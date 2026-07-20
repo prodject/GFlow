@@ -53,7 +53,7 @@ public class MainActivity extends Activity {
         add(grid, "Медиа", () -> startActivity(new Intent(this, MediaViewerActivity.class)));
         add(grid, "Текст", () -> startActivity(new Intent(this, TextViewerActivity.class)));
         add(grid, "Split", this::openSplitLauncher);
-        add(grid, "DVR / Камеры", this::showDvr);
+        add(grid, "DVR / Камеры", () -> startActivity(new Intent(this, DvrActivity.class)));
         add(grid, "Голос", () -> startActivity(new Intent(this, VoiceActivity.class)));
         add(grid, "Автомобиль", this::showCar);
         add(grid, "Климат", this::showClimate);
@@ -61,7 +61,7 @@ public class MainActivity extends Activity {
         add(grid, "HUD / OneOS", this::showHud);
         add(grid, "Браузер / Погода", this::showWeb);
         add(grid, "Рабочий стол", this::showLauncher);
-        add(grid, "ADB / Система", this::showSystem);
+        add(grid, "ADB / Система", () -> startActivity(new Intent(this, AdbShellActivity.class)));
         scroll.addView(root);
         setContentView(scroll);
     }
@@ -90,12 +90,9 @@ public class MainActivity extends Activity {
     private void showClimate() { panel("Климатические пресеты", "Сохранение текущего климата, создание/изменение/удаление пресетов, шаблоны комфорт/охлаждение/лето/зима, виджет и comfort climate экран."); }
     private void showAdas() { panel("ADAS / Вождение", "AEB, режим после старта, ELKA, FCW, LKA, LDW, RCW, предупреждение о скорости и удержание выбранного режима."); }
     private void showHud() { panel("HUD / Cluster / OneOS", "HUD presentation service, observer service, cluster bridge, media session listener, кнопки руля, ECARX/Geely intents."); }
-    private void showLauncher() { panel("Рабочий стол Monji", "Док приложений, выбор и порядок иконок, удаление с главной, запуск удаления приложений, темы, обои, часы, погода и виджеты."); }
+    private void showLauncher() { startActivity(new Intent(this, DesktopActivity.class)); }
     private void showSystem() { panel("ADB / Система", "ADB toggle, локальный shell, adb-grants, DPI/масштаб, автозум, автозапуск, watchdog и accessibility tracking."); }
-    private void showWeb() {
-        Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/search?q=weather"));
-        startActivity(i);
-    }
+    private void showWeb() { startActivity(new Intent(this, WeatherActivity.class)); }
     private void openSplitLauncher() {
         Intent i = getPackageManager().getLaunchIntentForPackage("com.android.settings");
         if (i != null) {

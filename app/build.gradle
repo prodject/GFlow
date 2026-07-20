@@ -19,8 +19,15 @@ android {
             signingConfig signingConfigs.debug
         }
     }
+
+    packaging {
+        jniLibs {
+            pickFirsts += ["**/libvosk.so"]
+        }
+    }
 }
 
 dependencies {
     implementation "androidx.core:core:1.13.1"
+    implementation "com.alphacephei:vosk-android:0.3.75"
 }
