@@ -1,0 +1,26 @@
+plugins {
+    id "com.android.application"
+}
+
+android {
+    namespace "com.prodject.gcontrol"
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "com.prodject.gcontrol"
+        minSdk 30
+        targetSdk 35
+        versionCode (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInteger()
+        versionName "1.${System.getenv("GITHUB_RUN_NUMBER") ?: "0"}"
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.debug
+        }
+    }
+}
+
+dependencies {
+    implementation "androidx.core:core:1.13.1"
+}
