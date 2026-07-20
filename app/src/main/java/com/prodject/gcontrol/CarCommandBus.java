@@ -13,5 +13,16 @@ final class CarCommandBus {
         i.putExtra("command", command);
         i.putExtra("value", value);
         c.sendBroadcast(i);
+        broadcast(c, "geely.oneos.intent.action.CAR_COMMAND", command, value);
+        broadcast(c, "ecarx.intent.action.CAR_COMMAND", command, value);
+        broadcast(c, "app.monji.CAR_COMMAND", command, value);
+    }
+
+    private static void broadcast(Context c, String action, String command, String value) {
+        Intent i = new Intent(action);
+        i.putExtra("command", command);
+        i.putExtra("value", value);
+        i.putExtra("source", c.getPackageName());
+        c.sendBroadcast(i);
     }
 }

@@ -15,6 +15,25 @@ The app provides a single car-control workspace with:
 - car command surface for climate, windows, sunroof, trunk, mirrors, seats, drive modes and sensors;
 - climate preset, ADAS, HUD/Cluster/OneOS, browser/weather, desktop and ADB/system screens.
 
+## Current Implementation Status
+
+Implemented:
+
+- Open-Meteo weather request screen;
+- Android notification/media session listener service;
+- local shell command screen, ADB setting toggle attempt, DPI command shortcut;
+- launchable-app desktop with pinned dock, app launch, shortcut removal and uninstall intent;
+- Vosk recording pipeline over the bundled Russian model;
+- DVR screen with Camera2 camera discovery;
+- DVR archive directory, segment naming and disk-limit pruning;
+- ECARX/Geely/OneOS intent broadcast attempts for vehicle commands.
+
+Still firmware-dependent:
+
+- real stock-camera recording depends on whether the head unit exposes those cameras through Camera2;
+- climate, windows, seats, ADAS, HUD and vehicle sensor commands need the exact Geely/ECARX/OneOS binder or intent contract for the target firmware;
+- privileged settings require system signature, root, or ADB grants.
+
 Some vehicle functions depend on firmware-specific Geely/ECARX/OneOS APIs, privileged Android permissions, or ADB grants. Unsupported firmware will show the UI but may not execute the underlying vehicle command until the matching integration layer is added.
 
 ## Build And Releases
