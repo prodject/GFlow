@@ -209,4 +209,5 @@ Implementation log
 - 2026-07-21: replaced fixed smart climate preset behavior with SmartClimateController modes, cooldown, staged summer/winter algorithms, dual-zone targets, fogging/call handling and drying after trip.
 - 2026-07-21: added VehicleSignalStateAdapter for reflection-based AdaptAPI ISensor reads: cabin/outside temperature, speed, fuel, rain, ignition, gear and engine states. Smart climate now uses these real signals first and keeps manual UI values as fallback.
 - 2026-07-21: added ADAS ACC/ICC controls from IADAS.smali: ACC/ICC switch, following time gap, ACC-with-TSR, max cruising speed diagnostics/buttons, speed-control mode and speed-limitation mode.
+- 2026-07-21: added low-speed 360 camera automation that monitors real vehicle speed and opens the stock AVM/3D camera view below a configurable threshold with hysteresis/cooldown.
 - 2026-07-21: added experimental Highway assist ready smart preset installer in ADAS. It enables ICC preparation, time gap, ACC-with-TSR, LKA, lane-change assist, auto lane-change assist and ACC/LCC switch while leaving final activation to stock vehicle controls.

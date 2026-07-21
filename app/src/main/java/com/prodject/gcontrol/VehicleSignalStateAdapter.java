@@ -62,6 +62,10 @@ final class VehicleSignalStateAdapter {
         return join(status);
     }
 
+    float speedKmh(float fallback) {
+        return readFloat("speed", SENSOR_CAR_SPEED, fallback);
+    }
+
     static String lastStatus(Context context) {
         return SmartClimateController.prefs(context).getString(KEY_LAST_STATUS, "");
     }
