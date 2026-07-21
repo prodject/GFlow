@@ -13,6 +13,8 @@ import android.widget.*;
 import java.util.*;
 
 public class MainActivity extends Activity {
+    private static final String APP_SETTINGS = "app_settings";
+    private static final String KEY_EXPERIMENTAL_FEATURES = "experimental_features";
     private static final String CLIMATE_PRESETS = "climate_presets";
     private static final String CLIMATE_PRESET_ORDER = "order";
     private static final String[] RUNTIME_PERMS = {
@@ -64,6 +66,7 @@ public class MainActivity extends Activity {
         add(grid, "HUD / OneOS", this::showHud);
         add(grid, "Браузер / Погода", this::showWeb);
         add(grid, "Рабочий стол", this::showLauncher);
+        add(grid, "Настройки", this::showSettings);
         add(grid, "ADB / Система", () -> startActivity(new Intent(this, AdbShellActivity.class)));
         scroll.addView(root);
         setContentView(scroll);
@@ -83,6 +86,31 @@ public class MainActivity extends Activity {
         back.setOnClickListener(v -> showDashboard());
         root.addView(back);
         setContentView(root);
+    }
+
+    private void showSettings() {
+        LinearLayout root = Ui.root(this, "Настройки");
+        root.addView(Ui.text(this, "Экспериментальные функции скрыты по умолчанию. Включай их только для проверки на конкретной прошивке автомобиля.", 14, false));
+        CheckBox experimental = new CheckBox(this);
+        experimental.setText("Experimental features");
+        experimental.setTextSize(16);
+        experimental.setChecked(experimentalFeaturesEnabled());
+        experimental.setOnCheckedChangeListener((button, checked) -> {
+            getSharedPreferences(APP_SETTINGS, MODE_PRIVATE).edit()
+                    .putBoolean(KEY_EXPERIMENTAL_FEATURES, checked)
+                    .apply();
+            Ui.toast(this, checked ? "Experimental features включены" : "Experimental features выключены");
+        });
+        Button back = Ui.button(this, "Назад");
+        back.setOnClickListener(v -> showDashboard());
+        root.addView(experimental);
+        root.addView(back);
+        setContentView(root);
+    }
+
+    private boolean experimentalFeaturesEnabled() {
+        return getSharedPreferences(APP_SETTINGS, MODE_PRIVATE)
+                .getBoolean(KEY_EXPERIMENTAL_FEATURES, false);
     }
 
     private LinearLayout commandRoot(String title) {
@@ -134,6 +162,11 @@ public class MainActivity extends Activity {
             root.addView(Ui.text(this, sb.toString(), 13, false), 2);
         });
         root.addView(b);
+    }
+
+    private void addCommandGroup(LinearLayout root, String title, int functionId, String[] labels, int[] values) {
+        root.addView(Ui.text(this, title, 14, true));
+        for (int i = 0; i < labels.length; i++) addCommand(root, labels[i], functionId, values[i]);
     }
 
     private String zoneLabel(int zone) {
@@ -374,6 +407,7 @@ public class MainActivity extends Activity {
         addCommand(root, "Drive Dynamic", EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_DYNAMIC);
         addCommand(root, "Drive Snow", EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_SNOW);
         addCommand(root, "Drive Offroad", EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_OFFROAD);
+        if (experimentalFeaturesEnabled()) addExperimentalDriveFeatures(root);
         addCommand(root, "Eco button", EcarxVehicleAdapter.DRIVE_ECO_BUTTON, EcarxVehicleAdapter.COMMON_ON);
         addCommand(root, "Руль мягкий", EcarxVehicleAdapter.DRIVE_STEERING_MODE, EcarxVehicleAdapter.STEERING_MODE_SOFT);
         addCommand(root, "Руль динамичный", EcarxVehicleAdapter.DRIVE_STEERING_MODE, EcarxVehicleAdapter.STEERING_MODE_DYNAMIC);
@@ -732,6 +766,68 @@ public class MainActivity extends Activity {
         addCommand(root, "AI lane warning vibrate", EcarxVehicleAdapter.ADAS_AI_LANE_CHANGE_WARNING, EcarxVehicleAdapter.AI_LANE_CHANGE_WARNING_VIBRATE);
         addCommand(root, "AI lane warning both", EcarxVehicleAdapter.ADAS_AI_LANE_CHANGE_WARNING, EcarxVehicleAdapter.AI_LANE_CHANGE_WARNING_BOTH);
         addCommand(root, "AI lane warning off", EcarxVehicleAdapter.ADAS_AI_LANE_CHANGE_WARNING, EcarxVehicleAdapter.COMMON_OFF);
+    }
+
+    private void addExperimentalDriveFeatures(LinearLayout root) {
+        root.addView(Ui.text(this, "Experimental drive features: функции из IDriveMode.smali. Перед использованием смотри диагностику support/readback.", 14, false));
+        addDiagnostic(root, "Experimental drive modes",
+                EcarxVehicleAdapter.DRIVE_MODE_SELECT,
+                EcarxVehicleAdapter.DRIVE_CUSTOM_PROPULSION,
+                EcarxVehicleAdapter.DRIVE_CUSTOM_SUSPENSION,
+                EcarxVehicleAdapter.DRIVE_CUSTOM_STEERING_FEEL,
+                EcarxVehicleAdapter.DRIVE_CUSTOM_CLIMATE,
+                EcarxVehicleAdapter.DRIVE_DIM_THEME_SET,
+                EcarxVehicleAdapter.DRIVE_ENERGY_MODE,
+                EcarxVehicleAdapter.DRIVE_CREEP_SET,
+                EcarxVehicleAdapter.DRIVE_LAUNCH_CONTROL,
+                EcarxVehicleAdapter.DRIVE_NOISE_CONTROL,
+                EcarxVehicleAdapter.DRIVE_SPEED_LIMIT_RANGE_VALUE,
+                EcarxVehicleAdapter.DRIVE_SPEED_LIMIT_RANGE_MIN,
+                EcarxVehicleAdapter.DRIVE_SPEED_LIMIT_RANGE_MAX,
+                EcarxVehicleAdapter.DRIVE_SPEED_LIMIT_RANGE_STEP,
+                EcarxVehicleAdapter.DRIVE_ESC_LEVEL,
+                EcarxVehicleAdapter.DRIVE_STARTRACK_MODE,
+                EcarxVehicleAdapter.DRIVE_PERFORMANCE_SAVING,
+                EcarxVehicleAdapter.DRIVE_POWER_TRAIN_STOP);
+        addCommandGroup(root, "Experimental: расширенные режимы движения", EcarxVehicleAdapter.DRIVE_MODE_SELECT,
+                new String[]{"Drive HDC", "Drive Mud", "Drive Rock", "Drive Sand", "Drive AWD", "Drive eAWD", "Drive Save", "Drive Pure", "Drive Hybrid", "Drive PHEV", "Drive Power", "Drive Normal", "Drive Eco HEV/PHEV", "Drive Eco Plus", "Drive Sport Plus", "Drive Adaptive", "Drive Custom", "Drive Start type 18", "Drive Start type 72", "Drive Start type 79", "Drive Start type 97"},
+                new int[]{EcarxVehicleAdapter.DRIVE_MODE_HDC, EcarxVehicleAdapter.DRIVE_MODE_MUD, EcarxVehicleAdapter.DRIVE_MODE_ROCK, EcarxVehicleAdapter.DRIVE_MODE_SAND, EcarxVehicleAdapter.DRIVE_MODE_AWD, EcarxVehicleAdapter.DRIVE_MODE_EAWD, EcarxVehicleAdapter.DRIVE_MODE_SAVE, EcarxVehicleAdapter.DRIVE_MODE_PURE, EcarxVehicleAdapter.DRIVE_MODE_HYBRID, EcarxVehicleAdapter.DRIVE_MODE_PHEV, EcarxVehicleAdapter.DRIVE_MODE_POWER, EcarxVehicleAdapter.DRIVE_MODE_NORMAL, EcarxVehicleAdapter.DRIVE_MODE_ECO_HEV_PHEV, EcarxVehicleAdapter.DRIVE_MODE_ECO_PLUS, EcarxVehicleAdapter.DRIVE_MODE_SPORT_PLUS, EcarxVehicleAdapter.DRIVE_MODE_ADAPTIVE, EcarxVehicleAdapter.DRIVE_MODE_CUSTOM, EcarxVehicleAdapter.DRIVE_MODE_START_TYPE18, EcarxVehicleAdapter.DRIVE_MODE_START_TYPE72, EcarxVehicleAdapter.DRIVE_MODE_START_TYPE79, EcarxVehicleAdapter.DRIVE_MODE_START_TYPE97});
+        addCommandGroup(root, "Experimental: custom propulsion", EcarxVehicleAdapter.DRIVE_CUSTOM_PROPULSION,
+                new String[]{"Propulsion Eco", "Propulsion Comfort", "Propulsion Sport", "Propulsion Offroad", "Propulsion Snow", "Propulsion Sand", "Propulsion Hybrid", "Propulsion Pure", "Propulsion Power", "Propulsion AWD", "Propulsion off"},
+                new int[]{EcarxVehicleAdapter.CUSTOM_PROPULSION_ECO, EcarxVehicleAdapter.CUSTOM_PROPULSION_COMFORT, EcarxVehicleAdapter.CUSTOM_PROPULSION_SPORT, EcarxVehicleAdapter.CUSTOM_PROPULSION_OFFROAD, EcarxVehicleAdapter.CUSTOM_PROPULSION_SNOW, EcarxVehicleAdapter.CUSTOM_PROPULSION_SAND, EcarxVehicleAdapter.CUSTOM_PROPULSION_HYBRID, EcarxVehicleAdapter.CUSTOM_PROPULSION_PURE, EcarxVehicleAdapter.CUSTOM_PROPULSION_POWER, EcarxVehicleAdapter.CUSTOM_PROPULSION_AWD, EcarxVehicleAdapter.COMMON_OFF});
+        addCommandGroup(root, "Experimental: custom suspension", EcarxVehicleAdapter.DRIVE_CUSTOM_SUSPENSION,
+                new String[]{"Suspension Standard", "Suspension Comfort", "Suspension Sport", "Suspension Offroad", "Suspension Snow", "Suspension Automatic", "Suspension off"},
+                new int[]{EcarxVehicleAdapter.CUSTOM_SUSPENSION_STANDARD, EcarxVehicleAdapter.CUSTOM_SUSPENSION_COMFORT, EcarxVehicleAdapter.CUSTOM_SUSPENSION_SPORT, EcarxVehicleAdapter.CUSTOM_SUSPENSION_OFFROAD, EcarxVehicleAdapter.CUSTOM_SUSPENSION_SNOW, EcarxVehicleAdapter.CUSTOM_SUSPENSION_AUTOMATIC, EcarxVehicleAdapter.COMMON_OFF});
+        addCommandGroup(root, "Experimental: steering feel", EcarxVehicleAdapter.DRIVE_CUSTOM_STEERING_FEEL,
+                new String[]{"Steering feel Light", "Steering feel Balanced", "Steering feel Heavy", "Steering feel off"},
+                new int[]{EcarxVehicleAdapter.CUSTOM_STEERING_LIGHT, EcarxVehicleAdapter.CUSTOM_STEERING_BALANCED, EcarxVehicleAdapter.CUSTOM_STEERING_HEAVY, EcarxVehicleAdapter.COMMON_OFF});
+        addCommandGroup(root, "Experimental: climate mode", EcarxVehicleAdapter.DRIVE_CUSTOM_CLIMATE,
+                new String[]{"Drive climate Normal", "Drive climate Eco", "Drive climate off"},
+                new int[]{EcarxVehicleAdapter.CUSTOM_CLIMATE_NORMAL, EcarxVehicleAdapter.CUSTOM_CLIMATE_ECO, EcarxVehicleAdapter.COMMON_OFF});
+        addCommandGroup(root, "Experimental: DIM theme", EcarxVehicleAdapter.DRIVE_DIM_THEME_SET,
+                new String[]{"DIM theme Red", "DIM theme Gold", "DIM theme Blue", "DIM theme off"},
+                new int[]{EcarxVehicleAdapter.DIM_THEME_RED, EcarxVehicleAdapter.DIM_THEME_GOLD, EcarxVehicleAdapter.DIM_THEME_BLUE, EcarxVehicleAdapter.COMMON_OFF});
+        addCommandGroup(root, "Experimental: energy drive mode", EcarxVehicleAdapter.DRIVE_ENERGY_MODE,
+                new String[]{"Energy Range", "Energy Tour", "Energy Sport", "Energy off"},
+                new int[]{EcarxVehicleAdapter.ENERGY_MODE_RANGE, EcarxVehicleAdapter.ENERGY_MODE_TOUR, EcarxVehicleAdapter.ENERGY_MODE_SPORT, EcarxVehicleAdapter.COMMON_OFF});
+        addCommandGroup(root, "Experimental: ESC level", EcarxVehicleAdapter.DRIVE_ESC_LEVEL,
+                new String[]{"ESC level 1", "ESC level 2", "ESC level 3", "ESC level 4", "ESC level 5", "ESC off"},
+                new int[]{EcarxVehicleAdapter.ESC_LEVEL_1, EcarxVehicleAdapter.ESC_LEVEL_2, EcarxVehicleAdapter.ESC_LEVEL_3, EcarxVehicleAdapter.ESC_LEVEL_4, EcarxVehicleAdapter.ESC_LEVEL_5, EcarxVehicleAdapter.COMMON_OFF});
+        addCommandGroup(root, "Experimental: Startrack / champion", EcarxVehicleAdapter.DRIVE_STARTRACK_MODE,
+                new String[]{"Startrack type 18", "Startrack type 72", "Startrack type 79", "Startrack type 97", "Startrack off"},
+                new int[]{EcarxVehicleAdapter.STARTRACK_TYPE18, EcarxVehicleAdapter.STARTRACK_TYPE72, EcarxVehicleAdapter.STARTRACK_TYPE79, EcarxVehicleAdapter.STARTRACK_TYPE97, EcarxVehicleAdapter.COMMON_OFF});
+        addCommandGroup(root, "Experimental: risky toggles", EcarxVehicleAdapter.DRIVE_CREEP_SET,
+                new String[]{"Creep on", "Creep off"},
+                new int[]{EcarxVehicleAdapter.COMMON_ON, EcarxVehicleAdapter.COMMON_OFF});
+        addCommand(root, "Launch control on", EcarxVehicleAdapter.DRIVE_LAUNCH_CONTROL, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "Launch control off", EcarxVehicleAdapter.DRIVE_LAUNCH_CONTROL, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(root, "Noise control on", EcarxVehicleAdapter.DRIVE_NOISE_CONTROL, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "Noise control off", EcarxVehicleAdapter.DRIVE_NOISE_CONTROL, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(root, "Performance saving on", EcarxVehicleAdapter.DRIVE_PERFORMANCE_SAVING, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "Performance saving off", EcarxVehicleAdapter.DRIVE_PERFORMANCE_SAVING, EcarxVehicleAdapter.COMMON_OFF);
+        addCommandGroup(root, "Experimental: power-train-stop", EcarxVehicleAdapter.DRIVE_POWER_TRAIN_STOP,
+                new String[]{"Power train stop not blocked", "Power train stop EV blocked", "Power train stop HEV blocked", "Power train stop EV+ blocked"},
+                new int[]{EcarxVehicleAdapter.POWER_TRAIN_STOP_NOT_BLOCKED, EcarxVehicleAdapter.POWER_TRAIN_STOP_EV_BLOCKED, EcarxVehicleAdapter.POWER_TRAIN_STOP_HEV_BLOCKED, EcarxVehicleAdapter.POWER_TRAIN_STOP_EV_PLUS_BLOCKED});
     }
 
     private void showHud() {
