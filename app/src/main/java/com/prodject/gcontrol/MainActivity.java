@@ -7,6 +7,8 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
@@ -134,7 +136,7 @@ public class MainActivity extends Activity {
         TextView subtitle = Ui.text(this, "Центр управления автомобилем, мультимедиа и сценариями", 16, false);
         subtitle.setTextColor(Color.rgb(222, 229, 235));
         hero.addView(subtitle);
-        hero.addView(new VehicleHeroView(this), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 170)));
+        hero.addView(new VehicleVisualView(this, false), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 190)));
 
         LinearLayout quick = Ui.row(this);
         quick.setPadding(0, Ui.dp(this, 10), 0, 0);
@@ -249,17 +251,42 @@ public class MainActivity extends Activity {
         }
     }
 
-    private final class VehicleHeroView extends View {
+    private final class VehicleVisualView extends View {
         private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final Path path = new Path();
+        private final boolean ambienceMode;
+        private final Bitmap model;
+        private final Bitmap underlay;
+        private final Bitmap lightScene;
+        private final Bitmap lightup;
+        private int accent = Color.rgb(38, 131, 215);
 
-        VehicleHeroView(Context context) {
+        VehicleVisualView(Context context, boolean ambienceMode) {
             super(context);
+            this.ambienceMode = ambienceMode;
+            model = BitmapFactory.decodeResource(getResources(), R.drawable.vehicle_settings_model);
+            underlay = BitmapFactory.decodeResource(getResources(), R.drawable.vehicle_settings_underlay);
+            lightScene = BitmapFactory.decodeResource(getResources(), R.drawable.vehicle_light_mode_fx11);
+            lightup = BitmapFactory.decodeResource(getResources(), R.drawable.vehicle_lightup_fx11);
             setClickable(true);
+        }
+
+        void setAccent(int color) {
+            accent = color;
+            invalidate();
         }
 
         @Override public boolean onTouchEvent(MotionEvent event) {
             if (event.getAction() != MotionEvent.ACTION_UP) return true;
+            if (ambienceMode) {
+                float x = event.getX() / Math.max(1f, getWidth());
+                if (x < 0.20f) setAccent(Color.rgb(232, 83, 70));
+                else if (x < 0.40f) setAccent(Color.rgb(230, 143, 39));
+                else if (x < 0.60f) setAccent(Color.rgb(235, 197, 54));
+                else if (x < 0.80f) setAccent(Color.rgb(52, 137, 224));
+                else setAccent(Color.rgb(136, 80, 214));
+                return true;
+            }
             float y = event.getY() / Math.max(1f, getHeight());
             float x = event.getX() / Math.max(1f, getWidth());
             if (y < 0.40f) transition(MainActivity.this::showClimateMenu);
@@ -275,6 +302,30 @@ public class MainActivity extends Activity {
             float h = getHeight();
             float cx = w / 2f;
             float base = h * 0.72f;
+
+            if (ambienceMode && lightScene != null) {
+                drawBitmapFit(canvas, lightScene, new RectF(w * 0.02f, h * 0.04f, w * 0.98f, h * 0.88f), 255);
+                paint.setStyle(Paint.Style.FILL);
+                paint.setColor(Color.argb(96, Color.red(accent), Color.green(accent), Color.blue(accent)));
+                canvas.drawRoundRect(new RectF(w * 0.14f, h * 0.30f, w * 0.86f, h * 0.66f), dp(42), dp(42), paint);
+                if (lightup != null) drawBitmapFit(canvas, lightup, new RectF(w * 0.03f, h * 0.02f, w * 0.97f, h * 0.88f), 218);
+                drawTouchHint(canvas, "Цвет подсветки", w * 0.50f, h * 0.92f, accent);
+                return;
+            }
+
+            if (!ambienceMode && (model != null || underlay != null)) {
+                paint.setStyle(Paint.Style.FILL);
+                paint.setColor(Color.argb(42, 255, 255, 255));
+                canvas.drawOval(new RectF(w * 0.08f, h * 0.70f, w * 0.92f, h * 0.97f), paint);
+                RectF bounds = new RectF(w * 0.02f, h * 0.02f, w * 0.98f, h * 0.92f);
+                if (underlay != null) drawBitmapFit(canvas, underlay, bounds, 178);
+                if (model != null) drawBitmapFit(canvas, model, bounds, 255);
+                drawTouchHint(canvas, "Климат", w * 0.50f, h * 0.18f, Ui.BLUE);
+                drawTouchHint(canvas, "Кузов", w * 0.50f, h * 0.54f, Ui.GREEN);
+                drawTouchHint(canvas, "ADAS", w * 0.27f, h * 0.83f, Color.rgb(113, 91, 177));
+                drawTouchHint(canvas, "360", w * 0.73f, h * 0.83f, Ui.AMBER);
+                return;
+            }
 
             paint.setStyle(Paint.Style.FILL);
             paint.setColor(Color.argb(38, 255, 255, 255));
@@ -304,6 +355,33 @@ public class MainActivity extends Activity {
             paint.setColor(Color.argb(120, 32, 42, 50));
             canvas.drawLine(cx, h * 0.16f, cx, h * 0.84f, paint);
             canvas.drawRoundRect(new RectF(w * 0.23f, h * 0.45f, w * 0.77f, h * 0.85f), dp(36), dp(36), paint);
+        }
+
+        private void drawBitmapFit(Canvas canvas, Bitmap bitmap, RectF target, int alpha) {
+            float scale = Math.min(target.width() / bitmap.getWidth(), target.height() / bitmap.getHeight());
+            float bw = bitmap.getWidth() * scale;
+            float bh = bitmap.getHeight() * scale;
+            RectF dst = new RectF(
+                    target.centerX() - bw / 2f,
+                    target.centerY() - bh / 2f,
+                    target.centerX() + bw / 2f,
+                    target.centerY() + bh / 2f);
+            paint.setAlpha(alpha);
+            canvas.drawBitmap(bitmap, null, dst, paint);
+            paint.setAlpha(255);
+        }
+
+        private void drawTouchHint(Canvas canvas, String label, float x, float y, int color) {
+            paint.setStyle(Paint.Style.FILL);
+            paint.setColor(Color.argb(208, Color.red(color), Color.green(color), Color.blue(color)));
+            RectF r = new RectF(x - dp(38), y - dp(13), x + dp(38), y + dp(13));
+            canvas.drawRoundRect(r, dp(13), dp(13), paint);
+            paint.setColor(Color.WHITE);
+            paint.setTextAlign(Paint.Align.CENTER);
+            paint.setTextSize(dp(11));
+            paint.setFakeBoldText(true);
+            canvas.drawText(label, x, y + dp(4), paint);
+            paint.setFakeBoldText(false);
         }
 
         private float dp(int value) {
@@ -2055,6 +2133,7 @@ public class MainActivity extends Activity {
         LinearLayout root = commandRoot("Experimental: Подсветка");
         addScreenMap(root, "Карта вкладки", "Ambience light разделен на цвета, эффекты, control mode, welcome/music/voice и зоны.",
                 "Color", "Effect", "Mode", "Zones");
+        addAmbiencePreview(root);
         root.addView(Ui.text(this, "Ambience light из IAmbienceLight.smali: темы, цвета, weather/music/welcome/voice и зоны.", 14, false));
         Ui.section(root, "Ambience diagnostics", "Readback и поддержка подсветки видны в Developer diagnostics.");
         addDiagnostic(root, "Ambience light",
@@ -2093,6 +2172,39 @@ public class MainActivity extends Activity {
         addCommandGroup(root, "Zones", EcarxVehicleAdapter.AMBIENCE_LIGHT_ZONE_EXPERIENCE,
                 new String[]{"Zone all", "Zone front", "Zone headrest", "Zone rear"},
                 new int[]{EcarxVehicleAdapter.AMBIENCE_LIGHT_ZONE_ALL, EcarxVehicleAdapter.AMBIENCE_LIGHT_ZONE_FRONT, EcarxVehicleAdapter.AMBIENCE_LIGHT_ZONE_HEADREST, EcarxVehicleAdapter.AMBIENCE_LIGHT_ZONE_REAR});
+    }
+
+    private void addAmbiencePreview(LinearLayout root) {
+        LinearLayout card = Ui.card(this);
+        LinearLayout top = Ui.row(this);
+        TextView title = Ui.text(this, "Визуал подсветки", 18, true);
+        top.addView(title, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        top.addView(Ui.help(this, "Визуал подсветки", "Preview использует ассеты OneOS-ControlBoard: фон салона/двери и подсвеченный слой автомобиля. Нажмите по нижней части preview, чтобы сменить цвет локально; реальные команды ниже отправляют значения в AdaptAPI."));
+        card.addView(top);
+        card.addView(Ui.muted(this, "Касание по preview меняет демонстрационный цвет. Команды ниже выполняют реальную запись theme/effect/zone."));
+        VehicleVisualView visual = new VehicleVisualView(this, true);
+        card.addView(visual, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 260)));
+
+        LinearLayout swatches = Ui.row(this);
+        addSwatch(swatches, visual, Color.rgb(232, 83, 70));
+        addSwatch(swatches, visual, Color.rgb(230, 143, 39));
+        addSwatch(swatches, visual, Color.rgb(235, 197, 54));
+        addSwatch(swatches, visual, Color.rgb(52, 137, 224));
+        addSwatch(swatches, visual, Color.rgb(136, 80, 214));
+        card.addView(swatches);
+        root.addView(card, lpMatchWrap(0, 8, 0, 14));
+    }
+
+    private void addSwatch(LinearLayout row, VehicleVisualView visual, int color) {
+        Button b = new Button(this);
+        b.setText("");
+        b.setMinHeight(Ui.dp(this, 44));
+        b.setMinWidth(Ui.dp(this, 44));
+        b.setBackground(Ui.cardBg(this, color, Ui.dp(this, 22), Color.argb(120, 255, 255, 255)));
+        b.setOnClickListener(v -> visual.setAccent(color));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 44), 1);
+        lp.setMargins(Ui.dp(this, 4), Ui.dp(this, 6), Ui.dp(this, 4), 0);
+        row.addView(b, lp);
     }
 
     private void showDayMode() {
