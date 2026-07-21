@@ -600,6 +600,19 @@ public class MainActivity extends Activity {
         addHudDimAction(root, "DIM avg fuel sample", a -> a.updateAvgFuelRanking(0, "{\"source\":\"GControl\",\"avg\":0}"));
         addHudDimAction(root, "DIM media mute", a -> a.publishMediaMuteState(1));
         addHudDimAction(root, "DIM media unmute", a -> a.publishMediaMuteState(0));
+        addAudioExtAction(root, "AudioExt: bind services", a -> a.bindAudioExt());
+        addAudioExtAction(root, "AudioExt: visualizer status", a -> a.visualizerStatus());
+        addAudioExtAction(root, "AudioExt: media playing", a -> a.notifyMediaStatus(1, getPackageName()));
+        addAudioExtAction(root, "AudioExt: media paused", a -> a.notifyMediaStatus(0, getPackageName()));
+        addAudioExtAction(root, "AudioExt: VR active", a -> a.notifyVrStatus(1, 0));
+        addAudioExtAction(root, "AudioExt: VR inactive", a -> a.notifyVrStatus(0, 0));
+        addAudioExtAction(root, "AudioExt: PDC volume on", a -> a.notifyPdcVolumeSwitch(1));
+        addAudioExtAction(root, "AudioExt: voice light 0.8", a -> a.voiceLight(0.8f));
+        addAudioExtAction(root, "AudioExt: anti-shake on", a -> a.antiShake(true, 0.5f));
+        addAudioExtAction(root, "AudioExt: loudness on", a -> a.loudness(true));
+        addAudioExtAction(root, "AudioExt: section max on", a -> a.useSectionMax(true));
+        addAudioExtAction(root, "AudioExt: voice base -35dB", a -> a.voiceDb(-35));
+        addAudioExtAction(root, "AudioExt: spectrum preset", a -> a.spectrumPreset(0, 1, 1.0f, 1.0f));
         Button hud = Ui.button(this, "Запустить HUD service");
         hud.setOnClickListener(v -> startForegroundService(new Intent(this, HudPresentationService.class)));
         Button observer = Ui.button(this, "Запустить HUD observer");
@@ -628,6 +641,25 @@ public class MainActivity extends Activity {
 
     interface HudDimAction {
         EcarxHudDimAdapter.Result run(EcarxHudDimAdapter adapter);
+    }
+
+    private void addAudioExtAction(LinearLayout root, String label, AudioExtAction action) {
+        Button b = Ui.button(this, label);
+        b.setOnClickListener(v -> {
+            AudioExtServiceAdapter.Result result;
+            try {
+                result = action.run(new AudioExtServiceAdapter(this));
+            } catch (Exception e) {
+                result = AudioExtServiceAdapter.Result.text(false, e.getClass().getSimpleName() + ": " + e.getMessage());
+            }
+            Ui.toast(this, result.success ? "AudioExt команда отправлена" : "AudioExt команда не выполнена");
+            root.addView(Ui.text(this, result.message, 13, false), 2);
+        });
+        root.addView(b);
+    }
+
+    interface AudioExtAction {
+        AudioExtServiceAdapter.Result run(AudioExtServiceAdapter adapter);
     }
     private void showLauncher() { startActivity(new Intent(this, DesktopActivity.class)); }
     private void showSystem() { panel("ADB / Система", "ADB toggle, локальный shell, adb-grants, DPI/масштаб, автозум, автозапуск, watchdog и accessibility tracking."); }

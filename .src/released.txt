@@ -89,7 +89,7 @@ Functional coverage
 - Steering wheel receiver: partial. It stores last wheel event, recognizes voice/PTT-like keys, forwards text command extras to the command bus and opens VoiceActivity with source/event context.
 - HUD presentation/observer services: scaffold.
 - Cluster bridge service: scaffold.
-- Real HUD/cluster contracts: partial. HUD vehicle function buttons and selected readback/support diagnostics added from IHUD.smali. HUDInteraction status/sync requests, DIMInteraction status/day-night/presentation bridge, IDimMenuInteraction tab/theme/nav/volume commands, IClimateInteraction temperature/unit writes and IMediaInteraction MediaSession publishing are wired through reflection from OneOS-SystemUIPlugin. AudioExtService InteractionProto/FDBus control and real cluster/HUD render surfaces are still pending.
+- Real HUD/cluster contracts: partial. HUD vehicle function buttons and selected readback/support diagnostics added from IHUD.smali. HUDInteraction status/sync requests, DIMInteraction status/day-night/presentation bridge, IDimMenuInteraction tab/theme/nav/volume commands, IClimateInteraction temperature/unit writes and IMediaInteraction MediaSession publishing are wired through reflection from OneOS-SystemUIPlugin. AudioExtService exported binder control is partially wired through raw AIDL transactions; native FDBus/protobuf low-level control and real cluster/HUD render surfaces are still pending.
 
 9. Browser / weather / internet
 - Weather via Open-Meteo: implemented.
@@ -162,3 +162,6 @@ Implementation log
 - 2026-07-21: expanded GControlMediaSessionListener to publish active session metadata/playback changes into the DIM media bridge.
 - 2026-07-21: expanded HVAC constants from IHvac.smali with temp dual/unit, display left/right temp tabs, hardkey left/right temp/sync/fan, rapid cooling/warming, second-row climate, climate lock, AQS/CO2/ions, fragrance, G-Clean, dry ventilation, pre/post climatisation, direction and sweeping modes.
 - 2026-07-21: wired the expanded HVAC functions into the Climate screen and added extended HVAC diagnostics.
+- 2026-07-21: added AudioExtServiceAdapter for exported com.autolink.audioextservice.AudioExtService and AudioExtControlService binder actions without compile-time AIDL dependencies.
+- 2026-07-21: wired IAudioExtService notifyMediaStatusChanged/notifyVrStatusChanged/notifyPDCVolCtrlSwt via raw Binder transactions.
+- 2026-07-21: wired IAudioExtControl visualizer/voice-light transactions: section zone, spectrum mode, amplitude/frequency gain, voice base dB, voice light degree, anti-shake, loudness weighting and section max.
