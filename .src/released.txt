@@ -103,7 +103,7 @@ Functional coverage
 - Pinned dock: implemented.
 - Add/remove shortcut and uninstall intent: implemented.
 - Ordering: implemented through dock item move up/down actions; drag UI still missing.
-- Themes/wallpaper/widgets/weather clock: partial. Clock and local wallpaper/theme presets are implemented; weather widget still missing.
+- Themes/wallpaper/widgets/weather clock: partial. Clock, local wallpaper/theme presets and refreshable weather widget are implemented.
 - OneOS dock contracts found in OneOS-Dock_src and OneOS-SystemUIPlugin_src; privileged integration pending.
 
 11. ADB / system
@@ -151,3 +151,4 @@ Implementation log
 - 2026-07-21: replaced fixed Settings split shortcut with launchable app chooser using FLAG_ACTIVITY_LAUNCH_ADJACENT / MULTIPLE_TASK.
 - 2026-07-21: improved steering wheel receiver to parse key/action/command extras, persist the last event and route voice/PTT-like events to VoiceActivity.
 - 2026-07-21: added Comfort Climate quick panel with HVAC status readback, comfort/quiet/warmup presets and common seat/wheel/fan/blowing controls.
+- 2026-07-21: added Desktop weather widget with Open-Meteo refresh and cached last value.

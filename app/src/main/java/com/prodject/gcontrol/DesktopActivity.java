@@ -7,12 +7,17 @@ import android.graphics.Color;
 import android.net.*;
 import android.os.*;
 import android.widget.*;
+import org.json.*;
+import java.io.*;
+import java.net.*;
 import java.text.*;
 import java.util.*;
 
 public class DesktopActivity extends Activity {
     private static final String KEY_PINNED_ORDER = "pinned_order";
     private static final String KEY_THEME = "theme";
+    private static final String KEY_WEATHER = "weather";
+    private static final String KEY_WEATHER_AT = "weather_at";
     private LinearLayout root;
     private final ArrayList<String> pinned = new ArrayList<>();
 
@@ -27,6 +32,7 @@ public class DesktopActivity extends Activity {
         root = Ui.root(this, "Рабочий стол");
         applyTheme(root);
         root.addView(Ui.text(this, new SimpleDateFormat("HH:mm · dd.MM.yyyy", Locale.getDefault()).format(new Date()), 20, true));
+        addWeatherWidget();
         Button theme = Ui.button(this, "Тема / обои");
         theme.setOnClickListener(v -> chooseTheme());
         root.addView(theme);
@@ -116,5 +122,45 @@ public class DesktopActivity extends Activity {
         int theme = getPreferences(0).getInt(KEY_THEME, 0);
         if (theme == 1) view.setBackgroundColor(Color.rgb(229, 231, 235));
         else if (theme == 2) view.setBackgroundColor(Color.rgb(232, 238, 244));
+    }
+
+    private void addWeatherWidget() {
+        String cached = getPreferences(0).getString(KEY_WEATHER, "Погода не обновлялась");
+        long at = getPreferences(0).getLong(KEY_WEATHER_AT, 0);
+        TextView weather = Ui.text(this, cached + (at == 0 ? "" : "\n" + new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date(at))), 16, true);
+        Button refresh = Ui.button(this, "Обновить погоду");
+        refresh.setOnClickListener(v -> {
+            weather.setText("Загружаю погоду...");
+            loadWeather(weather);
+        });
+        root.addView(weather);
+        root.addView(refresh);
+    }
+
+    private void loadWeather(TextView weather) {
+        new Thread(() -> {
+            try {
+                String url = "https://api.open-meteo.com/v1/forecast?latitude=55.7558&longitude=37.6173&current=temperature_2m,wind_speed_10m,weather_code";
+                JSONObject current = new JSONObject(read(new URL(url))).getJSONObject("current");
+                String text = "Погода: " + current.optDouble("temperature_2m") + " C, ветер " + current.optDouble("wind_speed_10m") + " км/ч, код " + current.optInt("weather_code");
+                getPreferences(0).edit().putString(KEY_WEATHER, text).putLong(KEY_WEATHER_AT, System.currentTimeMillis()).apply();
+                runOnUiThread(() -> weather.setText(text));
+            } catch (Exception e) {
+                runOnUiThread(() -> weather.setText("Ошибка погоды: " + e.getMessage()));
+            }
+        }).start();
+    }
+
+    private String read(URL url) throws IOException {
+        HttpURLConnection c = (HttpURLConnection) url.openConnection();
+        c.setConnectTimeout(8000);
+        c.setReadTimeout(8000);
+        try (InputStream in = c.getInputStream(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            byte[] buf = new byte[8192];
+            for (int n; (n = in.read(buf)) > 0;) out.write(buf, 0, n);
+            return out.toString("UTF-8");
+        } finally {
+            c.disconnect();
+        }
     }
 }
