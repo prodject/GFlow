@@ -77,7 +77,7 @@ Functional coverage
 - Quick templates comfort/cooling/winter: adapter implemented as multi-command HVAC templates.
 - Voice templates comfort/cooling/winter: implemented for explicit preset commands.
 - Comfort climate screen: implemented as a quick HVAC control panel with status, comfort/quiet/warmup presets and common fan/blowing/seat/wheel controls.
-- Vehicle execution: implemented through HVAC function IDs; still needs zone-specific driver/passenger controls and safe temperature write encoding.
+- Vehicle execution: implemented through HVAC function IDs; DIM climate bridge adds safe float temperature write for 0x10060100. Still needs zone-specific driver/passenger temperature controls.
 
 7. ADAS / driving
 - UI text: scaffold.
@@ -89,7 +89,7 @@ Functional coverage
 - Steering wheel receiver: partial. It stores last wheel event, recognizes voice/PTT-like keys, forwards text command extras to the command bus and opens VoiceActivity with source/event context.
 - HUD presentation/observer services: scaffold.
 - Cluster bridge service: scaffold.
-- Real HUD/cluster contracts: HUD vehicle function buttons and selected readback/support diagnostics added from IHUD.smali; hudinteraction, DIMInteraction and AudioExtService InteractionProto still pending.
+- Real HUD/cluster contracts: partial. HUD vehicle function buttons and selected readback/support diagnostics added from IHUD.smali. HUDInteraction status/sync requests, DIMInteraction status/day-night/presentation bridge, IDimMenuInteraction tab/theme/nav/volume commands and IClimateInteraction temperature/unit writes are wired through reflection from OneOS-SystemUIPlugin. AudioExtService InteractionProto and real cluster/HUD render surfaces are still pending.
 
 9. Browser / weather / internet
 - Weather via Open-Meteo: implemented.
@@ -154,3 +154,7 @@ Implementation log
 - 2026-07-21: added Desktop weather widget with Open-Meteo refresh and cached last value.
 - 2026-07-21: added DVR Camera2/MediaRecorder segment path with marker fallback and camera|microphone foreground service type.
 - 2026-07-21: expanded ADB/System helper with direct settings shortcuts for Accessibility, WRITE_SETTINGS, All Files Access and app details.
+- 2026-07-21: added EcarxHudDimAdapter using reflection against com.ecarx.xui.adaptapi.hudinteraction.HUDInteraction and com.ecarx.xui.adaptapi.diminteraction.DimInteraction from OneOS-SystemUIPlugin.
+- 2026-07-21: wired HUDInteraction requestHUDMode/requestCalibrationMode/requestADASOpenStatus/requestCarFollowingGAPLevel/getHUDCalibrationParam and height/ADAS/vehicle sync requests.
+- 2026-07-21: wired DimInteraction getShowPresentationOption/getSupportedRankingType/requestDayNightMode/setPresentationToDimSwitch/updateAvgFuleRanking plus IDimMenuInteraction IHU-ready/theme/tab/nav/volume commands.
+- 2026-07-21: wired DIM IClimateInteraction temperature unit and float temperature writes for HVAC_FUNC_TEMP 0x10060100.
