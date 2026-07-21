@@ -2,6 +2,7 @@ package com.prodject.gcontrol;
 
 import android.app.*;
 import android.content.*;
+import android.net.Uri;
 import android.os.*;
 import android.provider.Settings;
 import android.widget.*;
@@ -20,6 +21,10 @@ public class AdbShellActivity extends Activity {
         Button adb = Ui.button(this, "Переключить ADB");
         Button dpi = Ui.button(this, "DPI 440");
         Button grants = Ui.button(this, "Проверить grants");
+        Button accessibility = Ui.button(this, "Открыть Accessibility");
+        Button writeSettings = Ui.button(this, "Открыть WRITE_SETTINGS");
+        Button allFiles = Ui.button(this, "Открыть All files access");
+        Button appInfo = Ui.button(this, "Открыть карточку приложения");
         EditText zoomPackages = new EditText(this);
         zoomPackages.setHint("Autozoom packages: com.nav, maps, browser");
         EditText zoomScale = new EditText(this);
@@ -35,6 +40,10 @@ public class AdbShellActivity extends Activity {
         adb.setOnClickListener(v -> toggleAdb());
         dpi.setOnClickListener(v -> execute("wm density 440"));
         grants.setOnClickListener(v -> showGrants());
+        accessibility.setOnClickListener(v -> openSettings(Settings.ACTION_ACCESSIBILITY_SETTINGS));
+        writeSettings.setOnClickListener(v -> openSettings(Settings.ACTION_MANAGE_WRITE_SETTINGS, Uri.parse("package:" + getPackageName())));
+        allFiles.setOnClickListener(v -> openSettings(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, Uri.parse("package:" + getPackageName())));
+        appInfo.setOnClickListener(v -> openSettings(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + getPackageName())));
         zoom.setOnClickListener(v -> saveAutozoom(zoomPackages.getText().toString(), zoomScale.getText().toString()));
         zoomToggle.setOnClickListener(v -> toggleAutozoom());
         root.addView(command);
@@ -42,6 +51,10 @@ public class AdbShellActivity extends Activity {
         root.addView(adb);
         root.addView(dpi);
         root.addView(grants);
+        root.addView(accessibility);
+        root.addView(writeSettings);
+        root.addView(allFiles);
+        root.addView(appInfo);
         root.addView(Ui.text(this, "Autozoom меняет Settings.System.FONT_SCALE для выбранных приложений через AccessibilityService.", 14, false));
         root.addView(zoomPackages);
         root.addView(zoomScale);
@@ -84,8 +97,24 @@ public class AdbShellActivity extends Activity {
                 "adb shell settings get global adb_enabled\n\n" +
                 "Проверка внутри приложения:\n" +
                 "WRITE_SETTINGS=" + Settings.System.canWrite(this) + "\n" +
+                "MANAGE_EXTERNAL_STORAGE=" + (Build.VERSION.SDK_INT < 30 || Environment.isExternalStorageManager()) + "\n" +
+                "Accessibility last package=" + getSharedPreferences(AppWatchdogAccessibilityService.PREFS, MODE_PRIVATE).getString(AppWatchdogAccessibilityService.KEY_LAST_PACKAGE, "") + "\n" +
                 "SDK=" + Build.VERSION.SDK_INT + "\n" +
                 "Last foreground package=" + getSharedPreferences(AppWatchdogAccessibilityService.PREFS, MODE_PRIVATE).getString(AppWatchdogAccessibilityService.KEY_LAST_PACKAGE, ""));
+    }
+
+    private void openSettings(String action) {
+        openSettings(action, null);
+    }
+
+    private void openSettings(String action, Uri data) {
+        try {
+            Intent intent = new Intent(action);
+            if (data != null) intent.setData(data);
+            startActivity(intent);
+        } catch (Exception e) {
+            output.setText("Не удалось открыть настройки: " + e.getMessage());
+        }
     }
 
     private void saveAutozoom(String packages, String scale) {

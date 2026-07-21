@@ -110,7 +110,7 @@ Functional coverage
 - Local shell command execution: implemented.
 - ADB enabled toggle attempt: partial/privileged.
 - DPI command shortcut: implemented via shell attempt.
-- adb-grants verification/workflow: partial. Screen now prints grant/appops commands and basic permission state.
+- adb-grants verification/workflow: partial. Screen prints grant/appops commands, basic permission state and opens Accessibility, WRITE_SETTINGS, All Files Access and app details settings.
 - Autostart after boot: partial; BootReceiver starts VoiceForegroundService.
 - Watchdog accessibility service: partial. It tracks foreground package from TYPE_WINDOW_STATE_CHANGED events.
 - Active app tracking/autozoom: partial. ADB/System screen stores package filters and scale; AccessibilityService applies Settings.System.FONT_SCALE for matching foreground packages when enabled.
@@ -153,3 +153,4 @@ Implementation log
 - 2026-07-21: added Comfort Climate quick panel with HVAC status readback, comfort/quiet/warmup presets and common seat/wheel/fan/blowing controls.
 - 2026-07-21: added Desktop weather widget with Open-Meteo refresh and cached last value.
 - 2026-07-21: added DVR Camera2/MediaRecorder segment path with marker fallback and camera|microphone foreground service type.
+- 2026-07-21: expanded ADB/System helper with direct settings shortcuts for Accessibility, WRITE_SETTINGS, All Files Access and app details.
