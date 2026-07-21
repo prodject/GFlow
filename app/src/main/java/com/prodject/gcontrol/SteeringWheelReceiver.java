@@ -9,13 +9,17 @@ public class SteeringWheelReceiver extends BroadcastReceiver {
         String command = textExtra(intent, "command", "cmd", "voice", "text");
         int keyCode = intExtra(intent, "keyCode", "keycode", "key_code", "code");
         String gesture = gesture(intent);
+        String modifier = modifier(intent);
+        String foreground = context.getSharedPreferences(AppWatchdogAccessibilityService.PREFS, Context.MODE_PRIVATE)
+                .getString(AppWatchdogAccessibilityService.KEY_LAST_PACKAGE, "");
         String event = "action=" + intent.getAction() + " key=" + keyCode + " command=" + command;
         context.getSharedPreferences("steering", Context.MODE_PRIVATE).edit()
                 .putString("last_event", event)
                 .putLong("last_event_at", System.currentTimeMillis())
                 .apply();
         AutomationEngine.runTrigger(context, "button", keyCode + ":" + gesture);
-        if (AutomationEngine.runSteering(context, keyCode, gesture)) return;
+        AutomationEngine.SteeringResult steering = AutomationEngine.runSteering(context, keyCode, gesture, modifier, foreground);
+        if (steering.replaceStock) return;
         if (command != null && !command.trim().isEmpty()) {
             CarCommandBus.send(context, "steering", command);
             openVoice(context, command, event);
@@ -61,7 +65,18 @@ public class SteeringWheelReceiver extends BroadcastReceiver {
         if (repeat > 0) return "hold";
         String action = String.valueOf(intent.getAction()).toLowerCase(Locale.ROOT);
         if (action.contains("long") || action.contains("hold")) return "hold";
+        if (action.contains("triple")) return "triple";
         if (action.contains("double")) return "double";
+        int clickCount = intExtra(intent, "clickCount", "clicks", "tapCount");
+        if (clickCount == 3) return "triple";
+        if (clickCount == 2) return "double";
         return "press";
+    }
+
+    private String modifier(Intent intent) {
+        String value = textExtra(intent, "modifier", "heldKey", "withKey", "comboKey");
+        if (value != null) return value.trim();
+        int key = intExtra(intent, "modifierKeyCode", "heldKeyCode", "withKeyCode");
+        return key == 0 ? "" : String.valueOf(key);
     }
 }
