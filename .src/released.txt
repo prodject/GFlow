@@ -1,0 +1,123 @@
+GControl coverage log
+Updated: 2026-07-21
+
+Source inventory
+- .example: old Monji APK decompile and bundled resources.
+- .src/Functions.txt: functional target list extracted from old app.
+- .src/Ext: system APKs and decompiled sources used as integration references.
+
+Key system sources found in .src/Ext
+- OneOS-SystemUIPlugin_src: com.ecarx.xui.adaptapi.* including car, hvac, vehicle, dvr, evs, hudinteraction, tpms, wifiap, audiofx.
+- ECarXCarService_src: ecarx car service and permission ecarx.car.permission.CAR_HVAC.
+- CarService_src: Android Automotive car service permissions and vehicle categories.
+- DIMInteraction_src: DIM/QNX interaction, navigation/phone/camera monitor classes.
+- AudioExtService_src: autolink InteractionProto messages for dock/DIM/audio/media/navigation.
+- OneOS-Dock_src and OneOS-ControlBoard_src: OneOS UI/cloud/navigation/dock integration classes.
+- MultiWindowService_src and MultiWindowAnimator_src: privileged split/multi-window behavior.
+- TCAMService_src: car vendor extension service entry points.
+
+Coverage status legend
+- implemented: functional code exists in GControl.
+- partial: user-facing UI exists and some system/API calls are attempted.
+- adapter: reflection-based system contract added; requires target firmware classes/permissions.
+- scaffold: entry point/service exists but real behavior is not implemented.
+- missing: not implemented yet.
+- privileged: requires system signature, root, or adb grants.
+
+Functional coverage
+
+1. Main screens
+- Main dashboard: implemented.
+- Onboarding: implemented.
+- Legal/warranty screen: implemented.
+- File manager: implemented.
+- Media viewer: implemented.
+- Text viewer: implemented.
+- Split launcher: partial. Current implementation launches Settings with launch-adjacent flags; app chooser and privileged multi-window control still needed.
+
+2. File manager
+- Open file: implemented.
+- Share file: implemented.
+- Create folder: implemented.
+- Delete file/folder: implemented.
+- Move file/folder: implemented via File.renameTo; cross-volume copy/delete fallback still needed.
+- Internal storage browsing: implemented.
+- USB lookup: partial via /storage scan; StorageManager volume enumeration still needed.
+- Free/used space: implemented.
+
+3. DVR / cameras
+- Camera2 discovery: implemented.
+- Archive directory and size summary: implemented.
+- Segment naming and pruning: implemented.
+- Foreground camera service: scaffold.
+- Real video recording: missing. Current DvrService writes placeholder .mp4 marker files.
+- Stock camera integration: adapter added for com.ecarx.xui.adaptapi.evs.EVS and com.ecarx.xui.adaptapi.dvr.Dvr. Surface preview and real recording still pending.
+- Camera selection, segment duration, storage target, per-camera archive: missing.
+
+4. Voice assistant
+- Voice activity and app.monji.VOICE / VOICE_COMMAND / ASSIST entry points: implemented.
+- Foreground microphone service: implemented as foreground scaffold.
+- Local Vosk model pipeline: implemented.
+- Command routing to car controls: partial. Text commands are broadcast; parser and real vehicle function mapping still needed.
+
+5. Vehicle controls
+- Real contract found: com.ecarx.xui.adaptapi.car.Car.create(Context), ICar.getICarFunction(), ICarFunction.getFunctionValue/setFunctionValue/isFunctionSupported.
+- HVAC IDs found in IHvac.smali: power, AC, AC max, auto, eco, fan speed, blowing mode, temperature, circulation, front/rear defrost, seat heating/ventilation/massage, steering wheel heat.
+- BCM IDs found in IBcm.smali: windows, sunroof, sun curtain, trunk/custom key, mirror fold/adjust, doors, lamps, wipers.
+- ADAS IDs found in IADAS.smali: AEB, FCW, LKA, LDW, RCW, speed limit warning, ELKA/emergency lane, lane change assist, PDC.
+- HUD IDs found in IHUD.smali through vehicle interface list; detailed UI still pending.
+- Seat IDs found in ISeat.smali: seat position, height, backrest, cushion, headrest, massage-related controls.
+- Current GControl status before adapter: scaffold/broadcast only.
+- Next implementation target: reflection adapter and UI buttons for high-confidence int functions.
+
+6. Climate presets
+- Preset UI text: scaffold.
+- Save/edit/delete presets: missing.
+- Quick templates comfort/cooling/summer/winter: missing.
+- Comfort climate screen: missing.
+- Vehicle execution depends on HVAC adapter.
+
+7. ADAS / driving
+- UI text: scaffold.
+- Real function IDs found in IADAS.smali.
+- Direct toggles/readback: missing before adapter.
+
+8. HUD / Cluster / OneOS
+- Media session listener: implemented.
+- Steering wheel receiver: partial; opens VoiceActivity for any matching event.
+- HUD presentation/observer services: scaffold.
+- Cluster bridge service: scaffold.
+- Real HUD/cluster contracts: found candidates in com.ecarx.xui.adaptapi.hudinteraction, vehicle.IHUD, DIMInteraction and AudioExtService InteractionProto; implementation pending.
+
+9. Browser / weather / internet
+- Weather via Open-Meteo: implemented.
+- Open browser: implemented.
+- Open arbitrary site/bookmark/search: missing.
+
+10. Desktop / dock
+- Launchable app list: implemented.
+- Pinned dock: implemented.
+- Add/remove shortcut and uninstall intent: implemented.
+- Ordering: partial via insertion order only; drag/reorder UI missing.
+- Themes/wallpaper/widgets/weather clock: missing or partial clock only.
+- OneOS dock contracts found in OneOS-Dock_src and OneOS-SystemUIPlugin_src; privileged integration pending.
+
+11. ADB / system
+- Local shell command execution: implemented.
+- ADB enabled toggle attempt: partial/privileged.
+- DPI command shortcut: implemented via shell attempt.
+- adb-grants verification/workflow: missing.
+- Autostart after boot: partial; BootReceiver starts VoiceForegroundService.
+- Watchdog accessibility service: scaffold.
+- Active app tracking/autozoom: missing.
+
+Implementation log
+- 2026-07-21: created initial coverage log.
+- 2026-07-21: selected reflection-based ECarX/AdaptAPI vehicle adapter as first real integration layer to avoid compile-time dependency on system APK classes.
+- 2026-07-21: added EcarxVehicleAdapter using reflection against com.ecarx.xui.adaptapi.car.Car and ICarFunction.
+- 2026-07-21: wired first HVAC commands from IHvac.smali: power, AC, AC max, auto, eco, fan speed, circulation, defrost, seat heating/ventilation/massage, steering wheel heat.
+- 2026-07-21: wired first BCM commands from IBcm.smali: windows, window lock, sunroof, sun curtain, mirror fold, reading light, custom key trunk/360/DVR.
+- 2026-07-21: wired first ADAS commands from IADAS.smali: AEB, FCW, LKA, LDW, RCW, ELKA, speed limit warning, PDC.
+- 2026-07-21: added manifest permissions found in ECarXCarService_src and CarService_src for HVAC, car info/vendor extension, door, seat, mirror, HVAC and light categories. These remain privileged/system-signature on stock firmware.
+- 2026-07-21: added EcarxDvrAdapter using reflection against com.ecarx.xui.adaptapi.evs.EVS and com.ecarx.xui.adaptapi.dvr.Dvr.
+- 2026-07-21: wired DVR screen buttons for EVS rear/AVM/DVR open/close and DVR capture/camera online/mode/SD status diagnostics.
