@@ -154,6 +154,30 @@ final class EcarxVehicleAdapter {
         }
     }
 
+    Result support(int functionId) {
+        return support(functionId, 0);
+    }
+
+    Result support(int functionId, int zone) {
+        try {
+            Object fn = function();
+            Method method = fn.getClass().getMethod("isFunctionSupported", int.class, int.class);
+            Object status = method.invoke(fn, functionId, zone);
+            return Result.status(functionId, zone, "isFunctionSupported(function, zone) -> " + status);
+        } catch (NoSuchMethodException e) {
+            try {
+                Object fn = function();
+                Method method = fn.getClass().getMethod("isFunctionSupported", int.class);
+                Object status = method.invoke(fn, functionId);
+                return Result.status(functionId, zone, "isFunctionSupported(function) -> " + status);
+            } catch (Exception nested) {
+                return Result.error(functionId, zone, 0, nested);
+            }
+        } catch (Exception e) {
+            return Result.error(functionId, zone, 0, e);
+        }
+    }
+
     Result[] setAll(Command... commands) {
         Result[] results = new Result[commands.length];
         for (int i = 0; i < commands.length; i++) {
@@ -231,6 +255,11 @@ final class EcarxVehicleAdapter {
         static Result value(int functionId, int zone, int value) {
             return new Result(functionId, zone, value, true,
                     String.format(Locale.US, "getFunctionValue %s/%d = %s", hex(functionId), zone, hex(value)));
+        }
+
+        static Result status(int functionId, int zone, String status) {
+            return new Result(functionId, zone, 0, true,
+                    String.format(Locale.US, "%s/%d %s", hex(functionId), zone, status));
         }
 
         static Result error(int functionId, int zone, int value, Exception e) {
