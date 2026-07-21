@@ -326,6 +326,15 @@ public class MainActivity extends Activity {
         Button newPreset = Ui.button(this, "Создать smart preset");
         newPreset.setOnClickListener(v -> showSmartPresetEditor("", defaultSmartPresetText()));
         root.addView(newPreset);
+        Button newScenario = Ui.button(this, "Создать сценарий v2");
+        newScenario.setOnClickListener(v -> showScenarioEditor("", defaultScenarioText()));
+        root.addView(newScenario);
+        Button climateScenarios = Ui.button(this, "Добавить Зимний запуск / Летнее охлаждение v2");
+        climateScenarios.setOnClickListener(v -> {
+            installClimateScenarioV2();
+            showAutomation();
+        });
+        root.addView(climateScenarios);
         Button welcomeLeave = Ui.button(this, "Добавить шаблоны Welcome / Leave");
         welcomeLeave.setOnClickListener(v -> {
             installWelcomeLeaveScenarios();
@@ -365,6 +374,16 @@ public class MainActivity extends Activity {
             });
             root.addView(b);
         }
+        root.addView(Ui.text(this, "Сценарии v2", 16, true));
+        for (String name : AutomationEngine.names(prefs, AutomationEngine.KEY_SCENARIO_ORDER)) {
+            Button b = Ui.button(this, "Scenario: " + name);
+            b.setOnClickListener(v -> root.addView(Ui.text(this, AutomationEngine.runScenario(this, name, "manual", "ui"), 13, false), 2));
+            b.setOnLongClickListener(v -> {
+                showScenarioEditor(name, prefs.getString("scenario:" + name, ""));
+                return true;
+            });
+            root.addView(b);
+        }
         root.addView(Ui.text(this, "Триггеры запуска", 16, true));
         Button newTrigger = Ui.button(this, "Добавить триггер");
         newTrigger.setOnClickListener(v -> showTriggerEditor("", "manual", "", firstAutomationPreset()));
@@ -380,6 +399,9 @@ public class MainActivity extends Activity {
             root.addView(b);
         }
         root.addView(Ui.text(this, automationIdeas(), 14, false));
+        Button log = Ui.button(this, "Журнал выполнения");
+        log.setOnClickListener(v -> panel("Журнал автоматизации", AutomationEngine.scenarioLog(this)));
+        root.addView(log);
     }
 
     private void showSmartPresetEditor(String oldName, String oldBody) {
@@ -405,6 +427,39 @@ public class MainActivity extends Activity {
         root.addView(name);
         root.addView(body);
         root.addView(save);
+        if (!oldName.isEmpty()) root.addView(delete);
+    }
+
+    private void showScenarioEditor(String oldName, String oldBody) {
+        LinearLayout root = commandRoot(oldName.isEmpty() ? "Новый сценарий v2" : "Сценарий v2: " + oldName);
+        EditText name = new EditText(this);
+        name.setHint("Название");
+        name.setText(oldName);
+        EditText body = new EditText(this);
+        body.setMinLines(14);
+        body.setGravity(Gravity.TOP);
+        body.setHint(defaultScenarioText());
+        body.setText(oldBody);
+        Button save = Ui.button(this, "Сохранить сценарий");
+        save.setOnClickListener(v -> {
+            String clean = name.getText().toString().trim();
+            String text = body.getText().toString();
+            if (!text.contains("name:")) text = "name:" + clean + "\n" + text;
+            saveNamed(AutomationEngine.KEY_SCENARIO_ORDER, "scenario:", oldName, clean, text);
+            showAutomation();
+        });
+        Button run = Ui.button(this, "Запустить сейчас");
+        run.setOnClickListener(v -> root.addView(Ui.text(this, AutomationEngine.runScenario(this, name.getText().toString().trim(), "manual", "ui"), 13, false), 2));
+        Button delete = Ui.button(this, "Удалить");
+        delete.setOnClickListener(v -> {
+            deleteAutomationItem(AutomationEngine.KEY_SCENARIO_ORDER, "scenario:", oldName);
+            showAutomation();
+        });
+        root.addView(Ui.text(this, "Формат: trigger:manual=winter, trigger:app=maps, trigger:voice=зима, trigger:button=231:hold; condition:key=value; policy:startDelay=30s; policy:minInterval=30m; step:delay 5m; step:wait cabinTemp<=25 timeout=10m; step:command 0x.../zone=value; step:action smart_climate=true.", 13, false));
+        root.addView(name);
+        root.addView(body);
+        root.addView(save);
+        root.addView(run);
         if (!oldName.isEmpty()) root.addView(delete);
     }
 
@@ -612,6 +667,64 @@ public class MainActivity extends Activity {
 
     private String defaultSmartPresetText() {
         return "0x10010100/0=0x1\n0x10010300/0=0x1\n0x10020100/0=0x10020103\nfloat:0x10060100/1=22.0\nfloat:0x10060100/4=22.0";
+    }
+
+    private String defaultScenarioText() {
+        return "name:Morning comfort\n"
+                + "trigger:manual=morning\n"
+                + "condition:time=06:00..10:00\n"
+                + "condition:profile=Глеб\n"
+                + "policy:startDelay=10s\n"
+                + "policy:minInterval=30m\n"
+                + "policy:oncePerTrip=true\n"
+                + "policy:cancelOnConditionChange=true\n"
+                + "step:action smart_climate=true\n"
+                + "step:delay 5m\n"
+                + "step:command 0x10020100/0=0x10020102\n"
+                + "step:notify Сценарий завершен";
+    }
+
+    private void installClimateScenarioV2() {
+        saveNamed(AutomationEngine.KEY_SCENARIO_ORDER, "scenario:", "", "Зимний запуск",
+                "name:Зимний запуск\n"
+                        + "trigger:manual=winter\n"
+                        + "trigger:boot=BOOT_COMPLETED\n"
+                        + "condition:outsideTemp<5\n"
+                        + "policy:minInterval=30m\n"
+                        + "policy:oncePerTrip=true\n"
+                        + "policy:cancelOnConditionChange=true\n"
+                        + "step:notify Зимний запуск\n"
+                        + "step:action smart_climate=true\n"
+                        + "step:command 0x10010100/0=0x1\n"
+                        + "step:command float:0x10060100/1=22.0\n"
+                        + "step:command float:0x10060100/4=22.0\n"
+                        + "step:command 0x10070100/0=0x10070106\n"
+                        + "step:command 0x10040100/0=0x1\n"
+                        + "step:command 0x10090100/0=0x10090203\n"
+                        + "step:command 0x10050200/1=0x10050303\n"
+                        + "step:delay 5m\n"
+                        + "step:command 0x10020100/0=0x10020102\n"
+                        + "step:wait cabinTemp>=18 timeout=10m\n"
+                        + "step:command 0x10050200/1=0x10050301");
+        saveNamed(AutomationEngine.KEY_SCENARIO_ORDER, "scenario:", "", "Летнее охлаждение",
+                "name:Летнее охлаждение\n"
+                        + "trigger:manual=summer\n"
+                        + "condition:cabinTemp>25\n"
+                        + "policy:minInterval=30m\n"
+                        + "policy:cancelOnConditionChange=true\n"
+                        + "step:notify Летнее охлаждение\n"
+                        + "step:command 0x10010100/0=0x1\n"
+                        + "step:command 0x10010400/0=0x1\n"
+                        + "step:command float:0x10060100/1=18.0\n"
+                        + "step:command float:0x10060100/4=18.0\n"
+                        + "step:command 0x10030100/0=0x10030101\n"
+                        + "step:command 0x10020100/0=0x10020108\n"
+                        + "step:command 0x10050100/1=0x10050302\n"
+                        + "step:wait cabinTemp<=25 timeout=10m\n"
+                        + "step:command 0x10020100/0=0x10020103\n"
+                        + "step:wait cabinTemp<=22 timeout=15m\n"
+                        + "step:command 0x10010200/0=0x1");
+        Ui.toast(this, "Сценарии v2 добавлены");
     }
 
     private void installWelcomeLeaveScenarios() {

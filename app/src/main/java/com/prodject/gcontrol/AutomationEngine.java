@@ -8,6 +8,9 @@ final class AutomationEngine {
     static final String PREFS = "automation";
     static final String KEY_PRESET_ORDER = "preset_order";
     static final String KEY_TRIGGER_ORDER = "trigger_order";
+    static final String KEY_SCENARIO_ORDER = "scenario_order";
+    static final String KEY_LOG = "execution_log";
+    static final String KEY_TRIP_ID = "trip_id";
     static final String KEY_BUTTON_ORDER = "button_order";
     static final String KEY_PROFILE_ORDER = "profile_order";
     static final String KEY_SMART_CLIMATE = "smart_climate_enabled";
@@ -19,6 +22,47 @@ final class AutomationEngine {
     static final String KEY_ACTIVE_PROFILE = "active_profile";
 
     private AutomationEngine() {}
+
+    static String runScenario(Context context, String name, String triggerType, String triggerValue) {
+        Scenario scenario = decodeScenario(prefs(context).getString("scenario:" + name, ""));
+        if (scenario.name.length() == 0) return "Scenario not found: " + name;
+        RunDecision decision = canRun(context, scenario, triggerType, triggerValue);
+        if (!decision.allowed) {
+            String skipped = "SKIP " + scenario.name + ": " + decision.reason;
+            appendLog(context, skipped);
+            return skipped;
+        }
+        StringBuilder sb = new StringBuilder("Scenario: ").append(scenario.name).append("\n");
+        prefs(context).edit()
+                .putLong("scenario_last:" + scenario.name, System.currentTimeMillis())
+                .putString("scenario_trip:" + scenario.name, prefs(context).getString(KEY_TRIP_ID, "default"))
+                .apply();
+        appendLog(context, "START " + scenario.name + " trigger=" + triggerType + ":" + triggerValue);
+        if (scenario.startDelayMillis > 0) {
+            long ms = Math.min(scenario.startDelayMillis, 15000L);
+            appendLog(context, scenario.name + " start delay " + ms + "ms");
+            try {
+                Thread.sleep(ms);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                appendLog(context, "CANCEL " + scenario.name + ": start delay interrupted");
+                return "Scenario interrupted during start delay: " + scenario.name;
+            }
+        }
+        for (ScenarioStep step : scenario.steps) {
+            if (scenario.cancelOnConditionChange && !conditionsPass(context, scenario.conditions).allowed) {
+                String cancel = "CANCEL " + scenario.name + ": conditions changed";
+                sb.append(cancel).append("\n");
+                appendLog(context, cancel);
+                break;
+            }
+            String result = runStep(context, step);
+            sb.append(result).append("\n");
+            appendLog(context, scenario.name + " step " + step.kind + ": " + compactLine(result));
+        }
+        appendLog(context, "END " + scenario.name);
+        return sb.toString();
+    }
 
     static String runPreset(Context context, String name) {
         String encoded = prefs(context).getString("preset:" + name, "");
@@ -68,6 +112,10 @@ final class AutomationEngine {
 
     static void runTrigger(Context context, String type, String value) {
         SharedPreferences p = prefs(context);
+        for (String name : names(p, KEY_SCENARIO_ORDER)) {
+            Scenario scenario = decodeScenario(p.getString("scenario:" + name, ""));
+            if (scenario.matchesTrigger(type, value)) runScenario(context, name, type, value);
+        }
         for (String name : names(p, KEY_TRIGGER_ORDER)) {
             String raw = p.getString("trigger:" + name, "");
             String[] parts = raw.split("\\|", -1);
@@ -93,6 +141,62 @@ final class AutomationEngine {
             }
         }
         return false;
+    }
+
+    static String runStep(Context context, ScenarioStep step) {
+        if ("preset".equals(step.kind)) return runPreset(context, step.value);
+        if ("action".equals(step.kind)) {
+            String[] sides = step.value.split("=", 2);
+            return runAction(context, new Action(sides[0].trim(), sides.length > 1 ? sides[1].trim() : ""));
+        }
+        if ("command".equals(step.kind)) {
+            CommandPlan plan = decodePlan(step.value);
+            StringBuilder sb = new StringBuilder();
+            EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(context);
+            for (EcarxVehicleAdapter.Command command : plan.commands) sb.append(adapter.set(command.functionId, command.zone, command.value).message).append("\n");
+            for (FloatCommand command : plan.floatCommands) sb.append(adapter.setFloat(command.functionId, command.zone, command.value).message).append("\n");
+            return sb.length() == 0 ? "No command parsed: " + step.value : sb.toString();
+        }
+        if ("delay".equals(step.kind)) {
+            long ms = Math.min(parseDurationMillis(step.value), 15000L);
+            try {
+                Thread.sleep(ms);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return "Delay interrupted";
+            }
+            return "Delay " + ms + "ms";
+        }
+        if ("wait".equals(step.kind)) {
+            long deadline = System.currentTimeMillis() + Math.min(step.timeoutMillis, 30000L);
+            Condition condition = Condition.parse(step.value);
+            while (System.currentTimeMillis() < deadline) {
+                if (condition.matches(context).allowed) return "Wait condition matched: " + step.value;
+                try {
+                    Thread.sleep(1000L);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return "Wait interrupted";
+                }
+            }
+            return "Wait timeout: " + step.value;
+        }
+        if ("notify".equals(step.kind)) {
+            android.widget.Toast.makeText(context, step.value, android.widget.Toast.LENGTH_LONG).show();
+            return "Notify: " + step.value;
+        }
+        if ("voice".equals(step.kind)) {
+            CarCommandBus.send(context, "scenario", step.value);
+            return "Voice/broadcast command: " + step.value;
+        }
+        if ("launch".equals(step.kind)) {
+            Intent launch = context.getPackageManager().getLaunchIntentForPackage(step.value);
+            if (launch == null) return "Launch package not found: " + step.value;
+            launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(launch);
+            return "Launch: " + step.value;
+        }
+        return "Unknown step: " + step.kind + "=" + step.value;
     }
 
     static String applyProfile(Context context, String name) {
@@ -163,6 +267,28 @@ final class AutomationEngine {
         return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
 
+    static Scenario decodeScenario(String raw) {
+        Scenario scenario = new Scenario();
+        for (String line : raw.split("\\n")) {
+            String item = line.trim();
+            if (item.isEmpty() || item.startsWith("#")) continue;
+            String[] sides = item.split(":", 2);
+            if (sides.length != 2) continue;
+            String key = sides[0].trim();
+            String value = sides[1].trim();
+            if ("name".equals(key)) scenario.name = value;
+            else if ("trigger".equals(key)) scenario.triggers.add(value);
+            else if ("condition".equals(key)) scenario.conditions.add(Condition.parse(value));
+            else if ("policy".equals(key)) scenario.applyPolicy(value);
+            else if ("step".equals(key)) scenario.steps.add(ScenarioStep.parse(value));
+        }
+        return scenario;
+    }
+
+    static String scenarioLog(Context context) {
+        return prefs(context).getString(KEY_LOG, "");
+    }
+
     static List<String> names(SharedPreferences p, String key) {
         ArrayList<String> result = new ArrayList<>();
         for (String item : p.getString(key, "").split(",")) {
@@ -223,6 +349,54 @@ final class AutomationEngine {
         return sb.toString();
     }
 
+    static long parseDurationMillis(String value) {
+        String raw = value.trim().toLowerCase(Locale.ROOT);
+        try {
+            if (raw.endsWith("ms")) return Long.parseLong(raw.substring(0, raw.length() - 2).trim());
+            if (raw.endsWith("s")) return Long.parseLong(raw.substring(0, raw.length() - 1).trim()) * 1000L;
+            if (raw.endsWith("m")) return Long.parseLong(raw.substring(0, raw.length() - 1).trim()) * 60_000L;
+            return Long.parseLong(raw);
+        } catch (Exception e) {
+            return 0L;
+        }
+    }
+
+    private static RunDecision canRun(Context context, Scenario scenario, String triggerType, String triggerValue) {
+        if (!scenario.matchesTrigger(triggerType, triggerValue)) return RunDecision.no("trigger mismatch");
+        RunDecision conditions = conditionsPass(context, scenario.conditions);
+        if (!conditions.allowed) return conditions;
+        SharedPreferences p = prefs(context);
+        long now = System.currentTimeMillis();
+        long last = p.getLong("scenario_last:" + scenario.name, 0L);
+        if (scenario.minIntervalMillis > 0 && now - last < scenario.minIntervalMillis) return RunDecision.no("min interval not elapsed");
+        if (scenario.oncePerTrip) {
+            String trip = p.getString(KEY_TRIP_ID, "default");
+            if (trip.equals(p.getString("scenario_trip:" + scenario.name, ""))) return RunDecision.no("already ran this trip");
+        }
+        return RunDecision.yes();
+    }
+
+    private static RunDecision conditionsPass(Context context, List<Condition> conditions) {
+        for (Condition condition : conditions) {
+            RunDecision decision = condition.matches(context);
+            if (!decision.allowed) return decision;
+        }
+        return RunDecision.yes();
+    }
+
+    private static void appendLog(Context context, String line) {
+        SharedPreferences p = prefs(context);
+        String previous = p.getString(KEY_LOG, "");
+        String next = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(new Date()) + " " + line + "\n" + previous;
+        if (next.length() > 12000) next = next.substring(0, 12000);
+        p.edit().putString(KEY_LOG, next).apply();
+    }
+
+    private static String compactLine(String value) {
+        String line = value.replace('\n', ' ').trim();
+        return line.length() > 180 ? line.substring(0, 180) : line;
+    }
+
     private static String joinLines(List<String> lines) {
         StringBuilder sb = new StringBuilder();
         for (String line : lines) sb.append(line).append("\n");
@@ -239,6 +413,143 @@ final class AutomationEngine {
             this.floatCommands = floatCommands;
             this.actions = actions;
         }
+    }
+
+    static final class Scenario {
+        String name = "";
+        final ArrayList<String> triggers = new ArrayList<>();
+        final ArrayList<Condition> conditions = new ArrayList<>();
+        final ArrayList<ScenarioStep> steps = new ArrayList<>();
+        long minIntervalMillis;
+        long startDelayMillis;
+        boolean oncePerTrip;
+        boolean cancelOnConditionChange;
+
+        boolean matchesTrigger(String type, String value) {
+            if (triggers.isEmpty()) return "manual".equals(type);
+            String actual = value == null ? "" : value.toLowerCase(Locale.ROOT);
+            for (String trigger : triggers) {
+                String[] parts = trigger.split("=", 2);
+                String triggerType = parts[0].trim();
+                String expected = parts.length > 1 ? parts[1].trim().toLowerCase(Locale.ROOT) : "";
+                if (triggerType.equals(type) && (expected.isEmpty() || actual.contains(expected))) return true;
+            }
+            return false;
+        }
+
+        void applyPolicy(String value) {
+            String[] sides = value.split("=", 2);
+            String key = sides[0].trim();
+            String v = sides.length > 1 ? sides[1].trim() : "true";
+            if ("minInterval".equals(key)) minIntervalMillis = parseDurationMillis(v);
+            else if ("startDelay".equals(key)) startDelayMillis = parseDurationMillis(v);
+            else if ("oncePerTrip".equals(key)) oncePerTrip = Boolean.parseBoolean(v);
+            else if ("cancelOnConditionChange".equals(key)) cancelOnConditionChange = Boolean.parseBoolean(v);
+        }
+    }
+
+    static final class ScenarioStep {
+        final String kind;
+        final String value;
+        long timeoutMillis = 30000L;
+
+        ScenarioStep(String kind, String value) {
+            this.kind = kind;
+            this.value = value;
+        }
+
+        static ScenarioStep parse(String raw) {
+            String[] parts = raw.split(" ", 2);
+            String kind = parts[0].trim();
+            String value = parts.length > 1 ? parts[1].trim() : "";
+            ScenarioStep step = new ScenarioStep(kind, value);
+            if ("wait".equals(kind) && value.contains(" timeout=")) {
+                String[] waitParts = value.split(" timeout=", 2);
+                step = new ScenarioStep(kind, waitParts[0].trim());
+                step.timeoutMillis = parseDurationMillis(waitParts[1].trim());
+            }
+            return step;
+        }
+    }
+
+    static final class Condition {
+        final String key;
+        final String op;
+        final String value;
+
+        Condition(String key, String op, String value) {
+            this.key = key;
+            this.op = op;
+            this.value = value;
+        }
+
+        static Condition parse(String raw) {
+            for (String op : new String[]{">=", "<=", "!=", "=", ">", "<"}) {
+                int pos = raw.indexOf(op);
+                if (pos > 0) return new Condition(raw.substring(0, pos).trim(), op, raw.substring(pos + op.length()).trim());
+            }
+            return new Condition(raw.trim(), "=", "true");
+        }
+
+        RunDecision matches(Context context) {
+            SharedPreferences p = prefs(context);
+            if ("profile".equals(key)) return compare(p.getString(KEY_ACTIVE_PROFILE, ""), value);
+            if ("cabinTemp".equals(key)) return compareNumber(p.getFloat(KEY_CABIN_TEMP, 0f), op, parseFloat(value, 0f), key);
+            if ("outsideTemp".equals(key)) return compareNumber(p.getFloat(KEY_OUTSIDE_TEMP, 0f), op, parseFloat(value, 0f), key);
+            if ("time".equals(key)) return matchTime(value);
+            if ("weekday".equals(key)) return matchWeekday(value);
+            if ("lastApp".equals(key)) return compare(context.getSharedPreferences(AppWatchdogAccessibilityService.PREFS, Context.MODE_PRIVATE).getString(AppWatchdogAccessibilityService.KEY_LAST_PACKAGE, ""), value);
+            if ("engine".equals(key) || "gear".equals(key) || "speed".equals(key) || "fuel".equals(key) || "door".equals(key) || "security".equals(key) || "bluetooth".equals(key)) {
+                return RunDecision.no("condition needs mapped vehicle signal: " + key);
+            }
+            return RunDecision.no("unknown condition: " + key);
+        }
+
+        private RunDecision compare(String actual, String expected) {
+            boolean ok = "!=".equals(op) ? !actual.equals(expected) : actual.equals(expected);
+            return ok ? RunDecision.yes() : RunDecision.no(key + " expected " + op + " " + expected + ", actual " + actual);
+        }
+
+        private RunDecision compareNumber(float actual, String op, float expected, String label) {
+            boolean ok = ("=".equals(op) && actual == expected) || (">".equals(op) && actual > expected) || ("<".equals(op) && actual < expected)
+                    || (">=".equals(op) && actual >= expected) || ("<=".equals(op) && actual <= expected) || ("!=".equals(op) && actual != expected);
+            return ok ? RunDecision.yes() : RunDecision.no(label + " expected " + op + " " + expected + ", actual " + actual);
+        }
+
+        private RunDecision matchTime(String range) {
+            String[] parts = range.split("\\.\\.", 2);
+            if (parts.length != 2) return RunDecision.no("bad time range: " + range);
+            Calendar now = Calendar.getInstance();
+            int minutes = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE);
+            int start = parseClock(parts[0]);
+            int end = parseClock(parts[1]);
+            boolean ok = start <= end ? minutes >= start && minutes <= end : minutes >= start || minutes <= end;
+            return ok ? RunDecision.yes() : RunDecision.no("time outside " + range);
+        }
+
+        private int parseClock(String value) {
+            String[] parts = value.trim().split(":", 2);
+            return parseInt(parts[0], 0) * 60 + (parts.length > 1 ? parseInt(parts[1], 0) : 0);
+        }
+
+        private RunDecision matchWeekday(String expected) {
+            int day = Calendar.getInstance().get(Calendar.DAY_OF_WEEK);
+            String[] names = {"", "sun", "mon", "tue", "wed", "thu", "fri", "sat"};
+            return expected.toLowerCase(Locale.ROOT).contains(names[day]) ? RunDecision.yes() : RunDecision.no("weekday mismatch");
+        }
+    }
+
+    static final class RunDecision {
+        final boolean allowed;
+        final String reason;
+
+        private RunDecision(boolean allowed, String reason) {
+            this.allowed = allowed;
+            this.reason = reason;
+        }
+
+        static RunDecision yes() { return new RunDecision(true, "ok"); }
+        static RunDecision no(String reason) { return new RunDecision(false, reason); }
     }
 
     static final class Action {

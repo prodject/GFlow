@@ -44,6 +44,7 @@ public class VoiceActivity extends Activity {
 
     private String runVoiceCommand(String cmd) {
         if (cmd.trim().isEmpty()) return "Пустая команда";
+        AutomationEngine.runTrigger(this, "voice", cmd);
 
         EcarxVehicleAdapter.Result[] preset = parsePreset(cmd);
         if (preset != null) return describePreset(cmd, preset);

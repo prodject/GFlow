@@ -14,6 +14,7 @@ public class SteeringWheelReceiver extends BroadcastReceiver {
                 .putString("last_event", event)
                 .putLong("last_event_at", System.currentTimeMillis())
                 .apply();
+        AutomationEngine.runTrigger(context, "button", keyCode + ":" + gesture);
         if (AutomationEngine.runSteering(context, keyCode, gesture)) return;
         if (command != null && !command.trim().isEmpty()) {
             CarCommandBus.send(context, "steering", command);

@@ -126,6 +126,7 @@ Functional coverage
 - Rain scenario: partial. Template installer creates a smart preset that closes all windows, sunroof and sun curtain, switches wipers to AUTO and enables front defrost. Automatic rain-sensor trigger still needs confirmed signal mapping.
 - Night mode: partial. Template installer creates a smart preset for HUD navigation display, night daymode, low backlight/DIM brightness, blue DIM theme and subdued ambience lighting. Time/sunset trigger still needs scheduling or confirmed vehicle clock/day-night signal wiring.
 - App context automation: partial. Template installer creates navigation app triggers that enable autozoom, HUD navigation display and stock navigation/DIM map custom-key actions. True split-window launch still needs privileged multi-window integration.
+- Scenario engine v2: partial. User-editable scenarios support manual/app/boot/voice/steering-button triggers, conditions, repeat policies, cancel-on-condition-change, sequential steps, delays, wait conditions, notifications, app launch, voice/broadcast commands, smart-preset calls, actions and execution log with skip reasons. Many vehicle-state conditions remain diagnostic placeholders until engine/gear/speed/fuel/door/security/Bluetooth signals are mapped.
 
 Implementation log
 - 2026-07-21: created initial coverage log.
@@ -200,3 +201,4 @@ Implementation log
 - 2026-07-21: added Rain Scenario template for window/sunroof closure, automatic wipers and front defrost.
 - 2026-07-21: added Night Mode scenario template for HUD, daymode/brightness, DIM theme and ambience lighting.
 - 2026-07-21: added Navigation App Context scenario template and smart-preset autozoom action.
+- 2026-07-21: added scenario engine v2 with structured trigger/condition/policy/step format, execution log, skip reasons and Winter/Summer climate scenario templates.
