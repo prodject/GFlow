@@ -20,6 +20,7 @@ public class AppWatchdogAccessibilityService extends AccessibilityService {
         String pkg = pkgSeq.toString();
         SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
         prefs.edit().putString(KEY_LAST_PACKAGE, pkg).apply();
+        AutomationEngine.runTrigger(this, "app", pkg);
         if (!prefs.getBoolean(KEY_ENABLED, false)) return;
         float target = shouldZoom(pkg, prefs.getString(KEY_PACKAGES, "")) ? prefs.getFloat(KEY_SCALE, 1.15f) : 1.0f;
         try {

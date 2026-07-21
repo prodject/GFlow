@@ -64,6 +64,10 @@ public class MainActivity extends Activity {
         add(grid, "Климат", this::showClimate);
         add(grid, "ADAS", this::showAdas);
         add(grid, "Парковка / APA", this::showParkingApa);
+        add(grid, "Автоматизация", this::showAutomation);
+        add(grid, "Кнопки руля", this::showSteeringButtons);
+        add(grid, "Профили", this::showUserProfiles);
+        add(grid, "Умный климат", this::showSmartClimate);
         if (experimentalFeaturesEnabled()) {
             add(grid, "PAS / AVM", this::showPasAvm);
             add(grid, "AVAS / Digital Key", this::showAvasDigitalKey);
@@ -313,6 +317,281 @@ public class MainActivity extends Activity {
     private void showDvr() {
         startForegroundService(new Intent(this, DvrService.class));
         panel("Monji DVR", "Запись со штатных камер: передняя ADAS, левая, задняя, правая. Настройки: выбор камер, длина сегмента, лимит диска, внутренняя память или USB. Сервис DVR запущен.");
+    }
+
+    private void showAutomation() {
+        LinearLayout root = commandRoot("Автоматизация");
+        SharedPreferences prefs = AutomationEngine.prefs(this);
+        root.addView(Ui.text(this, "Smart preset - это список команд AdaptAPI. Формат: function/zone=value, для температуры float:function/zone=value. Триггеры: boot, app, manual.", 14, false));
+        Button newPreset = Ui.button(this, "Создать smart preset");
+        newPreset.setOnClickListener(v -> showSmartPresetEditor("", defaultSmartPresetText()));
+        root.addView(newPreset);
+        for (String name : AutomationEngine.names(prefs, AutomationEngine.KEY_PRESET_ORDER)) {
+            Button b = Ui.button(this, "Preset: " + name);
+            b.setOnClickListener(v -> root.addView(Ui.text(this, AutomationEngine.runPreset(this, name), 13, false), 2));
+            b.setOnLongClickListener(v -> {
+                showSmartPresetEditor(name, prefs.getString("preset:" + name, ""));
+                return true;
+            });
+            root.addView(b);
+        }
+        root.addView(Ui.text(this, "Триггеры запуска", 16, true));
+        Button newTrigger = Ui.button(this, "Добавить триггер");
+        newTrigger.setOnClickListener(v -> showTriggerEditor("", "manual", "", firstAutomationPreset()));
+        root.addView(newTrigger);
+        for (String name : AutomationEngine.names(prefs, AutomationEngine.KEY_TRIGGER_ORDER)) {
+            String raw = prefs.getString("trigger:" + name, "");
+            Button b = Ui.button(this, "Trigger: " + raw);
+            b.setOnLongClickListener(v -> {
+                String[] p = raw.split("\\|", -1);
+                showTriggerEditor(name, p.length > 1 ? p[1] : "manual", p.length > 2 ? p[2] : "", p.length > 3 ? p[3] : "");
+                return true;
+            });
+            root.addView(b);
+        }
+        root.addView(Ui.text(this, automationIdeas(), 14, false));
+    }
+
+    private void showSmartPresetEditor(String oldName, String oldBody) {
+        LinearLayout root = commandRoot(oldName.isEmpty() ? "Новый smart preset" : "Preset: " + oldName);
+        EditText name = new EditText(this);
+        name.setHint("Название");
+        name.setText(oldName);
+        EditText body = new EditText(this);
+        body.setMinLines(8);
+        body.setGravity(Gravity.TOP);
+        body.setHint(defaultSmartPresetText());
+        body.setText(oldBody);
+        Button save = Ui.button(this, "Сохранить");
+        Button delete = Ui.button(this, "Удалить");
+        save.setOnClickListener(v -> {
+            saveAutomationPreset(oldName, name.getText().toString(), body.getText().toString());
+            showAutomation();
+        });
+        delete.setOnClickListener(v -> {
+            deleteAutomationItem(AutomationEngine.KEY_PRESET_ORDER, "preset:", oldName);
+            showAutomation();
+        });
+        root.addView(name);
+        root.addView(body);
+        root.addView(save);
+        if (!oldName.isEmpty()) root.addView(delete);
+    }
+
+    private void showTriggerEditor(String oldName, String oldType, String oldMatch, String oldPreset) {
+        LinearLayout root = commandRoot(oldName.isEmpty() ? "Новый триггер" : "Триггер: " + oldName);
+        EditText name = new EditText(this);
+        name.setHint("Название");
+        name.setText(oldName);
+        EditText type = new EditText(this);
+        type.setHint("manual / boot / app");
+        type.setText(oldType);
+        EditText match = new EditText(this);
+        match.setHint("Условие: action/package substring; для boot можно пусто");
+        match.setText(oldMatch);
+        EditText preset = new EditText(this);
+        preset.setHint("Название smart preset");
+        preset.setText(oldPreset);
+        Button save = Ui.button(this, "Сохранить триггер");
+        save.setOnClickListener(v -> {
+            saveNamed(AutomationEngine.KEY_TRIGGER_ORDER, "trigger:", oldName, name.getText().toString(),
+                    name.getText().toString() + "|" + type.getText().toString().trim() + "|" + match.getText().toString().trim() + "|" + preset.getText().toString().trim());
+            showAutomation();
+        });
+        Button runManual = Ui.button(this, "Проверить как manual");
+        runManual.setOnClickListener(v -> AutomationEngine.runTrigger(this, "manual", match.getText().toString()));
+        root.addView(name);
+        root.addView(type);
+        root.addView(match);
+        root.addView(preset);
+        root.addView(save);
+        root.addView(runManual);
+    }
+
+    private void showSteeringButtons() {
+        LinearLayout root = commandRoot("Кнопки руля");
+        SharedPreferences steering = getSharedPreferences("steering", MODE_PRIVATE);
+        SharedPreferences prefs = AutomationEngine.prefs(this);
+        root.addView(Ui.text(this, "Последнее событие: " + steering.getString("last_event", "нет") + "\nЖесты: press, hold, double. Действие - запуск smart preset.", 14, false));
+        Button add = Ui.button(this, "Назначить кнопку");
+        add.setOnClickListener(v -> showSteeringButtonEditor("", "0", "hold", firstAutomationPreset()));
+        root.addView(add);
+        for (String name : AutomationEngine.names(prefs, AutomationEngine.KEY_BUTTON_ORDER)) {
+            String raw = prefs.getString("button:" + name, "");
+            Button b = Ui.button(this, "Button: " + raw);
+            b.setOnLongClickListener(v -> {
+                String[] p = raw.split("\\|", -1);
+                showSteeringButtonEditor(name, p.length > 1 ? p[1] : "0", p.length > 2 ? p[2] : "hold", p.length > 3 ? p[3] : "");
+                return true;
+            });
+            root.addView(b);
+        }
+    }
+
+    private void showSteeringButtonEditor(String oldName, String oldKey, String oldGesture, String oldPreset) {
+        LinearLayout root = commandRoot(oldName.isEmpty() ? "Новое назначение" : "Назначение: " + oldName);
+        EditText name = new EditText(this);
+        name.setHint("Название");
+        name.setText(oldName);
+        EditText key = new EditText(this);
+        key.setHint("keyCode из последнего события");
+        key.setText(oldKey);
+        EditText gesture = new EditText(this);
+        gesture.setHint("press / hold / double");
+        gesture.setText(oldGesture);
+        EditText preset = new EditText(this);
+        preset.setHint("Smart preset");
+        preset.setText(oldPreset);
+        Button save = Ui.button(this, "Сохранить назначение");
+        save.setOnClickListener(v -> {
+            saveNamed(AutomationEngine.KEY_BUTTON_ORDER, "button:", oldName, name.getText().toString(),
+                    name.getText().toString() + "|" + key.getText().toString().trim() + "|" + gesture.getText().toString().trim().toLowerCase(Locale.ROOT) + "|" + preset.getText().toString().trim());
+            showSteeringButtons();
+        });
+        root.addView(name);
+        root.addView(key);
+        root.addView(gesture);
+        root.addView(preset);
+        root.addView(save);
+    }
+
+    private void showUserProfiles() {
+        LinearLayout root = commandRoot("Профили пользователей");
+        SharedPreferences prefs = AutomationEngine.prefs(this);
+        root.addView(Ui.text(this, "Профиль хранит память сиденья и опциональный smart preset для климата/режима/подсветки. Активный: " + prefs.getString(AutomationEngine.KEY_ACTIVE_PROFILE, "не выбран"), 14, false));
+        Button add = Ui.button(this, "Создать профиль из текущего сиденья");
+        add.setOnClickListener(v -> showProfileEditor("", String.valueOf(EcarxVehicleAdapter.ZONE_DRIVER_LEFT), String.valueOf(EcarxVehicleAdapter.SEAT_POSITION_1), firstAutomationPreset()));
+        root.addView(add);
+        for (String name : AutomationEngine.names(prefs, AutomationEngine.KEY_PROFILE_ORDER)) {
+            Button b = Ui.button(this, "Профиль: " + name);
+            b.setOnClickListener(v -> root.addView(Ui.text(this, AutomationEngine.applyProfile(this, name), 13, false), 2));
+            b.setOnLongClickListener(v -> {
+                String[] p = prefs.getString("profile:" + name, "").split("\\|", -1);
+                showProfileEditor(name, p.length > 1 ? p[1] : "1", p.length > 2 ? p[2] : String.valueOf(EcarxVehicleAdapter.SEAT_POSITION_1), p.length > 3 ? p[3] : "");
+                return true;
+            });
+            root.addView(b);
+        }
+    }
+
+    private void showProfileEditor(String oldName, String oldZone, String oldMemory, String oldPreset) {
+        LinearLayout root = commandRoot(oldName.isEmpty() ? "Новый профиль" : "Профиль: " + oldName);
+        EditText name = new EditText(this);
+        name.setHint("Имя пользователя");
+        name.setText(oldName);
+        EditText zone = new EditText(this);
+        zone.setHint("Зона сиденья: driver=1, passenger=4");
+        zone.setText(oldZone);
+        EditText memory = new EditText(this);
+        memory.setHint("Память сиденья: 0x2d400101 / 0x2d400102");
+        memory.setText(oldMemory);
+        EditText preset = new EditText(this);
+        preset.setHint("Smart preset после выбора профиля");
+        preset.setText(oldPreset);
+        Button save = Ui.button(this, "Сохранить профиль");
+        save.setOnClickListener(v -> {
+            String result = AutomationEngine.saveCurrentSeatProfile(this, name.getText().toString().trim(), AutomationEngine.parseInt(zone.getText().toString(), EcarxVehicleAdapter.ZONE_DRIVER_LEFT), AutomationEngine.parseInt(memory.getText().toString(), EcarxVehicleAdapter.SEAT_POSITION_1), preset.getText().toString().trim());
+            Ui.toast(this, "Профиль сохранен");
+            root.addView(Ui.text(this, result, 13, false), 2);
+        });
+        root.addView(name);
+        root.addView(zone);
+        root.addView(memory);
+        root.addView(preset);
+        root.addView(save);
+    }
+
+    private void showSmartClimate() {
+        LinearLayout root = commandRoot("Умный кондиционер");
+        SharedPreferences prefs = AutomationEngine.prefs(this);
+        CheckBox enabled = new CheckBox(this);
+        enabled.setText("Запускать после boot/remote-start события");
+        enabled.setTextSize(16);
+        enabled.setChecked(prefs.getBoolean(AutomationEngine.KEY_SMART_CLIMATE, false));
+        EditText cabin = new EditText(this);
+        cabin.setHint("Текущая температура салона для теста");
+        cabin.setText(String.valueOf(prefs.getFloat(AutomationEngine.KEY_CABIN_TEMP, 26.0f)));
+        EditText outside = new EditText(this);
+        outside.setHint("Внешняя температура для теста");
+        outside.setText(String.valueOf(prefs.getFloat(AutomationEngine.KEY_OUTSIDE_TEMP, 26.0f)));
+        EditText target = new EditText(this);
+        target.setHint("Целевая температура");
+        target.setText(String.valueOf(prefs.getFloat(AutomationEngine.KEY_SMART_TARGET, 22.0f)));
+        EditText hot = new EditText(this);
+        hot.setHint("Порог жары");
+        hot.setText(String.valueOf(prefs.getFloat(AutomationEngine.KEY_SMART_HOT, 27.0f)));
+        EditText cold = new EditText(this);
+        cold.setHint("Порог холода");
+        cold.setText(String.valueOf(prefs.getFloat(AutomationEngine.KEY_SMART_COLD, 8.0f)));
+        Button save = Ui.button(this, "Сохранить настройки");
+        save.setOnClickListener(v -> {
+            prefs.edit()
+                    .putBoolean(AutomationEngine.KEY_SMART_CLIMATE, enabled.isChecked())
+                    .putFloat(AutomationEngine.KEY_CABIN_TEMP, AutomationEngine.parseFloat(cabin.getText().toString(), 26.0f))
+                    .putFloat(AutomationEngine.KEY_OUTSIDE_TEMP, AutomationEngine.parseFloat(outside.getText().toString(), 26.0f))
+                    .putFloat(AutomationEngine.KEY_SMART_TARGET, AutomationEngine.parseFloat(target.getText().toString(), 22.0f))
+                    .putFloat(AutomationEngine.KEY_SMART_HOT, AutomationEngine.parseFloat(hot.getText().toString(), 27.0f))
+                    .putFloat(AutomationEngine.KEY_SMART_COLD, AutomationEngine.parseFloat(cold.getText().toString(), 8.0f))
+                    .apply();
+            Ui.toast(this, "Smart climate сохранен");
+        });
+        Button run = Ui.button(this, "Запустить сейчас");
+        run.setOnClickListener(v -> {
+            save.performClick();
+            root.addView(Ui.text(this, AutomationEngine.runSmartClimate(this), 13, false), 2);
+        });
+        root.addView(Ui.text(this, "Логика: жарко - A/C, 18..target, средний/сильный вентилятор и вентиляция сиденья; холодно - дефрост, тепло, подогрев сиденья/руля; близко к цели - AUTO и мягкий вентилятор.", 14, false));
+        root.addView(enabled);
+        root.addView(cabin);
+        root.addView(outside);
+        root.addView(target);
+        root.addView(hot);
+        root.addView(cold);
+        root.addView(save);
+        root.addView(run);
+    }
+
+    private void saveAutomationPreset(String oldName, String newName, String body) {
+        saveNamed(AutomationEngine.KEY_PRESET_ORDER, "preset:", oldName, newName, body);
+    }
+
+    private void saveNamed(String orderKey, String prefix, String oldName, String newName, String value) {
+        String clean = newName.trim();
+        if (clean.isEmpty()) return;
+        SharedPreferences prefs = AutomationEngine.prefs(this);
+        ArrayList<String> names = new ArrayList<>(AutomationEngine.names(prefs, orderKey));
+        if (!oldName.isEmpty() && !oldName.equals(clean)) names.remove(oldName);
+        if (!names.contains(clean)) names.add(clean);
+        SharedPreferences.Editor editor = prefs.edit().putString(prefix + clean, value).putString(orderKey, AutomationEngine.join(names));
+        if (!oldName.isEmpty() && !oldName.equals(clean)) editor.remove(prefix + oldName);
+        editor.apply();
+    }
+
+    private void deleteAutomationItem(String orderKey, String prefix, String name) {
+        if (name == null || name.trim().isEmpty()) return;
+        SharedPreferences prefs = AutomationEngine.prefs(this);
+        ArrayList<String> names = new ArrayList<>(AutomationEngine.names(prefs, orderKey));
+        names.remove(name);
+        prefs.edit().remove(prefix + name).putString(orderKey, AutomationEngine.join(names)).apply();
+    }
+
+    private String firstAutomationPreset() {
+        List<String> names = AutomationEngine.names(AutomationEngine.prefs(this), AutomationEngine.KEY_PRESET_ORDER);
+        return names.isEmpty() ? "" : names.get(0);
+    }
+
+    private String defaultSmartPresetText() {
+        return "0x10010100/0=0x1\n0x10010300/0=0x1\n0x10020100/0=0x10020103\nfloat:0x10060100/1=22.0\nfloat:0x10060100/4=22.0";
+    }
+
+    private String automationIdeas() {
+        return "Что еще логично автоматизировать:\n"
+                + "- Welcome / уход: при открытии двери водителя включить профиль, климат, подсветку и любимый режим движения.\n"
+                + "- Parking guard: при парковке включать DVR/360 и закрывать окна/люк.\n"
+                + "- Rain scenario: по ручному триггеру или датчику дождя закрыть окна/люк и включить дворники auto.\n"
+                + "- Night mode: вечером менять яркость, HUD, тему DIM и салонную подсветку.\n"
+                + "- App context: при запуске навигации включать split, HUD navigation и автоzoom; при музыке менять DIM/media bridge.\n"
+                + "- Service mode: перед визитом в сервис отключать экспериментальные функции и возвращать стандартный профиль.";
     }
     private void showCar() {
         LinearLayout root = commandRoot("Управление автомобилем");
