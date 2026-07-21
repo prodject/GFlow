@@ -112,8 +112,8 @@ Functional coverage
 - DPI command shortcut: implemented via shell attempt.
 - adb-grants verification/workflow: partial. Screen now prints grant/appops commands and basic permission state.
 - Autostart after boot: partial; BootReceiver starts VoiceForegroundService.
-- Watchdog accessibility service: scaffold.
-- Active app tracking/autozoom: missing.
+- Watchdog accessibility service: partial. It tracks foreground package from TYPE_WINDOW_STATE_CHANGED events.
+- Active app tracking/autozoom: partial. ADB/System screen stores package filters and scale; AccessibilityService applies Settings.System.FONT_SCALE for matching foreground packages when enabled.
 
 Implementation log
 - 2026-07-21: created initial coverage log.
@@ -144,3 +144,5 @@ Implementation log
 - 2026-07-21: added FileManager cross-volume move fallback through recursive copy/delete.
 - 2026-07-21: changed Desktop pinned dock persistence to ordered storage and added move up/down actions.
 - 2026-07-21: added Desktop local wallpaper/theme presets while keeping existing launch/remove/uninstall behavior.
+- 2026-07-21: implemented AccessibilityService foreground package tracking and persisted last active package.
+- 2026-07-21: added ADB/System autozoom controls that save package filters and font scale, then apply Settings.System.FONT_SCALE from the watchdog service when enabled.

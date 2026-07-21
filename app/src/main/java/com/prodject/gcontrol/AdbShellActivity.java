@@ -1,6 +1,7 @@
 package com.prodject.gcontrol;
 
 import android.app.*;
+import android.content.*;
 import android.os.*;
 import android.provider.Settings;
 import android.widget.*;
@@ -19,16 +20,33 @@ public class AdbShellActivity extends Activity {
         Button adb = Ui.button(this, "Переключить ADB");
         Button dpi = Ui.button(this, "DPI 440");
         Button grants = Ui.button(this, "Проверить grants");
+        EditText zoomPackages = new EditText(this);
+        zoomPackages.setHint("Autozoom packages: com.nav, maps, browser");
+        EditText zoomScale = new EditText(this);
+        zoomScale.setHint("Autozoom scale");
+        Button zoom = Ui.button(this, "Сохранить autozoom");
+        Button zoomToggle = Ui.button(this, "Autozoom вкл/выкл");
         output = Ui.text(this, "", 14, false);
+        SharedPreferences watchdog = getSharedPreferences(AppWatchdogAccessibilityService.PREFS, MODE_PRIVATE);
+        zoomPackages.setText(watchdog.getString(AppWatchdogAccessibilityService.KEY_PACKAGES, "maps,navi,browser"));
+        zoomScale.setInputType(android.text.InputType.TYPE_CLASS_NUMBER | android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        zoomScale.setText(String.valueOf(watchdog.getFloat(AppWatchdogAccessibilityService.KEY_SCALE, 1.15f)));
         run.setOnClickListener(v -> execute(command.getText().toString()));
         adb.setOnClickListener(v -> toggleAdb());
         dpi.setOnClickListener(v -> execute("wm density 440"));
         grants.setOnClickListener(v -> showGrants());
+        zoom.setOnClickListener(v -> saveAutozoom(zoomPackages.getText().toString(), zoomScale.getText().toString()));
+        zoomToggle.setOnClickListener(v -> toggleAutozoom());
         root.addView(command);
         root.addView(run);
         root.addView(adb);
         root.addView(dpi);
         root.addView(grants);
+        root.addView(Ui.text(this, "Autozoom меняет Settings.System.FONT_SCALE для выбранных приложений через AccessibilityService.", 14, false));
+        root.addView(zoomPackages);
+        root.addView(zoomScale);
+        root.addView(zoom);
+        root.addView(zoomToggle);
         root.addView(output, new LinearLayout.LayoutParams(-1, 0, 1));
         setContentView(root);
     }
@@ -66,7 +84,32 @@ public class AdbShellActivity extends Activity {
                 "adb shell settings get global adb_enabled\n\n" +
                 "Проверка внутри приложения:\n" +
                 "WRITE_SETTINGS=" + Settings.System.canWrite(this) + "\n" +
-                "SDK=" + Build.VERSION.SDK_INT);
+                "SDK=" + Build.VERSION.SDK_INT + "\n" +
+                "Last foreground package=" + getSharedPreferences(AppWatchdogAccessibilityService.PREFS, MODE_PRIVATE).getString(AppWatchdogAccessibilityService.KEY_LAST_PACKAGE, ""));
+    }
+
+    private void saveAutozoom(String packages, String scale) {
+        float value = parseFloat(scale, 1.15f);
+        getSharedPreferences(AppWatchdogAccessibilityService.PREFS, MODE_PRIVATE).edit()
+                .putString(AppWatchdogAccessibilityService.KEY_PACKAGES, packages)
+                .putFloat(AppWatchdogAccessibilityService.KEY_SCALE, Math.max(0.85f, Math.min(1.6f, value)))
+                .apply();
+        output.setText("Autozoom packages сохранены: " + packages + "\nscale=" + Math.max(0.85f, Math.min(1.6f, value)));
+    }
+
+    private void toggleAutozoom() {
+        SharedPreferences prefs = getSharedPreferences(AppWatchdogAccessibilityService.PREFS, MODE_PRIVATE);
+        boolean next = !prefs.getBoolean(AppWatchdogAccessibilityService.KEY_ENABLED, false);
+        prefs.edit().putBoolean(AppWatchdogAccessibilityService.KEY_ENABLED, next).apply();
+        output.setText("Autozoom: " + (next ? "включен" : "выключен") + "\nПоследний пакет: " + prefs.getString(AppWatchdogAccessibilityService.KEY_LAST_PACKAGE, ""));
+    }
+
+    private float parseFloat(String value, float fallback) {
+        try {
+            return Float.parseFloat(value.trim());
+        } catch (Exception e) {
+            return fallback;
+        }
     }
 
     private String read(InputStream in) throws IOException {
