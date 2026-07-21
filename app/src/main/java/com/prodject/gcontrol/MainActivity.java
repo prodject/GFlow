@@ -344,6 +344,12 @@ public class MainActivity extends Activity {
             showAutomation();
         });
         root.addView(rainScenario);
+        Button nightMode = Ui.button(this, "Добавить шаблон Night Mode");
+        nightMode.setOnClickListener(v -> {
+            installNightModeScenario();
+            showAutomation();
+        });
+        root.addView(nightMode);
         for (String name : AutomationEngine.names(prefs, AutomationEngine.KEY_PRESET_ORDER)) {
             Button b = Ui.button(this, "Preset: " + name);
             b.setOnClickListener(v -> root.addView(Ui.text(this, AutomationEngine.runPreset(this, name), 13, false), 2));
@@ -646,6 +652,21 @@ public class MainActivity extends Activity {
                         + "0x10040100/0=0x1");
         saveNamed(AutomationEngine.KEY_TRIGGER_ORDER, "trigger:", "", "Rain manual", "Rain manual|manual|rain|Rain safe");
         Ui.toast(this, "Rain Scenario добавлен");
+    }
+
+    private void installNightModeScenario() {
+        saveAutomationPreset("", "Night mode",
+                "0x20110100/0=0x1\n"
+                        + "0x27030300/0=0x1\n"
+                        + "0x20150100/0=0x20150102\n"
+                        + "0x29020100/0=0x1\n"
+                        + "0x29020500/0=0x1\n"
+                        + "0x22040200/0=0x22040203\n"
+                        + "0x2a010100/0=0x1\n"
+                        + "0x2a010200/0=0x2a010205\n"
+                        + "0x2a080100/0=0x2a080103");
+        saveNamed(AutomationEngine.KEY_TRIGGER_ORDER, "trigger:", "", "Night manual", "Night manual|manual|night|Night mode");
+        Ui.toast(this, "Night Mode добавлен");
     }
 
     private String automationIdeas() {
