@@ -82,7 +82,7 @@ Functional coverage
 7. ADAS / driving
 - UI text: scaffold.
 - Real function IDs found in IADAS.smali.
-- Direct toggles/readback: partial. On/off toggles, selected mode values and readback/support diagnostics are wired through EcarxVehicleAdapter for the high-confidence ADAS IDs.
+- Direct toggles/readback: partial. On/off toggles, selected mode values and readback/support diagnostics are wired through EcarxVehicleAdapter for the high-confidence ADAS IDs. ACC/ICC controls now include switch mode, following time gap, ACC-with-TSR, speed-control mode, speed-limitation mode and experimental max cruising speed commands.
 
 8. HUD / Cluster / OneOS
 - Media session listener: implemented.
@@ -208,3 +208,4 @@ Implementation log
 - 2026-07-21: added driver/passenger user profile engine with structured profile settings, identity metadata and a redesigned profile editor.
 - 2026-07-21: replaced fixed smart climate preset behavior with SmartClimateController modes, cooldown, staged summer/winter algorithms, dual-zone targets, fogging/call handling and drying after trip.
 - 2026-07-21: added VehicleSignalStateAdapter for reflection-based AdaptAPI ISensor reads: cabin/outside temperature, speed, fuel, rain, ignition, gear and engine states. Smart climate now uses these real signals first and keeps manual UI values as fallback.
+- 2026-07-21: added ADAS ACC/ICC controls from IADAS.smali: ACC/ICC switch, following time gap, ACC-with-TSR, max cruising speed diagnostics/buttons, speed-control mode and speed-limitation mode.

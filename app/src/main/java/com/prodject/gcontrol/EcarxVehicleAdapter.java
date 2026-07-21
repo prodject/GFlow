@@ -280,8 +280,13 @@ final class EcarxVehicleAdapter {
     static final int ADAS_TRAFFIC_SIGN_ALERT = 0x200b0200;
     static final int ADAS_SPEED_LIMIT_WARN = 0x28060100;
     static final int ADAS_SPEED_LIMIT_WARNING_MODE = 0x28060200;
+    static final int ADAS_ACC_WITH_TSR = 0x28060300;
+    static final int ADAS_SPEED_LIMITATION_MODE = 0x20030500;
+    static final int ADAS_SPEED_CONTROL_MODE = 0x20030600;
     static final int ADAS_PDC = 0x20060300;
     static final int ADAS_PDC_WARNING_VOLUME = 0x28050100;
+    static final int ADAS_ACC_TIME_GAP = 0x280a0d00;
+    static final int ADAS_ACC_ICC_SWITCH = 0x280a1300;
     static final int ADAS_AI_DRIVER_ASSIST = 0x28080100;
     static final int ADAS_AI_ASSIST_DEFAULT_ON = 0x28080200;
     static final int ADAS_AI_ASSIST_FUSION_NAVI = 0x28080300;
@@ -295,6 +300,7 @@ final class EcarxVehicleAdapter {
     static final int ADAS_TLB_MODE = 0x28080c00;
     static final int ADAS_DRIVE_PILOT = 0x28070400;
     static final int ADAS_DRIVE_PILOT_STATUS = 0x28070500;
+    static final int ADAS_MAX_CRUISING_SPEED = 0x28070600;
     static final int ADAS_DRIVE_NZP_STATUS = 0x28070900;
     static final int ADAS_DRIVE_PILOT_ALARM_INFO = 0x28070a00;
     static final int ADAS_DRIVE_PILOT_ACC_LCC_SWITCH = 0x28070b00;
@@ -316,6 +322,13 @@ final class EcarxVehicleAdapter {
     static final int PDC_VOLUME_LOW = 0x28050101;
     static final int PDC_VOLUME_MID = 0x28050102;
     static final int PDC_VOLUME_HIGH = 0x28050103;
+    static final int ACC_ICC_OFF = 0x0;
+    static final int ACC_ICC_ACC = 0x1;
+    static final int ACC_ICC_ICC = 0x2;
+    static final int ACC_TIME_GAP_0 = 0x280a0d01;
+    static final int ACC_TIME_GAP_1 = 0x280a0d02;
+    static final int ACC_TIME_GAP_2 = 0x280a0d03;
+    static final int ACC_TIME_GAP_3 = 0x280a0d04;
     static final int AI_LANE_CHANGE_STRATEGY_OFF = 0x0;
     static final int AI_LANE_CHANGE_STRATEGY_GENTLE = 0x28080501;
     static final int AI_LANE_CHANGE_STRATEGY_STANDARD = 0x28080502;
