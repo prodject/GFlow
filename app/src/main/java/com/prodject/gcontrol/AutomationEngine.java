@@ -1,6 +1,7 @@
 package com.prodject.gcontrol;
 
 import android.content.*;
+import android.os.Build;
 import java.util.*;
 
 final class AutomationEngine {
@@ -40,6 +41,17 @@ final class AutomationEngine {
     private static String runAction(Context context, Action action) {
         if ("profile".equals(action.name)) return applyProfile(context, action.value);
         if ("smart_climate".equals(action.name)) return runSmartClimate(context);
+        if ("start_dvr".equals(action.name)) {
+            Intent intent = new Intent(context, DvrService.class).setAction(DvrService.ACTION_START);
+            if (Build.VERSION.SDK_INT >= 26) context.startForegroundService(intent);
+            else context.startService(intent);
+            return "DVR start requested";
+        }
+        if ("stop_dvr".equals(action.name)) {
+            Intent intent = new Intent(context, DvrService.class).setAction(DvrService.ACTION_STOP);
+            context.startService(intent);
+            return "DVR stop requested";
+        }
         return "Unknown action: " + action.name + "=" + action.value;
     }
 
