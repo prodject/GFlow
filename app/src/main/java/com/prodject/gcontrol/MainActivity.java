@@ -65,6 +65,7 @@ public class MainActivity extends Activity {
         add(grid, "ADAS", this::showAdas);
         add(grid, "Парковка / APA", this::showParkingApa);
         if (experimentalFeaturesEnabled()) {
+            add(grid, "PAS / AVM", this::showPasAvm);
             add(grid, "Сценарии", this::showSceneModes);
             add(grid, "Подсветка", this::showAmbienceLight);
             add(grid, "Яркость / DayMode", this::showDayMode);
@@ -823,6 +824,108 @@ public class MainActivity extends Activity {
                 CarSignalManagerAdapter.VEH_MOBDEV_RPA_STS_ON_OFF1,
                 CarSignalManagerAdapter.VEH_MOBDEV_RPA_STS_UINT8,
                 CarSignalManagerAdapter.VEH_PUSH_APA_INFO_REQ);
+    }
+
+    private void showPasAvm() {
+        LinearLayout root = commandRoot("Experimental: PAS / AVM");
+        root.addView(Ui.text(this, "PAS/PAC/AVM функции из IPAS.smali. PAS.smali содержит startAVM/stopAVM/getAVMState, но здесь команды идут через functionId AdaptAPI и BCM custom key 360.", 14, false));
+        addDiagnostic(root, "PAC / AVM camera state",
+                EcarxVehicleAdapter.PAS_PAC_ACTIVATION,
+                EcarxVehicleAdapter.PAS_AVM_OR_APA_ACTIVATION,
+                EcarxVehicleAdapter.PAS_PAC_STATUS,
+                EcarxVehicleAdapter.PAS_PAC_SYS_AVA_STATUS,
+                EcarxVehicleAdapter.PAS_PAC_CAMERA_TYPE,
+                EcarxVehicleAdapter.PAS_PAC_VIEW_SELECTION,
+                EcarxVehicleAdapter.PAS_PAC_3DVIEW_POSITION,
+                EcarxVehicleAdapter.PAS_PAC_CAR_MODE_TRANSPARENT,
+                EcarxVehicleAdapter.PAS_PAC_OBSTACLE_DETECTION,
+                EcarxVehicleAdapter.PAS_PAC_TOP_VIEW_ZOOM_IN,
+                EcarxVehicleAdapter.PAS_PAC_TOURING_VIEW);
+        addDiagnostic(root, "PAS radar state",
+                EcarxVehicleAdapter.PAS_ACTIVATED,
+                EcarxVehicleAdapter.PAS_STATUS,
+                EcarxVehicleAdapter.PAS_RADAR_WORK_MODE,
+                EcarxVehicleAdapter.PAS_RADAR_WORK_STATUS,
+                EcarxVehicleAdapter.PAS_RADAR_MIN_DISTANCE,
+                EcarxVehicleAdapter.PAS_RADAR_MAX_DISTANCE,
+                EcarxVehicleAdapter.PAS_RADAR_FRONT_CENTER,
+                EcarxVehicleAdapter.PAS_RADAR_REAR_CENTER,
+                EcarxVehicleAdapter.PAS_RADAR_FRONT_INNER_LEFT,
+                EcarxVehicleAdapter.PAS_RADAR_FRONT_INNER_RIGHT,
+                EcarxVehicleAdapter.PAS_RADAR_FRONT_OUT_LEFT,
+                EcarxVehicleAdapter.PAS_RADAR_FRONT_OUT_RIGHT,
+                EcarxVehicleAdapter.PAS_RADAR_REAR_INNER_LEFT,
+                EcarxVehicleAdapter.PAS_RADAR_REAR_INNER_RIGHT,
+                EcarxVehicleAdapter.PAS_RADAR_REAR_OUT_LEFT,
+                EcarxVehicleAdapter.PAS_RADAR_REAR_OUT_RIGHT);
+        addDiagnostic(root, "SAP / RCTA / parking readback",
+                EcarxVehicleAdapter.PAS_SAP_ACTIVATION,
+                EcarxVehicleAdapter.PAS_SAP_PARK_TYPE,
+                EcarxVehicleAdapter.PAS_SAP_PARK_IN_TYPE,
+                EcarxVehicleAdapter.PAS_SAP_PROGRESS,
+                EcarxVehicleAdapter.PAS_RCTA_ACTIVATION,
+                EcarxVehicleAdapter.PAS_RCTA_LEFT_WARNING,
+                EcarxVehicleAdapter.PAS_RCTA_RIGHT_WARNING,
+                EcarxVehicleAdapter.PAS_PRKG_AUX_INFO_DISP,
+                EcarxVehicleAdapter.PAS_PRKG_INTRPT_RELD_BTN);
+        addPreset(root, "Start AVM / PAC",
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.PAS_PAC_ACTIVATION, EcarxVehicleAdapter.COMMON_ON),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.PAS_AVM_OR_APA_ACTIVATION, EcarxVehicleAdapter.COMMON_ON),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_360));
+        addPreset(root, "Stop AVM / PAC",
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.PAS_PAC_ACTIVATION, EcarxVehicleAdapter.COMMON_OFF),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.PAS_AVM_OR_APA_ACTIVATION, EcarxVehicleAdapter.COMMON_OFF));
+        addCommand(root, "Open 360 panorama key", EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_360);
+        addCommand(root, "PAC app init completed", EcarxVehicleAdapter.PAS_PAC_APP_INIT_COMPLETED, EcarxVehicleAdapter.COMMON_ON);
+        addCommandGroup(root, "Auto reverse camera", EcarxVehicleAdapter.PAS_PAC_AUTO_REVERSE_CAMERA,
+                new String[]{"Reverse camera off", "Reverse camera rear", "Reverse camera top"},
+                new int[]{EcarxVehicleAdapter.PAS_AUTO_REVERSE_CAMERA_OFF, EcarxVehicleAdapter.PAS_AUTO_REVERSE_CAMERA_REAR, EcarxVehicleAdapter.PAS_AUTO_REVERSE_CAMERA_TOP});
+        addCommandGroup(root, "Radar work mode", EcarxVehicleAdapter.PAS_RADAR_WORK_MODE,
+                new String[]{"Radar off", "Radar standby", "Radar front+rear", "Radar front", "Radar rear"},
+                new int[]{EcarxVehicleAdapter.PAS_RADAR_WORK_MODE_OFF, EcarxVehicleAdapter.PAS_RADAR_WORK_MODE_STANDBY, EcarxVehicleAdapter.PAS_RADAR_WORK_MODE_FRONT_REAR_ACTIVE, EcarxVehicleAdapter.PAS_RADAR_WORK_MODE_FRONT_ACTIVE, EcarxVehicleAdapter.PAS_RADAR_WORK_MODE_REAR_ACTIVE});
+        addCommandGroup(root, "PAC 3D surround view", EcarxVehicleAdapter.PAS_PAC_VIEW_SELECTION,
+                new String[]{"3D surround", "Rear left 3D", "Rear right 3D"},
+                new int[]{EcarxVehicleAdapter.PAS_PAC_VIEW_SELECTION_3D, EcarxVehicleAdapter.PAS_PAC_VIEW_REAR_LEFT_3D, EcarxVehicleAdapter.PAS_PAC_VIEW_REAR_RIGHT_3D});
+        addCommandGroup(root, "PAC 3D position", EcarxVehicleAdapter.PAS_PAC_3DVIEW_POSITION,
+                new String[]{"3D off", "3D front center", "3D front left", "3D front right", "3D left", "3D right", "3D rear center", "3D rear left", "3D rear right"},
+                new int[]{EcarxVehicleAdapter.PAS_PAC_3D_POS_OFF, EcarxVehicleAdapter.PAS_PAC_3D_POS_FRONT_CENTER, EcarxVehicleAdapter.PAS_PAC_3D_POS_FRONT_LEFT, EcarxVehicleAdapter.PAS_PAC_3D_POS_FRONT_RIGHT, EcarxVehicleAdapter.PAS_PAC_3D_POS_LEFT, EcarxVehicleAdapter.PAS_PAC_3D_POS_RIGHT, EcarxVehicleAdapter.PAS_PAC_3D_POS_REAR_CENTER, EcarxVehicleAdapter.PAS_PAC_3D_POS_REAR_LEFT, EcarxVehicleAdapter.PAS_PAC_3D_POS_REAR_RIGHT});
+        addCommand(root, "Guide / steer path on", EcarxVehicleAdapter.PAS_PAC_OVERLAY_STEERPATH, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "Guide / steer path off", EcarxVehicleAdapter.PAS_PAC_OVERLAY_STEERPATH, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(root, "Distance overlay on", EcarxVehicleAdapter.PAS_PAC_OVERLAY_DSTINFO, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "Distance overlay off", EcarxVehicleAdapter.PAS_PAC_OVERLAY_DSTINFO, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(root, "Towbar overlay on", EcarxVehicleAdapter.PAS_PAC_OVERLAY_TOWBAR, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "Towbar overlay off", EcarxVehicleAdapter.PAS_PAC_OVERLAY_TOWBAR, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(root, "Transparent model on", EcarxVehicleAdapter.PAS_PAC_CAR_MODE_TRANSPARENT, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "Transparent model off", EcarxVehicleAdapter.PAS_PAC_CAR_MODE_TRANSPARENT, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(root, "Look-down / top view on", EcarxVehicleAdapter.PAS_PAC_TOP_VIEW_ZOOM_IN, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "Look-down / top view off", EcarxVehicleAdapter.PAS_PAC_TOP_VIEW_ZOOM_IN, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(root, "PAS top view on", EcarxVehicleAdapter.PAS_TOP_VIEW, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "PAS top view off", EcarxVehicleAdapter.PAS_TOP_VIEW, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(root, "Turn-round / touring view on", EcarxVehicleAdapter.PAS_PAC_TOURING_VIEW, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "Turn-round / touring view off", EcarxVehicleAdapter.PAS_PAC_TOURING_VIEW, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(root, "3D view lock on", EcarxVehicleAdapter.PAS_PAC_3DVIEW_LOCK, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "3D view lock off", EcarxVehicleAdapter.PAS_PAC_3DVIEW_LOCK, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(root, "PAC steer link on", EcarxVehicleAdapter.PAS_PAC_STEER_LINK, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "PAC steer link off", EcarxVehicleAdapter.PAS_PAC_STEER_LINK, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(root, "PAC auto front activation on", EcarxVehicleAdapter.PAS_PAC_AUTO_FRONT_ACTIV, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "PAC auto front activation off", EcarxVehicleAdapter.PAS_PAC_AUTO_FRONT_ACTIV, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(root, "PAS graphics on", EcarxVehicleAdapter.PAS_SHOW_GRAPHICS, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "PAS graphics off", EcarxVehicleAdapter.PAS_SHOW_GRAPHICS, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(root, "PAS mute on", EcarxVehicleAdapter.PAS_MUTE, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "PAS mute off", EcarxVehicleAdapter.PAS_MUTE, EcarxVehicleAdapter.COMMON_OFF);
+        addCommandGroup(root, "SAP parking", EcarxVehicleAdapter.PAS_SAP_PARK_TYPE,
+                new String[]{"SAP park in", "SAP park out"},
+                new int[]{EcarxVehicleAdapter.PAS_SAP_PARK_TYPE_IN, EcarxVehicleAdapter.PAS_SAP_PARK_TYPE_OUT});
+        addCommandGroup(root, "SAP park-in type", EcarxVehicleAdapter.PAS_SAP_PARK_IN_TYPE,
+                new String[]{"SAP perpendicular", "SAP parallel"},
+                new int[]{EcarxVehicleAdapter.PAS_SAP_PARK_IN_TYPE_PERP, EcarxVehicleAdapter.PAS_SAP_PARK_IN_TYPE_PARA});
+        addCommand(root, "RCTA on", EcarxVehicleAdapter.PAS_RCTA_ACTIVATION, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "RCTA off", EcarxVehicleAdapter.PAS_RCTA_ACTIVATION, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(root, "RCTA graphics on", EcarxVehicleAdapter.PAS_RCTA_SHOW_GRAPHICS, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "RCTA graphics off", EcarxVehicleAdapter.PAS_RCTA_SHOW_GRAPHICS, EcarxVehicleAdapter.COMMON_OFF);
+        addCommandGroup(root, "RCTA warning volume", EcarxVehicleAdapter.PAS_RCTA_WARNING_VOLUME,
+                new String[]{"RCTA volume off", "RCTA volume low", "RCTA volume mid", "RCTA volume high"},
+                new int[]{EcarxVehicleAdapter.PAS_RCTA_VOLUME_OFF, EcarxVehicleAdapter.PAS_RCTA_VOLUME_LOW, EcarxVehicleAdapter.PAS_RCTA_VOLUME_MID, EcarxVehicleAdapter.PAS_RCTA_VOLUME_HIGH});
     }
 
     private void showSceneModes() {
