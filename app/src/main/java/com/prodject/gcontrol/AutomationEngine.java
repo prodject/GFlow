@@ -265,6 +265,29 @@ final class AutomationEngine {
         if (SmartClimateController.prefs(context).getBoolean(SmartClimateController.KEY_ENABLED, false)) runSmartClimate(context);
     }
 
+    static void setLowSpeedCameraEnabled(Context context, boolean enabled, float threshold) {
+        prefs(context).edit()
+                .putBoolean(LowSpeedCameraService.KEY_ENABLED, enabled)
+                .putFloat(LowSpeedCameraService.KEY_THRESHOLD, threshold)
+                .putFloat(LowSpeedCameraService.KEY_RESET_THRESHOLD, Math.max(threshold + 1.0f, threshold + 5.0f))
+                .apply();
+        Intent intent = new Intent(context, LowSpeedCameraService.class)
+                .setAction(enabled ? LowSpeedCameraService.ACTION_START : LowSpeedCameraService.ACTION_STOP);
+        if (enabled) {
+            if (Build.VERSION.SDK_INT >= 26) context.startForegroundService(intent);
+            else context.startService(intent);
+        } else {
+            context.startService(intent);
+        }
+    }
+
+    static void startLowSpeedCameraIfEnabled(Context context) {
+        if (!prefs(context).getBoolean(LowSpeedCameraService.KEY_ENABLED, false)) return;
+        Intent intent = new Intent(context, LowSpeedCameraService.class).setAction(LowSpeedCameraService.ACTION_START);
+        if (Build.VERSION.SDK_INT >= 26) context.startForegroundService(intent);
+        else context.startService(intent);
+    }
+
     static SharedPreferences prefs(Context context) {
         return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }

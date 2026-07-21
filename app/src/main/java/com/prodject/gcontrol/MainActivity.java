@@ -365,6 +365,7 @@ public class MainActivity extends Activity {
             showAutomation();
         });
         root.addView(appContext);
+        addLowSpeedCameraAutomation(root, prefs);
         for (String name : AutomationEngine.names(prefs, AutomationEngine.KEY_PRESET_ORDER)) {
             Button b = Ui.button(this, "Preset: " + name);
             b.setOnClickListener(v -> root.addView(Ui.text(this, AutomationEngine.runPreset(this, name), 13, false), 2));
@@ -402,6 +403,30 @@ public class MainActivity extends Activity {
         Button log = Ui.button(this, "Журнал выполнения");
         log.setOnClickListener(v -> panel("Журнал автоматизации", AutomationEngine.scenarioLog(this)));
         root.addView(log);
+    }
+
+    private void addLowSpeedCameraAutomation(LinearLayout root, SharedPreferences prefs) {
+        root.addView(Ui.text(this, "Автокамеры 360 при низкой скорости", 16, true));
+        root.addView(Ui.text(this, "Правило открывает штатные 360/3D камеры при падении скорости ниже порога. Повторный запуск разрешается после подъема скорости выше порога + 5 км/ч.", 13, false));
+        EditText threshold = new EditText(this);
+        threshold.setHint("Порог скорости, км/ч");
+        threshold.setText(String.valueOf(prefs.getFloat(LowSpeedCameraService.KEY_THRESHOLD, 30.0f)));
+        CheckBox enabled = new CheckBox(this);
+        enabled.setText("Включать камеры при скорости ниже порога");
+        enabled.setChecked(prefs.getBoolean(LowSpeedCameraService.KEY_ENABLED, false));
+        Button save = Ui.button(this, "Сохранить правило камер");
+        save.setOnClickListener(v -> {
+            AutomationEngine.setLowSpeedCameraEnabled(this, enabled.isChecked(),
+                    AutomationEngine.parseFloat(threshold.getText().toString(), 30.0f));
+            showAutomation();
+        });
+        Button status = Ui.button(this, "Статус правила камер");
+        status.setOnClickListener(v -> root.addView(Ui.text(this,
+                prefs.getString(LowSpeedCameraService.KEY_LAST_RESULT, "Правило еще не выполнялось"), 13, false), 2));
+        root.addView(threshold);
+        root.addView(enabled);
+        root.addView(save);
+        root.addView(status);
     }
 
     private void showSmartPresetEditor(String oldName, String oldBody) {
