@@ -326,6 +326,12 @@ public class MainActivity extends Activity {
         Button newPreset = Ui.button(this, "Создать smart preset");
         newPreset.setOnClickListener(v -> showSmartPresetEditor("", defaultSmartPresetText()));
         root.addView(newPreset);
+        Button welcomeLeave = Ui.button(this, "Добавить шаблоны Welcome / Leave");
+        welcomeLeave.setOnClickListener(v -> {
+            installWelcomeLeaveScenarios();
+            showAutomation();
+        });
+        root.addView(welcomeLeave);
         for (String name : AutomationEngine.names(prefs, AutomationEngine.KEY_PRESET_ORDER)) {
             Button b = Ui.button(this, "Preset: " + name);
             b.setOnClickListener(v -> root.addView(Ui.text(this, AutomationEngine.runPreset(this, name), 13, false), 2));
@@ -582,6 +588,29 @@ public class MainActivity extends Activity {
 
     private String defaultSmartPresetText() {
         return "0x10010100/0=0x1\n0x10010300/0=0x1\n0x10020100/0=0x10020103\nfloat:0x10060100/1=22.0\nfloat:0x10060100/4=22.0";
+    }
+
+    private void installWelcomeLeaveScenarios() {
+        saveAutomationPreset("", "Welcome drive",
+                "action:profile=Driver\n"
+                        + "0x10010100/0=0x1\n"
+                        + "0x10010200/0=0x1\n"
+                        + "float:0x10060100/1=22.0\n"
+                        + "float:0x10060100/4=22.0\n"
+                        + "0x2a010100/0=0x1\n"
+                        + "0x2a010200/0=0x2a010206\n"
+                        + "0x2a080100/0=0x2a080103\n"
+                        + "0x22010100/0=0x22010102");
+        saveAutomationPreset("", "Leave car",
+                "0x21030100/-2147483648=0x21030102\n"
+                        + "0x21200300/0=0x1\n"
+                        + "0x21200500/0=0x1\n"
+                        + "0x10010100/0=0x0\n"
+                        + "0x2a010100/0=0x0\n"
+                        + "0x21020200/-2147483648=0x1");
+        saveNamed(AutomationEngine.KEY_TRIGGER_ORDER, "trigger:", "", "Welcome manual", "Welcome manual|manual|welcome|Welcome drive");
+        saveNamed(AutomationEngine.KEY_TRIGGER_ORDER, "trigger:", "", "Leave manual", "Leave manual|manual|leave|Leave car");
+        Ui.toast(this, "Welcome / Leave добавлены");
     }
 
     private String automationIdeas() {

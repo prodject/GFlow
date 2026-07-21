@@ -121,6 +121,7 @@ Functional coverage
 - Steering wheel button mapping: partial. The receiver stores the last key event and can map keyCode + gesture (press/hold/double) to a smart preset when firmware broadcasts enough key metadata.
 - User profiles: partial. Profiles save/recall seat memory slots and optionally run a smart preset for climate/drive/light settings. Actual seat memory execution remains firmware-dependent.
 - Smart climate: partial. A configurable hot/cold/target algorithm drives HVAC, fan, temperature, seat ventilation/heating and steering-wheel heat. It currently uses saved/test temperature values until cabin/outside temperature readback is mapped to confirmed vehicle signals.
+- Welcome/leave scenarios: partial. Template installer creates user-editable smart presets for profile recall, climate, ambience light, drive mode, window/sunroof close and lock actions, with manual triggers until confirmed door/approach/leave signals are mapped.
 
 Implementation log
 - 2026-07-21: created initial coverage log.
@@ -190,3 +191,4 @@ Implementation log
 - 2026-07-21: added Experimental AVAS / Digital Key screen. AVAS exposes warning-sound switch, volume and sound-type controls from IVehicle with an in-app safety warning; Digital Key is diagnostics/readback-only for request, unpair, termination, suspension, pairing-failed, tracking and timeout statuses.
 - 2026-07-21: added AutomationEngine for user-created smart presets, boot/app/manual triggers, steering wheel key mappings, user profiles and smart climate execution.
 - 2026-07-21: added dashboard menus for Automation, Steering buttons, User profiles and Smart climate. BootReceiver, SteeringWheelReceiver and Accessibility foreground tracking now dispatch automation triggers.
+- 2026-07-21: added smart-preset actions and Welcome/Leave scenario templates for profile, climate, ambience, drive mode and leave-car closure/lock workflows.

@@ -22,9 +22,12 @@ final class AutomationEngine {
     static String runPreset(Context context, String name) {
         String encoded = prefs(context).getString("preset:" + name, "");
         CommandPlan plan = decodePlan(encoded);
-        if (plan.commands.length == 0 && plan.floatCommands.length == 0) return "Пресет пустой: " + name;
+        if (plan.commands.length == 0 && plan.floatCommands.length == 0 && plan.actions.length == 0) return "Пресет пустой: " + name;
         EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(context);
         StringBuilder sb = new StringBuilder("Smart preset: ").append(name).append("\n");
+        for (Action action : plan.actions) {
+            sb.append(runAction(context, action)).append("\n");
+        }
         for (EcarxVehicleAdapter.Command command : plan.commands) {
             sb.append(adapter.set(command.functionId, command.zone, command.value).message).append("\n");
         }
@@ -32,6 +35,12 @@ final class AutomationEngine {
             sb.append(adapter.setFloat(command.functionId, command.zone, command.value).message).append("\n");
         }
         return sb.toString();
+    }
+
+    private static String runAction(Context context, Action action) {
+        if ("profile".equals(action.name)) return applyProfile(context, action.value);
+        if ("smart_climate".equals(action.name)) return runSmartClimate(context);
+        return "Unknown action: " + action.name + "=" + action.value;
     }
 
     static void runTrigger(Context context, String type, String value) {
@@ -143,9 +152,15 @@ final class AutomationEngine {
     static CommandPlan decodePlan(String raw) {
         ArrayList<EcarxVehicleAdapter.Command> commands = new ArrayList<>();
         ArrayList<FloatCommand> floats = new ArrayList<>();
+        ArrayList<Action> actions = new ArrayList<>();
         for (String line : raw.split("\\n")) {
             String item = line.trim();
             if (item.isEmpty() || item.startsWith("#")) continue;
+            if (item.startsWith("action:")) {
+                String[] sides = item.substring("action:".length()).split("=", 2);
+                actions.add(new Action(sides[0].trim(), sides.length > 1 ? sides[1].trim() : ""));
+                continue;
+            }
             boolean isFloat = item.startsWith("float:");
             if (isFloat) item = item.substring("float:".length());
             String[] sides = item.split("=", 2);
@@ -157,7 +172,7 @@ final class AutomationEngine {
             if (isFloat) floats.add(new FloatCommand(functionId, zone, parseFloat(sides[1], 0.0f)));
             else commands.add(new EcarxVehicleAdapter.Command(functionId, zone, parseInt(sides[1], 0)));
         }
-        return new CommandPlan(commands.toArray(new EcarxVehicleAdapter.Command[0]), floats.toArray(new FloatCommand[0]));
+        return new CommandPlan(commands.toArray(new EcarxVehicleAdapter.Command[0]), floats.toArray(new FloatCommand[0]), actions.toArray(new Action[0]));
     }
 
     static int parseInt(String value, int fallback) {
@@ -194,10 +209,22 @@ final class AutomationEngine {
     static final class CommandPlan {
         final EcarxVehicleAdapter.Command[] commands;
         final FloatCommand[] floatCommands;
+        final Action[] actions;
 
-        CommandPlan(EcarxVehicleAdapter.Command[] commands, FloatCommand[] floatCommands) {
+        CommandPlan(EcarxVehicleAdapter.Command[] commands, FloatCommand[] floatCommands, Action[] actions) {
             this.commands = commands;
             this.floatCommands = floatCommands;
+            this.actions = actions;
+        }
+    }
+
+    static final class Action {
+        final String name;
+        final String value;
+
+        Action(String name, String value) {
+            this.name = name;
+            this.value = value;
         }
     }
 
