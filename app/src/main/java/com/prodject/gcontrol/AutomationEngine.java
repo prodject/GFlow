@@ -129,18 +129,46 @@ final class AutomationEngine {
     }
 
     static boolean runSteering(Context context, int keyCode, String gesture) {
+        return runSteering(context, keyCode, gesture, "", "").replaceStock;
+    }
+
+    static SteeringResult runSteering(Context context, int keyCode, String gesture, String modifier, String foregroundPackage) {
         SharedPreferences p = prefs(context);
         String target = keyCode + ":" + gesture;
+        for (String name : names(p, KEY_BUTTON_ORDER)) {
+            String raw = p.getString("button2:" + name, "");
+            ButtonBinding binding = ButtonBinding.parse(raw);
+            if (!binding.matches(context, keyCode, gesture, modifier, foregroundPackage)) continue;
+            String result = runButtonTarget(context, binding);
+            appendLog(context, "BUTTON " + name + " " + result);
+            return new SteeringResult(binding.replacesStock(), result);
+        }
         for (String name : names(p, KEY_BUTTON_ORDER)) {
             String raw = p.getString("button:" + name, "");
             String[] parts = raw.split("\\|", -1);
             if (parts.length < 4) continue;
             if ((parts[1] + ":" + parts[2]).equals(target)) {
                 runPreset(context, parts[3]);
-                return true;
+                return new SteeringResult(true, "legacy preset " + parts[3]);
             }
         }
-        return false;
+        return new SteeringResult(false, "no binding");
+    }
+
+    private static String runButtonTarget(Context context, ButtonBinding binding) {
+        if ("preset".equals(binding.targetType)) return runPreset(context, binding.target);
+        if ("scenario".equals(binding.targetType)) return runScenario(context, binding.target, "button", binding.keyCode + ":" + binding.gesture);
+        if ("action".equals(binding.targetType)) {
+            String[] sides = binding.target.split("=", 2);
+            return runAction(context, new Action(sides[0].trim(), sides.length > 1 ? sides[1].trim() : ""));
+        }
+        if ("voice".equals(binding.targetType)) {
+            CarCommandBus.send(context, "steering", binding.target);
+            return "voice " + binding.target;
+        }
+        if ("launch".equals(binding.targetType)) return runStep(context, new ScenarioStep("launch", binding.target));
+        if ("command".equals(binding.targetType)) return runStep(context, new ScenarioStep("command", binding.target));
+        return "unknown target " + binding.targetType + ":" + binding.target;
     }
 
     static String runStep(Context context, ScenarioStep step) {
@@ -571,6 +599,75 @@ final class AutomationEngine {
             this.functionId = functionId;
             this.zone = zone;
             this.value = value;
+        }
+    }
+
+    static final class SteeringResult {
+        final boolean replaceStock;
+        final String message;
+
+        SteeringResult(boolean replaceStock, String message) {
+            this.replaceStock = replaceStock;
+            this.message = message;
+        }
+    }
+
+    static final class ButtonBinding {
+        final String name;
+        final int keyCode;
+        final String gesture;
+        final String modifier;
+        final String condition;
+        final String behavior;
+        final String targetType;
+        final String target;
+
+        ButtonBinding(String name, int keyCode, String gesture, String modifier, String condition, String behavior, String targetType, String target) {
+            this.name = name;
+            this.keyCode = keyCode;
+            this.gesture = gesture;
+            this.modifier = modifier;
+            this.condition = condition;
+            this.behavior = behavior;
+            this.targetType = targetType;
+            this.target = target;
+        }
+
+        static ButtonBinding parse(String raw) {
+            String[] p = raw.split("\\|", -1);
+            return new ButtonBinding(
+                    p.length > 0 ? p[0] : "",
+                    p.length > 1 ? parseInt(p[1], 0) : 0,
+                    p.length > 2 ? p[2] : "press",
+                    p.length > 3 ? p[3] : "",
+                    p.length > 4 ? p[4] : "always",
+                    p.length > 5 ? p[5] : "replace",
+                    p.length > 6 ? p[6] : "preset",
+                    p.length > 7 ? p[7] : "");
+        }
+
+        boolean matches(Context context, int key, String actualGesture, String actualModifier, String foregroundPackage) {
+            if (keyCode != key) return false;
+            if (!gesture.equals(actualGesture)) return false;
+            if (!modifier.isEmpty() && !modifier.equals(actualModifier)) return false;
+            if ("hold-only".equals(behavior) && !"hold".equals(actualGesture)) return false;
+            return conditionMatches(context, foregroundPackage);
+        }
+
+        boolean replacesStock() {
+            return "replace".equals(behavior) || "hold-only".equals(behavior) || "stationary-only".equals(behavior);
+        }
+
+        private boolean conditionMatches(Context context, String foregroundPackage) {
+            if (condition == null || condition.length() == 0 || "always".equals(condition)) return true;
+            if ("stationary".equals(condition) || "moving".equals(condition)) {
+                return false;
+            }
+            if (condition.startsWith("app=")) {
+                return foregroundPackage != null && foregroundPackage.toLowerCase(Locale.ROOT).contains(condition.substring(4).toLowerCase(Locale.ROOT));
+            }
+            RunDecision decision = Condition.parse(condition).matches(context);
+            return decision.allowed;
         }
     }
 }
