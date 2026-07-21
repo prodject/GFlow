@@ -77,7 +77,7 @@ Functional coverage
 - Quick templates comfort/cooling/winter: adapter implemented as multi-command HVAC templates.
 - Voice templates comfort/cooling/winter: implemented for explicit preset commands.
 - Comfort climate screen: implemented as a quick HVAC control panel with status, comfort/quiet/warmup presets and common fan/blowing/seat/wheel controls.
-- Vehicle execution: implemented through HVAC function IDs; DIM climate bridge adds safe float temperature write for 0x10060100. Still needs zone-specific driver/passenger temperature controls.
+- Vehicle execution: implemented through HVAC function IDs; DIM climate bridge adds safe float temperature write for 0x10060100. Driver/passenger workflows are partially covered through IHvac hardkey/display left/right temperature contracts, but exact numeric zone IDs for direct setFunctionValue temperature zones were not found yet.
 
 7. ADAS / driving
 - UI text: scaffold.
@@ -160,3 +160,5 @@ Implementation log
 - 2026-07-21: wired DIM IClimateInteraction temperature unit and float temperature writes for HVAC_FUNC_TEMP 0x10060100.
 - 2026-07-21: wired DIM IMediaInteraction updateMediaSourceTypeList/updateCurrentSourceType/updateCurrentProgress/updatePlaybackInfo/updateMediaMuteState using Android MediaSession data and dynamic IPlaybackInfo proxy.
 - 2026-07-21: expanded GControlMediaSessionListener to publish active session metadata/playback changes into the DIM media bridge.
+- 2026-07-21: expanded HVAC constants from IHvac.smali with temp dual/unit, display left/right temp tabs, hardkey left/right temp/sync/fan, rapid cooling/warming, second-row climate, climate lock, AQS/CO2/ions, fragrance, G-Clean, dry ventilation, pre/post climatisation, direction and sweeping modes.
+- 2026-07-21: wired the expanded HVAC functions into the Climate screen and added extended HVAC diagnostics.
