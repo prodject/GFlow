@@ -1713,12 +1713,41 @@ public class MainActivity extends Activity {
         addCommand(root, "Traffic sign alert выкл", EcarxVehicleAdapter.ADAS_TRAFFIC_SIGN_ALERT, EcarxVehicleAdapter.COMMON_OFF);
         addCommand(root, "Speed limit warning", EcarxVehicleAdapter.ADAS_SPEED_LIMIT_WARN, EcarxVehicleAdapter.COMMON_ON);
         addCommand(root, "Speed limit warning off", EcarxVehicleAdapter.ADAS_SPEED_LIMIT_WARN, EcarxVehicleAdapter.COMMON_OFF);
+        addAccIccAdasControls(root);
         addCommand(root, "Парктроник включить", EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.COMMON_ON);
         addCommand(root, "Парктроник выключить", EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.COMMON_OFF);
         addCommand(root, "PDC volume low", EcarxVehicleAdapter.ADAS_PDC_WARNING_VOLUME, EcarxVehicleAdapter.PDC_VOLUME_LOW);
         addCommand(root, "PDC volume mid", EcarxVehicleAdapter.ADAS_PDC_WARNING_VOLUME, EcarxVehicleAdapter.PDC_VOLUME_MID);
         addCommand(root, "PDC volume high", EcarxVehicleAdapter.ADAS_PDC_WARNING_VOLUME, EcarxVehicleAdapter.PDC_VOLUME_HIGH);
         if (experimentalFeaturesEnabled()) addExperimentalAdasFeatures(root);
+    }
+
+    private void addAccIccAdasControls(LinearLayout root) {
+        root.addView(Ui.text(this, "ADAS ACC/ICC: круиз, следование, TSR и скоростные режимы из IADAS.smali.", 14, true));
+        addDiagnostic(root, "ADAS ACC/ICC",
+                EcarxVehicleAdapter.ADAS_ACC_ICC_SWITCH,
+                EcarxVehicleAdapter.ADAS_ACC_TIME_GAP,
+                EcarxVehicleAdapter.ADAS_ACC_WITH_TSR,
+                EcarxVehicleAdapter.ADAS_MAX_CRUISING_SPEED,
+                EcarxVehicleAdapter.ADAS_SPEED_CONTROL_MODE,
+                EcarxVehicleAdapter.ADAS_SPEED_LIMITATION_MODE);
+        addCommandGroup(root, "ACC/ICC switch", EcarxVehicleAdapter.ADAS_ACC_ICC_SWITCH,
+                new String[]{"ACC/ICC off", "ACC on", "ICC on"},
+                new int[]{EcarxVehicleAdapter.ACC_ICC_OFF, EcarxVehicleAdapter.ACC_ICC_ACC, EcarxVehicleAdapter.ACC_ICC_ICC});
+        addCommandGroup(root, "ACC time gap / дистанция", EcarxVehicleAdapter.ADAS_ACC_TIME_GAP,
+                new String[]{"Gap 0", "Gap 1", "Gap 2", "Gap 3"},
+                new int[]{EcarxVehicleAdapter.ACC_TIME_GAP_0, EcarxVehicleAdapter.ACC_TIME_GAP_1, EcarxVehicleAdapter.ACC_TIME_GAP_2, EcarxVehicleAdapter.ACC_TIME_GAP_3});
+        addCommand(root, "ACC with TSR вкл", EcarxVehicleAdapter.ADAS_ACC_WITH_TSR, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "ACC with TSR выкл", EcarxVehicleAdapter.ADAS_ACC_WITH_TSR, EcarxVehicleAdapter.COMMON_OFF);
+        addCommandGroup(root, "Speed control mode", EcarxVehicleAdapter.ADAS_SPEED_CONTROL_MODE,
+                new String[]{"Speed control off", "Speed control on"},
+                new int[]{EcarxVehicleAdapter.COMMON_OFF, EcarxVehicleAdapter.COMMON_ON});
+        addCommandGroup(root, "Speed limitation mode", EcarxVehicleAdapter.ADAS_SPEED_LIMITATION_MODE,
+                new String[]{"Speed limitation off", "Speed limitation on"},
+                new int[]{EcarxVehicleAdapter.COMMON_OFF, EcarxVehicleAdapter.COMMON_ON});
+        addCommandGroup(root, "Experimental: max cruising speed", EcarxVehicleAdapter.ADAS_MAX_CRUISING_SPEED,
+                new String[]{"Max cruise 60", "Max cruise 80", "Max cruise 100", "Max cruise 120"},
+                new int[]{60, 80, 100, 120});
     }
 
     private void addExperimentalAdasFeatures(LinearLayout root) {
