@@ -12,9 +12,9 @@ public class DvrService extends BaseForegroundService {
     private final Runnable segmentTick = new Runnable() {
         @Override public void run() {
             if (!running) return;
-            writeMarkerSegment();
-            DvrArchive.prune(DvrService.this, 5L * 1024L * 1024L * 1024L);
-            handler.postDelayed(this, 60_000);
+            writeMarkerSegments();
+            DvrArchive.prune(DvrService.this, DvrArchive.limitBytes(DvrService.this));
+            handler.postDelayed(this, DvrArchive.segmentMillis(DvrService.this));
         }
     };
 
@@ -41,12 +41,15 @@ public class DvrService extends BaseForegroundService {
         return START_STICKY;
     }
 
-    private void writeMarkerSegment() {
-        File f = DvrArchive.newSegment(this, "marker");
-        try (FileOutputStream out = new FileOutputStream(f)) {
-            out.write(("GControl DVR segment placeholder " + System.currentTimeMillis()).getBytes("UTF-8"));
-        } catch (Exception e) {
-            android.util.Log.e("GControlDvr", "segment error", e);
+    private void writeMarkerSegments() {
+        long now = System.currentTimeMillis();
+        for (String cameraId : DvrArchive.selectedCameras(this)) {
+            File f = DvrArchive.newSegment(this, cameraId);
+            try (FileOutputStream out = new FileOutputStream(f)) {
+                out.write(("GControl DVR segment placeholder cam" + cameraId + " " + now).getBytes("UTF-8"));
+            } catch (Exception e) {
+                android.util.Log.e("GControlDvr", "segment error cam" + cameraId, e);
+            }
         }
     }
 }
