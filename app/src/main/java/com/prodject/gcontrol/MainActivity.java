@@ -1803,6 +1803,12 @@ public class MainActivity extends Activity {
         addCommand(root, "Drive Pilot выкл", EcarxVehicleAdapter.ADAS_DRIVE_PILOT, EcarxVehicleAdapter.COMMON_OFF);
         addCommand(root, "ACC/LCC switch вкл", EcarxVehicleAdapter.ADAS_DRIVE_PILOT_ACC_LCC_SWITCH, EcarxVehicleAdapter.COMMON_ON);
         addCommand(root, "ACC/LCC switch выкл", EcarxVehicleAdapter.ADAS_DRIVE_PILOT_ACC_LCC_SWITCH, EcarxVehicleAdapter.COMMON_OFF);
+        Button highwayAssist = Ui.button(this, "Установить пресет Highway assist ready");
+        highwayAssist.setOnClickListener(v -> {
+            saveAutomationPreset("", "Highway assist ready", highwayAssistReadyPreset());
+            root.addView(Ui.text(this, "Experimental preset installed: Highway assist ready", 13, false), 2);
+        });
+        root.addView(highwayAssist);
         addCommand(root, "Drive Pilot alarm cancel", EcarxVehicleAdapter.ADAS_DRIVE_PILOT_ALARM_INFO_CANCEL, EcarxVehicleAdapter.COMMON_ON);
         addCommand(root, "APB switch вкл", EcarxVehicleAdapter.ADAS_APB_SWITCH, EcarxVehicleAdapter.COMMON_ON);
         addCommand(root, "APB switch выкл", EcarxVehicleAdapter.ADAS_APB_SWITCH, EcarxVehicleAdapter.COMMON_OFF);
@@ -1816,6 +1822,17 @@ public class MainActivity extends Activity {
         addCommand(root, "Traffic light attention выкл", EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION, EcarxVehicleAdapter.COMMON_OFF);
         addCommand(root, "Traffic light sound вкл", EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION_SOUND, EcarxVehicleAdapter.COMMON_ON);
         addCommand(root, "Traffic light sound выкл", EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION_SOUND, EcarxVehicleAdapter.COMMON_OFF);
+    }
+
+    private String highwayAssistReadyPreset() {
+        return "# Experimental: prepares ADAS assist settings only; driver must confirm activation through stock controls.\n"
+                + "0x" + Integer.toHexString(EcarxVehicleAdapter.ADAS_ACC_ICC_SWITCH) + "/0=0x" + Integer.toHexString(EcarxVehicleAdapter.ACC_ICC_ICC) + "\n"
+                + "0x" + Integer.toHexString(EcarxVehicleAdapter.ADAS_ACC_TIME_GAP) + "/0=0x" + Integer.toHexString(EcarxVehicleAdapter.ACC_TIME_GAP_2) + "\n"
+                + "0x" + Integer.toHexString(EcarxVehicleAdapter.ADAS_ACC_WITH_TSR) + "/0=0x" + Integer.toHexString(EcarxVehicleAdapter.COMMON_ON) + "\n"
+                + "0x" + Integer.toHexString(EcarxVehicleAdapter.ADAS_LKA) + "/0=0x" + Integer.toHexString(EcarxVehicleAdapter.COMMON_ON) + "\n"
+                + "0x" + Integer.toHexString(EcarxVehicleAdapter.ADAS_LANE_CHANGE_ASSIST) + "/0=0x" + Integer.toHexString(EcarxVehicleAdapter.COMMON_ON) + "\n"
+                + "0x" + Integer.toHexString(EcarxVehicleAdapter.ADAS_AUTO_LANE_CHANGE_ASSIST) + "/0=0x" + Integer.toHexString(EcarxVehicleAdapter.COMMON_ON) + "\n"
+                + "0x" + Integer.toHexString(EcarxVehicleAdapter.ADAS_DRIVE_PILOT_ACC_LCC_SWITCH) + "/0=0x" + Integer.toHexString(EcarxVehicleAdapter.COMMON_ON) + "\n";
     }
 
     private void addExperimentalDriveFeatures(LinearLayout root) {
