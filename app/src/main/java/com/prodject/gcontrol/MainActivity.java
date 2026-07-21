@@ -538,7 +538,7 @@ public class MainActivity extends Activity {
 
     private void showHud() {
         LinearLayout root = commandRoot("HUD / Cluster / OneOS");
-        root.addView(Ui.text(this, "HUD/Cluster пока подключены как сервисные entry points. Следующий этап: com.ecarx.xui.adaptapi.hudinteraction и IHUD.", 14, false));
+        root.addView(Ui.text(this, new EcarxHudDimAdapter(this).availability(), 14, false));
         addDiagnostic(root, "HUD", EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.HUD_DISPLAY_NAVI, EcarxVehicleAdapter.HUD_DISPLAY_SAFETY);
         addCommand(root, "HUD включить", EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.COMMON_ON);
         addCommand(root, "HUD выключить", EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.COMMON_OFF);
@@ -550,6 +550,22 @@ public class MainActivity extends Activity {
         addCommand(root, "HUD navi on", EcarxVehicleAdapter.HUD_DISPLAY_NAVI, EcarxVehicleAdapter.COMMON_ON);
         addCommand(root, "HUD phone on", EcarxVehicleAdapter.HUD_DISPLAY_BTPHONE, EcarxVehicleAdapter.COMMON_ON);
         addCommand(root, "HUD drive env on", EcarxVehicleAdapter.HUD_DISPLAY_DRIVE_ENVIRONMENT, EcarxVehicleAdapter.COMMON_ON);
+        addHudDimAction(root, "HUDInteraction: статус", a -> a.hudStatus());
+        addHudDimAction(root, "HUDInteraction: height/sync", a -> a.hudSync());
+        addHudDimAction(root, "DIMInteraction: статус", a -> a.dimStatus());
+        addHudDimAction(root, "DIM: запрос day/night", a -> a.requestDayNightMode());
+        addHudDimAction(root, "DIM: presentation on", a -> a.setPresentation(true));
+        addHudDimAction(root, "DIM: presentation off", a -> a.setPresentation(false));
+        addHudDimAction(root, "DIM Menu: IHU ready/theme", a -> a.dimMenuReadyAndTheme());
+        addHudDimAction(root, "DIM Menu: вкладка навигации", a -> a.dimMenuTab(EcarxHudDimAdapter.DIM_TAB_NAVIGATION));
+        addHudDimAction(root, "DIM Menu: вкладка музыки", a -> a.dimMenuTab(EcarxHudDimAdapter.DIM_TAB_MUSIC));
+        addHudDimAction(root, "DIM Menu: control center", a -> a.dimMenuTab(EcarxHudDimAdapter.DIM_TAB_CONTROL_CENTER));
+        addHudDimAction(root, "DIM Navi: simplify", a -> a.switchNaviMode(EcarxHudDimAdapter.NAVI_MODE_SIMPLIFY));
+        addHudDimAction(root, "DIM Navi: AR", a -> a.switchNaviMode(EcarxHudDimAdapter.NAVI_MODE_AR));
+        addHudDimAction(root, "DIM volume 10", a -> a.setDimVolume(false, 10));
+        addHudDimAction(root, "DIM climate unit Celsius", a -> a.climateCelsiusUnit());
+        addHudDimAction(root, "DIM climate temp 22.0C", a -> a.climateTemp(22.0f));
+        addHudDimAction(root, "DIM avg fuel sample", a -> a.updateAvgFuelRanking(0, "{\"source\":\"GControl\",\"avg\":0}"));
         Button hud = Ui.button(this, "Запустить HUD service");
         hud.setOnClickListener(v -> startForegroundService(new Intent(this, HudPresentationService.class)));
         Button observer = Ui.button(this, "Запустить HUD observer");
@@ -559,6 +575,25 @@ public class MainActivity extends Activity {
         root.addView(hud);
         root.addView(observer);
         root.addView(cluster);
+    }
+
+    private void addHudDimAction(LinearLayout root, String label, HudDimAction action) {
+        Button b = Ui.button(this, label);
+        b.setOnClickListener(v -> {
+            EcarxHudDimAdapter.Result result;
+            try {
+                result = action.run(new EcarxHudDimAdapter(this));
+            } catch (Exception e) {
+                result = EcarxHudDimAdapter.Result.text(false, e.getClass().getSimpleName() + ": " + e.getMessage());
+            }
+            Ui.toast(this, result.success ? "OneOS команда отправлена" : "OneOS команда не выполнена");
+            root.addView(Ui.text(this, result.message, 13, false), 2);
+        });
+        root.addView(b);
+    }
+
+    interface HudDimAction {
+        EcarxHudDimAdapter.Result run(EcarxHudDimAdapter adapter);
     }
     private void showLauncher() { startActivity(new Intent(this, DesktopActivity.class)); }
     private void showSystem() { panel("ADB / Система", "ADB toggle, локальный shell, adb-grants, DPI/масштаб, автозум, автозапуск, watchdog и accessibility tracking."); }
