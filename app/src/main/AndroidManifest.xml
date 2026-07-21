@@ -22,6 +22,21 @@
     <uses-permission android:name="android.permission.WRITE_SETTINGS" />
     <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" />
+    <uses-permission android:name="ecarx.car.permission.CAR_HVAC" />
+    <uses-permission android:name="android.car.permission.CAR_INFO" />
+    <uses-permission android:name="android.car.permission.CAR_VENDOR_EXTENSION" />
+    <uses-permission android:name="android.car.permission.GET_CAR_VENDOR_CATEGORY_DOOR" />
+    <uses-permission android:name="android.car.permission.SET_CAR_VENDOR_CATEGORY_DOOR" />
+    <uses-permission android:name="android.car.permission.GET_CAR_VENDOR_CATEGORY_SEAT" />
+    <uses-permission android:name="android.car.permission.SET_CAR_VENDOR_CATEGORY_SEAT" />
+    <uses-permission android:name="android.car.permission.GET_CAR_VENDOR_CATEGORY_MIRROR" />
+    <uses-permission android:name="android.car.permission.SET_CAR_VENDOR_CATEGORY_MIRROR" />
+    <uses-permission android:name="android.car.permission.GET_CAR_VENDOR_CATEGORY_INFO" />
+    <uses-permission android:name="android.car.permission.SET_CAR_VENDOR_CATEGORY_INFO" />
+    <uses-permission android:name="android.car.permission.GET_CAR_VENDOR_CATEGORY_HVAC" />
+    <uses-permission android:name="android.car.permission.SET_CAR_VENDOR_CATEGORY_HVAC" />
+    <uses-permission android:name="android.car.permission.GET_CAR_VENDOR_CATEGORY_LIGHT" />
+    <uses-permission android:name="android.car.permission.SET_CAR_VENDOR_CATEGORY_LIGHT" />
 
     <application
         android:allowBackup="true"
