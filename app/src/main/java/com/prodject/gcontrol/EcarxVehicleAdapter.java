@@ -7,6 +7,8 @@ import java.util.Locale;
 final class EcarxVehicleAdapter {
     static final int COMMON_OFF = 0x0;
     static final int COMMON_ON = 0x1;
+    static final int ZONE_DRIVER_LEFT = 0x1;
+    static final int ZONE_PASSENGER_RIGHT = 0x4;
 
     static final int HVAC_POWER = 0x10010100;
     static final int HVAC_AUTO = 0x10010200;
@@ -312,6 +314,28 @@ final class EcarxVehicleAdapter {
         }
     }
 
+    Result setFloat(int functionId, int zone, float value) {
+        try {
+            Object fn = function();
+            Method method = fn.getClass().getMethod("setCustomizeFunctionValue", int.class, int.class, float.class);
+            Object ok = method.invoke(fn, functionId, zone, value);
+            return Result.floatValue(functionId, zone, value, Boolean.TRUE.equals(ok), "AdaptAPI setCustomizeFunctionValue(function, zone, float)");
+        } catch (Exception e) {
+            return Result.floatError(functionId, zone, value, e);
+        }
+    }
+
+    Result getFloat(int functionId, int zone) {
+        try {
+            Object fn = function();
+            Method method = fn.getClass().getMethod("getCustomizeFunctionValue", int.class, int.class);
+            Object value = method.invoke(fn, functionId, zone);
+            return Result.floatStatus(functionId, zone, ((Number) value).floatValue());
+        } catch (Exception e) {
+            return Result.error(functionId, zone, 0, e);
+        }
+    }
+
     Result support(int functionId) {
         return support(functionId, 0);
     }
@@ -420,9 +444,24 @@ final class EcarxVehicleAdapter {
                     String.format(Locale.US, "%s/%d %s", hex(functionId), zone, status));
         }
 
+        static Result floatValue(int functionId, int zone, float value, boolean apiResult, String path) {
+            return new Result(functionId, zone, 0, apiResult,
+                    String.format(Locale.US, "%s -> %s %s/%d=%.1f", path, apiResult, hex(functionId), zone, value));
+        }
+
+        static Result floatStatus(int functionId, int zone, float value) {
+            return new Result(functionId, zone, 0, true,
+                    String.format(Locale.US, "getCustomizeFunctionValue %s/%d = %.1f", hex(functionId), zone, value));
+        }
+
         static Result error(int functionId, int zone, int value, Exception e) {
             return new Result(functionId, zone, value, false,
                     "Ошибка AdaptAPI " + hex(functionId) + "/" + zone + "=" + hex(value) + ": " + compact(e));
+        }
+
+        static Result floatError(int functionId, int zone, float value, Exception e) {
+            return new Result(functionId, zone, 0, false,
+                    String.format(Locale.US, "Ошибка AdaptAPI %s/%d=%.1f: %s", hex(functionId), zone, value, compact(e)));
         }
     }
 

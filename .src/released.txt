@@ -77,7 +77,7 @@ Functional coverage
 - Quick templates comfort/cooling/winter: adapter implemented as multi-command HVAC templates.
 - Voice templates comfort/cooling/winter: implemented for explicit preset commands.
 - Comfort climate screen: implemented as a quick HVAC control panel with status, comfort/quiet/warmup presets and common fan/blowing/seat/wheel controls.
-- Vehicle execution: implemented through HVAC function IDs; DIM climate bridge adds safe float temperature write for 0x10060100. Driver/passenger workflows are partially covered through IHvac hardkey/display left/right temperature contracts, but exact numeric zone IDs for direct setFunctionValue temperature zones were not found yet.
+- Vehicle execution: implemented through HVAC function IDs. Direct temperature write is implemented from OneOS-Dock logic via ICarFunction.setCustomizeFunctionValue(0x10060100, zone, float): driver/left zone=1, passenger/right zone=4. DIM climate bridge also supports safe float temperature write for 0x10060100.
 
 7. ADAS / driving
 - UI text: scaffold.
@@ -167,3 +167,5 @@ Implementation log
 - 2026-07-21: wired IAudioExtControl visualizer/voice-light transactions: section zone, spectrum mode, amplitude/frequency gain, voice base dB, voice light degree, anti-shake, loudness weighting and section max.
 - 2026-07-21: added EcarxDockAdapter for OneOS dock reflection APIs: IDock.handOverDock/setDockCustomHvacIcon/setDockCustomAppIcon and device Dock switchDockBar/isDockBarShowing/notifyDockItemChanged.
 - 2026-07-21: wired OneOS Dock diagnostics and item-state actions into DesktopActivity.
+- 2026-07-21: confirmed HVAC temperature write encoding from OneOS-Dock CarFunctionUtils/HavTempPopupWindow: setCustomizeFunctionValue(0x10060100, zone, float), left zone 1 and right zone 4.
+- 2026-07-21: added EcarxVehicleAdapter float get/set methods for getCustomizeFunctionValue/setCustomizeFunctionValue and wired driver/passenger temperature buttons plus float diagnostics into Climate screen.
