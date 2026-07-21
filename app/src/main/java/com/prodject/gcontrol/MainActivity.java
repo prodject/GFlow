@@ -350,6 +350,12 @@ public class MainActivity extends Activity {
             showAutomation();
         });
         root.addView(nightMode);
+        Button appContext = Ui.button(this, "Добавить шаблон App Context: Navigation");
+        appContext.setOnClickListener(v -> {
+            installNavigationContextScenario();
+            showAutomation();
+        });
+        root.addView(appContext);
         for (String name : AutomationEngine.names(prefs, AutomationEngine.KEY_PRESET_ORDER)) {
             Button b = Ui.button(this, "Preset: " + name);
             b.setOnClickListener(v -> root.addView(Ui.text(this, AutomationEngine.runPreset(this, name), 13, false), 2));
@@ -667,6 +673,19 @@ public class MainActivity extends Activity {
                         + "0x2a080100/0=0x2a080103");
         saveNamed(AutomationEngine.KEY_TRIGGER_ORDER, "trigger:", "", "Night manual", "Night manual|manual|night|Night mode");
         Ui.toast(this, "Night Mode добавлен");
+    }
+
+    private void installNavigationContextScenario() {
+        saveAutomationPreset("", "Navigation context",
+                "action:autozoom=maps,navi,navitel,yandex,2gis:1.18\n"
+                        + "0x20110100/0=0x1\n"
+                        + "0x27030300/0=0x1\n"
+                        + "0x21110100/0=0x2\n"
+                        + "0x21110100/0=0x3");
+        saveNamed(AutomationEngine.KEY_TRIGGER_ORDER, "trigger:", "", "Navigation app", "Navigation app|app|maps|Navigation context");
+        saveNamed(AutomationEngine.KEY_TRIGGER_ORDER, "trigger:", "", "Navigation app yandex", "Navigation app yandex|app|yandex|Navigation context");
+        saveNamed(AutomationEngine.KEY_TRIGGER_ORDER, "trigger:", "", "Navigation app 2gis", "Navigation app 2gis|app|2gis|Navigation context");
+        Ui.toast(this, "Navigation App Context добавлен");
     }
 
     private String automationIdeas() {
