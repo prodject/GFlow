@@ -64,6 +64,11 @@ public class MainActivity extends Activity {
         add(grid, "Климат", this::showClimate);
         add(grid, "ADAS", this::showAdas);
         add(grid, "Парковка / APA", this::showParkingApa);
+        if (experimentalFeaturesEnabled()) {
+            add(grid, "Сценарии", this::showSceneModes);
+            add(grid, "Подсветка", this::showAmbienceLight);
+            add(grid, "Яркость / DayMode", this::showDayMode);
+        }
         add(grid, "HUD / OneOS", this::showHud);
         add(grid, "Браузер / Погода", this::showWeb);
         add(grid, "Рабочий стол", this::showLauncher);
@@ -818,6 +823,128 @@ public class MainActivity extends Activity {
                 CarSignalManagerAdapter.VEH_MOBDEV_RPA_STS_ON_OFF1,
                 CarSignalManagerAdapter.VEH_MOBDEV_RPA_STS_UINT8,
                 CarSignalManagerAdapter.VEH_PUSH_APA_INFO_REQ);
+    }
+
+    private void showSceneModes() {
+        LinearLayout root = commandRoot("Experimental: Сценарии");
+        root.addView(Ui.text(this, "Сценарные режимы из ISceneMode.smali. Кнопки отправляют ON/OFF в соответствующий scene function.", 14, false));
+        addDiagnostic(root, "Scene modes",
+                EcarxVehicleAdapter.SCENE_THEATER,
+                EcarxVehicleAdapter.SCENE_WASH,
+                EcarxVehicleAdapter.SCENE_PET,
+                EcarxVehicleAdapter.SCENE_SMOKING,
+                EcarxVehicleAdapter.SCENE_PARENT_CHILD,
+                EcarxVehicleAdapter.SCENE_ROMANTIC,
+                EcarxVehicleAdapter.SCENE_NAP,
+                EcarxVehicleAdapter.SCENE_QUEEN,
+                EcarxVehicleAdapter.SCENE_SLEEP,
+                EcarxVehicleAdapter.SCENE_CAMP,
+                EcarxVehicleAdapter.SCENE_MEETING,
+                EcarxVehicleAdapter.SCENE_REAR_ROW_VIDEO,
+                EcarxVehicleAdapter.SCENE_PSD_PASSENGER_THEATER);
+        addSceneToggle(root, "Theater", EcarxVehicleAdapter.SCENE_THEATER);
+        addSceneToggle(root, "Wash", EcarxVehicleAdapter.SCENE_WASH);
+        addSceneToggle(root, "Pet", EcarxVehicleAdapter.SCENE_PET);
+        addSceneToggle(root, "Smoking", EcarxVehicleAdapter.SCENE_SMOKING);
+        addSceneToggle(root, "Parent-child", EcarxVehicleAdapter.SCENE_PARENT_CHILD);
+        addSceneToggle(root, "Romantic", EcarxVehicleAdapter.SCENE_ROMANTIC);
+        addSceneToggle(root, "Nap", EcarxVehicleAdapter.SCENE_NAP);
+        addSceneToggle(root, "Queen", EcarxVehicleAdapter.SCENE_QUEEN);
+        addSceneToggle(root, "Sleep", EcarxVehicleAdapter.SCENE_SLEEP);
+        addSceneToggle(root, "Camping", EcarxVehicleAdapter.SCENE_CAMP);
+        addSceneToggle(root, "Meeting", EcarxVehicleAdapter.SCENE_MEETING);
+        addSceneToggle(root, "Rear-row video", EcarxVehicleAdapter.SCENE_REAR_ROW_VIDEO);
+        addSceneToggle(root, "PSD passenger theater", EcarxVehicleAdapter.SCENE_PSD_PASSENGER_THEATER);
+    }
+
+    private void addSceneToggle(LinearLayout root, String label, int functionId) {
+        addCommand(root, label + " on", functionId, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, label + " off", functionId, EcarxVehicleAdapter.COMMON_OFF);
+    }
+
+    private void showAmbienceLight() {
+        LinearLayout root = commandRoot("Experimental: Подсветка");
+        root.addView(Ui.text(this, "Ambience light из IAmbienceLight.smali: темы, цвета, weather/music/welcome/voice и зоны.", 14, false));
+        addDiagnostic(root, "Ambience light",
+                EcarxVehicleAdapter.AMBIENCE_LIGHT_THEME_COLOR,
+                EcarxVehicleAdapter.AMBIENCE_LIGHT_COLOR_WEATHER,
+                EcarxVehicleAdapter.AMBIENCE_LIGHT_EFFECT,
+                EcarxVehicleAdapter.AMBIENCE_LIGHT_CONTROL_MODE,
+                EcarxVehicleAdapter.AMBIENCE_LIGHT_MUSIC,
+                EcarxVehicleAdapter.AMBIENCE_LIGHT_MUSIC_SHOW_MODE,
+                EcarxVehicleAdapter.AMBIENCE_LIGHT_WELCOME_SHOW,
+                EcarxVehicleAdapter.AMBIENCE_LIGHT_WELCOME_SHOW_MODE,
+                EcarxVehicleAdapter.AMBIENCE_LIGHT_VOICE,
+                EcarxVehicleAdapter.AMBIENCE_LIGHT_ZONE_EXPERIENCE,
+                EcarxVehicleAdapter.AMBIENCE_LIGHT_MAIN_ZONES,
+                EcarxVehicleAdapter.AMBIENCE_LIGHT_TOP_ZONES,
+                EcarxVehicleAdapter.AMBIENCE_LIGHT_BOT_ZONES);
+        addCommandGroup(root, "Theme color", EcarxVehicleAdapter.AMBIENCE_LIGHT_THEME_COLOR,
+                new String[]{"Color red", "Color orange", "Color yellow", "Color green", "Color indigo", "Color blue", "Color violet", "Color white", "Color ice blue", "Color off"},
+                new int[]{EcarxVehicleAdapter.AMBIENCE_LIGHT_COLOR_RED, EcarxVehicleAdapter.AMBIENCE_LIGHT_COLOR_ORANGE, EcarxVehicleAdapter.AMBIENCE_LIGHT_COLOR_YELLOW, EcarxVehicleAdapter.AMBIENCE_LIGHT_COLOR_GREEN, EcarxVehicleAdapter.AMBIENCE_LIGHT_COLOR_INDIGO, EcarxVehicleAdapter.AMBIENCE_LIGHT_COLOR_BLUE, EcarxVehicleAdapter.AMBIENCE_LIGHT_COLOR_VIOLET, EcarxVehicleAdapter.AMBIENCE_LIGHT_COLOR_WHITE, EcarxVehicleAdapter.AMBIENCE_LIGHT_COLOR_ICE_BLUE, EcarxVehicleAdapter.COMMON_OFF});
+        addCommandGroup(root, "Theme mode", EcarxVehicleAdapter.AMBIENCE_LIGHT_EFFECT,
+                new String[]{"Effect solid", "Effect gradients", "Effect breathe", "Theme radical", "Theme simple", "Theme liberating", "Theme agile", "Effect off"},
+                new int[]{EcarxVehicleAdapter.AMBIENCE_LIGHT_EFFECT_SOLID, EcarxVehicleAdapter.AMBIENCE_LIGHT_EFFECT_GRADIENTS, EcarxVehicleAdapter.AMBIENCE_LIGHT_EFFECT_BREATHE, EcarxVehicleAdapter.AMBIENCE_LIGHT_THEME_RADICAL, EcarxVehicleAdapter.AMBIENCE_LIGHT_THEME_SIMPLE, EcarxVehicleAdapter.AMBIENCE_LIGHT_THEME_LIBERATING, EcarxVehicleAdapter.AMBIENCE_LIGHT_THEME_AGILE, EcarxVehicleAdapter.COMMON_OFF});
+        addCommandGroup(root, "Control mode", EcarxVehicleAdapter.AMBIENCE_LIGHT_CONTROL_MODE,
+                new String[]{"Control more", "Control music", "Control screen", "Control color", "Control time"},
+                new int[]{EcarxVehicleAdapter.AMBIENCE_LIGHT_CONTROL_MORE, EcarxVehicleAdapter.AMBIENCE_LIGHT_CONTROL_MUSIC, EcarxVehicleAdapter.AMBIENCE_LIGHT_CONTROL_SCREEN, EcarxVehicleAdapter.AMBIENCE_LIGHT_CONTROL_COLOR, EcarxVehicleAdapter.AMBIENCE_LIGHT_CONTROL_TIME});
+        addCommand(root, "Music show on", EcarxVehicleAdapter.AMBIENCE_LIGHT_MUSIC_SHOW_MODE, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "Music show off", EcarxVehicleAdapter.AMBIENCE_LIGHT_MUSIC_SHOW_MODE, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(root, "Welcome show on", EcarxVehicleAdapter.AMBIENCE_LIGHT_WELCOME_SHOW, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "Welcome show off", EcarxVehicleAdapter.AMBIENCE_LIGHT_WELCOME_SHOW, EcarxVehicleAdapter.COMMON_OFF);
+        addCommandGroup(root, "Welcome show mode", EcarxVehicleAdapter.AMBIENCE_LIGHT_WELCOME_SHOW_MODE,
+                new String[]{"Welcome passionate", "Welcome normal", "Welcome subdued", "Welcome off"},
+                new int[]{EcarxVehicleAdapter.AMBIENCE_LIGHT_WELCOME_PASSIONATE, EcarxVehicleAdapter.AMBIENCE_LIGHT_WELCOME_NORMAL, EcarxVehicleAdapter.AMBIENCE_LIGHT_WELCOME_SUBDUED, EcarxVehicleAdapter.COMMON_OFF});
+        addCommand(root, "Voice light on", EcarxVehicleAdapter.AMBIENCE_LIGHT_VOICE, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "Voice light off", EcarxVehicleAdapter.AMBIENCE_LIGHT_VOICE, EcarxVehicleAdapter.COMMON_OFF);
+        addCommandGroup(root, "Zones", EcarxVehicleAdapter.AMBIENCE_LIGHT_ZONE_EXPERIENCE,
+                new String[]{"Zone all", "Zone front", "Zone headrest", "Zone rear"},
+                new int[]{EcarxVehicleAdapter.AMBIENCE_LIGHT_ZONE_ALL, EcarxVehicleAdapter.AMBIENCE_LIGHT_ZONE_FRONT, EcarxVehicleAdapter.AMBIENCE_LIGHT_ZONE_HEADREST, EcarxVehicleAdapter.AMBIENCE_LIGHT_ZONE_REAR});
+    }
+
+    private void showDayMode() {
+        LinearLayout root = commandRoot("Experimental: Яркость / DayMode");
+        root.addView(Ui.text(this, "DayMode и яркость из IDayMode.smali. Для яркости значения 25/50/75 экспериментальные; сначала проверь min/max/step.", 14, false));
+        addDiagnostic(root, "DayMode / brightness",
+                EcarxVehicleAdapter.DAYMODE_SETTING,
+                EcarxVehicleAdapter.DAYMODE_SYNC,
+                EcarxVehicleAdapter.DAYMODE_BRIGHTNESS_DAY,
+                EcarxVehicleAdapter.DAYMODE_BRIGHTNESS_NIGHT,
+                EcarxVehicleAdapter.DAYMODE_BRIGHTNESS_MIN,
+                EcarxVehicleAdapter.DAYMODE_BRIGHTNESS_MAX,
+                EcarxVehicleAdapter.DAYMODE_BRIGHTNESS_STEP,
+                EcarxVehicleAdapter.DAYMODE_BACKLIGHT_LINKAGE,
+                EcarxVehicleAdapter.DAYMODE_BACKLIGHT_BRIGHTNESS,
+                EcarxVehicleAdapter.DAYMODE_DIM_BRIGHTNESS,
+                EcarxVehicleAdapter.DAYMODE_FLOODLIGHT_BRIGHTNESS,
+                EcarxVehicleAdapter.DAYMODE_BRIGHTNESS_SCREEN,
+                EcarxVehicleAdapter.DAYMODE_ELECTRIC_REAR_VIEW_MIRROR,
+                EcarxVehicleAdapter.DAYMODE_CUSTOM_DAY_TIME,
+                EcarxVehicleAdapter.DAYMODE_CUSTOM_NIGHT_TIME,
+                EcarxVehicleAdapter.DAYMODE_SUN_TIME,
+                EcarxVehicleAdapter.DAYMODE_TIME_CONTROL_THEME_SWITCH,
+                EcarxVehicleAdapter.DAYMODE_PSD_BRIGHTNESS_DAYMODE,
+                EcarxVehicleAdapter.DAYMODE_PSD_BRIGHTNESS_SCREEN);
+        addCommandGroup(root, "DayMode", EcarxVehicleAdapter.DAYMODE_SETTING,
+                new String[]{"DayMode day", "DayMode night", "DayMode auto", "DayMode off"},
+                new int[]{EcarxVehicleAdapter.DAYMODE_VALUE_DAY, EcarxVehicleAdapter.DAYMODE_VALUE_NIGHT, EcarxVehicleAdapter.DAYMODE_VALUE_AUTO, EcarxVehicleAdapter.COMMON_OFF});
+        addCommand(root, "DayMode sync on", EcarxVehicleAdapter.DAYMODE_SYNC, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "DayMode sync off", EcarxVehicleAdapter.DAYMODE_SYNC, EcarxVehicleAdapter.COMMON_OFF);
+        addBrightnessCommands(root, "Backlight", EcarxVehicleAdapter.DAYMODE_BACKLIGHT_BRIGHTNESS);
+        addBrightnessCommands(root, "DIM", EcarxVehicleAdapter.DAYMODE_DIM_BRIGHTNESS);
+        addBrightnessCommands(root, "Floodlight", EcarxVehicleAdapter.DAYMODE_FLOODLIGHT_BRIGHTNESS);
+        addBrightnessCommands(root, "Screen", EcarxVehicleAdapter.DAYMODE_BRIGHTNESS_SCREEN);
+        addBrightnessCommands(root, "Electric rear-view mirror", EcarxVehicleAdapter.DAYMODE_ELECTRIC_REAR_VIEW_MIRROR);
+        addCommand(root, "Backlight linkage on", EcarxVehicleAdapter.DAYMODE_BACKLIGHT_LINKAGE, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "Backlight linkage off", EcarxVehicleAdapter.DAYMODE_BACKLIGHT_LINKAGE, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(root, "Time-control theme on", EcarxVehicleAdapter.DAYMODE_TIME_CONTROL_THEME_SWITCH, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "Time-control theme off", EcarxVehicleAdapter.DAYMODE_TIME_CONTROL_THEME_SWITCH, EcarxVehicleAdapter.COMMON_OFF);
+    }
+
+    private void addBrightnessCommands(LinearLayout root, String label, int functionId) {
+        addCommand(root, label + " 25", functionId, 25);
+        addCommand(root, label + " 50", functionId, 50);
+        addCommand(root, label + " 75", functionId, 75);
     }
 
     private void showAdas() {
