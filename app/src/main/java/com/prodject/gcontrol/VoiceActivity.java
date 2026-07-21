@@ -65,6 +65,14 @@ public class VoiceActivity extends Activity {
             return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HVAC_AC, EcarxVehicleAdapter.COMMON_ON);
         }
         if (has(cmd, "лобов") || has(cmd, "обдув")) {
+            if (has(cmd, "лицо") && has(cmd, "ног")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_FACE_AND_LEG);
+            if (has(cmd, "лицо") && (has(cmd, "стек") || has(cmd, "лоб"))) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_FACE_AND_FRONT_WINDOW);
+            if (has(cmd, "ног") && (has(cmd, "стек") || has(cmd, "лоб"))) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_LEG_AND_FRONT_WINDOW);
+            if (has(cmd, "лицо")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_FACE);
+            if (has(cmd, "ног")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_LEG);
+            if (has(cmd, "все")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_ALL);
+            if (has(cmd, "auto") || has(cmd, "авто")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_AUTO);
+            if (has(cmd, "макс") || has(cmd, "max")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HVAC_DEFROST_FRONT_MAX, EcarxVehicleAdapter.COMMON_ON);
             return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HVAC_DEFROST_FRONT, EcarxVehicleAdapter.COMMON_ON);
         }
         if (has(cmd, "задн") && has(cmd, "стек")) {
@@ -75,6 +83,24 @@ public class VoiceActivity extends Activity {
         }
         if (has(cmd, "рециркуляц")) {
             return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HVAC_CIRCULATION, EcarxVehicleAdapter.CIRCULATION_OUTSIDE);
+        }
+        if (has(cmd, "вентилятор") || has(cmd, "fan")) {
+            if (has(cmd, "auto") || has(cmd, "авто")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_AUTO);
+            if (has(cmd, "9")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_9);
+            if (has(cmd, "8")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_8);
+            if (has(cmd, "7")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_7);
+            if (has(cmd, "6")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_6);
+            if (has(cmd, "5")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_5);
+            if (has(cmd, "4")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_4);
+            if (has(cmd, "3")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_3);
+            if (has(cmd, "2")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_2);
+            if (has(cmd, "1")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_1);
+        }
+        if (has(cmd, "зона") && (has(cmd, "dual") || has(cmd, "дв"))) {
+            return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HVAC_CLIMATE_ZONE, EcarxVehicleAdapter.CLIMATE_ZONE_DUAL);
+        }
+        if (has(cmd, "зона") && (has(cmd, "single") || has(cmd, "одн"))) {
+            return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HVAC_CLIMATE_ZONE, EcarxVehicleAdapter.CLIMATE_ZONE_SINGLE);
         }
         if (has(cmd, "окн") && (has(cmd, "откр") || has(cmd, "open"))) {
             return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_WINDOW, EcarxVehicleAdapter.WINDOW_OPEN);
