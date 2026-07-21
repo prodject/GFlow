@@ -670,10 +670,10 @@ public class MainActivity extends Activity {
         mode.setHint("off / fast_cool / fast_heat / stabilize / maintain / dry / summer");
         mode.setText(prefs.getString(SmartClimateController.KEY_MODE, SmartClimateController.MODE_OFF));
         EditText cabin = new EditText(this);
-        cabin.setHint("Текущая температура салона для теста");
+        cabin.setHint("Fallback: температура салона");
         cabin.setText(String.valueOf(prefs.getFloat(SmartClimateController.KEY_CABIN_TEMP, 26.0f)));
         EditText outside = new EditText(this);
-        outside.setHint("Внешняя температура для теста");
+        outside.setHint("Fallback: внешняя температура");
         outside.setText(String.valueOf(prefs.getFloat(SmartClimateController.KEY_OUTSIDE_TEMP, 26.0f)));
         EditText driverTarget = new EditText(this);
         driverTarget.setHint("Цель водительской зоны");
@@ -723,7 +723,9 @@ public class MainActivity extends Activity {
         dry.setOnClickListener(v -> root.addView(Ui.text(this, SmartClimateController.dryAfterTrip(this), 13, false), 2));
         Button log = Ui.button(this, "Журнал климата");
         log.setOnClickListener(v -> panel("Журнал умного климата", SmartClimateController.log(this)));
-        root.addView(Ui.text(this, "Режимы: off, fast_cool, fast_heat, stabilize, maintain, dry, summer. Контроллер не меняет настройки чаще одного раза в минуту, учитывает салон/улицу, минуты двигателя, запотевание, звонок и отдельные зоны.", 14, false));
+        Button signals = Ui.button(this, "Статус сигналов авто");
+        signals.setOnClickListener(v -> panel("Сигналы авто", VehicleSignalStateAdapter.lastStatus(this)));
+        root.addView(Ui.text(this, "Режимы: off, fast_cool, fast_heat, stabilize, maintain, dry, summer. Контроллер читает реальные sensor-сигналы через AdaptAPI, а поля салон/улица используются как fallback.", 14, false));
         root.addView(enabled);
         root.addView(mode);
         root.addView(cabin);
@@ -739,6 +741,7 @@ public class MainActivity extends Activity {
         root.addView(resetCooldown);
         root.addView(dry);
         root.addView(log);
+        root.addView(signals);
     }
 
     private void saveAutomationPreset(String oldName, String newName, String body) {
