@@ -102,8 +102,8 @@ Functional coverage
 - Launchable app list: implemented.
 - Pinned dock: implemented.
 - Add/remove shortcut and uninstall intent: implemented.
-- Ordering: partial via insertion order only; drag/reorder UI missing.
-- Themes/wallpaper/widgets/weather clock: missing or partial clock only.
+- Ordering: implemented through dock item move up/down actions; drag UI still missing.
+- Themes/wallpaper/widgets/weather clock: partial. Clock and local wallpaper/theme presets are implemented; weather widget still missing.
 - OneOS dock contracts found in OneOS-Dock_src and OneOS-SystemUIPlugin_src; privileged integration pending.
 
 11. ADB / system
@@ -142,3 +142,5 @@ Implementation log
 - 2026-07-21: changed DVR placeholder archive to write per-camera marker segments and prune recursively by configured archive limit.
 - 2026-07-21: added FileManager StorageManager USB volume lookup with /storage fallback.
 - 2026-07-21: added FileManager cross-volume move fallback through recursive copy/delete.
+- 2026-07-21: changed Desktop pinned dock persistence to ordered storage and added move up/down actions.
+- 2026-07-21: added Desktop local wallpaper/theme presets while keeping existing launch/remove/uninstall behavior.
