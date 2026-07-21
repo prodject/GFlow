@@ -123,6 +123,7 @@ Functional coverage
 - Smart climate: partial. A configurable hot/cold/target algorithm drives HVAC, fan, temperature, seat ventilation/heating and steering-wheel heat. It currently uses saved/test temperature values until cabin/outside temperature readback is mapped to confirmed vehicle signals.
 - Welcome/leave scenarios: partial. Template installer creates user-editable smart presets for profile recall, climate, ambience light, drive mode, window/sunroof close and lock actions, with manual triggers until confirmed door/approach/leave signals are mapped.
 - Parking guard: partial. Template installer creates a smart preset that starts DVR, opens 360 through the custom key, closes windows/sunroof/sun curtain and locks doors. Gear/park-state trigger still needs confirmed vehicle signal mapping.
+- Rain scenario: partial. Template installer creates a smart preset that closes all windows, sunroof and sun curtain, switches wipers to AUTO and enables front defrost. Automatic rain-sensor trigger still needs confirmed signal mapping.
 
 Implementation log
 - 2026-07-21: created initial coverage log.
@@ -194,3 +195,4 @@ Implementation log
 - 2026-07-21: added dashboard menus for Automation, Steering buttons, User profiles and Smart climate. BootReceiver, SteeringWheelReceiver and Accessibility foreground tracking now dispatch automation triggers.
 - 2026-07-21: added smart-preset actions and Welcome/Leave scenario templates for profile, climate, ambience, drive mode and leave-car closure/lock workflows.
 - 2026-07-21: added Parking Guard scenario template and smart-preset DVR start/stop actions.
+- 2026-07-21: added Rain Scenario template for window/sunroof closure, automatic wipers and front defrost.
