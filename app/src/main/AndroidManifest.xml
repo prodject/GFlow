@@ -67,7 +67,7 @@
             </intent-filter>
         </activity>
 
-        <service android:name=".DvrService" android:exported="false" android:foregroundServiceType="camera" />
+        <service android:name=".DvrService" android:exported="false" android:foregroundServiceType="camera|microphone" />
         <service android:name=".VoiceForegroundService" android:exported="false" android:foregroundServiceType="microphone" />
         <service android:name=".HudPresentationService" android:exported="false" />
         <service android:name=".HudObserverService" android:exported="false" />
