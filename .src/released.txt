@@ -33,7 +33,7 @@ Functional coverage
 - File manager: implemented.
 - Media viewer: implemented.
 - Text viewer: implemented.
-- Split launcher: partial. Current implementation launches Settings with launch-adjacent flags; app chooser and privileged multi-window control still needed.
+- Split launcher: partial. App chooser launches selected apps with launch-adjacent flags; privileged multi-window control still needed.
 
 2. File manager
 - Open file: implemented.
@@ -148,3 +148,4 @@ Implementation log
 - 2026-07-21: added ADB/System autozoom controls that save package filters and font scale, then apply Settings.System.FONT_SCALE from the watchdog service when enabled.
 - 2026-07-21: added saved HVAC preset editor with create/edit/delete and persisted functionId/zone/value command lists.
 - 2026-07-21: expanded ADAS controls from IADAS.smali with off toggles, blind spot detection, traffic sign recognition, lane change assist, PDC volume and AI lane strategy/warning modes.
+- 2026-07-21: replaced fixed Settings split shortcut with launchable app chooser using FLAG_ACTIVITY_LAUNCH_ADJACENT / MULTIPLE_TASK.

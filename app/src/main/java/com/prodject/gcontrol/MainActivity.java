@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.*;
 import android.content.*;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.*;
 import android.provider.Settings;
@@ -499,10 +500,25 @@ public class MainActivity extends Activity {
     private void showSystem() { panel("ADB / Система", "ADB toggle, локальный shell, adb-grants, DPI/масштаб, автозум, автозапуск, watchdog и accessibility tracking."); }
     private void showWeb() { startActivity(new Intent(this, WeatherActivity.class)); }
     private void openSplitLauncher() {
-        Intent i = getPackageManager().getLaunchIntentForPackage("com.android.settings");
-        if (i != null) {
-            i.addFlags(Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
-            startActivity(i);
-        } else Ui.toast(this, "Не найдено приложение для split-запуска");
+        Intent query = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER);
+        List<ResolveInfo> apps = getPackageManager().queryIntentActivities(query, 0);
+        Collections.sort(apps, Comparator.comparing(a -> a.loadLabel(getPackageManager()).toString().toLowerCase(Locale.ROOT)));
+        if (apps.isEmpty()) {
+            Ui.toast(this, "Нет приложений для split-запуска");
+            return;
+        }
+        String[] labels = new String[apps.size()];
+        for (int i = 0; i < apps.size(); i++) labels[i] = apps.get(i).loadLabel(getPackageManager()).toString();
+        new AlertDialog.Builder(this).setTitle("Запустить рядом").setItems(labels, (d, which) -> {
+            ResolveInfo info = apps.get(which);
+            Intent launch = getPackageManager().getLaunchIntentForPackage(info.activityInfo.packageName);
+            if (launch == null) {
+                launch = new Intent(Intent.ACTION_MAIN)
+                        .addCategory(Intent.CATEGORY_LAUNCHER)
+                        .setClassName(info.activityInfo.packageName, info.activityInfo.name);
+            }
+            launch.addFlags(Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
+            startActivity(launch);
+        }).show();
     }
 }
