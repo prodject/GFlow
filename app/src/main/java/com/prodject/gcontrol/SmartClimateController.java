@@ -41,11 +41,13 @@ final class SmartClimateController {
         long last = p.getLong(KEY_LAST_APPLY_AT, 0L);
         if (now - last < 60_000L) return "Cooldown: настройки менялись меньше минуты назад";
 
-        State s = State.from(p);
+        VehicleSignalStateAdapter signals = new VehicleSignalStateAdapter(context);
+        State s = signals.smartClimateState(p);
         EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(context);
         ArrayList<String> out = new ArrayList<>();
         out.add("SmartClimate mode=" + mode + " cabin=" + s.cabin + " outside=" + s.outside
                 + " driverTarget=" + s.driverTarget + " passengerTarget=" + s.passengerTarget);
+        out.add("Signals:\n" + signals.status());
         out.add(adapter.set(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_ON).message);
 
         if (s.fogging) {
@@ -63,6 +65,7 @@ final class SmartClimateController {
         prefs(context).edit()
                 .putLong(KEY_LAST_APPLY_AT, now)
                 .putString(KEY_LAST_STAGE, stage(mode, s))
+                .putString(VehicleSignalStateAdapter.KEY_LAST_STATUS, signals.status())
                 .putString(KEY_LOG, joinLines(out) + "\n" + p.getString(KEY_LOG, ""))
                 .apply();
         return joinLines(out);
