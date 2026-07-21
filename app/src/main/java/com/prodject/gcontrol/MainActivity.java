@@ -12,6 +12,8 @@ import android.widget.*;
 import java.util.*;
 
 public class MainActivity extends Activity {
+    private static final String CLIMATE_PRESETS = "climate_presets";
+    private static final String CLIMATE_PRESET_ORDER = "order";
     private static final String[] RUNTIME_PERMS = {
             Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO
     };
@@ -130,6 +132,35 @@ public class MainActivity extends Activity {
         root.addView(b);
     }
 
+    private void addSavedClimatePreset(LinearLayout root, String label, EcarxVehicleAdapter.Command[] commands) {
+        Button b = Ui.button(this, "Сохраненный: " + label);
+        b.setOnClickListener(v -> runPreset(root, label, commands));
+        b.setOnLongClickListener(v -> {
+            String[] actions = {"Редактировать", "Удалить"};
+            new AlertDialog.Builder(this).setTitle(label).setItems(actions, (d, which) -> {
+                if (which == 0) showClimatePresetEditor(label, encodeCommands(commands));
+                else {
+                    deleteClimatePreset(label);
+                    showClimate();
+                }
+            }).show();
+            return true;
+        });
+        root.addView(b);
+    }
+
+    private void runPreset(LinearLayout root, String label, EcarxVehicleAdapter.Command... commands) {
+        EcarxVehicleAdapter.Result[] results = new EcarxVehicleAdapter(this).setAll(commands);
+        StringBuilder sb = new StringBuilder(label).append("\n");
+        boolean ok = true;
+        for (EcarxVehicleAdapter.Result r : results) {
+            ok &= r.success;
+            sb.append(r.message).append("\n");
+        }
+        Ui.toast(this, ok ? "Пресет отправлен" : "Пресет выполнен частично");
+        root.addView(Ui.text(this, sb.toString(), 13, false), 2);
+    }
+
     private void addDiagnostic(LinearLayout root, String label, int... functionIds) {
         Button b = Ui.button(this, "Диагностика: " + label);
         b.setOnClickListener(v -> {
@@ -226,6 +257,13 @@ public class MainActivity extends Activity {
         LinearLayout root = commandRoot("Климат");
         root.addView(Ui.text(this, "HVAC-функции из IHvac.smali. Для сидений и зон сейчас используется zone=0 fallback.", 14, false));
         addDiagnostic(root, "HVAC", EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.HVAC_AC, EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.HVAC_CIRCULATION, EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.HVAC_TEMP_MIN, EcarxVehicleAdapter.HVAC_TEMP_MAX, EcarxVehicleAdapter.HVAC_TEMP_STEP);
+        Button editor = Ui.button(this, "Создать / редактировать пресет");
+        editor.setOnClickListener(v -> showClimatePresetEditor("", defaultPresetText()));
+        root.addView(editor);
+        for (String name : climatePresetNames()) {
+            EcarxVehicleAdapter.Command[] commands = decodeCommands(getSharedPreferences(CLIMATE_PRESETS, MODE_PRIVATE).getString(name, ""));
+            if (commands.length > 0) addSavedClimatePreset(root, name, commands);
+        }
         addPreset(root, "Пресет Комфорт",
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_ON),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_AUTO, EcarxVehicleAdapter.COMMON_ON),
@@ -284,6 +322,109 @@ public class MainActivity extends Activity {
         addCommand(root, "Массаж сиденья ур.1", EcarxVehicleAdapter.HVAC_SEAT_MASSAGE, EcarxVehicleAdapter.SEAT_LEVEL_1);
         addCommand(root, "Подогрев руля low", EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT, EcarxVehicleAdapter.WHEEL_HEAT_LOW);
         addCommand(root, "Подогрев руля off", EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT, EcarxVehicleAdapter.COMMON_OFF);
+    }
+
+    private void showClimatePresetEditor(String oldName, String commandsText) {
+        LinearLayout form = Ui.root(this, "Пресет климата");
+        EditText name = new EditText(this);
+        name.setHint("Название");
+        name.setText(oldName);
+        EditText commands = new EditText(this);
+        commands.setHint("functionId,zone,value по одной команде на строку");
+        commands.setMinLines(8);
+        commands.setText(commandsText);
+        Button save = Ui.button(this, "Сохранить");
+        Button cancel = Ui.button(this, "Назад");
+        save.setOnClickListener(v -> {
+            String presetName = name.getText().toString().trim();
+            EcarxVehicleAdapter.Command[] parsed = decodeCommands(commands.getText().toString());
+            if (presetName.isEmpty() || parsed.length == 0) {
+                Ui.toast(this, "Нужно имя и хотя бы одна команда");
+                return;
+            }
+            if (!oldName.isEmpty() && !oldName.equals(presetName)) deleteClimatePreset(oldName);
+            saveClimatePreset(presetName, encodeCommands(parsed));
+            showClimate();
+        });
+        cancel.setOnClickListener(v -> showClimate());
+        form.addView(Ui.text(this, "Формат: functionId,zone,value. Можно писать decimal или 0xHEX.", 14, false));
+        form.addView(name);
+        form.addView(commands);
+        form.addView(save);
+        form.addView(cancel);
+        setContentView(form);
+    }
+
+    private String defaultPresetText() {
+        return EcarxVehicleAdapter.hex(EcarxVehicleAdapter.HVAC_POWER) + ",0," + EcarxVehicleAdapter.hex(EcarxVehicleAdapter.COMMON_ON) + "\n"
+                + EcarxVehicleAdapter.hex(EcarxVehicleAdapter.HVAC_AUTO) + ",0," + EcarxVehicleAdapter.hex(EcarxVehicleAdapter.COMMON_ON) + "\n"
+                + EcarxVehicleAdapter.hex(EcarxVehicleAdapter.HVAC_FAN_SPEED) + ",0," + EcarxVehicleAdapter.hex(EcarxVehicleAdapter.FAN_SPEED_3);
+    }
+
+    private void saveClimatePreset(String name, String encoded) {
+        SharedPreferences prefs = getSharedPreferences(CLIMATE_PRESETS, MODE_PRIVATE);
+        ArrayList<String> names = climatePresetNames();
+        if (!names.contains(name)) names.add(name);
+        prefs.edit().putString(name, encoded).putString(CLIMATE_PRESET_ORDER, join(names)).apply();
+    }
+
+    private void deleteClimatePreset(String name) {
+        ArrayList<String> names = climatePresetNames();
+        names.remove(name);
+        getSharedPreferences(CLIMATE_PRESETS, MODE_PRIVATE).edit().remove(name).putString(CLIMATE_PRESET_ORDER, join(names)).apply();
+    }
+
+    private ArrayList<String> climatePresetNames() {
+        String order = getSharedPreferences(CLIMATE_PRESETS, MODE_PRIVATE).getString(CLIMATE_PRESET_ORDER, "");
+        ArrayList<String> names = new ArrayList<>();
+        for (String item : order.split("\n")) {
+            String name = item.trim();
+            if (!name.isEmpty()) names.add(name);
+        }
+        return names;
+    }
+
+    private String encodeCommands(EcarxVehicleAdapter.Command[] commands) {
+        StringBuilder sb = new StringBuilder();
+        for (EcarxVehicleAdapter.Command command : commands) {
+            sb.append(EcarxVehicleAdapter.hex(command.functionId))
+                    .append(",")
+                    .append(command.zone)
+                    .append(",")
+                    .append(EcarxVehicleAdapter.hex(command.value))
+                    .append("\n");
+        }
+        return sb.toString();
+    }
+
+    private EcarxVehicleAdapter.Command[] decodeCommands(String raw) {
+        ArrayList<EcarxVehicleAdapter.Command> commands = new ArrayList<>();
+        for (String line : raw.split("\n")) {
+            String clean = line.trim();
+            if (clean.isEmpty() || clean.startsWith("#")) continue;
+            String[] parts = clean.split(",");
+            if (parts.length < 2) continue;
+            try {
+                int functionId = parseNumber(parts[0]);
+                int zone = parts.length > 2 ? parseNumber(parts[1]) : 0;
+                int value = parseNumber(parts.length > 2 ? parts[2] : parts[1]);
+                commands.add(new EcarxVehicleAdapter.Command(functionId, zone, value));
+            } catch (Exception ignored) {
+            }
+        }
+        return commands.toArray(new EcarxVehicleAdapter.Command[0]);
+    }
+
+    private int parseNumber(String raw) {
+        String value = raw.trim().toLowerCase(Locale.ROOT);
+        if (value.startsWith("0x")) return (int) Long.parseLong(value.substring(2), 16);
+        return Integer.parseInt(value);
+    }
+
+    private String join(ArrayList<String> names) {
+        StringBuilder sb = new StringBuilder();
+        for (String name : names) sb.append(name).append("\n");
+        return sb.toString();
     }
 
     private void showAdas() {

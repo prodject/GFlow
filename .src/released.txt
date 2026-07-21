@@ -73,11 +73,11 @@ Functional coverage
 
 6. Climate presets
 - Preset UI text: implemented.
-- Save/edit/delete presets: missing.
+- Save/edit/delete presets: implemented for HVAC command presets stored in app preferences.
 - Quick templates comfort/cooling/winter: adapter implemented as multi-command HVAC templates.
 - Voice templates comfort/cooling/winter: implemented for explicit preset commands.
 - Comfort climate screen: missing.
-- Vehicle execution: implemented through HVAC function IDs; still needs zone-specific driver/passenger controls, safe temperature write encoding, and user-editable saved presets.
+- Vehicle execution: implemented through HVAC function IDs; still needs zone-specific driver/passenger controls and safe temperature write encoding.
 
 7. ADAS / driving
 - UI text: scaffold.
@@ -146,3 +146,4 @@ Implementation log
 - 2026-07-21: added Desktop local wallpaper/theme presets while keeping existing launch/remove/uninstall behavior.
 - 2026-07-21: implemented AccessibilityService foreground package tracking and persisted last active package.
 - 2026-07-21: added ADB/System autozoom controls that save package filters and font scale, then apply Settings.System.FONT_SCALE from the watchdog service when enabled.
+- 2026-07-21: added saved HVAC preset editor with create/edit/delete and persisted functionId/zone/value command lists.
