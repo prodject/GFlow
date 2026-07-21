@@ -82,7 +82,7 @@ Functional coverage
 7. ADAS / driving
 - UI text: scaffold.
 - Real function IDs found in IADAS.smali.
-- Direct toggles/readback: partial. On/off toggles, selected mode values and readback/support diagnostics are wired through EcarxVehicleAdapter for the high-confidence ADAS IDs. ACC/ICC controls now include switch mode, following time gap, ACC-with-TSR, speed-control mode, speed-limitation mode and experimental max cruising speed commands.
+- Direct toggles/readback: partial. On/off toggles, selected mode values and readback/support diagnostics are wired through EcarxVehicleAdapter for the high-confidence ADAS IDs. ACC/ICC controls now include switch mode, following time gap, ACC-with-TSR, speed-control mode, speed-limitation mode, experimental max cruising speed commands and an experimental Highway assist ready smart preset installer that only prepares ADAS settings.
 
 8. HUD / Cluster / OneOS
 - Media session listener: implemented.
@@ -209,3 +209,4 @@ Implementation log
 - 2026-07-21: replaced fixed smart climate preset behavior with SmartClimateController modes, cooldown, staged summer/winter algorithms, dual-zone targets, fogging/call handling and drying after trip.
 - 2026-07-21: added VehicleSignalStateAdapter for reflection-based AdaptAPI ISensor reads: cabin/outside temperature, speed, fuel, rain, ignition, gear and engine states. Smart climate now uses these real signals first and keeps manual UI values as fallback.
 - 2026-07-21: added ADAS ACC/ICC controls from IADAS.smali: ACC/ICC switch, following time gap, ACC-with-TSR, max cruising speed diagnostics/buttons, speed-control mode and speed-limitation mode.
+- 2026-07-21: added experimental Highway assist ready smart preset installer in ADAS. It enables ICC preparation, time gap, ACC-with-TSR, LKA, lane-change assist, auto lane-change assist and ACC/LCC switch while leaving final activation to stock vehicle controls.
