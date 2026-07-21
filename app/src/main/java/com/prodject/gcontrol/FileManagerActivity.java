@@ -81,7 +81,7 @@ public class FileManagerActivity extends Activity {
     private void pasteMove() {
         if (moveCandidate == null) { Ui.toast(this, "Файл не выбран"); return; }
         File target = new File(current, moveCandidate.getName());
-        boolean ok = moveCandidate.renameTo(target);
+        boolean ok = moveCandidate.renameTo(target) || copyThenDelete(moveCandidate, target);
         Ui.toast(this, ok ? "Перемещено" : "Не удалось переместить");
         moveCandidate = null;
         render();
@@ -114,9 +114,77 @@ public class FileManagerActivity extends Activity {
     }
 
     private void openUsb() {
+        ArrayList<File> roots = usbRoots();
+        if (!roots.isEmpty()) { current = roots.get(0); render(); } else Ui.toast(this, "USB-флешка не найдена");
+    }
+
+    private ArrayList<File> usbRoots() {
+        ArrayList<File> roots = new ArrayList<>();
+        try {
+            Object sm = getSystemService(Context.STORAGE_SERVICE);
+            Object volumes = sm.getClass().getMethod("getStorageVolumes").invoke(sm);
+            if (volumes instanceof List) {
+                for (Object volume : (List<?>) volumes) {
+                    File dir = volumeDirectory(volume);
+                    if (dir != null && dir.canRead() && isUsbLike(dir)) roots.add(dir);
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        if (!roots.isEmpty()) return roots;
         File storage = new File("/storage");
-        File[] roots = storage.listFiles(f -> f.canRead() && !f.getName().equals("emulated") && !f.getName().equals("self"));
-        if (roots != null && roots.length > 0) { current = roots[0]; render(); } else Ui.toast(this, "USB-флешка не найдена");
+        File[] fallback = storage.listFiles(f -> f.canRead() && isUsbLike(f));
+        if (fallback != null) roots.addAll(Arrays.asList(fallback));
+        return roots;
+    }
+
+    private File volumeDirectory(Object volume) {
+        try {
+            Object dir = volume.getClass().getMethod("getDirectory").invoke(volume);
+            if (dir instanceof File) return (File) dir;
+        } catch (Exception ignored) {
+        }
+        try {
+            Object path = volume.getClass().getMethod("getPath").invoke(volume);
+            if (path instanceof String) return new File((String) path);
+        } catch (Exception ignored) {
+        }
+        return null;
+    }
+
+    private boolean isUsbLike(File f) {
+        String name = f.getName();
+        String path = f.getAbsolutePath();
+        return f.isDirectory()
+                && !name.equals("emulated")
+                && !name.equals("self")
+                && !path.contains("/storage/emulated");
+    }
+
+    private boolean copyThenDelete(File source, File target) {
+        try {
+            copyRec(source, target);
+            return delete(source);
+        } catch (Exception e) {
+            android.util.Log.e("GControlFiles", "move fallback failed", e);
+            return false;
+        }
+    }
+
+    private void copyRec(File source, File target) throws IOException {
+        if (source.isDirectory()) {
+            target.mkdirs();
+            File[] files = source.listFiles();
+            if (files != null) for (File child : files) copyRec(child, new File(target, child.getName()));
+            return;
+        }
+        File parent = target.getParentFile();
+        if (parent != null) parent.mkdirs();
+        try (InputStream in = new FileInputStream(source); OutputStream out = new FileOutputStream(target)) {
+            byte[] buffer = new byte[64 * 1024];
+            int read;
+            while ((read = in.read(buffer)) != -1) out.write(buffer, 0, read);
+        }
     }
 
     private String storageInfo(File f) {
