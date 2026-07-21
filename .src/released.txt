@@ -115,6 +115,13 @@ Functional coverage
 - Watchdog accessibility service: partial. It tracks foreground package from TYPE_WINDOW_STATE_CHANGED events.
 - Active app tracking/autozoom: partial. ADB/System screen stores package filters and scale; AccessibilityService applies Settings.System.FONT_SCALE for matching foreground packages when enabled.
 
+12. Automation / smart logic
+- Smart presets: implemented. Users can create app-defined command presets from AdaptAPI function/zone/value lines, including float HVAC temperature writes.
+- Trigger engine: partial. Boot, foreground-app and manual trigger types are wired; deeper car-state triggers still need confirmed firmware signals.
+- Steering wheel button mapping: partial. The receiver stores the last key event and can map keyCode + gesture (press/hold/double) to a smart preset when firmware broadcasts enough key metadata.
+- User profiles: partial. Profiles save/recall seat memory slots and optionally run a smart preset for climate/drive/light settings. Actual seat memory execution remains firmware-dependent.
+- Smart climate: partial. A configurable hot/cold/target algorithm drives HVAC, fan, temperature, seat ventilation/heating and steering-wheel heat. It currently uses saved/test temperature values until cabin/outside temperature readback is mapped to confirmed vehicle signals.
+
 Implementation log
 - 2026-07-21: created initial coverage log.
 - 2026-07-21: selected reflection-based ECarX/AdaptAPI vehicle adapter as first real integration layer to avoid compile-time dependency on system APK classes.
@@ -181,3 +188,5 @@ Implementation log
 - 2026-07-21: added Experimental features dashboard entries for Scene modes, Ambience light and DayMode/Brightness. Scene modes cover Theater/Wash/Pet/Smoking/Parent-child/Romantic/Nap/Queen/Sleep/Camping/Meeting/Rear-row video/PSD passenger theater. Ambience covers theme colors/effects/control modes/music/welcome/voice/zones. DayMode covers day/night/auto, sync, backlight/screen/DIM/floodlight/electric mirror brightness diagnostics and test values.
 - 2026-07-21: added Experimental PAS / AVM screen with PAC/AVM start-stop, camera/readback diagnostics, radar modes, 3D surround positions, guide overlays, transparent model, look-down/top-view, turn-round/touring view and SAP/RCTA parking commands from IPAS/PAS sources.
 - 2026-07-21: added Experimental AVAS / Digital Key screen. AVAS exposes warning-sound switch, volume and sound-type controls from IVehicle with an in-app safety warning; Digital Key is diagnostics/readback-only for request, unpair, termination, suspension, pairing-failed, tracking and timeout statuses.
+- 2026-07-21: added AutomationEngine for user-created smart presets, boot/app/manual triggers, steering wheel key mappings, user profiles and smart climate execution.
+- 2026-07-21: added dashboard menus for Automation, Steering buttons, User profiles and Smart climate. BootReceiver, SteeringWheelReceiver and Accessibility foreground tracking now dispatch automation triggers.

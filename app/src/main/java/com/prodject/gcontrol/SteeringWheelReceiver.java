@@ -8,11 +8,13 @@ public class SteeringWheelReceiver extends BroadcastReceiver {
         if (intent == null) return;
         String command = textExtra(intent, "command", "cmd", "voice", "text");
         int keyCode = intExtra(intent, "keyCode", "keycode", "key_code", "code");
+        String gesture = gesture(intent);
         String event = "action=" + intent.getAction() + " key=" + keyCode + " command=" + command;
         context.getSharedPreferences("steering", Context.MODE_PRIVATE).edit()
                 .putString("last_event", event)
                 .putLong("last_event_at", System.currentTimeMillis())
                 .apply();
+        if (AutomationEngine.runSteering(context, keyCode, gesture)) return;
         if (command != null && !command.trim().isEmpty()) {
             CarCommandBus.send(context, "steering", command);
             openVoice(context, command, event);
@@ -49,5 +51,16 @@ public class SteeringWheelReceiver extends BroadcastReceiver {
             if (intent.hasExtra(name)) return intent.getIntExtra(name, 0);
         }
         return 0;
+    }
+
+    private String gesture(Intent intent) {
+        String value = textExtra(intent, "gesture", "actionType", "eventType", "keyAction");
+        if (value != null && !value.trim().isEmpty()) return value.trim().toLowerCase(Locale.ROOT);
+        int repeat = intExtra(intent, "repeatCount", "repeat", "longPress");
+        if (repeat > 0) return "hold";
+        String action = String.valueOf(intent.getAction()).toLowerCase(Locale.ROOT);
+        if (action.contains("long") || action.contains("hold")) return "hold";
+        if (action.contains("double")) return "double";
+        return "press";
     }
 }
