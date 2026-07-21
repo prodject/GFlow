@@ -117,6 +117,36 @@ public class MainActivity extends Activity {
         root.addView(b);
     }
 
+    private void addZoneCommands(LinearLayout root, String label, int functionId, int value, int... zones) {
+        for (int zone : zones) addCommand(root, label + " · " + zoneLabel(zone), functionId, zone, value);
+    }
+
+    private void addZoneDiagnostic(LinearLayout root, String label, int functionId, int... zones) {
+        Button b = Ui.button(this, "Диагностика зон: " + label);
+        b.setOnClickListener(v -> {
+            EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
+            StringBuilder sb = new StringBuilder(label).append("\n");
+            for (int zone : zones) {
+                sb.append(zoneLabel(zone)).append(": ")
+                        .append(adapter.support(functionId, zone).message).append("\n")
+                        .append(adapter.get(functionId, zone).message).append("\n");
+            }
+            root.addView(Ui.text(this, sb.toString(), 13, false), 2);
+        });
+        root.addView(b);
+    }
+
+    private String zoneLabel(int zone) {
+        if (zone == EcarxVehicleAdapter.ZONE_ALL) return "все зоны";
+        if (zone == EcarxVehicleAdapter.ZONE_DRIVER_LEFT) return "водитель/1L";
+        if (zone == EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT) return "пассажир/1R";
+        if (zone == EcarxVehicleAdapter.ZONE_ROW_2_LEFT) return "2L";
+        if (zone == EcarxVehicleAdapter.ZONE_ROW_2_RIGHT) return "2R";
+        if (zone == EcarxVehicleAdapter.ZONE_ROW_1_ALL) return "1 ряд";
+        if (zone == EcarxVehicleAdapter.ZONE_ROW_2_ALL) return "2 ряд";
+        return "zone=" + zone;
+    }
+
     private void addFloatCommand(LinearLayout root, String label, int functionId, int zone, float value) {
         Button b = Ui.button(this, label + " · " + EcarxVehicleAdapter.hex(functionId) + "/" + zone + "=" + value);
         b.setOnClickListener(v -> {
@@ -207,12 +237,16 @@ public class MainActivity extends Activity {
     }
     private void showCar() {
         LinearLayout root = commandRoot("Управление автомобилем");
-        root.addView(Ui.text(this, "BCM-функции из IBcm.smali. Часть команд зональная; zone=0 используется как базовый fallback.", 14, false));
+        root.addView(Ui.text(this, "BCM-функции из IBcm.smali. Зоны берутся из GlyCarAreaId: все=0x80000000, 1L=1, 1R=4, 2L=16, 2R=64.", 14, false));
         addDiagnostic(root, "BCM / Drive / Seat", EcarxVehicleAdapter.BCM_WINDOW, EcarxVehicleAdapter.BCM_DOOR, EcarxVehicleAdapter.BCM_DOOR_LOCK, EcarxVehicleAdapter.BCM_WIPER, EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.SEAT_POSITION_SET);
         addDiagnostic(root, "BCM двери/окна расширенно", EcarxVehicleAdapter.BCM_DOOR_POS, EcarxVehicleAdapter.BCM_DOOR_STATUS, EcarxVehicleAdapter.BCM_DOOR_OBSTACLE_DETECTED, EcarxVehicleAdapter.BCM_DOOR_ANTI_PINCH, EcarxVehicleAdapter.BCM_WINDOW_MOVING_STATE, EcarxVehicleAdapter.BCM_WINDOW_POS, EcarxVehicleAdapter.BCM_WINDOW_CURRENT_POS);
         addDiagnostic(root, "BCM кузов/датчики", EcarxVehicleAdapter.BCM_CHARGING_CAP, EcarxVehicleAdapter.BCM_FUEL_CAP, EcarxVehicleAdapter.BCM_REAR_MIRROR_ADJUST, EcarxVehicleAdapter.BCM_STEERING_WHEEL_ADJUST, EcarxVehicleAdapter.BCM_DISPLAY_POSITION, EcarxVehicleAdapter.BCM_RAIN_SENSOR_SENSITIVITY, EcarxVehicleAdapter.BCM_RAIN_SENSOR_SENSITIVITY_MIN, EcarxVehicleAdapter.BCM_RAIN_SENSOR_SENSITIVITY_MAX, EcarxVehicleAdapter.BCM_RAIN_SENSOR_SENSITIVITY_STEP);
+        addZoneDiagnostic(root, "Окна", EcarxVehicleAdapter.BCM_WINDOW, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.ZONE_ROW_2_LEFT, EcarxVehicleAdapter.ZONE_ROW_2_RIGHT);
+        addZoneDiagnostic(root, "Двери", EcarxVehicleAdapter.BCM_DOOR, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.ZONE_ROW_2_LEFT, EcarxVehicleAdapter.ZONE_ROW_2_RIGHT);
         addCommand(root, "Окна открыть", EcarxVehicleAdapter.BCM_WINDOW, EcarxVehicleAdapter.WINDOW_OPEN);
         addCommand(root, "Окна закрыть", EcarxVehicleAdapter.BCM_WINDOW, EcarxVehicleAdapter.WINDOW_CLOSE);
+        addZoneCommands(root, "Окно открыть", EcarxVehicleAdapter.BCM_WINDOW, EcarxVehicleAdapter.WINDOW_OPEN, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.ZONE_ROW_2_LEFT, EcarxVehicleAdapter.ZONE_ROW_2_RIGHT);
+        addZoneCommands(root, "Окно закрыть", EcarxVehicleAdapter.BCM_WINDOW, EcarxVehicleAdapter.WINDOW_CLOSE, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.ZONE_ROW_2_LEFT, EcarxVehicleAdapter.ZONE_ROW_2_RIGHT);
         addCommand(root, "Окна пауза", EcarxVehicleAdapter.BCM_WINDOW, EcarxVehicleAdapter.WINDOW_PAUSE);
         addCommand(root, "Окна half", EcarxVehicleAdapter.BCM_WINDOW, EcarxVehicleAdapter.WINDOW_HALF);
         addCommand(root, "Окна open pause", EcarxVehicleAdapter.BCM_WINDOW, EcarxVehicleAdapter.WINDOW_OPEN_PAUSE);
@@ -221,6 +255,8 @@ public class MainActivity extends Activity {
         addCommand(root, "Блокировка окон выкл", EcarxVehicleAdapter.BCM_WINDOW_LOCK, EcarxVehicleAdapter.COMMON_OFF);
         addCommand(root, "Двери открыть", EcarxVehicleAdapter.BCM_DOOR, EcarxVehicleAdapter.DOOR_OPEN);
         addCommand(root, "Двери закрыть", EcarxVehicleAdapter.BCM_DOOR, EcarxVehicleAdapter.DOOR_CLOSE);
+        addZoneCommands(root, "Дверь открыть", EcarxVehicleAdapter.BCM_DOOR, EcarxVehicleAdapter.DOOR_OPEN, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.ZONE_ROW_2_LEFT, EcarxVehicleAdapter.ZONE_ROW_2_RIGHT);
+        addZoneCommands(root, "Дверь закрыть", EcarxVehicleAdapter.BCM_DOOR, EcarxVehicleAdapter.DOOR_CLOSE, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.ZONE_ROW_2_LEFT, EcarxVehicleAdapter.ZONE_ROW_2_RIGHT);
         addCommand(root, "Двери пауза", EcarxVehicleAdapter.BCM_DOOR, EcarxVehicleAdapter.DOOR_PAUSE);
         addCommand(root, "Door control открыть", EcarxVehicleAdapter.BCM_DOOR_CONTROL, EcarxVehicleAdapter.DOOR_OPEN);
         addCommand(root, "Door control закрыть", EcarxVehicleAdapter.BCM_DOOR_CONTROL, EcarxVehicleAdapter.DOOR_CLOSE);
@@ -342,12 +378,19 @@ public class MainActivity extends Activity {
         addCommand(root, "Руль мягкий", EcarxVehicleAdapter.DRIVE_STEERING_MODE, EcarxVehicleAdapter.STEERING_MODE_SOFT);
         addCommand(root, "Руль динамичный", EcarxVehicleAdapter.DRIVE_STEERING_MODE, EcarxVehicleAdapter.STEERING_MODE_DYNAMIC);
         root.addView(Ui.text(this, "Профили и регулировки сидений из ISeat.smali.", 14, false));
+        addZoneDiagnostic(root, "Сиденье положение", EcarxVehicleAdapter.SEAT_POSITION_SET, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.ZONE_ROW_2_LEFT, EcarxVehicleAdapter.ZONE_ROW_2_RIGHT);
         addCommand(root, "Сиденье вперед", EcarxVehicleAdapter.SEAT_LENGTH, EcarxVehicleAdapter.SEAT_FORWARD);
         addCommand(root, "Сиденье назад", EcarxVehicleAdapter.SEAT_LENGTH, EcarxVehicleAdapter.SEAT_BACKWARD);
+        addZoneCommands(root, "Сиденье вперед", EcarxVehicleAdapter.SEAT_LENGTH, EcarxVehicleAdapter.SEAT_FORWARD, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT);
+        addZoneCommands(root, "Сиденье назад", EcarxVehicleAdapter.SEAT_LENGTH, EcarxVehicleAdapter.SEAT_BACKWARD, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT);
         addCommand(root, "Сиденье выше", EcarxVehicleAdapter.SEAT_HEIGHT, EcarxVehicleAdapter.SEAT_HEIGHT_UP);
         addCommand(root, "Сиденье ниже", EcarxVehicleAdapter.SEAT_HEIGHT, EcarxVehicleAdapter.SEAT_HEIGHT_DOWN);
+        addZoneCommands(root, "Сиденье выше", EcarxVehicleAdapter.SEAT_HEIGHT, EcarxVehicleAdapter.SEAT_HEIGHT_UP, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT);
+        addZoneCommands(root, "Сиденье ниже", EcarxVehicleAdapter.SEAT_HEIGHT, EcarxVehicleAdapter.SEAT_HEIGHT_DOWN, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT);
         addCommand(root, "Спинка вперед", EcarxVehicleAdapter.SEAT_BACKREST, EcarxVehicleAdapter.SEAT_BACKREST_FORWARD);
         addCommand(root, "Спинка назад", EcarxVehicleAdapter.SEAT_BACKREST, EcarxVehicleAdapter.SEAT_BACKREST_BACKWARD);
+        addZoneCommands(root, "Спинка вперед", EcarxVehicleAdapter.SEAT_BACKREST, EcarxVehicleAdapter.SEAT_BACKREST_FORWARD, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT);
+        addZoneCommands(root, "Спинка назад", EcarxVehicleAdapter.SEAT_BACKREST, EcarxVehicleAdapter.SEAT_BACKREST_BACKWARD, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT);
         addCommand(root, "Сохранить профиль 1", EcarxVehicleAdapter.SEAT_POSITION_SAVE, EcarxVehicleAdapter.SEAT_POSITION_1);
         addCommand(root, "Сохранить профиль 2", EcarxVehicleAdapter.SEAT_POSITION_SAVE, EcarxVehicleAdapter.SEAT_POSITION_2);
         addCommand(root, "Вызвать профиль 1", EcarxVehicleAdapter.SEAT_POSITION_SET, EcarxVehicleAdapter.SEAT_POSITION_1);
@@ -362,6 +405,8 @@ public class MainActivity extends Activity {
         addDiagnostic(root, "HVAC", EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.HVAC_AC, EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.HVAC_CIRCULATION, EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.HVAC_TEMP_MIN, EcarxVehicleAdapter.HVAC_TEMP_MAX, EcarxVehicleAdapter.HVAC_TEMP_STEP);
         addDiagnostic(root, "HVAC расширенный", EcarxVehicleAdapter.HVAC_TEMP_DUAL, EcarxVehicleAdapter.HVAC_TEMP_UNIT, EcarxVehicleAdapter.HVAC_DISPLAY_WINDOW_TAB, EcarxVehicleAdapter.HVAC_AQS_SWITCH, EcarxVehicleAdapter.HVAC_CO2_SWITCH, EcarxVehicleAdapter.HVAC_IONS_SWITCH, EcarxVehicleAdapter.HVAC_AIR_FRAGRANCE, EcarxVehicleAdapter.HVAC_FILTER_ELEMENT_LIFE, EcarxVehicleAdapter.HVAC_MODULE_CONNECT_STATUS);
         addFloatDiagnostic(root, "Температура driver/passenger", EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT);
+        addZoneDiagnostic(root, "Подогрев сидений", EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.ZONE_ROW_2_LEFT, EcarxVehicleAdapter.ZONE_ROW_2_RIGHT);
+        addZoneDiagnostic(root, "Вентиляция сидений", EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT);
         Button comfortPanel = Ui.button(this, "Комфортный климат");
         comfortPanel.setOnClickListener(v -> showComfortClimate());
         root.addView(comfortPanel);
@@ -383,12 +428,12 @@ public class MainActivity extends Activity {
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_AC, EcarxVehicleAdapter.COMMON_ON),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_AC_MAX, EcarxVehicleAdapter.COMMON_ON),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_5),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, EcarxVehicleAdapter.SEAT_LEVEL_2));
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_LEVEL_2));
         addPreset(root, "Пресет Зима",
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_ON),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_DEFROST_FRONT, EcarxVehicleAdapter.COMMON_ON),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_DEFROST_REAR, EcarxVehicleAdapter.COMMON_ON),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.SEAT_LEVEL_2),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_LEVEL_2),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT, EcarxVehicleAdapter.WHEEL_HEAT_MID));
         addCommand(root, "Климат включить", EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_ON);
         addCommand(root, "Климат выключить", EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_OFF);
@@ -465,8 +510,14 @@ public class MainActivity extends Activity {
         addCommand(root, "Sweeping all", EcarxVehicleAdapter.HVAC_SWEEPING_MODE, EcarxVehicleAdapter.SWEEPING_MODE_ALL);
         addCommand(root, "Sweeping custom", EcarxVehicleAdapter.HVAC_SWEEPING_MODE, EcarxVehicleAdapter.SWEEPING_MODE_CUSTOM);
         addCommand(root, "Подогрев сиденья ур.1", EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.SEAT_LEVEL_1);
+        addZoneCommands(root, "Подогрев сиденья ур.1", EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.SEAT_LEVEL_1, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.ZONE_ROW_2_LEFT, EcarxVehicleAdapter.ZONE_ROW_2_RIGHT);
+        addZoneCommands(root, "Подогрев сиденья off", EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.COMMON_OFF, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.ZONE_ROW_2_LEFT, EcarxVehicleAdapter.ZONE_ROW_2_RIGHT);
         addCommand(root, "Вентиляция сиденья ур.1", EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, EcarxVehicleAdapter.SEAT_LEVEL_1);
+        addZoneCommands(root, "Вентиляция сиденья ур.1", EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, EcarxVehicleAdapter.SEAT_LEVEL_1, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT);
+        addZoneCommands(root, "Вентиляция сиденья off", EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, EcarxVehicleAdapter.COMMON_OFF, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT);
         addCommand(root, "Массаж сиденья ур.1", EcarxVehicleAdapter.HVAC_SEAT_MASSAGE, EcarxVehicleAdapter.SEAT_LEVEL_1);
+        addZoneCommands(root, "Массаж сиденья ур.1", EcarxVehicleAdapter.HVAC_SEAT_MASSAGE, EcarxVehicleAdapter.SEAT_LEVEL_1, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT);
+        addZoneCommands(root, "Массаж сиденья off", EcarxVehicleAdapter.HVAC_SEAT_MASSAGE, EcarxVehicleAdapter.COMMON_OFF, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT);
         addCommand(root, "Подогрев руля low", EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT, EcarxVehicleAdapter.WHEEL_HEAT_LOW);
         addCommand(root, "Подогрев руля off", EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT, EcarxVehicleAdapter.COMMON_OFF);
     }
@@ -509,7 +560,7 @@ public class MainActivity extends Activity {
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_ON),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_5),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_LEG_AND_FRONT_WINDOW),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.SEAT_LEVEL_2),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_LEVEL_2),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT, EcarxVehicleAdapter.WHEEL_HEAT_MID));
         addCommand(root, "Power on", EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_ON);
         addCommand(root, "Power off", EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_OFF);
@@ -526,8 +577,12 @@ public class MainActivity extends Activity {
         addCommand(root, "Обдув все", EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_ALL);
         addCommand(root, "Seat heat off", EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.COMMON_OFF);
         addCommand(root, "Seat heat 2", EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.SEAT_LEVEL_2);
+        addZoneCommands(root, "Seat heat 2", EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.SEAT_LEVEL_2, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT);
+        addZoneCommands(root, "Seat heat off", EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.COMMON_OFF, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT);
         addCommand(root, "Seat vent off", EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, EcarxVehicleAdapter.COMMON_OFF);
         addCommand(root, "Seat vent 2", EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, EcarxVehicleAdapter.SEAT_LEVEL_2);
+        addZoneCommands(root, "Seat vent 2", EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, EcarxVehicleAdapter.SEAT_LEVEL_2, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT);
+        addZoneCommands(root, "Seat vent off", EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, EcarxVehicleAdapter.COMMON_OFF, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT);
         addCommand(root, "Wheel heat off", EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT, EcarxVehicleAdapter.COMMON_OFF);
         addCommand(root, "Wheel heat mid", EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT, EcarxVehicleAdapter.WHEEL_HEAT_MID);
     }

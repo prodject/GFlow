@@ -7,8 +7,19 @@ import java.util.Locale;
 final class EcarxVehicleAdapter {
     static final int COMMON_OFF = 0x0;
     static final int COMMON_ON = 0x1;
+    static final int ZONE_ALL = 0x80000000;
     static final int ZONE_DRIVER_LEFT = 0x1;
+    static final int ZONE_ROW_1_CENTER = 0x2;
     static final int ZONE_PASSENGER_RIGHT = 0x4;
+    static final int ZONE_ROW_1_ALL = 0x8;
+    static final int ZONE_ROW_2_LEFT = 0x10;
+    static final int ZONE_ROW_2_CENTER = 0x20;
+    static final int ZONE_ROW_2_RIGHT = 0x40;
+    static final int ZONE_ROW_2_ALL = 0x80;
+    static final int ZONE_ROW_3_LEFT = 0x100;
+    static final int ZONE_ROW_3_CENTER = 0x200;
+    static final int ZONE_ROW_3_RIGHT = 0x400;
+    static final int ZONE_ROW_3_ALL = 0x800;
 
     static final int HVAC_POWER = 0x10010100;
     static final int HVAC_AUTO = 0x10010200;
@@ -332,7 +343,7 @@ final class EcarxVehicleAdapter {
     }
 
     Result set(int functionId, int value) {
-        return set(functionId, 0, value);
+        return set(functionId, defaultZone(functionId), value);
     }
 
     Result set(int functionId, int zone, int value) {
@@ -356,7 +367,7 @@ final class EcarxVehicleAdapter {
     }
 
     Result get(int functionId) {
-        return get(functionId, 0);
+        return get(functionId, defaultZone(functionId));
     }
 
     Result get(int functionId, int zone) {
@@ -402,7 +413,7 @@ final class EcarxVehicleAdapter {
     }
 
     Result support(int functionId) {
-        return support(functionId, 0);
+        return support(functionId, defaultZone(functionId));
     }
 
     Result support(int functionId, int zone) {
@@ -460,6 +471,42 @@ final class EcarxVehicleAdapter {
         carFunction = getter.invoke(car);
         if (carFunction == null) throw new IllegalStateException("getICarFunction returned null");
         return carFunction;
+    }
+
+    private static int defaultZone(int functionId) {
+        switch (functionId) {
+            case HVAC_SEAT_HEATING:
+            case HVAC_SEAT_VENTILATION:
+            case HVAC_SEAT_MASSAGE:
+            case HVAC_AUTO_SEAT_HEATING:
+            case HVAC_AUTO_SEAT_VENTILATION:
+            case HVAC_AUTO_SEAT_MASSAGE:
+            case SEAT_LENGTH:
+            case SEAT_HEIGHT:
+            case SEAT_BACKREST:
+            case SEAT_POSITION_SAVE:
+            case SEAT_POSITION_SET:
+            case SEAT_RESTORE:
+            case SEAT_ONE_KEY_COMFORT:
+                return ZONE_DRIVER_LEFT;
+            case BCM_WINDOW:
+            case BCM_WINDOW_LOCK:
+            case BCM_WINDOW_POS:
+            case BCM_WINDOW_CURRENT_POS:
+            case BCM_WINDOW_MOVING_STATE:
+            case BCM_DOOR:
+            case BCM_DOOR_CONTROL:
+            case BCM_DOOR_LOCK:
+            case BCM_DOOR_POS:
+            case BCM_DOOR_STATUS:
+            case BCM_CHILD_SAFETY_LOCK:
+            case BCM_CHILD_SAFETY_LOCK_SCENE:
+                return ZONE_ALL;
+            case BCM_REAR_MIRROR_ADJUST:
+                return ZONE_DRIVER_LEFT;
+            default:
+                return 0;
+        }
     }
 
     private void callOptional(Object target, String name) {
