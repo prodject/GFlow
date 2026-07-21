@@ -661,52 +661,84 @@ public class MainActivity extends Activity {
 
     private void showSmartClimate() {
         LinearLayout root = commandRoot("Умный кондиционер");
-        SharedPreferences prefs = AutomationEngine.prefs(this);
+        SharedPreferences prefs = SmartClimateController.prefs(this);
         CheckBox enabled = new CheckBox(this);
-        enabled.setText("Запускать после boot/remote-start события");
+        enabled.setText("Контроллер включен");
         enabled.setTextSize(16);
-        enabled.setChecked(prefs.getBoolean(AutomationEngine.KEY_SMART_CLIMATE, false));
+        enabled.setChecked(prefs.getBoolean(SmartClimateController.KEY_ENABLED, false));
+        EditText mode = new EditText(this);
+        mode.setHint("off / fast_cool / fast_heat / stabilize / maintain / dry / summer");
+        mode.setText(prefs.getString(SmartClimateController.KEY_MODE, SmartClimateController.MODE_OFF));
         EditText cabin = new EditText(this);
         cabin.setHint("Текущая температура салона для теста");
-        cabin.setText(String.valueOf(prefs.getFloat(AutomationEngine.KEY_CABIN_TEMP, 26.0f)));
+        cabin.setText(String.valueOf(prefs.getFloat(SmartClimateController.KEY_CABIN_TEMP, 26.0f)));
         EditText outside = new EditText(this);
         outside.setHint("Внешняя температура для теста");
-        outside.setText(String.valueOf(prefs.getFloat(AutomationEngine.KEY_OUTSIDE_TEMP, 26.0f)));
-        EditText target = new EditText(this);
-        target.setHint("Целевая температура");
-        target.setText(String.valueOf(prefs.getFloat(AutomationEngine.KEY_SMART_TARGET, 22.0f)));
-        EditText hot = new EditText(this);
-        hot.setHint("Порог жары");
-        hot.setText(String.valueOf(prefs.getFloat(AutomationEngine.KEY_SMART_HOT, 27.0f)));
-        EditText cold = new EditText(this);
-        cold.setHint("Порог холода");
-        cold.setText(String.valueOf(prefs.getFloat(AutomationEngine.KEY_SMART_COLD, 8.0f)));
+        outside.setText(String.valueOf(prefs.getFloat(SmartClimateController.KEY_OUTSIDE_TEMP, 26.0f)));
+        EditText driverTarget = new EditText(this);
+        driverTarget.setHint("Цель водительской зоны");
+        driverTarget.setText(String.valueOf(prefs.getFloat(SmartClimateController.KEY_DRIVER_TARGET, 22.0f)));
+        EditText passengerTarget = new EditText(this);
+        passengerTarget.setHint("Цель пассажирской зоны");
+        passengerTarget.setText(String.valueOf(prefs.getFloat(SmartClimateController.KEY_PASSENGER_TARGET, 22.0f)));
+        EditText engineMinutes = new EditText(this);
+        engineMinutes.setHint("Минуты работы двигателя");
+        engineMinutes.setText(String.valueOf(prefs.getInt(SmartClimateController.KEY_ENGINE_MINUTES, 0)));
+        CheckBox fogging = new CheckBox(this);
+        fogging.setText("Запотевание стекол");
+        fogging.setChecked(prefs.getBoolean(SmartClimateController.KEY_FOGGING, false));
+        CheckBox call = new CheckBox(this);
+        call.setText("Активный звонок");
+        call.setChecked(prefs.getBoolean(SmartClimateController.KEY_CALL_ACTIVE, false));
+        CheckBox dryAfterTrip = new CheckBox(this);
+        dryAfterTrip.setText("Просушка после поездки");
+        dryAfterTrip.setChecked(prefs.getBoolean(SmartClimateController.KEY_DRY_AFTER_TRIP, true));
         Button save = Ui.button(this, "Сохранить настройки");
         save.setOnClickListener(v -> {
             prefs.edit()
-                    .putBoolean(AutomationEngine.KEY_SMART_CLIMATE, enabled.isChecked())
-                    .putFloat(AutomationEngine.KEY_CABIN_TEMP, AutomationEngine.parseFloat(cabin.getText().toString(), 26.0f))
-                    .putFloat(AutomationEngine.KEY_OUTSIDE_TEMP, AutomationEngine.parseFloat(outside.getText().toString(), 26.0f))
-                    .putFloat(AutomationEngine.KEY_SMART_TARGET, AutomationEngine.parseFloat(target.getText().toString(), 22.0f))
-                    .putFloat(AutomationEngine.KEY_SMART_HOT, AutomationEngine.parseFloat(hot.getText().toString(), 27.0f))
-                    .putFloat(AutomationEngine.KEY_SMART_COLD, AutomationEngine.parseFloat(cold.getText().toString(), 8.0f))
+                    .putBoolean(SmartClimateController.KEY_ENABLED, enabled.isChecked())
+                    .putString(SmartClimateController.KEY_MODE, mode.getText().toString().trim())
+                    .putFloat(SmartClimateController.KEY_CABIN_TEMP, AutomationEngine.parseFloat(cabin.getText().toString(), 26.0f))
+                    .putFloat(SmartClimateController.KEY_OUTSIDE_TEMP, AutomationEngine.parseFloat(outside.getText().toString(), 26.0f))
+                    .putFloat(SmartClimateController.KEY_DRIVER_TARGET, AutomationEngine.parseFloat(driverTarget.getText().toString(), 22.0f))
+                    .putFloat(SmartClimateController.KEY_PASSENGER_TARGET, AutomationEngine.parseFloat(passengerTarget.getText().toString(), 22.0f))
+                    .putInt(SmartClimateController.KEY_ENGINE_MINUTES, AutomationEngine.parseInt(engineMinutes.getText().toString(), 0))
+                    .putBoolean(SmartClimateController.KEY_FOGGING, fogging.isChecked())
+                    .putBoolean(SmartClimateController.KEY_CALL_ACTIVE, call.isChecked())
+                    .putBoolean(SmartClimateController.KEY_DRY_AFTER_TRIP, dryAfterTrip.isChecked())
                     .apply();
             Ui.toast(this, "Smart climate сохранен");
         });
-        Button run = Ui.button(this, "Запустить сейчас");
+        Button run = Ui.button(this, "Контроллер: шаг сейчас");
         run.setOnClickListener(v -> {
             save.performClick();
             root.addView(Ui.text(this, AutomationEngine.runSmartClimate(this), 13, false), 2);
         });
-        root.addView(Ui.text(this, "Логика: жарко - A/C, 18..target, средний/сильный вентилятор и вентиляция сиденья; холодно - дефрост, тепло, подогрев сиденья/руля; близко к цели - AUTO и мягкий вентилятор.", 14, false));
+        Button resetCooldown = Ui.button(this, "Сбросить минутный cooldown");
+        resetCooldown.setOnClickListener(v -> {
+            prefs.edit().putLong(SmartClimateController.KEY_LAST_APPLY_AT, 0L).apply();
+            Ui.toast(this, "Cooldown сброшен");
+        });
+        Button dry = Ui.button(this, "Просушка сейчас");
+        dry.setOnClickListener(v -> root.addView(Ui.text(this, SmartClimateController.dryAfterTrip(this), 13, false), 2));
+        Button log = Ui.button(this, "Журнал климата");
+        log.setOnClickListener(v -> panel("Журнал умного климата", SmartClimateController.log(this)));
+        root.addView(Ui.text(this, "Режимы: off, fast_cool, fast_heat, stabilize, maintain, dry, summer. Контроллер не меняет настройки чаще одного раза в минуту, учитывает салон/улицу, минуты двигателя, запотевание, звонок и отдельные зоны.", 14, false));
         root.addView(enabled);
+        root.addView(mode);
         root.addView(cabin);
         root.addView(outside);
-        root.addView(target);
-        root.addView(hot);
-        root.addView(cold);
+        root.addView(driverTarget);
+        root.addView(passengerTarget);
+        root.addView(engineMinutes);
+        root.addView(fogging);
+        root.addView(call);
+        root.addView(dryAfterTrip);
         root.addView(save);
         root.addView(run);
+        root.addView(resetCooldown);
+        root.addView(dry);
+        root.addView(log);
     }
 
     private void saveAutomationPreset(String oldName, String newName, String body) {

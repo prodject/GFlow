@@ -258,38 +258,11 @@ final class AutomationEngine {
     }
 
     static String runSmartClimate(Context context) {
-        SharedPreferences p = prefs(context);
-        float cabin = p.getFloat(KEY_CABIN_TEMP, 26.0f);
-        float outside = p.getFloat(KEY_OUTSIDE_TEMP, cabin);
-        float target = p.getFloat(KEY_SMART_TARGET, 22.0f);
-        float hot = p.getFloat(KEY_SMART_HOT, 27.0f);
-        float cold = p.getFloat(KEY_SMART_COLD, 8.0f);
-        EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(context);
-        ArrayList<String> out = new ArrayList<>();
-        out.add("Smart climate cabin=" + cabin + " outside=" + outside + " target=" + target);
-        out.add(adapter.set(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_ON).message);
-        if (cabin >= hot || outside >= hot) {
-            out.add(adapter.set(EcarxVehicleAdapter.HVAC_AC, EcarxVehicleAdapter.COMMON_ON).message);
-            out.add(adapter.setFloat(EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, Math.max(18.0f, target)).message);
-            out.add(adapter.setFloat(EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, Math.max(18.0f, target)).message);
-            out.add(adapter.set(EcarxVehicleAdapter.HVAC_FAN_SPEED, cabin - target > 4 ? EcarxVehicleAdapter.FAN_SPEED_5 : EcarxVehicleAdapter.FAN_SPEED_3).message);
-            out.add(adapter.set(EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, cabin - target > 2 ? EcarxVehicleAdapter.SEAT_LEVEL_2 : EcarxVehicleAdapter.SEAT_LEVEL_1).message);
-        } else if (cabin <= cold || outside <= cold) {
-            out.add(adapter.set(EcarxVehicleAdapter.HVAC_DEFROST_FRONT, EcarxVehicleAdapter.COMMON_ON).message);
-            out.add(adapter.setFloat(EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, Math.min(26.0f, target + 3.0f)).message);
-            out.add(adapter.set(EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_4).message);
-            out.add(adapter.set(EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_LEVEL_2).message);
-            out.add(adapter.set(EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT, EcarxVehicleAdapter.WHEEL_HEAT_MID).message);
-        } else {
-            out.add(adapter.set(EcarxVehicleAdapter.HVAC_AUTO, EcarxVehicleAdapter.COMMON_ON).message);
-            out.add(adapter.setFloat(EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, target).message);
-            out.add(adapter.set(EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_AUTO).message);
-        }
-        return joinLines(out);
+        return SmartClimateController.tick(context);
     }
 
     static void runSmartClimateIfEnabled(Context context) {
-        if (prefs(context).getBoolean(KEY_SMART_CLIMATE, false)) runSmartClimate(context);
+        if (SmartClimateController.prefs(context).getBoolean(SmartClimateController.KEY_ENABLED, false)) runSmartClimate(context);
     }
 
     static SharedPreferences prefs(Context context) {
@@ -523,8 +496,8 @@ final class AutomationEngine {
         RunDecision matches(Context context) {
             SharedPreferences p = prefs(context);
             if ("profile".equals(key)) return compare(p.getString(KEY_ACTIVE_PROFILE, ""), value);
-            if ("cabinTemp".equals(key)) return compareNumber(p.getFloat(KEY_CABIN_TEMP, 0f), op, parseFloat(value, 0f), key);
-            if ("outsideTemp".equals(key)) return compareNumber(p.getFloat(KEY_OUTSIDE_TEMP, 0f), op, parseFloat(value, 0f), key);
+            if ("cabinTemp".equals(key)) return compareNumber(SmartClimateController.prefs(context).getFloat(SmartClimateController.KEY_CABIN_TEMP, p.getFloat(KEY_CABIN_TEMP, 0f)), op, parseFloat(value, 0f), key);
+            if ("outsideTemp".equals(key)) return compareNumber(SmartClimateController.prefs(context).getFloat(SmartClimateController.KEY_OUTSIDE_TEMP, p.getFloat(KEY_OUTSIDE_TEMP, 0f)), op, parseFloat(value, 0f), key);
             if ("time".equals(key)) return matchTime(value);
             if ("weekday".equals(key)) return matchWeekday(value);
             if ("lastApp".equals(key)) return compare(context.getSharedPreferences(AppWatchdogAccessibilityService.PREFS, Context.MODE_PRIVATE).getString(AppWatchdogAccessibilityService.KEY_LAST_PACKAGE, ""), value);
