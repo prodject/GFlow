@@ -169,7 +169,9 @@ final class EcarxVehicleAdapter {
     static final int BCM_SUNCURT_OPEN = 0x21200400;
     static final int BCM_SUNCURT_CLOSE = 0x21200500;
     static final int BCM_MIRROR_FOLD = 0x21060100;
+    static final int BCM_REAR_MIRROR_ADJUST = 0x21060200;
     static final int BCM_MIRROR_DEFROST = 0x21110600;
+    static final int BCM_STEERING_WHEEL_ADJUST = 0x21070100;
     static final int BCM_READING_LIGHT = 0x21051300;
     static final int BCM_ALL_READING_LIGHTS = 0x21110300;
     static final int BCM_CUSTOM_KEY = 0x21110100;
@@ -252,6 +254,7 @@ final class EcarxVehicleAdapter {
     static final int ICC_NOTIFY_NORMAL = 0x21110800;
     static final int ICC_NOTIFY_WARNING = 0x21110804;
     static final int ICC_NOTIFY_ERROR = 0x21110805;
+    static final int MIRROR_ADJUST_ACTIVE = 0x1;
 
     static final int ADAS_AEB = 0x20070e00;
     static final int ADAS_FCW = 0x200e0100;

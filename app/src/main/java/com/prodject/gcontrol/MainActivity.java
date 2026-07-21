@@ -210,7 +210,7 @@ public class MainActivity extends Activity {
         root.addView(Ui.text(this, "BCM-функции из IBcm.smali. Часть команд зональная; zone=0 используется как базовый fallback.", 14, false));
         addDiagnostic(root, "BCM / Drive / Seat", EcarxVehicleAdapter.BCM_WINDOW, EcarxVehicleAdapter.BCM_DOOR, EcarxVehicleAdapter.BCM_DOOR_LOCK, EcarxVehicleAdapter.BCM_WIPER, EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.SEAT_POSITION_SET);
         addDiagnostic(root, "BCM двери/окна расширенно", EcarxVehicleAdapter.BCM_DOOR_POS, EcarxVehicleAdapter.BCM_DOOR_STATUS, EcarxVehicleAdapter.BCM_DOOR_OBSTACLE_DETECTED, EcarxVehicleAdapter.BCM_DOOR_ANTI_PINCH, EcarxVehicleAdapter.BCM_WINDOW_MOVING_STATE, EcarxVehicleAdapter.BCM_WINDOW_POS, EcarxVehicleAdapter.BCM_WINDOW_CURRENT_POS);
-        addDiagnostic(root, "BCM кузов/датчики", EcarxVehicleAdapter.BCM_CHARGING_CAP, EcarxVehicleAdapter.BCM_FUEL_CAP, EcarxVehicleAdapter.BCM_DISPLAY_POSITION, EcarxVehicleAdapter.BCM_RAIN_SENSOR_SENSITIVITY, EcarxVehicleAdapter.BCM_RAIN_SENSOR_SENSITIVITY_MIN, EcarxVehicleAdapter.BCM_RAIN_SENSOR_SENSITIVITY_MAX, EcarxVehicleAdapter.BCM_RAIN_SENSOR_SENSITIVITY_STEP);
+        addDiagnostic(root, "BCM кузов/датчики", EcarxVehicleAdapter.BCM_CHARGING_CAP, EcarxVehicleAdapter.BCM_FUEL_CAP, EcarxVehicleAdapter.BCM_REAR_MIRROR_ADJUST, EcarxVehicleAdapter.BCM_STEERING_WHEEL_ADJUST, EcarxVehicleAdapter.BCM_DISPLAY_POSITION, EcarxVehicleAdapter.BCM_RAIN_SENSOR_SENSITIVITY, EcarxVehicleAdapter.BCM_RAIN_SENSOR_SENSITIVITY_MIN, EcarxVehicleAdapter.BCM_RAIN_SENSOR_SENSITIVITY_MAX, EcarxVehicleAdapter.BCM_RAIN_SENSOR_SENSITIVITY_STEP);
         addCommand(root, "Окна открыть", EcarxVehicleAdapter.BCM_WINDOW, EcarxVehicleAdapter.WINDOW_OPEN);
         addCommand(root, "Окна закрыть", EcarxVehicleAdapter.BCM_WINDOW, EcarxVehicleAdapter.WINDOW_CLOSE);
         addCommand(root, "Окна пауза", EcarxVehicleAdapter.BCM_WINDOW, EcarxVehicleAdapter.WINDOW_PAUSE);
@@ -239,6 +239,16 @@ public class MainActivity extends Activity {
         addCommand(root, "Шторка открыть", EcarxVehicleAdapter.BCM_SUNCURT_OPEN, EcarxVehicleAdapter.COMMON_ON);
         addCommand(root, "Шторка закрыть", EcarxVehicleAdapter.BCM_SUNCURT_CLOSE, EcarxVehicleAdapter.COMMON_ON);
         addCommand(root, "Зеркала сложить/переключить", EcarxVehicleAdapter.BCM_MIRROR_FOLD, EcarxVehicleAdapter.COMMON_ON);
+        Button mirrorDialog = Ui.button(this, "Открыть штатную регулировку зеркал · ControlBoard.showMirrorDialog");
+        mirrorDialog.setOnClickListener(v -> {
+            EcarxControlBoardAdapter.Result result = new EcarxControlBoardAdapter(this).showMirrorDialog();
+            Ui.toast(this, result.success ? "Диалог открыт" : "Диалог не открыт");
+            root.addView(Ui.text(this, result.message, 13, false), 2);
+        });
+        root.addView(mirrorDialog);
+        root.addView(Ui.text(this, new EcarxControlBoardAdapter(this).availability(), 13, false));
+        addCommand(root, "Зеркало left adjust mode", EcarxVehicleAdapter.BCM_REAR_MIRROR_ADJUST, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.MIRROR_ADJUST_ACTIVE);
+        addCommand(root, "Зеркало right adjust mode", EcarxVehicleAdapter.BCM_REAR_MIRROR_ADJUST, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.MIRROR_ADJUST_ACTIVE);
         addCommand(root, "Зеркала defrost вкл", EcarxVehicleAdapter.BCM_MIRROR_DEFROST, EcarxVehicleAdapter.COMMON_ON);
         addCommand(root, "Зеркала defrost выкл", EcarxVehicleAdapter.BCM_MIRROR_DEFROST, EcarxVehicleAdapter.COMMON_OFF);
         addCommand(root, "Power on/off", EcarxVehicleAdapter.BCM_POWER_ONOFF, EcarxVehicleAdapter.COMMON_ON);
