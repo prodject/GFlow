@@ -63,6 +63,7 @@ public class MainActivity extends Activity {
         add(grid, "Автомобиль", this::showCar);
         add(grid, "Климат", this::showClimate);
         add(grid, "ADAS", this::showAdas);
+        add(grid, "Парковка / APA", this::showParkingApa);
         add(grid, "HUD / OneOS", this::showHud);
         add(grid, "Браузер / Погода", this::showWeb);
         add(grid, "Рабочий стол", this::showLauncher);
@@ -167,6 +168,44 @@ public class MainActivity extends Activity {
     private void addCommandGroup(LinearLayout root, String title, int functionId, String[] labels, int[] values) {
         root.addView(Ui.text(this, title, 14, true));
         for (int i = 0; i < labels.length; i++) addCommand(root, labels[i], functionId, values[i]);
+    }
+
+    private void addSignalCommand(LinearLayout root, String label, String methodName, int signalId, int value) {
+        Button b = Ui.button(this, label + " · " + CarSignalManagerAdapter.hex(signalId) + "=" + CarSignalManagerAdapter.hex(value));
+        b.setOnClickListener(v -> {
+            CarSignalManagerAdapter.Result result = new CarSignalManagerAdapter(this).set(methodName, signalId, value);
+            Ui.toast(this, result.success ? "Команда отправлена" : "Команда не выполнена");
+            root.addView(Ui.text(this, result.message, 13, false), 2);
+        });
+        root.addView(b);
+    }
+
+    private void addSignalDiagnostic(LinearLayout root, String label, Object... methodSignalPairs) {
+        Button b = Ui.button(this, "Диагностика raw: " + label);
+        b.setOnClickListener(v -> {
+            CarSignalManagerAdapter adapter = new CarSignalManagerAdapter(this);
+            StringBuilder sb = new StringBuilder(label).append("\n");
+            for (int i = 0; i + 1 < methodSignalPairs.length; i += 2) {
+                String method = (String) methodSignalPairs[i];
+                int signalId = (Integer) methodSignalPairs[i + 1];
+                sb.append(adapter.get(method, signalId).message).append("\n");
+            }
+            root.addView(Ui.text(this, sb.toString(), 13, false), 2);
+        });
+        root.addView(b);
+    }
+
+    private void addHalPropertyDiagnostic(LinearLayout root, String label, int... propertyIds) {
+        Button b = Ui.button(this, "HAL свойства: " + label);
+        b.setOnClickListener(v -> {
+            CarSignalManagerAdapter adapter = new CarSignalManagerAdapter(this);
+            StringBuilder sb = new StringBuilder(label).append("\n");
+            for (int propertyId : propertyIds) {
+                sb.append(adapter.rawHalProperty(propertyId, "VehiclePropertyVEH2").message).append("\n");
+            }
+            root.addView(Ui.text(this, sb.toString(), 13, false), 2);
+        });
+        root.addView(b);
     }
 
     private String zoneLabel(int zone) {
@@ -722,6 +761,63 @@ public class MainActivity extends Activity {
         StringBuilder sb = new StringBuilder();
         for (String name : names) sb.append(name).append("\n");
         return sb.toString();
+    }
+
+    private void showParkingApa() {
+        LinearLayout root = commandRoot("Парковка / APA");
+        root.addView(Ui.text(this, "Штатный вход в автопарковку найден через BCM custom key 0x65. Raw APA/RPA сигналы доступны только через Experimental features.", 14, false));
+        addCommand(root, "Открыть штатный Auto Park UI", EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_AUTO_PARK);
+        addCommand(root, "Открыть 360 panorama", EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_360);
+        addDiagnostic(root, "BCM parking entry", EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.ADAS_PDC_WARNING_VOLUME);
+        if (!experimentalFeaturesEnabled()) {
+            root.addView(Ui.text(this, "Включи Settings -> Experimental features, чтобы увидеть raw APA/RPA диагностику и кнопки.", 14, false));
+            return;
+        }
+        root.addView(Ui.text(this, "Experimental APA/RPA: CarSignalManager raw methods. Значения взяты из annotation smali; выполнение зависит от доступа к системному car service.", 14, false));
+        addSignalDiagnostic(root, "APA/RPA status",
+                "getDrvrAsscSysDisp", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_DISP,
+                "getDrvrAsscSysSts", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_STS,
+                "getRemPrkgEnaSts", CarSignalManagerAdapter.SIG_REM_PRKG_ENA_STS,
+                "getICCVehSts", CarSignalManagerAdapter.SIG_ICC_VEH_STS);
+        addSignalCommand(root, "APA on button", "setDrvrAsscSysBtnPush", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_BTN_PUSH, CarSignalManagerAdapter.APA_BUTTON_ON);
+        addSignalCommand(root, "APA undo", "setDrvrAsscSysBtnPush", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_BTN_PUSH, CarSignalManagerAdapter.APA_UNDO);
+        addSignalCommand(root, "APA cancel", "setDrvrAsscSysBtnPush", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_BTN_PUSH, CarSignalManagerAdapter.APA_CANCEL);
+        addSignalCommand(root, "APA manual", "setDrvrAsscSysBtnPush", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_BTN_PUSH, CarSignalManagerAdapter.APA_MANUAL);
+        addSignalCommand(root, "APA confirm enter auto parking", "setDrvrAsscSysBtnPush", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_BTN_PUSH, CarSignalManagerAdapter.APA_CONFIRM_ENTER);
+        addSignalCommand(root, "PAS button", "setDrvrAsscSysBtnPush", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_BTN_PUSH, CarSignalManagerAdapter.APA_PAS);
+        addSignalCommand(root, "RPA button", "setDrvrAsscSysBtnPush", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_BTN_PUSH, CarSignalManagerAdapter.APA_RPA);
+        addSignalCommand(root, "RPA button alt", "setDrvrAsscSysBtnPush", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_BTN_PUSH, CarSignalManagerAdapter.APA_RPA_ALT);
+        addSignalCommand(root, "Parking mode default", "setDrvrAsscSysParkMod", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_PARK_MOD, CarSignalManagerAdapter.PARK_MODE_DEFAULT);
+        addSignalCommand(root, "Parking mode horizontal in", "setDrvrAsscSysParkMod", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_PARK_MOD, CarSignalManagerAdapter.PARK_MODE_HORIZONTAL_IN);
+        addSignalCommand(root, "Parking mode perpendicular in", "setDrvrAsscSysParkMod", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_PARK_MOD, CarSignalManagerAdapter.PARK_MODE_PERPENDICULAR_IN);
+        addSignalCommand(root, "Parking mode perpendicular in forward", "setDrvrAsscSysParkMod", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_PARK_MOD, CarSignalManagerAdapter.PARK_MODE_PERPENDICULAR_IN_FORWARD);
+        addSignalCommand(root, "Parking mode perpendicular in backward", "setDrvrAsscSysParkMod", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_PARK_MOD, CarSignalManagerAdapter.PARK_MODE_PERPENDICULAR_IN_BACKWARD);
+        addSignalCommand(root, "Parking mode horizontal left out", "setDrvrAsscSysParkMod", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_PARK_MOD, CarSignalManagerAdapter.PARK_MODE_HORIZONTAL_LEFT_OUT);
+        addSignalCommand(root, "Parking mode horizontal right out", "setDrvrAsscSysParkMod", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_PARK_MOD, CarSignalManagerAdapter.PARK_MODE_HORIZONTAL_RIGHT_OUT);
+        addSignalCommand(root, "Parking mode perpendicular left out forward", "setDrvrAsscSysParkMod", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_PARK_MOD, CarSignalManagerAdapter.PARK_MODE_PERPENDICULAR_LEFT_OUT_FORWARD);
+        addSignalCommand(root, "Parking mode perpendicular right out forward", "setDrvrAsscSysParkMod", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_PARK_MOD, CarSignalManagerAdapter.PARK_MODE_PERPENDICULAR_RIGHT_OUT_FORWARD);
+        addSignalCommand(root, "Parking mode perpendicular left out backward", "setDrvrAsscSysParkMod", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_PARK_MOD, CarSignalManagerAdapter.PARK_MODE_PERPENDICULAR_LEFT_OUT_BACKWARD);
+        addSignalCommand(root, "Parking mode perpendicular right out backward", "setDrvrAsscSysParkMod", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_PARK_MOD, CarSignalManagerAdapter.PARK_MODE_PERPENDICULAR_RIGHT_OUT_BACKWARD);
+        addSignalCommand(root, "Parking mode cancel", "setDrvrAsscSysParkMod", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_PARK_MOD, CarSignalManagerAdapter.PARK_MODE_CANCEL);
+        addSignalCommand(root, "Remote parking enable", "setRemPrkgEnaReq", CarSignalManagerAdapter.SIG_REM_PRKG_ENA_REQ, EcarxVehicleAdapter.COMMON_ON);
+        addSignalCommand(root, "Remote parking disable", "setRemPrkgEnaReq", CarSignalManagerAdapter.SIG_REM_PRKG_ENA_REQ, EcarxVehicleAdapter.COMMON_OFF);
+        addSignalCommand(root, "Remote parking self-search", "setRemPrkgSelfSearchReq", CarSignalManagerAdapter.SIG_REM_PRKG_SELF_SEARCH_REQ, CarSignalManagerAdapter.APA_BUTTON_ON);
+        addSignalCommand(root, "Remote parking self-search no press", "setRemPrkgSelfSearchReq", CarSignalManagerAdapter.SIG_REM_PRKG_SELF_SEARCH_REQ, CarSignalManagerAdapter.APA_BUTTON_NO_PRESS);
+        addHalPropertyDiagnostic(root, "Mobile RPA HAL properties",
+                CarSignalManagerAdapter.VEH_MOBDEV_RPA_AUTHENT_REQ1_AUTHENT_STS,
+                CarSignalManagerAdapter.VEH_MOBDEV_RPA_AUTHENT_REQ1_CHKS,
+                CarSignalManagerAdapter.VEH_MOBDEV_RPA_AUTHENT_REQ1_CNTR,
+                CarSignalManagerAdapter.VEH_MOBDEV_RPA_AUTHENT_REQ1_RNDX,
+                CarSignalManagerAdapter.VEH_MOBDEV_RPA_AUTHENT_REQ1_RNDY,
+                CarSignalManagerAdapter.VEH_MOBDEV_RPA_AUTHENT_REQ_AUTHENT_STS,
+                CarSignalManagerAdapter.VEH_MOBDEV_RPA_AUTHENT_REQ_CHKS,
+                CarSignalManagerAdapter.VEH_MOBDEV_RPA_AUTHENT_REQ_CNTR,
+                CarSignalManagerAdapter.VEH_MOBDEV_RPA_AUTHENT_REQ_RNDX,
+                CarSignalManagerAdapter.VEH_MOBDEV_RPA_AUTHENT_REQ_RNDY,
+                CarSignalManagerAdapter.VEH_MOBDEV_RPA_REQ_RESP,
+                CarSignalManagerAdapter.VEH_MOBDEV_RPA_STS_ON_OFF1,
+                CarSignalManagerAdapter.VEH_MOBDEV_RPA_STS_UINT8,
+                CarSignalManagerAdapter.VEH_PUSH_APA_INFO_REQ);
     }
 
     private void showAdas() {
