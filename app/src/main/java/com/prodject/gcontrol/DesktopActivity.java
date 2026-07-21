@@ -36,12 +36,48 @@ public class DesktopActivity extends Activity {
         Button theme = Ui.button(this, "Тема / обои");
         theme.setOnClickListener(v -> chooseTheme());
         root.addView(theme);
+        addOneOsDockPanel();
         root.addView(Ui.text(this, "Док приложений", 18, true));
         for (String pkg : pinned) addAppRow(pkg, true);
         root.addView(Ui.text(this, "Все приложения", 18, true));
         for (ResolveInfo info : apps()) addAppRow(info.activityInfo.packageName, false);
         scroll.addView(root);
         setContentView(scroll);
+    }
+
+    private void addOneOsDockPanel() {
+        root.addView(Ui.text(this, new EcarxDockAdapter(this).availability(), 14, false));
+        addDockAction("OneOS Dock: hand over on", a -> a.handOver(true));
+        addDockAction("OneOS Dock: hand over off", a -> a.handOver(false));
+        addDockAction("OneOS Dock: status", EcarxDockAdapter::deviceStatus);
+        addDockAction("OneOS Dock: show", a -> a.switchDeviceDock(true));
+        addDockAction("OneOS Dock: hide", a -> a.switchDeviceDock(false));
+        addDockAction("OneOS Dock: HVAC open", a -> a.notifyItem(EcarxDockAdapter.TYPE_HVAC, EcarxDockAdapter.STATE_OPEN));
+        addDockAction("OneOS Dock: HVAC close", a -> a.notifyItem(EcarxDockAdapter.TYPE_HVAC, EcarxDockAdapter.STATE_CLOSE));
+        addDockAction("OneOS Dock: media open", a -> a.notifyItem(EcarxDockAdapter.TYPE_MEDIA, EcarxDockAdapter.STATE_OPEN));
+        addDockAction("OneOS Dock: volume open", a -> a.notifyItem(EcarxDockAdapter.TYPE_VOLUME, EcarxDockAdapter.STATE_OPEN));
+        addDockAction("OneOS Dock: defrost open", a -> a.notifyItem(EcarxDockAdapter.TYPE_DEFROSTING, EcarxDockAdapter.STATE_OPEN));
+        addDockAction("OneOS Dock: custom HVAC icon 0", a -> a.customHvacIcon(0));
+        addDockAction("OneOS Dock: custom app icon marker", a -> a.customAppIcon(0, getPackageName().getBytes()));
+    }
+
+    private void addDockAction(String label, DockAction action) {
+        Button b = Ui.button(this, label);
+        b.setOnClickListener(v -> {
+            EcarxDockAdapter.Result result;
+            try {
+                result = action.run(new EcarxDockAdapter(this));
+            } catch (Exception e) {
+                result = EcarxDockAdapter.Result.text(false, e.getClass().getSimpleName() + ": " + e.getMessage());
+            }
+            Ui.toast(this, result.success ? "OneOS Dock команда отправлена" : "OneOS Dock команда не выполнена");
+            root.addView(Ui.text(this, result.message, 13, false), Math.min(4, root.getChildCount()));
+        });
+        root.addView(b);
+    }
+
+    interface DockAction {
+        EcarxDockAdapter.Result run(EcarxDockAdapter adapter);
     }
 
     private List<ResolveInfo> apps() {
