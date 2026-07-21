@@ -89,7 +89,7 @@ Functional coverage
 - Steering wheel receiver: partial. It stores last wheel event, recognizes voice/PTT-like keys, forwards text command extras to the command bus and opens VoiceActivity with source/event context.
 - HUD presentation/observer services: scaffold.
 - Cluster bridge service: scaffold.
-- Real HUD/cluster contracts: partial. HUD vehicle function buttons and selected readback/support diagnostics added from IHUD.smali. HUDInteraction status/sync requests, DIMInteraction status/day-night/presentation bridge, IDimMenuInteraction tab/theme/nav/volume commands and IClimateInteraction temperature/unit writes are wired through reflection from OneOS-SystemUIPlugin. AudioExtService InteractionProto and real cluster/HUD render surfaces are still pending.
+- Real HUD/cluster contracts: partial. HUD vehicle function buttons and selected readback/support diagnostics added from IHUD.smali. HUDInteraction status/sync requests, DIMInteraction status/day-night/presentation bridge, IDimMenuInteraction tab/theme/nav/volume commands, IClimateInteraction temperature/unit writes and IMediaInteraction MediaSession publishing are wired through reflection from OneOS-SystemUIPlugin. AudioExtService InteractionProto/FDBus control and real cluster/HUD render surfaces are still pending.
 
 9. Browser / weather / internet
 - Weather via Open-Meteo: implemented.
@@ -158,3 +158,5 @@ Implementation log
 - 2026-07-21: wired HUDInteraction requestHUDMode/requestCalibrationMode/requestADASOpenStatus/requestCarFollowingGAPLevel/getHUDCalibrationParam and height/ADAS/vehicle sync requests.
 - 2026-07-21: wired DimInteraction getShowPresentationOption/getSupportedRankingType/requestDayNightMode/setPresentationToDimSwitch/updateAvgFuleRanking plus IDimMenuInteraction IHU-ready/theme/tab/nav/volume commands.
 - 2026-07-21: wired DIM IClimateInteraction temperature unit and float temperature writes for HVAC_FUNC_TEMP 0x10060100.
+- 2026-07-21: wired DIM IMediaInteraction updateMediaSourceTypeList/updateCurrentSourceType/updateCurrentProgress/updatePlaybackInfo/updateMediaMuteState using Android MediaSession data and dynamic IPlaybackInfo proxy.
+- 2026-07-21: expanded GControlMediaSessionListener to publish active session metadata/playback changes into the DIM media bridge.
