@@ -64,7 +64,7 @@ Functional coverage
 - Real contract found: com.ecarx.xui.adaptapi.car.Car.create(Context), ICar.getICarFunction(), ICarFunction.getFunctionValue/setFunctionValue/isFunctionSupported.
 - HVAC IDs found in IHvac.smali: power, AC, AC max, auto, eco, fan speed, blowing mode, temperature/min/max/step, climate zone, circulation, front/rear defrost, seat heating/ventilation/massage, steering wheel heat.
 - BCM IDs found in IBcm.smali: windows, sunroof, sun curtain, trunk/custom key, mirror fold/adjust, doors, locks, child safety lock, lamps, wipers, washer.
-- ADAS IDs found in IADAS.smali: AEB, FCW, LKA, LDW, RCW, speed limit warning, ELKA/emergency lane, lane change assist, PDC.
+- ADAS IDs found in IADAS.smali: AEB, FCW, LKA, LDW, RCW, speed limit warning, ELKA/emergency lane, lane change assist, blind spot detection, traffic sign recognition, PDC, AI assist lane strategy/warning.
 - HUD IDs found in IHUD.smali; first HUD controls are wired through EcarxVehicleAdapter.
 - Seat IDs found in ISeat.smali: seat position, height, backrest, cushion, headrest, massage-related controls.
 - Current GControl status: reflection adapter and UI buttons are implemented for high-confidence HVAC, BCM, ADAS, HUD, drive mode and seat int functions. HVAC coverage includes power/AC/auto/eco, full fan scale, circulation, blowing modes, defrost, climate zone, seat heating/ventilation/massage and steering wheel heat. BCM coverage includes windows, doors, locks, child lock, sunroof/sun curtain, mirror fold, reading lights, wipers, washer and selected exterior lamps.
@@ -82,7 +82,7 @@ Functional coverage
 7. ADAS / driving
 - UI text: scaffold.
 - Real function IDs found in IADAS.smali.
-- Direct toggles/readback: partial. First toggles and selected readback/support diagnostics are wired through EcarxVehicleAdapter.
+- Direct toggles/readback: partial. On/off toggles, selected mode values and readback/support diagnostics are wired through EcarxVehicleAdapter for the high-confidence ADAS IDs.
 
 8. HUD / Cluster / OneOS
 - Media session listener: implemented.
@@ -147,3 +147,4 @@ Implementation log
 - 2026-07-21: implemented AccessibilityService foreground package tracking and persisted last active package.
 - 2026-07-21: added ADB/System autozoom controls that save package filters and font scale, then apply Settings.System.FONT_SCALE from the watchdog service when enabled.
 - 2026-07-21: added saved HVAC preset editor with create/edit/delete and persisted functionId/zone/value command lists.
+- 2026-07-21: expanded ADAS controls from IADAS.smali with off toggles, blind spot detection, traffic sign recognition, lane change assist, PDC volume and AI lane strategy/warning modes.
