@@ -86,7 +86,7 @@ Functional coverage
 
 8. HUD / Cluster / OneOS
 - Media session listener: implemented.
-- Steering wheel receiver: partial; opens VoiceActivity for any matching event.
+- Steering wheel receiver: partial. It stores last wheel event, recognizes voice/PTT-like keys, forwards text command extras to the command bus and opens VoiceActivity with source/event context.
 - HUD presentation/observer services: scaffold.
 - Cluster bridge service: scaffold.
 - Real HUD/cluster contracts: HUD vehicle function buttons and selected readback/support diagnostics added from IHUD.smali; hudinteraction, DIMInteraction and AudioExtService InteractionProto still pending.
@@ -149,3 +149,4 @@ Implementation log
 - 2026-07-21: added saved HVAC preset editor with create/edit/delete and persisted functionId/zone/value command lists.
 - 2026-07-21: expanded ADAS controls from IADAS.smali with off toggles, blind spot detection, traffic sign recognition, lane change assist, PDC volume and AI lane strategy/warning modes.
 - 2026-07-21: replaced fixed Settings split shortcut with launchable app chooser using FLAG_ACTIVITY_LAUNCH_ADJACENT / MULTIPLE_TASK.
+- 2026-07-21: improved steering wheel receiver to parse key/action/command extras, persist the last event and route voice/PTT-like events to VoiceActivity.
