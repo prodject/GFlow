@@ -136,11 +136,11 @@ Functional coverage
 - Shared visual UI kit: implemented. Programmatic cards, soft rounded panels, status pills, muted secondary text and styled buttons are centralized in Ui.java so existing screens inherit a cleaner minimal car UI.
 - Inline help pattern: implemented for the main dashboard. Each dashboard card has a "?" control and long-press help with a short explanation.
 - Animated navigation: implemented as a lightweight fade/scale transition for dashboard card taps. Deep in-screen transitions remain pending.
-- Tesla/settings-style split navigation: partial. The dashboard now follows grouped settings logic, but inner vehicle pages still contain long command lists and need second-level category navigation.
+- Tesla/settings-style split navigation: partial. The dashboard follows grouped settings logic, and key vehicle tabs now start with a card-style screen map. Full second-level category switching is still pending.
 - 3D/vehicle visual layer: partial. The main dashboard now has a lightweight Canvas-rendered perspective vehicle visual in the hero area. A real interactive 3D control model is still pending until command taxonomy and safe touch zones are stabilized.
-- Inner tab redesign: partial. Shared command screens now use a cleaner header, back action, integration status card, help button and entry animation. Climate, vehicle, ADAS, automation and HUD screens still need compact second-level control groups and reduced diagnostic noise for normal users.
-- Visual safety states: pending. Commands need clear "safe", "diagnostic", "experimental", "privileged" and "firmware required" badges throughout inner screens.
-- End-user mode vs developer diagnostics mode: pending. The app still exposes many raw IDs directly in user flows; a clean user mode should hide raw IDs unless diagnostics are enabled.
+- Inner tab redesign: partial. Shared command screens now use a cleaner header, back action, integration status card, help button, entry animation, developer/user diagnostic filtering and screen maps for Climate, Vehicle, ADAS and HUD. Automation and experimental pages still need compact second-level control groups.
+- Visual safety states: partial. Shared command helpers now prefix commands and command groups with SAFE/DIAG/EXP/PRIV/FIRMWARE labels and hide raw function IDs in normal mode. Deeper screens still need richer visual badges beside individual risky controls.
+- End-user mode vs developer diagnostics mode: partial. Settings now has a Developer diagnostics toggle; normal user mode hides diagnostic blocks and raw IDs, while developer mode restores support/readback/HAL diagnostics and hex command details.
 
 Implementation log
 - 2026-07-22: added UX / visual design backlog for the 13.2 inch vertical head-unit interface with implemented/partial/pending statuses.
@@ -149,6 +149,9 @@ Implementation log
 - 2026-07-22: added lightweight dashboard navigation animation and adaptive two-column card sizing for wide vertical screens.
 - 2026-07-22: updated shared command screens with a cleaner header, back action, integration status card and contextual help button.
 - 2026-07-22: added a Canvas-rendered perspective vehicle visual to the main dashboard hero as the first non-decorative automotive visual layer.
+- 2026-07-22: added Developer diagnostics mode. User mode now hides raw IDs and diagnostic helper blocks; developer mode restores diagnostics and hex details.
+- 2026-07-22: added shared command safety labels: SAFE, DIAG, EXP, PRIV and FIRMWARE.
+- 2026-07-22: added card-style screen maps and clearer section breaks to Climate, Vehicle, ADAS and HUD pages.
 - 2026-07-21: created initial coverage log.
 - 2026-07-21: selected reflection-based ECarX/AdaptAPI vehicle adapter as first real integration layer to avoid compile-time dependency on system APK classes.
 - 2026-07-21: added EcarxVehicleAdapter using reflection against com.ecarx.xui.adaptapi.car.Car and ICarFunction.

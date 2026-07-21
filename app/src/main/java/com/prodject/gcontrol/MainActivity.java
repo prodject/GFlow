@@ -22,6 +22,7 @@ import java.util.*;
 public class MainActivity extends Activity {
     private static final String APP_SETTINGS = "app_settings";
     private static final String KEY_EXPERIMENTAL_FEATURES = "experimental_features";
+    private static final String KEY_DEVELOPER_MODE = "developer_mode";
     private static final String CLIMATE_PRESETS = "climate_presets";
     private static final String CLIMATE_PRESET_ORDER = "order";
     private static final String[] RUNTIME_PERMS = {
@@ -124,7 +125,7 @@ public class MainActivity extends Activity {
         LinearLayout top = Ui.row(this);
         TextView title = Ui.text(this, "GControl", 34, true);
         title.setTextColor(Color.WHITE);
-        TextView badge = Ui.pill(this, experimentalFeaturesEnabled() ? "EXPERIMENTAL ON" : "STABLE MODE", experimentalFeaturesEnabled() ? Ui.AMBER : Ui.GREEN);
+        TextView badge = Ui.pill(this, developerModeEnabled() ? "DEVELOPER MODE" : (experimentalFeaturesEnabled() ? "EXPERIMENTAL ON" : "USER MODE"), developerModeEnabled() ? Ui.BLUE : (experimentalFeaturesEnabled() ? Ui.AMBER : Ui.GREEN));
         top.addView(title, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
         top.addView(badge);
         hero.addView(top);
@@ -160,6 +161,7 @@ public class MainActivity extends Activity {
         addStatusCard(strip, "Адаптер", new EcarxVehicleAdapter(this).availability().contains("unavailable") ? "нет связи" : "готов", Ui.BLUE);
         addStatusCard(strip, "DVR", "настройки", Color.rgb(168, 65, 58));
         addStatusCard(strip, "Автоклимат", SmartClimateController.prefs(this).getBoolean(SmartClimateController.KEY_ENABLED, false) ? "включен" : "выключен", Ui.GREEN);
+        addStatusCard(strip, "Режим", developerModeEnabled() ? "developer" : "user", developerModeEnabled() ? Ui.BLUE : Ui.GREEN);
         root.addView(strip, lpMatchWrap(0, 0, 0, 14));
     }
 
@@ -323,7 +325,18 @@ public class MainActivity extends Activity {
                     .apply();
             Ui.toast(this, checked ? "Experimental features включены" : "Experimental features выключены");
         });
+        CheckBox developer = new CheckBox(this);
+        developer.setText("Developer diagnostics");
+        developer.setTextSize(16);
+        developer.setChecked(developerModeEnabled());
+        developer.setOnCheckedChangeListener((button, checked) -> {
+            getSharedPreferences(APP_SETTINGS, MODE_PRIVATE).edit()
+                    .putBoolean(KEY_DEVELOPER_MODE, checked)
+                    .apply();
+            Ui.toast(this, checked ? "Developer diagnostics включены" : "Developer diagnostics выключены");
+        });
         card.addView(experimental);
+        card.addView(developer);
         Button back = Ui.button(this, "Назад");
         back.setOnClickListener(v -> transition(this::showDashboard));
         root.addView(card, lpMatchWrap(0, 8, 0, 12));
@@ -335,6 +348,11 @@ public class MainActivity extends Activity {
     private boolean experimentalFeaturesEnabled() {
         return getSharedPreferences(APP_SETTINGS, MODE_PRIVATE)
                 .getBoolean(KEY_EXPERIMENTAL_FEATURES, false);
+    }
+
+    private boolean developerModeEnabled() {
+        return getSharedPreferences(APP_SETTINGS, MODE_PRIVATE)
+                .getBoolean(KEY_DEVELOPER_MODE, false);
     }
 
     private LinearLayout commandRoot(String title) {
@@ -350,6 +368,9 @@ public class MainActivity extends Activity {
         LinearLayout status = Ui.card(this);
         status.addView(Ui.muted(this, "Статус интеграции"));
         status.addView(Ui.text(this, new EcarxVehicleAdapter(this).availability(), 14, false));
+        status.addView(Ui.muted(this, developerModeEnabled()
+                ? "Developer diagnostics включены: raw IDs и диагностические блоки видны."
+                : "User mode: raw IDs и диагностические блоки скрыты. Включите Developer diagnostics в настройках для проверки прошивки."));
         root.addView(status, lpMatchWrap(0, 0, 0, 12));
         scroll.addView(root);
         setContentView(scroll);
@@ -357,8 +378,65 @@ public class MainActivity extends Activity {
         return root;
     }
 
+    private void addGroupTitle(LinearLayout root, String title, int functionId) {
+        LinearLayout row = Ui.row(this);
+        TextView label = Ui.text(this, title, 14, true);
+        row.addView(label, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        row.addView(Ui.pill(this, safetyFor(title), safetyColor(safetyFor(title))));
+        if (developerModeEnabled()) row.addView(Ui.muted(this, "  " + EcarxVehicleAdapter.hex(functionId)));
+        root.addView(row);
+    }
+
+    private String commandText(String label, String safety, String raw) {
+        StringBuilder sb = new StringBuilder("[")
+                .append(safety)
+                .append("] ")
+                .append(label);
+        if (developerModeEnabled() && raw != null && !raw.trim().isEmpty()) sb.append(" · ").append(raw);
+        return sb.toString();
+    }
+
+    private String safetyFor(String label) {
+        String normalized = label == null ? "" : label.toLowerCase(Locale.ROOT);
+        if (normalized.contains("диагност") || normalized.contains("diagnostic") || normalized.contains("readback") || normalized.contains("hal ") || normalized.contains("raw")) return "DIAG";
+        if (normalized.contains("experimental") || normalized.contains("avas") || normalized.contains("digital key") || normalized.contains("launch control") || normalized.contains("power train") || normalized.contains("risky")) return "EXP";
+        if (normalized.contains("adb") || normalized.contains("grant") || normalized.contains("secure") || normalized.contains("shell")) return "PRIV";
+        if (normalized.contains("door") || normalized.contains("двер") || normalized.contains("window") || normalized.contains("окн") || normalized.contains("seat") || normalized.contains("сиден") || normalized.contains("adas") || normalized.contains("drive") || normalized.contains("hud") || normalized.contains("mirror") || normalized.contains("зерк") || normalized.contains("light") || normalized.contains("свет") || normalized.contains("wiper") || normalized.contains("люк") || normalized.contains("штор") || normalized.contains("climate") || normalized.contains("климат")) return "FIRMWARE";
+        return "SAFE";
+    }
+
+    private int safetyColor(String safety) {
+        if ("SAFE".equals(safety)) return Ui.GREEN;
+        if ("DIAG".equals(safety)) return Ui.BLUE;
+        if ("EXP".equals(safety)) return Ui.AMBER;
+        if ("PRIV".equals(safety)) return Color.rgb(120, 80, 160);
+        return Color.rgb(86, 104, 120);
+    }
+
+    private void addScreenMap(LinearLayout root, String title, String body, String... chips) {
+        LinearLayout card = Ui.card(this);
+        LinearLayout row = Ui.row(this);
+        TextView h = Ui.text(this, title, 16, true);
+        row.addView(h, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        row.addView(Ui.help(this, title, body));
+        card.addView(row);
+        card.addView(Ui.muted(this, body));
+        if (chips.length > 0) {
+            LinearLayout chipRow = Ui.row(this);
+            chipRow.setPadding(0, Ui.dp(this, 8), 0, 0);
+            for (String chip : chips) {
+                TextView pill = Ui.pill(this, chip, Color.rgb(86, 104, 120));
+                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                lp.setMargins(0, 0, Ui.dp(this, 6), 0);
+                chipRow.addView(pill, lp);
+            }
+            card.addView(chipRow);
+        }
+        root.addView(card, lpMatchWrap(0, 0, 0, 12));
+    }
+
     private void addCommand(LinearLayout root, String label, int functionId, int value) {
-        Button b = Ui.button(this, label + " · " + EcarxVehicleAdapter.hex(functionId) + "=" + EcarxVehicleAdapter.hex(value));
+        Button b = Ui.button(this, commandText(label, safetyFor(label), EcarxVehicleAdapter.hex(functionId) + "=" + EcarxVehicleAdapter.hex(value)));
         b.setOnClickListener(v -> {
             EcarxVehicleAdapter.Result result = CarCommandBus.sendVehicle(this, functionId, value);
             Ui.toast(this, result.success ? "Команда отправлена" : "Команда не выполнена");
@@ -368,7 +446,7 @@ public class MainActivity extends Activity {
     }
 
     private void addCommand(LinearLayout root, String label, int functionId, int zone, int value) {
-        Button b = Ui.button(this, label + " · " + EcarxVehicleAdapter.hex(functionId) + "/" + zone + "=" + EcarxVehicleAdapter.hex(value));
+        Button b = Ui.button(this, commandText(label, safetyFor(label), EcarxVehicleAdapter.hex(functionId) + "/" + zone + "=" + EcarxVehicleAdapter.hex(value)));
         b.setOnClickListener(v -> {
             EcarxVehicleAdapter.Result result = CarCommandBus.sendVehicle(this, functionId, zone, value);
             Ui.toast(this, result.success ? "Команда отправлена" : "Команда не выполнена");
@@ -382,7 +460,8 @@ public class MainActivity extends Activity {
     }
 
     private void addZoneDiagnostic(LinearLayout root, String label, int functionId, int... zones) {
-        Button b = Ui.button(this, "Диагностика зон: " + label);
+        if (!developerModeEnabled()) return;
+        Button b = Ui.button(this, commandText("Диагностика зон: " + label, "DIAG", EcarxVehicleAdapter.hex(functionId)));
         b.setOnClickListener(v -> {
             EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
             StringBuilder sb = new StringBuilder(label).append("\n");
@@ -397,12 +476,12 @@ public class MainActivity extends Activity {
     }
 
     private void addCommandGroup(LinearLayout root, String title, int functionId, String[] labels, int[] values) {
-        root.addView(Ui.text(this, title, 14, true));
+        addGroupTitle(root, title, functionId);
         for (int i = 0; i < labels.length; i++) addCommand(root, labels[i], functionId, values[i]);
     }
 
     private void addSignalCommand(LinearLayout root, String label, String methodName, int signalId, int value) {
-        Button b = Ui.button(this, label + " · " + CarSignalManagerAdapter.hex(signalId) + "=" + CarSignalManagerAdapter.hex(value));
+        Button b = Ui.button(this, commandText(label, safetyFor(label), CarSignalManagerAdapter.hex(signalId) + "=" + CarSignalManagerAdapter.hex(value)));
         b.setOnClickListener(v -> {
             CarSignalManagerAdapter.Result result = new CarSignalManagerAdapter(this).set(methodName, signalId, value);
             Ui.toast(this, result.success ? "Команда отправлена" : "Команда не выполнена");
@@ -412,7 +491,8 @@ public class MainActivity extends Activity {
     }
 
     private void addSignalDiagnostic(LinearLayout root, String label, Object... methodSignalPairs) {
-        Button b = Ui.button(this, "Диагностика raw: " + label);
+        if (!developerModeEnabled()) return;
+        Button b = Ui.button(this, commandText("Диагностика raw: " + label, "DIAG", ""));
         b.setOnClickListener(v -> {
             CarSignalManagerAdapter adapter = new CarSignalManagerAdapter(this);
             StringBuilder sb = new StringBuilder(label).append("\n");
@@ -427,7 +507,8 @@ public class MainActivity extends Activity {
     }
 
     private void addHalPropertyDiagnostic(LinearLayout root, String label, int... propertyIds) {
-        Button b = Ui.button(this, "HAL свойства: " + label);
+        if (!developerModeEnabled()) return;
+        Button b = Ui.button(this, commandText("HAL свойства: " + label, "DIAG", ""));
         b.setOnClickListener(v -> {
             CarSignalManagerAdapter adapter = new CarSignalManagerAdapter(this);
             StringBuilder sb = new StringBuilder(label).append("\n");
@@ -451,7 +532,7 @@ public class MainActivity extends Activity {
     }
 
     private void addFloatCommand(LinearLayout root, String label, int functionId, int zone, float value) {
-        Button b = Ui.button(this, label + " · " + EcarxVehicleAdapter.hex(functionId) + "/" + zone + "=" + value);
+        Button b = Ui.button(this, commandText(label, safetyFor(label), EcarxVehicleAdapter.hex(functionId) + "/" + zone + "=" + value));
         b.setOnClickListener(v -> {
             EcarxVehicleAdapter.Result result = new EcarxVehicleAdapter(this).setFloat(functionId, zone, value);
             Ui.toast(this, result.success ? "Команда отправлена" : "Команда не выполнена");
@@ -461,7 +542,8 @@ public class MainActivity extends Activity {
     }
 
     private void addFloatDiagnostic(LinearLayout root, String label, int functionId, int... zones) {
-        Button b = Ui.button(this, "Float диагностика: " + label);
+        if (!developerModeEnabled()) return;
+        Button b = Ui.button(this, commandText("Float диагностика: " + label, "DIAG", EcarxVehicleAdapter.hex(functionId)));
         b.setOnClickListener(v -> {
             EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
             StringBuilder sb = new StringBuilder(label).append("\n");
@@ -520,7 +602,8 @@ public class MainActivity extends Activity {
     }
 
     private void addDiagnostic(LinearLayout root, String label, int... functionIds) {
-        Button b = Ui.button(this, "Диагностика: " + label);
+        if (!developerModeEnabled()) return;
+        Button b = Ui.button(this, commandText("Диагностика: " + label, "DIAG", functionIds.length == 0 ? "" : functionIds.length + " ids"));
         b.setOnClickListener(v -> {
             EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
             StringBuilder sb = new StringBuilder(label).append("\n");
@@ -1165,6 +1248,9 @@ public class MainActivity extends Activity {
     }
     private void showCar() {
         LinearLayout root = commandRoot("Управление автомобилем");
+        addScreenMap(root, "Карта вкладки", "Основной пользовательский поток: окна/двери/свет и быстрые кнопки. Ниже идут расширенные BCM-команды, режимы движения и сиденья; raw-диагностика видна только в Developer diagnostics.",
+                "Кузов", "Свет", "Drive", "Сиденья");
+        Ui.section(root, "Кузов и доступ", "Окна, двери, замки, люк, шторка и зеркала. Эти команды зависят от поддержки BCM на конкретной прошивке.");
         root.addView(Ui.text(this, "BCM-функции из IBcm.smali. Зоны берутся из GlyCarAreaId: все=0x80000000, 1L=1, 1R=4, 2L=16, 2R=64.", 14, false));
         addDiagnostic(root, "BCM / Drive / Seat", EcarxVehicleAdapter.BCM_WINDOW, EcarxVehicleAdapter.BCM_DOOR, EcarxVehicleAdapter.BCM_DOOR_LOCK, EcarxVehicleAdapter.BCM_WIPER, EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.SEAT_POSITION_SET);
         addDiagnostic(root, "BCM двери/окна расширенно", EcarxVehicleAdapter.BCM_DOOR_POS, EcarxVehicleAdapter.BCM_DOOR_STATUS, EcarxVehicleAdapter.BCM_DOOR_OBSTACLE_DETECTED, EcarxVehicleAdapter.BCM_DOOR_ANTI_PINCH, EcarxVehicleAdapter.BCM_WINDOW_MOVING_STATE, EcarxVehicleAdapter.BCM_WINDOW_POS, EcarxVehicleAdapter.BCM_WINDOW_CURRENT_POS);
@@ -1232,6 +1318,7 @@ public class MainActivity extends Activity {
         addCommand(root, "Wiper high", EcarxVehicleAdapter.BCM_WIPER, EcarxVehicleAdapter.WIPER_HIGH);
         addCommand(root, "Wiper intermittent", EcarxVehicleAdapter.BCM_WIPER, EcarxVehicleAdapter.WIPER_INTERMITTENT);
         addCommand(root, "Washer", EcarxVehicleAdapter.BCM_WASHER, EcarxVehicleAdapter.COMMON_ON);
+        Ui.section(root, "Свет и внешние сигналы", "Наружное/внутреннее освещение, аварийка, поворотники и grille/welcome light. Используйте как firmware-зависимые команды.");
         addCommand(root, "Ближний свет вкл", EcarxVehicleAdapter.BCM_LIGHT_DIPPED_BEAM, EcarxVehicleAdapter.COMMON_ON);
         addCommand(root, "Ближний свет выкл", EcarxVehicleAdapter.BCM_LIGHT_DIPPED_BEAM, EcarxVehicleAdapter.COMMON_OFF);
         addCommand(root, "Дальний свет вкл", EcarxVehicleAdapter.BCM_LIGHT_MAIN_BEAM, EcarxVehicleAdapter.COMMON_ON);
@@ -1296,6 +1383,7 @@ public class MainActivity extends Activity {
         addCommand(root, "Custom key: loud speaker", EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_LOUD_SPEAKER);
         addCommand(root, "Custom key: auto park", EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_AUTO_PARK);
         addCommand(root, "Custom key: driving mode", EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_DRIVING_MODE);
+        Ui.section(root, "Режимы движения", "Быстрый выбор Eco/Comfort/Dynamic/Snow/Offroad и steering feel. Расширенные режимы скрыты за Experimental features.");
         root.addView(Ui.text(this, "Режимы движения из IDriveMode.smali.", 14, false));
         addCommand(root, "Drive Eco", EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_ECO);
         addCommand(root, "Drive Comfort", EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_COMFORT);
@@ -1306,6 +1394,7 @@ public class MainActivity extends Activity {
         addCommand(root, "Eco button", EcarxVehicleAdapter.DRIVE_ECO_BUTTON, EcarxVehicleAdapter.COMMON_ON);
         addCommand(root, "Руль мягкий", EcarxVehicleAdapter.DRIVE_STEERING_MODE, EcarxVehicleAdapter.STEERING_MODE_SOFT);
         addCommand(root, "Руль динамичный", EcarxVehicleAdapter.DRIVE_STEERING_MODE, EcarxVehicleAdapter.STEERING_MODE_DYNAMIC);
+        Ui.section(root, "Сиденья", "Позиции, высота, спинка и память сидений. Пользовательские профили удобнее на вкладке Профили.");
         root.addView(Ui.text(this, "Профили и регулировки сидений из ISeat.smali.", 14, false));
         addZoneDiagnostic(root, "Сиденье положение", EcarxVehicleAdapter.SEAT_POSITION_SET, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.ZONE_ROW_2_LEFT, EcarxVehicleAdapter.ZONE_ROW_2_RIGHT);
         addCommand(root, "Сиденье вперед", EcarxVehicleAdapter.SEAT_LENGTH, EcarxVehicleAdapter.SEAT_FORWARD);
@@ -1330,12 +1419,15 @@ public class MainActivity extends Activity {
 
     private void showClimate() {
         LinearLayout root = commandRoot("Климат");
+        addScreenMap(root, "Карта вкладки", "Верхняя часть - комфортный климат и пресеты. Далее идут базовое включение, температура, вентилятор, рециркуляция, обдув и дополнительные HVAC-функции.",
+                "Пресеты", "Температура", "Обдув", "Сиденья");
         root.addView(Ui.text(this, "HVAC-функции из IHvac.smali и OneOS-Dock: обычные int-команды плюс float-температура driver zone=1 / passenger zone=4.", 14, false));
         addDiagnostic(root, "HVAC", EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.HVAC_AC, EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.HVAC_CIRCULATION, EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.HVAC_TEMP_MIN, EcarxVehicleAdapter.HVAC_TEMP_MAX, EcarxVehicleAdapter.HVAC_TEMP_STEP);
         addDiagnostic(root, "HVAC расширенный", EcarxVehicleAdapter.HVAC_TEMP_DUAL, EcarxVehicleAdapter.HVAC_TEMP_UNIT, EcarxVehicleAdapter.HVAC_DISPLAY_WINDOW_TAB, EcarxVehicleAdapter.HVAC_AQS_SWITCH, EcarxVehicleAdapter.HVAC_CO2_SWITCH, EcarxVehicleAdapter.HVAC_IONS_SWITCH, EcarxVehicleAdapter.HVAC_AIR_FRAGRANCE, EcarxVehicleAdapter.HVAC_FILTER_ELEMENT_LIFE, EcarxVehicleAdapter.HVAC_MODULE_CONNECT_STATUS);
         addFloatDiagnostic(root, "Температура driver/passenger", EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT);
         addZoneDiagnostic(root, "Подогрев сидений", EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.ZONE_ROW_2_LEFT, EcarxVehicleAdapter.ZONE_ROW_2_RIGHT);
         addZoneDiagnostic(root, "Вентиляция сидений", EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT);
+        Ui.section(root, "Быстрый комфорт", "Комфортная панель и редактор пресетов. Это основной пользовательский путь для климата.");
         Button comfortPanel = Ui.button(this, "Комфортный климат");
         comfortPanel.setOnClickListener(v -> showComfortClimate());
         root.addView(comfortPanel);
@@ -1346,6 +1438,7 @@ public class MainActivity extends Activity {
             EcarxVehicleAdapter.Command[] commands = decodeCommands(getSharedPreferences(CLIMATE_PRESETS, MODE_PRIVATE).getString(name, ""));
             if (commands.length > 0) addSavedClimatePreset(root, name, commands);
         }
+        Ui.section(root, "Готовые пресеты", "Комфорт, охлаждение и зима отправляют несколько HVAC-команд подряд.");
         addPreset(root, "Пресет Комфорт",
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_ON),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_AUTO, EcarxVehicleAdapter.COMMON_ON),
@@ -1364,6 +1457,7 @@ public class MainActivity extends Activity {
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_DEFROST_REAR, EcarxVehicleAdapter.COMMON_ON),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_LEVEL_2),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT, EcarxVehicleAdapter.WHEEL_HEAT_MID));
+        Ui.section(root, "Основной климат", "Питание HVAC, A/C, Auto, Eco, вентилятор, рециркуляция и направление обдува.");
         addCommand(root, "Климат включить", EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_ON);
         addCommand(root, "Климат выключить", EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_OFF);
         addCommand(root, "A/C включить", EcarxVehicleAdapter.HVAC_AC, EcarxVehicleAdapter.COMMON_ON);
@@ -1932,8 +2026,11 @@ public class MainActivity extends Activity {
 
     private void showAdas() {
         LinearLayout root = commandRoot("ADAS / Вождение");
+        addScreenMap(root, "Карта вкладки", "Сначала базовые ассистенты безопасности и полосы, затем ACC/ICC и парковочные предупреждения. Расширенные AI/Drive Pilot настройки доступны только через Experimental features.",
+                "Safety", "Lane", "ACC", "PDC");
         root.addView(Ui.text(this, "ADAS-функции из IADAS.smali.", 14, false));
         addDiagnostic(root, "ADAS", EcarxVehicleAdapter.ADAS_AEB, EcarxVehicleAdapter.ADAS_FCW, EcarxVehicleAdapter.ADAS_LKA, EcarxVehicleAdapter.ADAS_LDW, EcarxVehicleAdapter.ADAS_BLIND_SPOT_DETECTION, EcarxVehicleAdapter.ADAS_TRAFFIC_SIGN_RECOGNITION, EcarxVehicleAdapter.ADAS_SPEED_LIMIT_WARN, EcarxVehicleAdapter.ADAS_PDC);
+        Ui.section(root, "Базовая безопасность", "AEB/FCW/LKA/LDW/RCW/ELKA и распознавание знаков. Работоспособность подтверждается прошивкой автомобиля.");
         addCommand(root, "AEB включить", EcarxVehicleAdapter.ADAS_AEB, EcarxVehicleAdapter.COMMON_ON);
         addCommand(root, "AEB выключить", EcarxVehicleAdapter.ADAS_AEB, EcarxVehicleAdapter.COMMON_OFF);
         addCommand(root, "FCW включить", EcarxVehicleAdapter.ADAS_FCW, EcarxVehicleAdapter.COMMON_ON);
@@ -1959,6 +2056,7 @@ public class MainActivity extends Activity {
         addCommand(root, "Speed limit warning", EcarxVehicleAdapter.ADAS_SPEED_LIMIT_WARN, EcarxVehicleAdapter.COMMON_ON);
         addCommand(root, "Speed limit warning off", EcarxVehicleAdapter.ADAS_SPEED_LIMIT_WARN, EcarxVehicleAdapter.COMMON_OFF);
         addAccIccAdasControls(root);
+        Ui.section(root, "Парковочные предупреждения", "Парктроник и громкость PDC. Для камер и APA используйте отдельную вкладку Парковка / APA.");
         addCommand(root, "Парктроник включить", EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.COMMON_ON);
         addCommand(root, "Парктроник выключить", EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.COMMON_OFF);
         addCommand(root, "PDC volume low", EcarxVehicleAdapter.ADAS_PDC_WARNING_VOLUME, EcarxVehicleAdapter.PDC_VOLUME_LOW);
@@ -1968,6 +2066,7 @@ public class MainActivity extends Activity {
     }
 
     private void addAccIccAdasControls(LinearLayout root) {
+        Ui.section(root, "ACC / ICC", "Подготовка адаптивного круиза, дистанции и TSR. Не заменяет штатное подтверждение ассистента водителем.");
         root.addView(Ui.text(this, "ADAS ACC/ICC: круиз, следование, TSR и скоростные режимы из IADAS.smali.", 14, true));
         addDiagnostic(root, "ADAS ACC/ICC",
                 EcarxVehicleAdapter.ADAS_ACC_ICC_SWITCH,
@@ -2144,7 +2243,10 @@ public class MainActivity extends Activity {
 
     private void showHud() {
         LinearLayout root = commandRoot("HUD / Cluster / OneOS");
+        addScreenMap(root, "Карта вкладки", "HUD-команды управляют отображением на проекторе, DIM и OneOS media bridge. Service-кнопки запускают фоновые мосты и нужны в основном для проверки интеграции.",
+                "HUD", "DIM", "Media", "Service");
         root.addView(Ui.text(this, new EcarxHudDimAdapter(this).availability(), 14, false));
+        Ui.section(root, "HUD display", "Включение HUD, calibration и отображаемые блоки: safety, media, navigation, phone и drive environment.");
         addDiagnostic(root, "HUD", EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.HUD_DISPLAY_NAVI, EcarxVehicleAdapter.HUD_DISPLAY_SAFETY);
         addCommand(root, "HUD включить", EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.COMMON_ON);
         addCommand(root, "HUD выключить", EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.COMMON_OFF);
@@ -2156,6 +2258,7 @@ public class MainActivity extends Activity {
         addCommand(root, "HUD navi on", EcarxVehicleAdapter.HUD_DISPLAY_NAVI, EcarxVehicleAdapter.COMMON_ON);
         addCommand(root, "HUD phone on", EcarxVehicleAdapter.HUD_DISPLAY_BTPHONE, EcarxVehicleAdapter.COMMON_ON);
         addCommand(root, "HUD drive env on", EcarxVehicleAdapter.HUD_DISPLAY_DRIVE_ENVIRONMENT, EcarxVehicleAdapter.COMMON_ON);
+        Ui.section(root, "OneOS / DIM bridge", "Reflection-вызовы к HUDInteraction, DimInteraction и media bridge. Если прошивка не поддерживает классы, команда вернет диагностическое сообщение.");
         addHudDimAction(root, "HUDInteraction: статус", a -> a.hudStatus());
         addHudDimAction(root, "HUDInteraction: height/sync", a -> a.hudSync());
         addHudDimAction(root, "DIMInteraction: статус", a -> a.dimStatus());
