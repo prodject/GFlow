@@ -82,6 +82,18 @@ public class VoiceActivity extends Activity {
         if (has(cmd, "окн") && (has(cmd, "закр") || has(cmd, "close"))) {
             return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_WINDOW, EcarxVehicleAdapter.WINDOW_CLOSE);
         }
+        if (has(cmd, "двер") && (has(cmd, "откр") || has(cmd, "open"))) {
+            return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_DOOR, EcarxVehicleAdapter.DOOR_OPEN);
+        }
+        if (has(cmd, "двер") && (has(cmd, "закр") || has(cmd, "close"))) {
+            return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_DOOR, EcarxVehicleAdapter.DOOR_CLOSE);
+        }
+        if (has(cmd, "зам") && has(cmd, "двер")) {
+            return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_DOOR_LOCK, off(cmd) ? EcarxVehicleAdapter.COMMON_OFF : EcarxVehicleAdapter.COMMON_ON);
+        }
+        if (has(cmd, "дет") && (has(cmd, "зам") || has(cmd, "lock"))) {
+            return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_CHILD_SAFETY_LOCK, off(cmd) ? EcarxVehicleAdapter.COMMON_OFF : EcarxVehicleAdapter.COMMON_ON);
+        }
         if (has(cmd, "люк") && has(cmd, "откр")) {
             return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_SUNROOF_OPEN, EcarxVehicleAdapter.COMMON_ON);
         }
@@ -102,6 +114,34 @@ public class VoiceActivity extends Activity {
         }
         if (has(cmd, "dvr") || has(cmd, "регистратор")) {
             return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_DVR);
+        }
+        if (has(cmd, "дворник") || has(cmd, "wiper")) {
+            if (off(cmd)) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_WIPER, EcarxVehicleAdapter.WIPER_OFF);
+            if (has(cmd, "авто") || has(cmd, "auto")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_WIPER, EcarxVehicleAdapter.WIPER_AUTO);
+            if (has(cmd, "быстр") || has(cmd, "high")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_WIPER, EcarxVehicleAdapter.WIPER_HIGH);
+            if (has(cmd, "прерыв") || has(cmd, "intermittent")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_WIPER, EcarxVehicleAdapter.WIPER_INTERMITTENT);
+            return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_WIPER, EcarxVehicleAdapter.WIPER_LOW);
+        }
+        if (has(cmd, "омыв")) {
+            return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_WASHER, EcarxVehicleAdapter.COMMON_ON);
+        }
+        if (has(cmd, "аварий")) {
+            return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_LIGHT_HAZARD, off(cmd) ? EcarxVehicleAdapter.COMMON_OFF : EcarxVehicleAdapter.COMMON_ON);
+        }
+        if (has(cmd, "ближн") && has(cmd, "свет")) {
+            return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_LIGHT_DIPPED_BEAM, off(cmd) ? EcarxVehicleAdapter.COMMON_OFF : EcarxVehicleAdapter.COMMON_ON);
+        }
+        if (has(cmd, "дальн") && has(cmd, "свет")) {
+            return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_LIGHT_MAIN_BEAM, off(cmd) ? EcarxVehicleAdapter.COMMON_OFF : EcarxVehicleAdapter.COMMON_ON);
+        }
+        if ((has(cmd, "птф") || has(cmd, "туман")) && has(cmd, "зад")) {
+            return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_LIGHT_REAR_FOG, off(cmd) ? EcarxVehicleAdapter.COMMON_OFF : EcarxVehicleAdapter.COMMON_ON);
+        }
+        if (has(cmd, "птф") || has(cmd, "туман")) {
+            return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_LIGHT_FRONT_FOG, off(cmd) ? EcarxVehicleAdapter.COMMON_OFF : EcarxVehicleAdapter.COMMON_ON);
+        }
+        if (has(cmd, "салон") && has(cmd, "свет")) {
+            return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_ALL_READING_LIGHTS, off(cmd) ? EcarxVehicleAdapter.COMMON_OFF : EcarxVehicleAdapter.COMMON_ON);
         }
         if (has(cmd, "руль") && has(cmd, "подогрев")) {
             return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT, off(cmd) ? EcarxVehicleAdapter.COMMON_OFF : EcarxVehicleAdapter.WHEEL_HEAT_MID);
