@@ -5,6 +5,7 @@ import android.content.*;
 import android.os.*;
 import android.widget.*;
 import java.util.*;
+import java.util.regex.*;
 
 public class VoiceActivity extends Activity {
     private final VoskVoiceRecognizer recognizer = new VoskVoiceRecognizer();
@@ -55,6 +56,9 @@ public class VoiceActivity extends Activity {
     }
 
     private EcarxVehicleAdapter.Result parseVehicleCommand(String cmd) {
+        EcarxVehicleAdapter.Result temperature = parseTemperatureCommand(cmd);
+        if (temperature != null) return temperature;
+
         if (has(cmd, "климат") && off(cmd)) {
             return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_OFF);
         }
@@ -203,6 +207,33 @@ public class VoiceActivity extends Activity {
             return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_OFFROAD);
         }
         return null;
+    }
+
+    private EcarxVehicleAdapter.Result parseTemperatureCommand(String cmd) {
+        if (!isTemperatureCommand(cmd)) return null;
+        Float value = temperatureValue(cmd);
+        if (value == null) return null;
+        if (value < 16.0f || value > 32.0f) {
+            return EcarxVehicleAdapter.Result.status(EcarxVehicleAdapter.HVAC_TEMP, zoneFromCommand(cmd, EcarxVehicleAdapter.ZONE_DRIVER_LEFT),
+                    String.format(Locale.US, "temperature %.1f outside expected HVAC range 16.0..32.0", value));
+        }
+        int zone = zoneFromCommand(cmd, EcarxVehicleAdapter.ZONE_DRIVER_LEFT);
+        return new EcarxVehicleAdapter(this).setFloat(EcarxVehicleAdapter.HVAC_TEMP, zone, value);
+    }
+
+    private boolean isTemperatureCommand(String cmd) {
+        return has(cmd, "температур") || has(cmd, "градус") || has(cmd, "temp") || has(cmd, "temperature");
+    }
+
+    private Float temperatureValue(String cmd) {
+        Matcher matcher = Pattern.compile("(\\d{2})(?:[\\.,](\\d))?").matcher(cmd);
+        if (!matcher.find()) return null;
+        String raw = matcher.group(1) + (matcher.group(2) == null ? "" : "." + matcher.group(2));
+        try {
+            return Float.parseFloat(raw);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     private EcarxVehicleAdapter.Result[] parsePreset(String cmd) {
