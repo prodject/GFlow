@@ -66,6 +66,7 @@ public class MainActivity extends Activity {
         add(grid, "Парковка / APA", this::showParkingApa);
         if (experimentalFeaturesEnabled()) {
             add(grid, "PAS / AVM", this::showPasAvm);
+            add(grid, "AVAS / Digital Key", this::showAvasDigitalKey);
             add(grid, "Сценарии", this::showSceneModes);
             add(grid, "Подсветка", this::showAmbienceLight);
             add(grid, "Яркость / DayMode", this::showDayMode);
@@ -926,6 +927,36 @@ public class MainActivity extends Activity {
         addCommandGroup(root, "RCTA warning volume", EcarxVehicleAdapter.PAS_RCTA_WARNING_VOLUME,
                 new String[]{"RCTA volume off", "RCTA volume low", "RCTA volume mid", "RCTA volume high"},
                 new int[]{EcarxVehicleAdapter.PAS_RCTA_VOLUME_OFF, EcarxVehicleAdapter.PAS_RCTA_VOLUME_LOW, EcarxVehicleAdapter.PAS_RCTA_VOLUME_MID, EcarxVehicleAdapter.PAS_RCTA_VOLUME_HIGH});
+    }
+
+    private void showAvasDigitalKey() {
+        LinearLayout root = commandRoot("Experimental: AVAS / Digital Key");
+        root.addView(Ui.text(this, "AVAS - внешний звук предупреждения пешеходов у EV/PHEV. Отключение или смена громкости/типа звука может быть юридически и безопасностно спорной, поэтому раздел спрятан за Experimental features.", 14, false));
+        addDiagnostic(root, "AVAS",
+                EcarxVehicleAdapter.VEHICLE_AVAS_SWITCH,
+                EcarxVehicleAdapter.VEHICLE_AVAS_VOLUME,
+                EcarxVehicleAdapter.VEHICLE_AVAS_SOUND_TYPE,
+                EcarxVehicleAdapter.VEHICLE_AVAS_SOUND_TYPE_NAME,
+                EcarxVehicleAdapter.VEHICLE_AVAS_SOUND_TYPE_PATH);
+        addCommand(root, "AVAS switch on", EcarxVehicleAdapter.VEHICLE_AVAS_SWITCH, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "AVAS switch off", EcarxVehicleAdapter.VEHICLE_AVAS_SWITCH, EcarxVehicleAdapter.COMMON_OFF);
+        addCommandGroup(root, "AVAS volume", EcarxVehicleAdapter.VEHICLE_AVAS_VOLUME,
+                new String[]{"AVAS volume off", "AVAS volume low", "AVAS volume mid", "AVAS volume high"},
+                new int[]{EcarxVehicleAdapter.AVAS_VOLUME_OFF, EcarxVehicleAdapter.AVAS_VOLUME_LOW, EcarxVehicleAdapter.AVAS_VOLUME_MID, EcarxVehicleAdapter.AVAS_VOLUME_HIGH});
+        addCommandGroup(root, "AVAS sound type", EcarxVehicleAdapter.VEHICLE_AVAS_SOUND_TYPE,
+                new String[]{"AVAS sound none", "AVAS sound 1", "AVAS sound 2", "AVAS sound 3", "AVAS sound 4", "AVAS sound 5", "AVAS sound 6", "AVAS sound 7", "AVAS sound 8"},
+                new int[]{EcarxVehicleAdapter.AVAS_SOUND_NONE, EcarxVehicleAdapter.AVAS_SOUND_1, EcarxVehicleAdapter.AVAS_SOUND_2, EcarxVehicleAdapter.AVAS_SOUND_3, EcarxVehicleAdapter.AVAS_SOUND_4, EcarxVehicleAdapter.AVAS_SOUND_5, EcarxVehicleAdapter.AVAS_SOUND_6, EcarxVehicleAdapter.AVAS_SOUND_7, EcarxVehicleAdapter.AVAS_SOUND_8});
+        root.addView(Ui.text(this, "Digital key ниже только читает статусы. Команды pair/unpair/delete/termination/suspension намеренно не добавлены.", 14, false));
+        addDiagnostic(root, "Digital key statuses",
+                EcarxVehicleAdapter.VEHICLE_DIGITAL_KEY,
+                EcarxVehicleAdapter.VEHICLE_DIGITAL_KEY_REQ_STS,
+                EcarxVehicleAdapter.VEHICLE_DIGITAL_KEY_UNPAIR,
+                EcarxVehicleAdapter.VEHICLE_DIGITAL_KEY_TERMINATION,
+                EcarxVehicleAdapter.VEHICLE_DIGITAL_KEY_SUSPENSION,
+                EcarxVehicleAdapter.VEHICLE_DIGITAL_KEY_PAIRING_FAILED,
+                EcarxVehicleAdapter.VEHICLE_DIGITAL_KEY_TRACKING_WAIT,
+                EcarxVehicleAdapter.VEHICLE_DIGITAL_KEY_TRACKING_RESULT,
+                EcarxVehicleAdapter.VEHICLE_DIGITAL_KEY_RES_TIMEOUT);
     }
 
     private void showSceneModes() {
