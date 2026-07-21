@@ -104,7 +104,7 @@ Functional coverage
 - Add/remove shortcut and uninstall intent: implemented.
 - Ordering: implemented through dock item move up/down actions; drag UI still missing.
 - Themes/wallpaper/widgets/weather clock: partial. Clock, local wallpaper/theme presets and refreshable weather widget are implemented.
-- OneOS dock contracts found in OneOS-Dock_src and OneOS-SystemUIPlugin_src; privileged integration pending.
+- OneOS dock contracts: partial. com.ecarx.xui.adaptapi.dock.IDock handOverDock/custom icon calls and com.ecarx.xui.adaptapi.device.dock.Dock show/hide/status/item-state calls are wired through reflection; firmware permissions/signature may still block real system dock takeover.
 
 11. ADB / system
 - Local shell command execution: implemented.
@@ -165,3 +165,5 @@ Implementation log
 - 2026-07-21: added AudioExtServiceAdapter for exported com.autolink.audioextservice.AudioExtService and AudioExtControlService binder actions without compile-time AIDL dependencies.
 - 2026-07-21: wired IAudioExtService notifyMediaStatusChanged/notifyVrStatusChanged/notifyPDCVolCtrlSwt via raw Binder transactions.
 - 2026-07-21: wired IAudioExtControl visualizer/voice-light transactions: section zone, spectrum mode, amplitude/frequency gain, voice base dB, voice light degree, anti-shake, loudness weighting and section max.
+- 2026-07-21: added EcarxDockAdapter for OneOS dock reflection APIs: IDock.handOverDock/setDockCustomHvacIcon/setDockCustomAppIcon and device Dock switchDockBar/isDockBarShowing/notifyDockItemChanged.
+- 2026-07-21: wired OneOS Dock diagnostics and item-state actions into DesktopActivity.
