@@ -92,7 +92,9 @@ Functional coverage
 9. Browser / weather / internet
 - Weather via Open-Meteo: implemented.
 - Open browser: implemented.
-- Open arbitrary site/bookmark/search: missing.
+- Open arbitrary site: implemented.
+- Bookmarks: implemented with local preferences.
+- Search: implemented through browser intent.
 
 10. Desktop / dock
 - Launchable app list: implemented.
@@ -106,7 +108,7 @@ Functional coverage
 - Local shell command execution: implemented.
 - ADB enabled toggle attempt: partial/privileged.
 - DPI command shortcut: implemented via shell attempt.
-- adb-grants verification/workflow: missing.
+- adb-grants verification/workflow: partial. Screen now prints grant/appops commands and basic permission state.
 - Autostart after boot: partial; BootReceiver starts VoiceForegroundService.
 - Watchdog accessibility service: scaffold.
 - Active app tracking/autozoom: missing.
@@ -125,3 +127,5 @@ Implementation log
 - 2026-07-21: added drive mode IDs from IDriveMode.smali and wired Eco/Comfort/Dynamic/Snow/Offroad plus steering mode commands.
 - 2026-07-21: added seat IDs from ISeat.smali and wired basic movement plus memory save/restore commands.
 - 2026-07-21: added quick HVAC multi-command presets for comfort, cooling and winter.
+- 2026-07-21: added browser URL/search/bookmark workflow.
+- 2026-07-21: added ADB grants helper output for WRITE_SECURE_SETTINGS, usage stats, storage and overlay appops.

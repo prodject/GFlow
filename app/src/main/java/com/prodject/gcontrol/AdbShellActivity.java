@@ -18,14 +18,17 @@ public class AdbShellActivity extends Activity {
         Button run = Ui.button(this, "Выполнить");
         Button adb = Ui.button(this, "Переключить ADB");
         Button dpi = Ui.button(this, "DPI 440");
+        Button grants = Ui.button(this, "Проверить grants");
         output = Ui.text(this, "", 14, false);
         run.setOnClickListener(v -> execute(command.getText().toString()));
         adb.setOnClickListener(v -> toggleAdb());
         dpi.setOnClickListener(v -> execute("wm density 440"));
+        grants.setOnClickListener(v -> showGrants());
         root.addView(command);
         root.addView(run);
         root.addView(adb);
         root.addView(dpi);
+        root.addView(grants);
         root.addView(output, new LinearLayout.LayoutParams(-1, 0, 1));
         setContentView(root);
     }
@@ -51,6 +54,19 @@ public class AdbShellActivity extends Activity {
                 runOnUiThread(() -> output.setText("Ошибка: " + e.getMessage()));
             }
         }).start();
+    }
+
+    private void showGrants() {
+        String pkg = getPackageName();
+        output.setText("ADB grants для " + pkg + ":\n" +
+                "adb shell pm grant " + pkg + " android.permission.WRITE_SECURE_SETTINGS\n" +
+                "adb shell appops set " + pkg + " GET_USAGE_STATS allow\n" +
+                "adb shell appops set " + pkg + " MANAGE_EXTERNAL_STORAGE allow\n" +
+                "adb shell appops set " + pkg + " android:system_alert_window allow\n" +
+                "adb shell settings get global adb_enabled\n\n" +
+                "Проверка внутри приложения:\n" +
+                "WRITE_SETTINGS=" + Settings.System.canWrite(this) + "\n" +
+                "SDK=" + Build.VERSION.SDK_INT);
     }
 
     private String read(InputStream in) throws IOException {

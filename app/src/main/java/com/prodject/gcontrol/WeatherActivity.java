@@ -1,6 +1,7 @@
 package com.prodject.gcontrol;
 
 import android.app.*;
+import android.content.*;
 import android.os.*;
 import android.widget.*;
 import org.json.*;
@@ -20,17 +21,74 @@ public class WeatherActivity extends Activity {
         EditText lon = new EditText(this);
         lon.setHint("Долгота");
         lon.setText("37.6173");
+        EditText address = new EditText(this);
+        address.setHint("Сайт или поисковый запрос");
+        address.setText("https://www.google.com");
         Button weather = Ui.button(this, "Получить погоду");
-        Button browser = Ui.button(this, "Открыть браузер");
+        Button browser = Ui.button(this, "Открыть сайт");
+        Button search = Ui.button(this, "Поиск");
+        Button bookmark = Ui.button(this, "Добавить закладку");
         result = Ui.text(this, "", 16, false);
         weather.setOnClickListener(v -> load(lat.getText().toString(), lon.getText().toString()));
-        browser.setOnClickListener(v -> startActivity(new android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://www.google.com"))));
+        browser.setOnClickListener(v -> open(normalizeUrl(address.getText().toString())));
+        search.setOnClickListener(v -> open("https://www.google.com/search?q=" + encode(address.getText().toString())));
+        bookmark.setOnClickListener(v -> {
+            String url = normalizeUrl(address.getText().toString());
+            LinkedHashSet<String> items = new LinkedHashSet<>(getPreferences(0).getStringSet("bookmarks", new LinkedHashSet<>()));
+            items.add(url);
+            getPreferences(0).edit().putStringSet("bookmarks", items).apply();
+            renderBookmarks(root, address);
+        });
         root.addView(lat);
         root.addView(lon);
         root.addView(weather);
+        root.addView(address);
         root.addView(browser);
+        root.addView(search);
+        root.addView(bookmark);
+        renderBookmarks(root, address);
         root.addView(result);
         setContentView(root);
+    }
+
+    private void renderBookmarks(LinearLayout root, EditText address) {
+        root.addView(Ui.text(this, "Закладки", 18, true));
+        Set<String> items = getPreferences(0).getStringSet("bookmarks", new LinkedHashSet<>());
+        for (String url : items) {
+            Button b = Ui.button(this, url);
+            b.setOnClickListener(v -> {
+                address.setText(url);
+                open(url);
+            });
+            b.setOnLongClickListener(v -> {
+                LinkedHashSet<String> copy = new LinkedHashSet<>(getPreferences(0).getStringSet("bookmarks", new LinkedHashSet<>()));
+                copy.remove(url);
+                getPreferences(0).edit().putStringSet("bookmarks", copy).apply();
+                Ui.toast(this, "Закладка удалена, откройте экран заново");
+                return true;
+            });
+            root.addView(b);
+        }
+    }
+
+    private void open(String url) {
+        startActivity(new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)));
+    }
+
+    private String normalizeUrl(String input) {
+        String value = input.trim();
+        if (value.isEmpty()) return "https://www.google.com";
+        if (value.startsWith("http://") || value.startsWith("https://")) return value;
+        if (value.contains(".") && !value.contains(" ")) return "https://" + value;
+        return "https://www.google.com/search?q=" + encode(value);
+    }
+
+    private String encode(String value) {
+        try {
+            return URLEncoder.encode(value, "UTF-8");
+        } catch (Exception e) {
+            return "";
+        }
     }
 
     private void load(String lat, String lon) {
