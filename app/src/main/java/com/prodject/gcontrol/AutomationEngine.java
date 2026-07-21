@@ -84,6 +84,7 @@ final class AutomationEngine {
 
     private static String runAction(Context context, Action action) {
         if ("profile".equals(action.name)) return applyProfile(context, action.value);
+        if ("user_profile".equals(action.name)) return UserProfileEngine.apply(context, action.value);
         if ("smart_climate".equals(action.name)) return runSmartClimate(context);
         if ("start_dvr".equals(action.name)) {
             Intent intent = new Intent(context, DvrService.class).setAction(DvrService.ACTION_START);

@@ -583,48 +583,80 @@ public class MainActivity extends Activity {
 
     private void showUserProfiles() {
         LinearLayout root = commandRoot("Профили пользователей");
-        SharedPreferences prefs = AutomationEngine.prefs(this);
-        root.addView(Ui.text(this, "Профиль хранит память сиденья и опциональный smart preset для климата/режима/подсветки. Активный: " + prefs.getString(AutomationEngine.KEY_ACTIVE_PROFILE, "не выбран"), 14, false));
-        Button add = Ui.button(this, "Создать профиль из текущего сиденья");
-        add.setOnClickListener(v -> showProfileEditor("", String.valueOf(EcarxVehicleAdapter.ZONE_DRIVER_LEFT), String.valueOf(EcarxVehicleAdapter.SEAT_POSITION_1), firstAutomationPreset()));
-        root.addView(add);
-        for (String name : AutomationEngine.names(prefs, AutomationEngine.KEY_PROFILE_ORDER)) {
-            Button b = Ui.button(this, "Профиль: " + name);
-            b.setOnClickListener(v -> root.addView(Ui.text(this, AutomationEngine.applyProfile(this, name), 13, false), 2));
+        SharedPreferences prefs = UserProfileEngine.prefs(this);
+        root.addView(Ui.text(this, "Активный профиль: " + AutomationEngine.prefs(this).getString(AutomationEngine.KEY_ACTIVE_PROFILE, "не выбран")
+                + "\nПоследний: " + prefs.getString(UserProfileEngine.KEY_LAST_USED, "нет")
+                + "\nИдентификация: Face ID / телефон / Bluetooth / цифровой ключ сохраняются как правила профиля; автоматическое применение включается после появления соответствующего системного события.", 14, false));
+        Button addDriver = Ui.button(this, "Создать профиль водителя");
+        addDriver.setOnClickListener(v -> showUserProfileEditor("", "driver", "manual=", UserProfileEngine.defaultDriverBody()));
+        Button addPassenger = Ui.button(this, "Создать профиль пассажира");
+        addPassenger.setOnClickListener(v -> showUserProfileEditor("", "passenger", "manual=", UserProfileEngine.defaultPassengerBody()));
+        Button last = Ui.button(this, "Применить последний профиль");
+        last.setOnClickListener(v -> root.addView(Ui.text(this, UserProfileEngine.apply(this, prefs.getString(UserProfileEngine.KEY_LAST_USED, "")), 13, false), 2));
+        root.addView(addDriver);
+        root.addView(addPassenger);
+        root.addView(last);
+        addProfileSection(root, "Водители", "driver");
+        addProfileSection(root, "Пассажиры", "passenger");
+    }
+
+    private void addProfileSection(LinearLayout root, String title, String type) {
+        root.addView(Ui.text(this, title, 18, true));
+        for (String name : UserProfileEngine.names(this, type)) {
+            String raw = UserProfileEngine.raw(this, name);
+            Button b = Ui.button(this, name + " · " + type);
+            b.setOnClickListener(v -> root.addView(Ui.text(this, UserProfileEngine.apply(this, name), 13, false), 2));
             b.setOnLongClickListener(v -> {
-                String[] p = prefs.getString("profile:" + name, "").split("\\|", -1);
-                showProfileEditor(name, p.length > 1 ? p[1] : "1", p.length > 2 ? p[2] : String.valueOf(EcarxVehicleAdapter.SEAT_POSITION_1), p.length > 3 ? p[3] : "");
+                String identity = "";
+                String body = "";
+                for (String line : raw.split("\\n")) {
+                    if (line.startsWith("identity:")) identity = line.substring("identity:".length());
+                    else if (!line.startsWith("name:") && !line.startsWith("type:")) body += line + "\n";
+                }
+                showUserProfileEditor(name, type, identity, body);
                 return true;
             });
             root.addView(b);
         }
     }
 
-    private void showProfileEditor(String oldName, String oldZone, String oldMemory, String oldPreset) {
+    private void showUserProfileEditor(String oldName, String oldType, String oldIdentity, String oldBody) {
         LinearLayout root = commandRoot(oldName.isEmpty() ? "Новый профиль" : "Профиль: " + oldName);
         EditText name = new EditText(this);
-        name.setHint("Имя пользователя");
+        name.setHint("Имя профиля");
         name.setText(oldName);
-        EditText zone = new EditText(this);
-        zone.setHint("Зона сиденья: driver=1, passenger=4");
-        zone.setText(oldZone);
-        EditText memory = new EditText(this);
-        memory.setHint("Память сиденья: 0x2d400101 / 0x2d400102");
-        memory.setText(oldMemory);
-        EditText preset = new EditText(this);
-        preset.setHint("Smart preset после выбора профиля");
-        preset.setText(oldPreset);
+        EditText type = new EditText(this);
+        type.setHint("driver / passenger");
+        type.setText(oldType);
+        EditText identity = new EditText(this);
+        identity.setHint("manual=Глеб; phone=Pixel; bluetooth=AA:BB; face=gleb; digitalKey=id");
+        identity.setText(oldIdentity);
+        EditText body = new EditText(this);
+        body.setMinLines(16);
+        body.setGravity(Gravity.TOP);
+        body.setHint(UserProfileEngine.defaultDriverBody());
+        body.setText(oldBody);
         Button save = Ui.button(this, "Сохранить профиль");
         save.setOnClickListener(v -> {
-            String result = AutomationEngine.saveCurrentSeatProfile(this, name.getText().toString().trim(), AutomationEngine.parseInt(zone.getText().toString(), EcarxVehicleAdapter.ZONE_DRIVER_LEFT), AutomationEngine.parseInt(memory.getText().toString(), EcarxVehicleAdapter.SEAT_POSITION_1), preset.getText().toString().trim());
+            String result = UserProfileEngine.save(this, oldName, name.getText().toString(), type.getText().toString().trim(), identity.getText().toString(), body.getText().toString());
             Ui.toast(this, "Профиль сохранен");
             root.addView(Ui.text(this, result, 13, false), 2);
         });
+        Button apply = Ui.button(this, "Применить");
+        apply.setOnClickListener(v -> root.addView(Ui.text(this, UserProfileEngine.apply(this, name.getText().toString().trim()), 13, false), 2));
+        Button delete = Ui.button(this, "Удалить");
+        delete.setOnClickListener(v -> {
+            UserProfileEngine.delete(this, oldName, oldType);
+            showUserProfiles();
+        });
+        root.addView(Ui.text(this, "Доступные строки: seatMemory, seatLength, seatHeight, seatBackrest, mirror, climateTemp, fan, seatHeat, seatVent, drive, steering, hud, brightness, ambience, volume, mediaSource, desktopPins, buttonPreset, preset, scenario, adas.", 13, false));
         root.addView(name);
-        root.addView(zone);
-        root.addView(memory);
-        root.addView(preset);
+        root.addView(type);
+        root.addView(identity);
+        root.addView(body);
         root.addView(save);
+        root.addView(apply);
+        if (!oldName.isEmpty()) root.addView(delete);
     }
 
     private void showSmartClimate() {
