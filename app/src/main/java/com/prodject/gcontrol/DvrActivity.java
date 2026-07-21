@@ -5,6 +5,7 @@ import android.content.*;
 import android.hardware.camera2.*;
 import android.os.*;
 import android.widget.*;
+import java.io.File;
 import java.util.*;
 
 public class DvrActivity extends Activity {
@@ -13,7 +14,9 @@ public class DvrActivity extends Activity {
     private EditText camerasInput;
     private EditText segmentInput;
     private EditText limitInput;
+    private EditText storagePathInput;
     private Spinner storageInput;
+    private Spinner qualityInput;
 
     @Override public void onCreate(Bundle b) {
         super.onCreate(b);
@@ -60,7 +63,7 @@ public class DvrActivity extends Activity {
     private void addSettingsUi() {
         SharedPreferences prefs = getSharedPreferences(DvrArchive.PREFS, MODE_PRIVATE);
         camerasInput = new EditText(this);
-        camerasInput.setHint("front,rear,left,right или Camera2 id через запятую");
+        camerasInput.setHint("front,rear,camera2:0,evs:360,evs:rear,evs:dvr");
         camerasInput.setText(prefs.getString(DvrArchive.KEY_CAMERAS, DvrArchive.DEFAULT_CAMERAS));
         segmentInput = new EditText(this);
         segmentInput.setHint("Длина сегмента, сек");
@@ -75,11 +78,21 @@ public class DvrActivity extends Activity {
         storageInput.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, storage));
         String current = prefs.getString(DvrArchive.KEY_STORAGE, DvrArchive.STORAGE_EXTERNAL);
         for (int i = 0; i < storage.length; i++) if (storage[i].equals(current)) storageInput.setSelection(i);
-        root.addView(Ui.text(this, "Настройки записи marker-сегментов: камеры, длина сегмента, лимит и целевое хранилище.", 14, false));
+        storagePathInput = new EditText(this);
+        storagePathInput.setHint("Путь записи, например /storage/XXXX-XXXX/GControlDvr");
+        storagePathInput.setText(prefs.getString(DvrArchive.KEY_STORAGE_PATH, ""));
+        qualityInput = new Spinner(this);
+        String[] quality = {DvrArchive.QUALITY_720P, DvrArchive.QUALITY_1080P, DvrArchive.QUALITY_480P};
+        qualityInput.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, quality));
+        String currentQuality = prefs.getString(DvrArchive.KEY_QUALITY, DvrArchive.QUALITY_720P);
+        for (int i = 0; i < quality.length; i++) if (quality[i].equals(currentQuality)) qualityInput.setSelection(i);
+        root.addView(Ui.text(this, "Источники: front/rear/external или camera2:<id> пишутся через Camera2. evs:360/evs:rear/evs:dvr открывают штатную EVS-камеру и пробуют записать экран через screenrecord.", 14, false));
         root.addView(camerasInput);
         root.addView(segmentInput);
         root.addView(limitInput);
         root.addView(storageInput);
+        root.addView(storagePathInput);
+        root.addView(qualityInput);
     }
 
     private void saveSettings() {
@@ -87,7 +100,9 @@ public class DvrActivity extends Activity {
                 camerasInput.getText().toString(),
                 parseInt(segmentInput.getText().toString(), 60),
                 parseInt(limitInput.getText().toString(), 5),
-                String.valueOf(storageInput.getSelectedItem()));
+                String.valueOf(storageInput.getSelectedItem()),
+                String.valueOf(qualityInput.getSelectedItem()),
+                storagePathInput.getText().toString());
         Ui.toast(this, "Настройки DVR сохранены");
     }
 
@@ -122,13 +137,28 @@ public class DvrActivity extends Activity {
             for (String id : cm.getCameraIdList()) {
                 CameraCharacteristics cc = cm.getCameraCharacteristics(id);
                 Integer facing = cc.get(CameraCharacteristics.LENS_FACING);
-                sb.append("cam").append(id).append(" · ").append(facingName(facing)).append("\n");
+                sb.append("camera2:").append(id).append(" · ").append(facingName(facing)).append("\n");
             }
         } catch (Exception e) {
             sb.append("Ошибка Camera2: ").append(e.getMessage()).append("\n");
         }
+        sb.append("\nEVS источники из OneOS AdaptAPI: evs:rear, evs:360, evs:dvr\n");
+        sb.append("\nUSB кандидаты:\n").append(usbRootsSummary());
         sb.append("\n").append(DvrArchive.summary(this));
         status.setText(sb.toString());
+    }
+
+    private String usbRootsSummary() {
+        StringBuilder sb = new StringBuilder();
+        File storage = new File("/storage");
+        File[] roots = storage.listFiles(file -> file.isDirectory()
+                && file.canWrite()
+                && !"emulated".equals(file.getName())
+                && !"self".equals(file.getName()));
+        if (roots == null || roots.length == 0) return "не найдены\n";
+        Arrays.sort(roots, Comparator.comparing(File::getAbsolutePath));
+        for (File root : roots) sb.append(root.getAbsolutePath()).append("\n");
+        return sb.toString();
     }
 
     private String facingName(Integer facing) {
