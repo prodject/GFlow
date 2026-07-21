@@ -332,6 +332,12 @@ public class MainActivity extends Activity {
             showAutomation();
         });
         root.addView(welcomeLeave);
+        Button parkingGuard = Ui.button(this, "Добавить шаблон Parking Guard");
+        parkingGuard.setOnClickListener(v -> {
+            installParkingGuardScenario();
+            showAutomation();
+        });
+        root.addView(parkingGuard);
         for (String name : AutomationEngine.names(prefs, AutomationEngine.KEY_PRESET_ORDER)) {
             Button b = Ui.button(this, "Preset: " + name);
             b.setOnClickListener(v -> root.addView(Ui.text(this, AutomationEngine.runPreset(this, name), 13, false), 2));
@@ -611,6 +617,18 @@ public class MainActivity extends Activity {
         saveNamed(AutomationEngine.KEY_TRIGGER_ORDER, "trigger:", "", "Welcome manual", "Welcome manual|manual|welcome|Welcome drive");
         saveNamed(AutomationEngine.KEY_TRIGGER_ORDER, "trigger:", "", "Leave manual", "Leave manual|manual|leave|Leave car");
         Ui.toast(this, "Welcome / Leave добавлены");
+    }
+
+    private void installParkingGuardScenario() {
+        saveAutomationPreset("", "Parking guard",
+                "action:start_dvr=true\n"
+                        + "0x21110100/0=0x1\n"
+                        + "0x21030100/-2147483648=0x21030102\n"
+                        + "0x21200300/0=0x1\n"
+                        + "0x21200500/0=0x1\n"
+                        + "0x21020200/-2147483648=0x1");
+        saveNamed(AutomationEngine.KEY_TRIGGER_ORDER, "trigger:", "", "Parking manual", "Parking manual|manual|parking|Parking guard");
+        Ui.toast(this, "Parking Guard добавлен");
     }
 
     private String automationIdeas() {
