@@ -416,6 +416,35 @@ final class EcarxVehicleAdapter {
     static final int PAS_RCTA_VOLUME_MID = 0x23050502;
     static final int PAS_RCTA_VOLUME_HIGH = 0x23050503;
 
+    static final int VEHICLE_AVAS_SWITCH = 0x201a0500;
+    static final int VEHICLE_AVAS_VOLUME = 0x201a0600;
+    static final int VEHICLE_AVAS_SOUND_TYPE = 0x201a0700;
+    static final int VEHICLE_AVAS_SOUND_TYPE_NAME = 0x201a0800;
+    static final int VEHICLE_AVAS_SOUND_TYPE_PATH = 0x201a0900;
+    static final int VEHICLE_DIGITAL_KEY = 0x20281000;
+    static final int VEHICLE_DIGITAL_KEY_REQ_STS = 0x20281100;
+    static final int VEHICLE_DIGITAL_KEY_UNPAIR = 0x20281200;
+    static final int VEHICLE_DIGITAL_KEY_TERMINATION = 0x20281300;
+    static final int VEHICLE_DIGITAL_KEY_SUSPENSION = 0x20281400;
+    static final int VEHICLE_DIGITAL_KEY_PAIRING_FAILED = 0x20281401;
+    static final int VEHICLE_DIGITAL_KEY_TRACKING_WAIT = 0x20281402;
+    static final int VEHICLE_DIGITAL_KEY_TRACKING_RESULT = 0x20281403;
+    static final int VEHICLE_DIGITAL_KEY_RES_TIMEOUT = 0x20291400;
+
+    static final int AVAS_VOLUME_OFF = 0x0;
+    static final int AVAS_VOLUME_LOW = 0x201a0601;
+    static final int AVAS_VOLUME_MID = 0x201a0602;
+    static final int AVAS_VOLUME_HIGH = 0x201a0603;
+    static final int AVAS_SOUND_NONE = 0x0;
+    static final int AVAS_SOUND_1 = 0x201a0701;
+    static final int AVAS_SOUND_2 = 0x201a0702;
+    static final int AVAS_SOUND_3 = 0x201a0703;
+    static final int AVAS_SOUND_4 = 0x201a0704;
+    static final int AVAS_SOUND_5 = 0x201a0705;
+    static final int AVAS_SOUND_6 = 0x201a0706;
+    static final int AVAS_SOUND_7 = 0x201a0707;
+    static final int AVAS_SOUND_8 = 0x201a0708;
+
     static final int HUD_ACTIVE = 0x20110100;
     static final int HUD_CALIBRATION = 0x20110200;
     static final int HUD_ANGLE_RESET = 0x27010800;
