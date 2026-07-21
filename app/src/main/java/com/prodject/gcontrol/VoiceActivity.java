@@ -17,8 +17,14 @@ public class VoiceActivity extends Activity {
         root.addView(Ui.text(this, "Экран прослушивания. Локальная модель: assets/vosk-model-ru, нативная библиотека: libvosk.so. Поддерживаются app.monji.VOICE, VOICE_COMMAND и ASSIST.", 16, false));
         EditText input = new EditText(this);
         input.setHint("Введите или продиктуйте команду");
+        input.setText(getIntent().getStringExtra("command"));
         Button run = Ui.button(this, "Выполнить");
         result = Ui.text(this, "", 16, true);
+        String source = getIntent().getStringExtra("source");
+        String event = getIntent().getStringExtra("event");
+        if (source != null || event != null) {
+            result.setText("Источник: " + source + "\n" + event);
+        }
         Button listen = Ui.button(this, "Слушать Vosk");
         Button stop = Ui.button(this, "Стоп");
         run.setOnClickListener(v -> {
