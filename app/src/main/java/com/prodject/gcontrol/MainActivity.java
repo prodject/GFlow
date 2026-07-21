@@ -117,6 +117,30 @@ public class MainActivity extends Activity {
         root.addView(b);
     }
 
+    private void addFloatCommand(LinearLayout root, String label, int functionId, int zone, float value) {
+        Button b = Ui.button(this, label + " · " + EcarxVehicleAdapter.hex(functionId) + "/" + zone + "=" + value);
+        b.setOnClickListener(v -> {
+            EcarxVehicleAdapter.Result result = new EcarxVehicleAdapter(this).setFloat(functionId, zone, value);
+            Ui.toast(this, result.success ? "Команда отправлена" : "Команда не выполнена");
+            root.addView(Ui.text(this, result.message, 13, false), 2);
+        });
+        root.addView(b);
+    }
+
+    private void addFloatDiagnostic(LinearLayout root, String label, int functionId, int... zones) {
+        Button b = Ui.button(this, "Float диагностика: " + label);
+        b.setOnClickListener(v -> {
+            EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
+            StringBuilder sb = new StringBuilder(label).append("\n");
+            for (int zone : zones) {
+                sb.append(adapter.support(functionId, zone).message).append("\n");
+                sb.append(adapter.getFloat(functionId, zone).message).append("\n");
+            }
+            root.addView(Ui.text(this, sb.toString(), 13, false), 2);
+        });
+        root.addView(b);
+    }
+
     private void addPreset(LinearLayout root, String label, EcarxVehicleAdapter.Command... commands) {
         Button b = Ui.button(this, label);
         b.setOnClickListener(v -> {
@@ -256,9 +280,10 @@ public class MainActivity extends Activity {
 
     private void showClimate() {
         LinearLayout root = commandRoot("Климат");
-        root.addView(Ui.text(this, "HVAC-функции из IHvac.smali. Для сидений и зон сейчас используется zone=0 fallback.", 14, false));
+        root.addView(Ui.text(this, "HVAC-функции из IHvac.smali и OneOS-Dock: обычные int-команды плюс float-температура driver zone=1 / passenger zone=4.", 14, false));
         addDiagnostic(root, "HVAC", EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.HVAC_AC, EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.HVAC_CIRCULATION, EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.HVAC_TEMP_MIN, EcarxVehicleAdapter.HVAC_TEMP_MAX, EcarxVehicleAdapter.HVAC_TEMP_STEP);
         addDiagnostic(root, "HVAC расширенный", EcarxVehicleAdapter.HVAC_TEMP_DUAL, EcarxVehicleAdapter.HVAC_TEMP_UNIT, EcarxVehicleAdapter.HVAC_DISPLAY_WINDOW_TAB, EcarxVehicleAdapter.HVAC_AQS_SWITCH, EcarxVehicleAdapter.HVAC_CO2_SWITCH, EcarxVehicleAdapter.HVAC_IONS_SWITCH, EcarxVehicleAdapter.HVAC_AIR_FRAGRANCE, EcarxVehicleAdapter.HVAC_FILTER_ELEMENT_LIFE, EcarxVehicleAdapter.HVAC_MODULE_CONNECT_STATUS);
+        addFloatDiagnostic(root, "Температура driver/passenger", EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT);
         Button comfortPanel = Ui.button(this, "Комфортный климат");
         comfortPanel.setOnClickListener(v -> showComfortClimate());
         root.addView(comfortPanel);
@@ -326,6 +351,14 @@ public class MainActivity extends Activity {
         addCommand(root, "Температура dual split", EcarxVehicleAdapter.HVAC_TEMP_DUAL, EcarxVehicleAdapter.COMMON_OFF);
         addCommand(root, "Температура Celsius", EcarxVehicleAdapter.HVAC_TEMP_UNIT, EcarxVehicleAdapter.TEMP_UNIT_C);
         addCommand(root, "Температура Fahrenheit", EcarxVehicleAdapter.HVAC_TEMP_UNIT, EcarxVehicleAdapter.TEMP_UNIT_F);
+        addFloatCommand(root, "Driver temp 18.0C", EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, 18.0f);
+        addFloatCommand(root, "Driver temp 20.0C", EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, 20.0f);
+        addFloatCommand(root, "Driver temp 22.0C", EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, 22.0f);
+        addFloatCommand(root, "Driver temp 24.0C", EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, 24.0f);
+        addFloatCommand(root, "Passenger temp 18.0C", EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, 18.0f);
+        addFloatCommand(root, "Passenger temp 20.0C", EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, 20.0f);
+        addFloatCommand(root, "Passenger temp 22.0C", EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, 22.0f);
+        addFloatCommand(root, "Passenger temp 24.0C", EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, 24.0f);
         addCommand(root, "Открыть левую температуру", EcarxVehicleAdapter.HVAC_DISPLAY_WINDOW_TAB, EcarxVehicleAdapter.DISPLAY_WINDOW_TAB_LEFT_TEMP);
         addCommand(root, "Открыть правую температуру", EcarxVehicleAdapter.HVAC_DISPLAY_WINDOW_TAB, EcarxVehicleAdapter.DISPLAY_WINDOW_TAB_RIGHT_TEMP);
         addCommand(root, "Открыть вкладку сидений", EcarxVehicleAdapter.HVAC_DISPLAY_WINDOW_TAB, EcarxVehicleAdapter.DISPLAY_WINDOW_TAB_SEAT);
