@@ -49,10 +49,10 @@ Functional coverage
 - Camera2 discovery: implemented.
 - Archive directory and size summary: implemented.
 - Segment naming and pruning: implemented.
-- Foreground camera service: partial. It attempts Camera2/MediaRecorder segments and falls back to marker files.
-- Real video recording: partial. Camera2/MediaRecorder path records first available Camera2 camera when permission/device support allows; selected non-Camera2/EVS cameras still use placeholder marker files.
-- Stock camera integration: adapter added for com.ecarx.xui.adaptapi.evs.EVS and com.ecarx.xui.adaptapi.dvr.Dvr. Surface preview and real recording still pending.
-- Camera selection, segment duration, storage target, per-camera archive: implemented for marker-segment workflow. Camera2/EVS real capture still needs MediaRecorder or EVS surface binding.
+- Foreground camera service: partial. It attempts selected Camera2/MediaRecorder sources, then EVS/screenrecord sources, and falls back to marker files.
+- Real video recording: partial. Camera2/MediaRecorder path records selected Camera2 ids or facing aliases when permission/device support allows.
+- Stock camera integration: partial. com.ecarx.xui.adaptapi.evs.EVS can open rear/AVM-360/DVR views, and GControl can experimentally record the displayed EVS/360 view through Android screenrecord when firmware permissions allow. Direct EVS encoder/surface capture is still pending because the decompiled IEvsCamera contract exposes preview SurfaceHolder methods but no recording surface or file writer.
+- Camera selection, segment duration, quality profile, storage target, explicit USB/path target and per-camera archive: implemented. Camera2 sources support front/rear/external/camera2:<id>; EVS sources support evs:rear/evs:360/evs:dvr through the screenrecord backend.
 
 4. Voice assistant
 - Voice activity and app.monji.VOICE / VOICE_COMMAND / ASSIST entry points: implemented.
@@ -153,6 +153,7 @@ Implementation log
 - 2026-07-21: added Comfort Climate quick panel with HVAC status readback, comfort/quiet/warmup presets and common seat/wheel/fan/blowing controls.
 - 2026-07-21: added Desktop weather widget with Open-Meteo refresh and cached last value.
 - 2026-07-21: added DVR Camera2/MediaRecorder segment path with marker fallback and camera|microphone foreground service type.
+- 2026-07-21: expanded DVR settings with quality profiles, explicit recording path for USB targets, Camera2 source aliases and experimental EVS/360 screenrecord backend based on the decompiled IEvsCamera preview-only contract.
 - 2026-07-21: expanded ADB/System helper with direct settings shortcuts for Accessibility, WRITE_SETTINGS, All Files Access and app details.
 - 2026-07-21: added EcarxHudDimAdapter using reflection against com.ecarx.xui.adaptapi.hudinteraction.HUDInteraction and com.ecarx.xui.adaptapi.diminteraction.DimInteraction from OneOS-SystemUIPlugin.
 - 2026-07-21: wired HUDInteraction requestHUDMode/requestCalibrationMode/requestADASOpenStatus/requestCarFollowingGAPLevel/getHUDCalibrationParam and height/ADAS/vehicle sync requests.

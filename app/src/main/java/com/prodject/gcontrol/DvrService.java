@@ -19,12 +19,15 @@ public class DvrService extends BaseForegroundService {
     private CameraDevice cameraDevice;
     private CameraCaptureSession captureSession;
     private MediaRecorder mediaRecorder;
+    private Process screenRecordProcess;
     private boolean cameraRecording;
     private boolean running;
+    private String activeSource;
+    private int openedEvsCameraId = -1;
     private final Runnable segmentTick = new Runnable() {
         @Override public void run() {
             if (!running) return;
-            if (!startCameraSegment()) writeMarkerSegments();
+            if (!startNextSegment()) writeMarkerSegments();
             DvrArchive.prune(DvrService.this, DvrArchive.limitBytes(DvrService.this));
             handler.postDelayed(this, DvrArchive.segmentMillis(DvrService.this));
         }
@@ -43,7 +46,7 @@ public class DvrService extends BaseForegroundService {
         String action = intent == null ? ACTION_START : intent.getAction();
         if (ACTION_STOP.equals(action)) {
             running = false;
-            stopCameraSegment();
+            stopActiveSegment();
             stopForeground(true);
             stopSelf();
         } else {
@@ -56,17 +59,40 @@ public class DvrService extends BaseForegroundService {
 
     @Override public void onDestroy() {
         running = false;
-        stopCameraSegment();
+        stopActiveSegment();
         if (recorderThread != null) recorderThread.quitSafely();
         super.onDestroy();
     }
 
-    private boolean startCameraSegment() {
+    private boolean startNextSegment() {
+        String[] sources = DvrArchive.selectedCameras(this);
+        if (sources.length == 0) return false;
+        String preferred = nextSource(sources);
+        if (trySource(preferred)) return true;
+        for (String source : sources) if (!source.equals(preferred) && trySource(source)) return true;
+        return false;
+    }
+
+    private boolean trySource(String source) {
+        return isEvsSource(source) ? startEvsScreenRecordSegment(source) : startCameraSegment(source);
+    }
+
+    private String nextSource(String[] sources) {
+        if (activeSource == null) return sources[0];
+        for (int i = 0; i < sources.length; i++) {
+            if (sources[i].equals(activeSource)) return sources[(i + 1) % sources.length];
+        }
+        return sources[0];
+    }
+
+    private boolean startCameraSegment(String source) {
         if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) return false;
-        String cameraId = firstCamera2Id();
+        String cameraId = camera2IdFor(source);
         if (cameraId == null) return false;
-        stopCameraSegment();
-        File out = DvrArchive.newSegment(this, cameraId);
+        stopActiveSegment();
+        activeSource = source;
+        File out = DvrArchive.newSegment(this, "camera2_" + cameraId);
+        DvrArchive.Quality quality = DvrArchive.quality(this);
         try {
             ensureRecorderThread();
             mediaRecorder = new MediaRecorder();
@@ -74,9 +100,9 @@ public class DvrService extends BaseForegroundService {
             mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
             mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
             mediaRecorder.setOutputFile(out.getAbsolutePath());
-            mediaRecorder.setVideoEncodingBitRate(4_000_000);
+            mediaRecorder.setVideoEncodingBitRate(quality.bitrate);
             mediaRecorder.setVideoFrameRate(30);
-            mediaRecorder.setVideoSize(1280, 720);
+            mediaRecorder.setVideoSize(quality.width, quality.height);
             mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
             mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
             mediaRecorder.prepare();
@@ -86,21 +112,51 @@ public class DvrService extends BaseForegroundService {
                     cameraDevice = camera;
                     createRecordingSession();
                 }
+
                 @Override public void onDisconnected(CameraDevice camera) {
                     camera.close();
                     cameraDevice = null;
                 }
+
                 @Override public void onError(CameraDevice camera, int error) {
                     camera.close();
                     cameraDevice = null;
-                    stopCameraSegment();
+                    stopActiveSegment();
                 }
             }, recorderHandler);
             cameraRecording = true;
             return true;
         } catch (Exception e) {
-            android.util.Log.e("GControlDvr", "camera segment failed", e);
-            stopCameraSegment();
+            android.util.Log.e("GControlDvr", "camera segment failed " + source, e);
+            stopActiveSegment();
+            return false;
+        }
+    }
+
+    private boolean startEvsScreenRecordSegment(String source) {
+        stopActiveSegment();
+        activeSource = source;
+        int evsCameraId = evsCameraId(source);
+        File out = DvrArchive.newSegment(this, source);
+        DvrArchive.Quality quality = DvrArchive.quality(this);
+        try {
+            EcarxDvrAdapter.Result open = new EcarxDvrAdapter(this).openEvs(evsCameraId);
+            if (!open.success) android.util.Log.w("GControlDvr", open.message);
+            openedEvsCameraId = evsCameraId;
+            ArrayList<String> cmd = new ArrayList<>();
+            cmd.add("screenrecord");
+            cmd.add("--size");
+            cmd.add(quality.width + "x" + quality.height);
+            cmd.add("--bit-rate");
+            cmd.add(String.valueOf(quality.bitrate));
+            cmd.add("--time-limit");
+            cmd.add(String.valueOf(Math.max(10, Math.min(180, (DvrArchive.segmentMillis(this) / 1000) - 1))));
+            cmd.add(out.getAbsolutePath());
+            screenRecordProcess = new ProcessBuilder(cmd).redirectErrorStream(true).start();
+            return true;
+        } catch (Exception e) {
+            android.util.Log.e("GControlDvr", "EVS screenrecord failed " + source, e);
+            stopActiveSegment();
             return false;
         }
     }
@@ -118,17 +174,23 @@ public class DvrService extends BaseForegroundService {
                         mediaRecorder.start();
                     } catch (Exception e) {
                         android.util.Log.e("GControlDvr", "record start failed", e);
-                        stopCameraSegment();
+                        stopActiveSegment();
                     }
                 }
+
                 @Override public void onConfigureFailed(CameraCaptureSession session) {
-                    stopCameraSegment();
+                    stopActiveSegment();
                 }
             }, recorderHandler);
         } catch (Exception e) {
             android.util.Log.e("GControlDvr", "session failed", e);
-            stopCameraSegment();
+            stopActiveSegment();
         }
+    }
+
+    private void stopActiveSegment() {
+        stopCameraSegment();
+        stopScreenRecordSegment();
     }
 
     private void stopCameraSegment() {
@@ -154,6 +216,22 @@ public class DvrService extends BaseForegroundService {
         cameraRecording = false;
     }
 
+    private void stopScreenRecordSegment() {
+        try {
+            if (screenRecordProcess != null) {
+                screenRecordProcess.destroy();
+                screenRecordProcess.waitFor();
+            }
+        } catch (Exception ignored) {
+        }
+        screenRecordProcess = null;
+        try {
+            if (openedEvsCameraId != -1) new EcarxDvrAdapter(this).closeEvs(openedEvsCameraId);
+        } catch (Exception ignored) {
+        }
+        openedEvsCameraId = -1;
+    }
+
     private void ensureRecorderThread() {
         if (recorderThread != null) return;
         recorderThread = new HandlerThread("GControlDvrRecorder");
@@ -161,16 +239,45 @@ public class DvrService extends BaseForegroundService {
         recorderHandler = new Handler(recorderThread.getLooper());
     }
 
-    private String firstCamera2Id() {
+    private String camera2IdFor(String source) {
         try {
-            Set<String> selected = new LinkedHashSet<>(Arrays.asList(DvrArchive.selectedCameras(this)));
             CameraManager manager = getSystemService(CameraManager.class);
             String[] ids = manager.getCameraIdList();
-            for (String id : ids) if (selected.contains(id)) return id;
-            return ids.length > 0 ? ids[0] : null;
+            String normalized = source == null ? "" : source.trim().toLowerCase(Locale.ROOT);
+            if (normalized.startsWith("camera2:")) normalized = normalized.substring("camera2:".length());
+            for (String id : ids) if (id.equals(normalized)) return id;
+            Integer wantedFacing = wantedFacing(normalized);
+            if (wantedFacing != null) {
+                for (String id : ids) {
+                    CameraCharacteristics cc = manager.getCameraCharacteristics(id);
+                    Integer facing = cc.get(CameraCharacteristics.LENS_FACING);
+                    if (wantedFacing.equals(facing)) return id;
+                }
+            }
+            return ids.length > 0 && ("front".equals(normalized) || "rear".equals(normalized)) ? ids[0] : null;
         } catch (Exception e) {
             return null;
         }
+    }
+
+    private Integer wantedFacing(String source) {
+        if ("front".equals(source) || "adas".equals(source)) return CameraCharacteristics.LENS_FACING_FRONT;
+        if ("rear".equals(source) || "back".equals(source)) return CameraCharacteristics.LENS_FACING_BACK;
+        if ("external".equals(source) || "usb".equals(source) || "left".equals(source) || "right".equals(source)) {
+            return Build.VERSION.SDK_INT >= 23 ? CameraCharacteristics.LENS_FACING_EXTERNAL : null;
+        }
+        return null;
+    }
+
+    private boolean isEvsSource(String source) {
+        return source != null && source.toLowerCase(Locale.ROOT).startsWith("evs:");
+    }
+
+    private int evsCameraId(String source) {
+        String normalized = source == null ? "" : source.toLowerCase(Locale.ROOT);
+        if (normalized.contains("rear")) return EcarxDvrAdapter.EVS_CAMERA_REAR;
+        if (normalized.contains("dvr")) return EcarxDvrAdapter.EVS_CAMERA_DVR;
+        return EcarxDvrAdapter.EVS_CAMERA_AVM;
     }
 
     private void writeMarkerSegments() {
