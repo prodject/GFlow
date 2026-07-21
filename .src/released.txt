@@ -65,15 +65,15 @@ Functional coverage
 - HVAC IDs found in IHvac.smali: power, AC, AC max, auto, eco, fan speed, blowing mode, temperature, circulation, front/rear defrost, seat heating/ventilation/massage, steering wheel heat.
 - BCM IDs found in IBcm.smali: windows, sunroof, sun curtain, trunk/custom key, mirror fold/adjust, doors, lamps, wipers.
 - ADAS IDs found in IADAS.smali: AEB, FCW, LKA, LDW, RCW, speed limit warning, ELKA/emergency lane, lane change assist, PDC.
-- HUD IDs found in IHUD.smali through vehicle interface list; detailed UI still pending.
+- HUD IDs found in IHUD.smali; first HUD controls are wired through EcarxVehicleAdapter.
 - Seat IDs found in ISeat.smali: seat position, height, backrest, cushion, headrest, massage-related controls.
 - Current GControl status before adapter: scaffold/broadcast only.
 - Next implementation target: reflection adapter and UI buttons for high-confidence int functions.
 
 6. Climate presets
-- Preset UI text: scaffold.
+- Preset UI text: implemented.
 - Save/edit/delete presets: missing.
-- Quick templates comfort/cooling/summer/winter: missing.
+- Quick templates comfort/cooling/winter: adapter implemented as multi-command HVAC templates.
 - Comfort climate screen: missing.
 - Vehicle execution depends on HVAC adapter.
 
@@ -87,7 +87,7 @@ Functional coverage
 - Steering wheel receiver: partial; opens VoiceActivity for any matching event.
 - HUD presentation/observer services: scaffold.
 - Cluster bridge service: scaffold.
-- Real HUD/cluster contracts: found candidates in com.ecarx.xui.adaptapi.hudinteraction, vehicle.IHUD, DIMInteraction and AudioExtService InteractionProto; implementation pending.
+- Real HUD/cluster contracts: HUD vehicle function buttons added from IHUD.smali; hudinteraction, DIMInteraction and AudioExtService InteractionProto still pending.
 
 9. Browser / weather / internet
 - Weather via Open-Meteo: implemented.
@@ -121,3 +121,7 @@ Implementation log
 - 2026-07-21: added manifest permissions found in ECarXCarService_src and CarService_src for HVAC, car info/vendor extension, door, seat, mirror, HVAC and light categories. These remain privileged/system-signature on stock firmware.
 - 2026-07-21: added EcarxDvrAdapter using reflection against com.ecarx.xui.adaptapi.evs.EVS and com.ecarx.xui.adaptapi.dvr.Dvr.
 - 2026-07-21: wired DVR screen buttons for EVS rear/AVM/DVR open/close and DVR capture/camera online/mode/SD status diagnostics.
+- 2026-07-21: added HUD function IDs from IHUD.smali and wired HUD active/calibration/display toggles.
+- 2026-07-21: added drive mode IDs from IDriveMode.smali and wired Eco/Comfort/Dynamic/Snow/Offroad plus steering mode commands.
+- 2026-07-21: added seat IDs from ISeat.smali and wired basic movement plus memory save/restore commands.
+- 2026-07-21: added quick HVAC multi-command presets for comfort, cooling and winter.

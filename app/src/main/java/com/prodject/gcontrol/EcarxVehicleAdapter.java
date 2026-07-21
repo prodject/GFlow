@@ -60,6 +60,43 @@ final class EcarxVehicleAdapter {
     static final int ADAS_SPEED_LIMIT_WARN = 0x28060100;
     static final int ADAS_PDC = 0x20060300;
 
+    static final int HUD_ACTIVE = 0x20110100;
+    static final int HUD_CALIBRATION = 0x20110200;
+    static final int HUD_ANGLE_RESET = 0x27010800;
+    static final int HUD_SNOW_MODE = 0x27020100;
+    static final int HUD_DISPLAY_SAFETY = 0x27030100;
+    static final int HUD_DISPLAY_MEDIA = 0x27030200;
+    static final int HUD_DISPLAY_NAVI = 0x27030300;
+    static final int HUD_DISPLAY_BTPHONE = 0x27030400;
+    static final int HUD_DISPLAY_DRIVE_ENVIRONMENT = 0x27030500;
+
+    static final int DRIVE_MODE_SELECT = 0x22010100;
+    static final int DRIVE_MODE_ECO = 0x22010101;
+    static final int DRIVE_MODE_COMFORT = 0x22010102;
+    static final int DRIVE_MODE_DYNAMIC = 0x22010103;
+    static final int DRIVE_MODE_SNOW = 0x22010109;
+    static final int DRIVE_MODE_OFFROAD = 0x22010113;
+    static final int DRIVE_ECO_BUTTON = 0x22020100;
+    static final int DRIVE_STEERING_MODE = 0x22040400;
+    static final int STEERING_MODE_SOFT = 0x22040401;
+    static final int STEERING_MODE_DYNAMIC = 0x22040402;
+
+    static final int SEAT_LENGTH = 0x2d020100;
+    static final int SEAT_HEIGHT = 0x2d020200;
+    static final int SEAT_BACKREST = 0x2d030200;
+    static final int SEAT_POSITION_SAVE = 0x2d400100;
+    static final int SEAT_POSITION_SET = 0x2d400200;
+    static final int SEAT_RESTORE = 0x2d400300;
+    static final int SEAT_ONE_KEY_COMFORT = 0x2d411100;
+    static final int SEAT_POSITION_1 = 0x2d400101;
+    static final int SEAT_POSITION_2 = 0x2d400102;
+    static final int SEAT_FORWARD = 0x2d020101;
+    static final int SEAT_BACKWARD = 0x2d020102;
+    static final int SEAT_HEIGHT_UP = 0x2d020201;
+    static final int SEAT_HEIGHT_DOWN = 0x2d020202;
+    static final int SEAT_BACKREST_FORWARD = 0x2d030201;
+    static final int SEAT_BACKREST_BACKWARD = 0x2d030202;
+
     private final Context context;
     private Object car;
     private Object carFunction;
@@ -115,6 +152,15 @@ final class EcarxVehicleAdapter {
         } catch (Exception e) {
             return Result.error(functionId, zone, 0, e);
         }
+    }
+
+    Result[] setAll(Command... commands) {
+        Result[] results = new Result[commands.length];
+        for (int i = 0; i < commands.length; i++) {
+            Command c = commands[i];
+            results[i] = set(c.functionId, c.zone, c.value);
+        }
+        return results;
     }
 
     String availability() {
@@ -190,6 +236,22 @@ final class EcarxVehicleAdapter {
         static Result error(int functionId, int zone, int value, Exception e) {
             return new Result(functionId, zone, value, false,
                     "Ошибка AdaptAPI " + hex(functionId) + "/" + zone + "=" + hex(value) + ": " + compact(e));
+        }
+    }
+
+    static final class Command {
+        final int functionId;
+        final int zone;
+        final int value;
+
+        Command(int functionId, int value) {
+            this(functionId, 0, value);
+        }
+
+        Command(int functionId, int zone, int value) {
+            this.functionId = functionId;
+            this.zone = zone;
+            this.value = value;
         }
     }
 }
