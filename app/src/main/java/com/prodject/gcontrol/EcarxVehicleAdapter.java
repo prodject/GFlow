@@ -111,8 +111,28 @@ final class EcarxVehicleAdapter {
     static final int ADAS_LDW = 0x28030100;
     static final int ADAS_RCW = 0x20071000;
     static final int ADAS_ELKA = 0x20070600;
+    static final int ADAS_LANE_CHANGE_ASSIST = 0x20070700;
+    static final int ADAS_AUTO_LANE_CHANGE_ASSIST = 0x28040100;
+    static final int ADAS_BLIND_SPOT_DETECTION = 0x28070100;
+    static final int ADAS_TRAFFIC_SIGN_RECOGNITION = 0x200b0100;
+    static final int ADAS_TRAFFIC_SIGN_ALERT = 0x200b0200;
     static final int ADAS_SPEED_LIMIT_WARN = 0x28060100;
+    static final int ADAS_SPEED_LIMIT_WARNING_MODE = 0x28060200;
     static final int ADAS_PDC = 0x20060300;
+    static final int ADAS_PDC_WARNING_VOLUME = 0x28050100;
+    static final int ADAS_AI_DRIVER_ASSIST = 0x28080100;
+    static final int ADAS_AI_LANE_CHANGE_STRATEGY = 0x28080500;
+    static final int ADAS_AI_LANE_CHANGE_WARNING = 0x28080700;
+
+    static final int PDC_VOLUME_LOW = 0x28050101;
+    static final int PDC_VOLUME_MID = 0x28050102;
+    static final int PDC_VOLUME_HIGH = 0x28050103;
+    static final int AI_LANE_CHANGE_STRATEGY_GENTLE = 0x28080501;
+    static final int AI_LANE_CHANGE_STRATEGY_STANDARD = 0x28080502;
+    static final int AI_LANE_CHANGE_STRATEGY_RADICAL = 0x28080503;
+    static final int AI_LANE_CHANGE_WARNING_VOICE = 0x28080701;
+    static final int AI_LANE_CHANGE_WARNING_VIBRATE = 0x28080702;
+    static final int AI_LANE_CHANGE_WARNING_BOTH = 0x28080703;
 
     static final int HUD_ACTIVE = 0x20110100;
     static final int HUD_CALIBRATION = 0x20110200;
