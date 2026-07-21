@@ -5,10 +5,17 @@ import android.app.*;
 import android.content.*;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.RectF;
+import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.*;
 import android.provider.Settings;
 import android.view.*;
+import android.view.animation.DecelerateInterpolator;
 import android.widget.*;
 import java.util.*;
 
@@ -50,59 +57,262 @@ public class MainActivity extends Activity {
 
     private void showDashboard() {
         ScrollView scroll = new ScrollView(this);
-        LinearLayout root = Ui.root(this, "GControl");
-        GridLayout grid = new GridLayout(this);
-        grid.setColumnCount(getResources().getConfiguration().screenWidthDp >= 700 ? 3 : 2);
-        root.addView(grid);
-        add(grid, "Файлы", () -> startActivity(new Intent(this, FileManagerActivity.class)));
-        add(grid, "Медиа", () -> startActivity(new Intent(this, MediaViewerActivity.class)));
-        add(grid, "Текст", () -> startActivity(new Intent(this, TextViewerActivity.class)));
-        add(grid, "Split", this::openSplitLauncher);
-        add(grid, "DVR / Камеры", () -> startActivity(new Intent(this, DvrActivity.class)));
-        add(grid, "Голос", () -> startActivity(new Intent(this, VoiceActivity.class)));
-        add(grid, "Автомобиль", this::showCar);
-        add(grid, "Климат", this::showClimate);
-        add(grid, "ADAS", this::showAdas);
-        add(grid, "Парковка / APA", this::showParkingApa);
-        add(grid, "Автоматизация", this::showAutomation);
-        add(grid, "Кнопки руля", this::showSteeringButtons);
-        add(grid, "Профили", this::showUserProfiles);
-        add(grid, "Умный климат", this::showSmartClimate);
+        scroll.setFillViewport(true);
+        LinearLayout root = new LinearLayout(this);
+        root.setOrientation(LinearLayout.VERTICAL);
+        root.setPadding(Ui.dp(this, 22), Ui.dp(this, 18), Ui.dp(this, 22), Ui.dp(this, 20));
+        root.setBackgroundColor(Ui.BG);
+
+        addHero(root);
+        addStatusStrip(root);
+
+        Ui.section(root, "Автомобиль", "Главные функции управления машиной собраны первыми: климат, кузов, камеры, ассистенты и HUD. Опасные или неподтвержденные команды вынесены в experimental-разделы.");
+        addNavGrid(root, new NavItem[]{
+                new NavItem("Климат", "Температура, обдув, сиденья, руль", "22°", Ui.BLUE, this::showClimate),
+                new NavItem("Автомобиль", "Окна, двери, свет, зеркала, режимы", "BCM", Color.rgb(56, 124, 95), this::showCar),
+                new NavItem("DVR / Камеры", "Архив, штатные камеры, 360", "REC", Color.rgb(168, 65, 58), () -> startActivity(new Intent(this, DvrActivity.class))),
+                new NavItem("ADAS", "Ассистенты, предупреждения, ACC/ICC", "A", Color.rgb(113, 91, 177), this::showAdas),
+                new NavItem("Парковка / APA", "360, APA/RPA, парковочные диагностики", "P", Color.rgb(205, 133, 50), this::showParkingApa),
+                new NavItem("HUD / OneOS", "Проектор, DIM, media bridge", "HUD", Color.rgb(58, 106, 156), this::showHud)
+        });
+
+        Ui.section(root, "Сценарии", "Здесь находятся пользовательские сценарии: пресеты, кнопки руля, профили и умный климат. Это слой удобства поверх прямых команд автомобиля.");
+        addNavGrid(root, new NavItem[]{
+                new NavItem("Автоматизация", "Сценарии, триггеры, smart presets", "AUTO", Ui.GREEN, this::showAutomation),
+                new NavItem("Умный климат", "Алгоритмы охлаждения, нагрева и просушки", "AI", Color.rgb(41, 136, 150), this::showSmartClimate),
+                new NavItem("Профили", "Водитель, пассажир, сиденья, настройки", "USER", Color.rgb(87, 112, 146), this::showUserProfiles),
+                new NavItem("Кнопки руля", "Жесты, условия и действия", "SW", Color.rgb(126, 99, 65), this::showSteeringButtons)
+        });
+
+        Ui.section(root, "Мультимедиа и система", "Файлы, рабочий стол, браузер, ADB и настройки приложения. Эти разделы не управляют автомобилем напрямую.");
+        addNavGrid(root, new NavItem[]{
+                new NavItem("Рабочий стол", "Док, приложения, обои, виджеты", "APP", Color.rgb(50, 115, 128), this::showLauncher),
+                new NavItem("Браузер / Погода", "Open-Meteo, сайты, поиск, закладки", "WEB", Color.rgb(73, 130, 83), this::showWeb),
+                new NavItem("Файлы", "Внутренняя память, USB, операции", "USB", Color.rgb(92, 108, 124), () -> startActivity(new Intent(this, FileManagerActivity.class))),
+                new NavItem("Медиа", "Просмотр фото, видео и аудио", "PLAY", Color.rgb(119, 83, 132), () -> startActivity(new Intent(this, MediaViewerActivity.class))),
+                new NavItem("Голос", "Vosk, команды, ASSIST intent", "MIC", Color.rgb(180, 90, 60), () -> startActivity(new Intent(this, VoiceActivity.class))),
+                new NavItem("ADB / Система", "Shell, grants, DPI, accessibility", "ADB", Color.rgb(80, 88, 98), () -> startActivity(new Intent(this, AdbShellActivity.class))),
+                new NavItem("Split", "Запуск приложений рядом", "2UP", Color.rgb(95, 122, 170), this::openSplitLauncher),
+                new NavItem("Текст", "Просмотр текстовых файлов", "TXT", Color.rgb(118, 118, 118), () -> startActivity(new Intent(this, TextViewerActivity.class))),
+                new NavItem("Настройки", "Experimental features и поведение UI", "SET", Color.rgb(52, 52, 52), this::showSettings)
+        });
+
         if (experimentalFeaturesEnabled()) {
-            add(grid, "PAS / AVM", this::showPasAvm);
-            add(grid, "AVAS / Digital Key", this::showAvasDigitalKey);
-            add(grid, "Сценарии", this::showSceneModes);
-            add(grid, "Подсветка", this::showAmbienceLight);
-            add(grid, "Яркость / DayMode", this::showDayMode);
+            Ui.section(root, "Experimental", "Неподтвержденные функции показываются только после включения experimental gate. Сначала запускайте диагностику support/readback на конкретной машине.");
+            addNavGrid(root, new NavItem[]{
+                    new NavItem("PAS / AVM", "Радары, AVM, камеры, overlays", "AVM", Ui.AMBER, this::showPasAvm),
+                    new NavItem("AVAS / Digital Key", "Звук предупреждения и key diagnostics", "KEY", Color.rgb(154, 91, 60), this::showAvasDigitalKey),
+                    new NavItem("Сценарии", "Theater, Pet, Camping, Nap", "SCN", Color.rgb(128, 90, 150), this::showSceneModes),
+                    new NavItem("Подсветка", "Цвета, эффекты, зоны", "RGB", Color.rgb(54, 132, 130), this::showAmbienceLight),
+                    new NavItem("Яркость / DayMode", "DIM, day/night, backlight", "DIM", Color.rgb(88, 105, 130), this::showDayMode)
+            });
         }
-        add(grid, "HUD / OneOS", this::showHud);
-        add(grid, "Браузер / Погода", this::showWeb);
-        add(grid, "Рабочий стол", this::showLauncher);
-        add(grid, "Настройки", this::showSettings);
-        add(grid, "ADB / Система", () -> startActivity(new Intent(this, AdbShellActivity.class)));
+
         scroll.addView(root);
         setContentView(scroll);
+        Ui.animateIn(root);
     }
 
-    private void add(GridLayout grid, String label, Runnable action) {
+    private void addHero(LinearLayout root) {
+        LinearLayout hero = Ui.card(this);
+        hero.setPadding(Ui.dp(this, 20), Ui.dp(this, 18), Ui.dp(this, 20), Ui.dp(this, 18));
+        GradientDrawable bg = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+                new int[]{Color.rgb(24, 30, 36), Color.rgb(42, 54, 62), Color.rgb(245, 248, 250)});
+        bg.setCornerRadius(Ui.dp(this, 22));
+        hero.setBackground(bg);
+
+        LinearLayout top = Ui.row(this);
+        TextView title = Ui.text(this, "GControl", 34, true);
+        title.setTextColor(Color.WHITE);
+        TextView badge = Ui.pill(this, experimentalFeaturesEnabled() ? "EXPERIMENTAL ON" : "STABLE MODE", experimentalFeaturesEnabled() ? Ui.AMBER : Ui.GREEN);
+        top.addView(title, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        top.addView(badge);
+        hero.addView(top);
+
+        TextView subtitle = Ui.text(this, "Центр управления автомобилем, мультимедиа и сценариями", 16, false);
+        subtitle.setTextColor(Color.rgb(222, 229, 235));
+        hero.addView(subtitle);
+        hero.addView(new VehicleHeroView(this), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 170)));
+
+        LinearLayout quick = Ui.row(this);
+        quick.setPadding(0, Ui.dp(this, 10), 0, 0);
+        addHeroButton(quick, "Климат", this::showClimate);
+        addHeroButton(quick, "Камера 360", this::showParkingApa);
+        addHeroButton(quick, "Голос", () -> startActivity(new Intent(this, VoiceActivity.class)));
+        hero.addView(quick);
+        root.addView(hero, lpMatchWrap(0, 0, 0, 14));
+    }
+
+    private void addHeroButton(LinearLayout row, String label, Runnable action) {
         Button b = Ui.button(this, label);
-        b.setMinHeight(Ui.dp(this, 72));
-        b.setOnClickListener(v -> action.run());
-        grid.addView(b, new ViewGroup.LayoutParams(getResources().getConfiguration().screenWidthDp >= 700 ? Ui.dp(this, 220) : Ui.dp(this, 165), ViewGroup.LayoutParams.WRAP_CONTENT));
+        b.setTextColor(Color.WHITE);
+        b.setGravity(Gravity.CENTER);
+        b.setBackground(Ui.cardBg(this, Color.argb(70, 255, 255, 255), Ui.dp(this, 16), Color.argb(80, 255, 255, 255)));
+        b.setOnClickListener(v -> transition(action));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 54), 1);
+        lp.setMargins(Ui.dp(this, 4), 0, Ui.dp(this, 4), 0);
+        row.addView(b, lp);
+    }
+
+    private void addStatusStrip(LinearLayout root) {
+        LinearLayout strip = new LinearLayout(this);
+        strip.setOrientation(LinearLayout.HORIZONTAL);
+        addStatusCard(strip, "Адаптер", new EcarxVehicleAdapter(this).availability().contains("unavailable") ? "нет связи" : "готов", Ui.BLUE);
+        addStatusCard(strip, "DVR", "настройки", Color.rgb(168, 65, 58));
+        addStatusCard(strip, "Автоклимат", SmartClimateController.prefs(this).getBoolean(SmartClimateController.KEY_ENABLED, false) ? "включен" : "выключен", Ui.GREEN);
+        root.addView(strip, lpMatchWrap(0, 0, 0, 14));
+    }
+
+    private void addStatusCard(LinearLayout strip, String title, String value, int color) {
+        LinearLayout card = Ui.card(this);
+        TextView t = Ui.muted(this, title);
+        TextView v = Ui.text(this, value, 18, true);
+        v.setTextColor(color);
+        card.addView(t);
+        card.addView(v);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1);
+        lp.setMargins(Ui.dp(this, 4), 0, Ui.dp(this, 4), 0);
+        strip.addView(card, lp);
+    }
+
+    private void addNavGrid(LinearLayout root, NavItem[] items) {
+        GridLayout grid = new GridLayout(this);
+        grid.setColumnCount(getResources().getConfiguration().screenWidthDp >= 700 ? 2 : 1);
+        for (NavItem item : items) addNavCard(grid, item);
+        root.addView(grid, lpMatchWrap(0, 2, 0, 16));
+    }
+
+    private void addNavCard(GridLayout grid, NavItem item) {
+        LinearLayout card = Ui.card(this);
+        card.setClickable(true);
+        card.setOnClickListener(v -> transition(item.action));
+        card.setOnLongClickListener(v -> {
+            Ui.dialog(this, item.title, item.help());
+            return true;
+        });
+
+        LinearLayout row = Ui.row(this);
+        TextView icon = Ui.pill(this, item.badge, item.color);
+        TextView title = Ui.text(this, item.title, 18, true);
+        Button help = Ui.help(this, item.title, item.help());
+        row.addView(icon);
+        row.addView(title, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        row.addView(help);
+        card.addView(row);
+        card.addView(Ui.muted(this, item.subtitle));
+
+        int columns = getResources().getConfiguration().screenWidthDp >= 700 ? 2 : 1;
+        int cardDp = columns == 2 ? Math.max(280, (getResources().getConfiguration().screenWidthDp - 76) / 2) : -1;
+        GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
+        lp.width = columns == 2 ? Ui.dp(this, cardDp) : ViewGroup.LayoutParams.MATCH_PARENT;
+        lp.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+        lp.setMargins(Ui.dp(this, 5), Ui.dp(this, 5), Ui.dp(this, 5), Ui.dp(this, 5));
+        grid.addView(card, lp);
+    }
+
+    private LinearLayout.LayoutParams lpMatchWrap(int l, int t, int r, int b) {
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.setMargins(Ui.dp(this, l), Ui.dp(this, t), Ui.dp(this, r), Ui.dp(this, b));
+        return lp;
+    }
+
+    private void transition(Runnable action) {
+        View content = getWindow().getDecorView();
+        content.animate().alpha(0.92f).scaleX(0.985f).scaleY(0.985f).setDuration(90).setInterpolator(new DecelerateInterpolator()).withEndAction(() -> {
+            content.setAlpha(1f);
+            content.setScaleX(1f);
+            content.setScaleY(1f);
+            action.run();
+        }).start();
+    }
+
+    private static final class NavItem {
+        final String title;
+        final String subtitle;
+        final String badge;
+        final int color;
+        final Runnable action;
+
+        NavItem(String title, String subtitle, String badge, int color, Runnable action) {
+            this.title = title;
+            this.subtitle = subtitle;
+            this.badge = badge;
+            this.color = color;
+            this.action = action;
+        }
+
+        String help() {
+            return subtitle + "\n\nНажмите карточку для перехода. Удерживайте карточку или нажмите '?' для подсказки.";
+        }
+    }
+
+    private static final class VehicleHeroView extends View {
+        private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Path path = new Path();
+
+        VehicleHeroView(Context context) {
+            super(context);
+        }
+
+        @Override protected void onDraw(Canvas canvas) {
+            super.onDraw(canvas);
+            float w = getWidth();
+            float h = getHeight();
+            float cx = w / 2f;
+            float base = h * 0.72f;
+
+            paint.setStyle(Paint.Style.FILL);
+            paint.setColor(Color.argb(38, 255, 255, 255));
+            canvas.drawOval(new RectF(w * 0.13f, h * 0.63f, w * 0.87f, h * 0.90f), paint);
+
+            path.reset();
+            path.moveTo(cx, h * 0.12f);
+            path.cubicTo(w * 0.70f, h * 0.17f, w * 0.82f, h * 0.44f, w * 0.80f, base);
+            path.lineTo(w * 0.64f, h * 0.86f);
+            path.lineTo(w * 0.36f, h * 0.86f);
+            path.lineTo(w * 0.20f, base);
+            path.cubicTo(w * 0.18f, h * 0.44f, w * 0.30f, h * 0.17f, cx, h * 0.12f);
+            paint.setColor(Color.argb(230, 247, 250, 252));
+            canvas.drawPath(path, paint);
+
+            paint.setColor(Color.rgb(36, 45, 54));
+            canvas.drawRoundRect(new RectF(w * 0.37f, h * 0.23f, w * 0.63f, h * 0.40f), dp(18), dp(18), paint);
+            paint.setColor(Color.rgb(206, 218, 228));
+            canvas.drawRoundRect(new RectF(w * 0.27f, h * 0.49f, w * 0.73f, h * 0.66f), dp(22), dp(22), paint);
+
+            paint.setColor(Color.rgb(34, 116, 205));
+            canvas.drawRoundRect(new RectF(w * 0.31f, h * 0.72f, w * 0.43f, h * 0.78f), dp(10), dp(10), paint);
+            canvas.drawRoundRect(new RectF(w * 0.57f, h * 0.72f, w * 0.69f, h * 0.78f), dp(10), dp(10), paint);
+
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(dp(2));
+            paint.setColor(Color.argb(120, 32, 42, 50));
+            canvas.drawLine(cx, h * 0.16f, cx, h * 0.84f, paint);
+            canvas.drawRoundRect(new RectF(w * 0.23f, h * 0.45f, w * 0.77f, h * 0.85f), dp(36), dp(36), paint);
+        }
+
+        private float dp(int value) {
+            return Ui.dp(getContext(), value);
+        }
     }
 
     private void panel(String title, String body) {
         LinearLayout root = Ui.root(this, title);
-        root.addView(Ui.text(this, body, 16, false));
+        LinearLayout card = Ui.card(this);
+        card.addView(Ui.text(this, body, 16, false));
+        root.addView(card, lpMatchWrap(0, 8, 0, 12));
         Button back = Ui.button(this, "Назад");
-        back.setOnClickListener(v -> showDashboard());
+        back.setOnClickListener(v -> transition(this::showDashboard));
         root.addView(back);
         setContentView(root);
+        Ui.animateIn(root);
     }
 
     private void showSettings() {
         LinearLayout root = Ui.root(this, "Настройки");
-        root.addView(Ui.text(this, "Экспериментальные функции скрыты по умолчанию. Включай их только для проверки на конкретной прошивке автомобиля.", 14, false));
+        LinearLayout card = Ui.card(this);
+        card.addView(Ui.text(this, "Экспериментальные функции скрыты по умолчанию. Включайте их только для проверки на конкретной прошивке автомобиля.", 14, false));
+        card.addView(Ui.help(this, "Experimental features", "Открывает неподтвержденные PAS/AVM, AVAS, Digital Key, сценарии, подсветку и DayMode-разделы. Эти функции могут требовать привилегий, поддержки прошивки или предварительной диагностики."));
         CheckBox experimental = new CheckBox(this);
         experimental.setText("Experimental features");
         experimental.setTextSize(16);
@@ -113,11 +323,13 @@ public class MainActivity extends Activity {
                     .apply();
             Ui.toast(this, checked ? "Experimental features включены" : "Experimental features выключены");
         });
+        card.addView(experimental);
         Button back = Ui.button(this, "Назад");
-        back.setOnClickListener(v -> showDashboard());
-        root.addView(experimental);
+        back.setOnClickListener(v -> transition(this::showDashboard));
+        root.addView(card, lpMatchWrap(0, 8, 0, 12));
         root.addView(back);
         setContentView(root);
+        Ui.animateIn(root);
     }
 
     private boolean experimentalFeaturesEnabled() {
@@ -128,12 +340,20 @@ public class MainActivity extends Activity {
     private LinearLayout commandRoot(String title) {
         ScrollView scroll = new ScrollView(this);
         LinearLayout root = Ui.root(this, title);
-        root.addView(Ui.text(this, new EcarxVehicleAdapter(this).availability(), 14, false));
+        LinearLayout tools = Ui.row(this);
         Button back = Ui.button(this, "Назад");
-        back.setOnClickListener(v -> showDashboard());
-        root.addView(back);
+        back.setOnClickListener(v -> transition(this::showDashboard));
+        tools.addView(back, new LinearLayout.LayoutParams(0, Ui.dp(this, 52), 1));
+        tools.addView(Ui.help(this, title, "Вкладка содержит обычные команды, диагностику и firmware-dependent действия. Если команда не сработала, сначала проверьте блоки диагностики support/readback и разрешения ADB/system."), new LinearLayout.LayoutParams(Ui.dp(this, 52), Ui.dp(this, 52)));
+        root.addView(tools, lpMatchWrap(0, 4, 0, 10));
+
+        LinearLayout status = Ui.card(this);
+        status.addView(Ui.muted(this, "Статус интеграции"));
+        status.addView(Ui.text(this, new EcarxVehicleAdapter(this).availability(), 14, false));
+        root.addView(status, lpMatchWrap(0, 0, 0, 12));
         scroll.addView(root);
         setContentView(scroll);
+        Ui.animateIn(root);
         return root;
     }
 
