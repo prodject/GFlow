@@ -58,7 +58,7 @@ Functional coverage
 - Voice activity and app.monji.VOICE / VOICE_COMMAND / ASSIST entry points: implemented.
 - Foreground microphone service: implemented as foreground scaffold.
 - Local Vosk model pipeline: implemented.
-- Command routing to car controls: partial. Text commands are broadcast; parser and real vehicle function mapping still needed.
+- Command routing to car controls: partial. Parser now maps high-confidence Russian/English commands to real ECarX function IDs for climate, presets, windows, sunroof/sun curtain, trunk/custom key, 360/DVR, seat/wheel heating, HUD and drive modes. Unknown commands still use the legacy broadcast path.
 
 5. Vehicle controls
 - Real contract found: com.ecarx.xui.adaptapi.car.Car.create(Context), ICar.getICarFunction(), ICarFunction.getFunctionValue/setFunctionValue/isFunctionSupported.
@@ -67,27 +67,29 @@ Functional coverage
 - ADAS IDs found in IADAS.smali: AEB, FCW, LKA, LDW, RCW, speed limit warning, ELKA/emergency lane, lane change assist, PDC.
 - HUD IDs found in IHUD.smali; first HUD controls are wired through EcarxVehicleAdapter.
 - Seat IDs found in ISeat.smali: seat position, height, backrest, cushion, headrest, massage-related controls.
-- Current GControl status before adapter: scaffold/broadcast only.
-- Next implementation target: reflection adapter and UI buttons for high-confidence int functions.
+- Current GControl status: reflection adapter and UI buttons are implemented for high-confidence HVAC, BCM, ADAS, HUD, drive mode and seat int functions.
+- Readback/support diagnostics: implemented for selected HVAC, BCM, ADAS, HUD, drive and seat IDs through getFunctionValue/isFunctionSupported.
+- Next implementation target: zone-specific validation, more function IDs from mirrors/doors/wipers/lights/temperature/blowing mode, and replacing fallback zone=0 where the decompiled contract requires a concrete zone.
 
 6. Climate presets
 - Preset UI text: implemented.
 - Save/edit/delete presets: missing.
 - Quick templates comfort/cooling/winter: adapter implemented as multi-command HVAC templates.
+- Voice templates comfort/cooling/winter: implemented for explicit preset commands.
 - Comfort climate screen: missing.
-- Vehicle execution depends on HVAC adapter.
+- Vehicle execution: implemented through HVAC function IDs; still needs zone-specific driver/passenger controls and user-editable saved presets.
 
 7. ADAS / driving
 - UI text: scaffold.
 - Real function IDs found in IADAS.smali.
-- Direct toggles/readback: missing before adapter.
+- Direct toggles/readback: partial. First toggles and selected readback/support diagnostics are wired through EcarxVehicleAdapter.
 
 8. HUD / Cluster / OneOS
 - Media session listener: implemented.
 - Steering wheel receiver: partial; opens VoiceActivity for any matching event.
 - HUD presentation/observer services: scaffold.
 - Cluster bridge service: scaffold.
-- Real HUD/cluster contracts: HUD vehicle function buttons added from IHUD.smali; hudinteraction, DIMInteraction and AudioExtService InteractionProto still pending.
+- Real HUD/cluster contracts: HUD vehicle function buttons and selected readback/support diagnostics added from IHUD.smali; hudinteraction, DIMInteraction and AudioExtService InteractionProto still pending.
 
 9. Browser / weather / internet
 - Weather via Open-Meteo: implemented.
@@ -129,3 +131,6 @@ Implementation log
 - 2026-07-21: added quick HVAC multi-command presets for comfort, cooling and winter.
 - 2026-07-21: added browser URL/search/bookmark workflow.
 - 2026-07-21: added ADB grants helper output for WRITE_SECURE_SETTINGS, usage stats, storage and overlay appops.
+- 2026-07-21: added EcarxVehicleAdapter support diagnostics using ICarFunction.isFunctionSupported with one-arg and zone-aware reflection fallbacks.
+- 2026-07-21: added UI diagnostic buttons for selected HVAC, BCM, ADAS, HUD, drive mode and seat function IDs.
+- 2026-07-21: added VoiceActivity parser that maps high-confidence voice/text commands to real ECarX vehicle controls while keeping the legacy broadcast fallback.

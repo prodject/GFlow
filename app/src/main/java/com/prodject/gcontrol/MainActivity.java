@@ -130,6 +130,21 @@ public class MainActivity extends Activity {
         root.addView(b);
     }
 
+    private void addDiagnostic(LinearLayout root, String label, int... functionIds) {
+        Button b = Ui.button(this, "Диагностика: " + label);
+        b.setOnClickListener(v -> {
+            EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
+            StringBuilder sb = new StringBuilder(label).append("\n");
+            for (int functionId : functionIds) {
+                EcarxVehicleAdapter.Result support = adapter.support(functionId);
+                EcarxVehicleAdapter.Result value = adapter.get(functionId);
+                sb.append(support.message).append("\n").append(value.message).append("\n");
+            }
+            root.addView(Ui.text(this, sb.toString(), 13, false), 2);
+        });
+        root.addView(b);
+    }
+
     private void showDvr() {
         startForegroundService(new Intent(this, DvrService.class));
         panel("Monji DVR", "Запись со штатных камер: передняя ADAS, левая, задняя, правая. Настройки: выбор камер, длина сегмента, лимит диска, внутренняя память или USB. Сервис DVR запущен.");
@@ -137,6 +152,7 @@ public class MainActivity extends Activity {
     private void showCar() {
         LinearLayout root = commandRoot("Управление автомобилем");
         root.addView(Ui.text(this, "BCM-функции из IBcm.smali. Часть команд зональная; zone=0 используется как базовый fallback.", 14, false));
+        addDiagnostic(root, "BCM / Drive / Seat", EcarxVehicleAdapter.BCM_WINDOW, EcarxVehicleAdapter.BCM_WINDOW_LOCK, EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.SEAT_POSITION_SET);
         addCommand(root, "Окна открыть", EcarxVehicleAdapter.BCM_WINDOW, EcarxVehicleAdapter.WINDOW_OPEN);
         addCommand(root, "Окна закрыть", EcarxVehicleAdapter.BCM_WINDOW, EcarxVehicleAdapter.WINDOW_CLOSE);
         addCommand(root, "Окна пауза", EcarxVehicleAdapter.BCM_WINDOW, EcarxVehicleAdapter.WINDOW_PAUSE);
@@ -179,6 +195,7 @@ public class MainActivity extends Activity {
     private void showClimate() {
         LinearLayout root = commandRoot("Климат");
         root.addView(Ui.text(this, "HVAC-функции из IHvac.smali. Для сидений и зон сейчас используется zone=0 fallback.", 14, false));
+        addDiagnostic(root, "HVAC", EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.HVAC_AC, EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.HVAC_CIRCULATION);
         addPreset(root, "Пресет Комфорт",
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_ON),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_AUTO, EcarxVehicleAdapter.COMMON_ON),
@@ -221,6 +238,7 @@ public class MainActivity extends Activity {
     private void showAdas() {
         LinearLayout root = commandRoot("ADAS / Вождение");
         root.addView(Ui.text(this, "ADAS-функции из IADAS.smali.", 14, false));
+        addDiagnostic(root, "ADAS", EcarxVehicleAdapter.ADAS_AEB, EcarxVehicleAdapter.ADAS_FCW, EcarxVehicleAdapter.ADAS_LKA, EcarxVehicleAdapter.ADAS_SPEED_LIMIT_WARN);
         addCommand(root, "AEB включить", EcarxVehicleAdapter.ADAS_AEB, EcarxVehicleAdapter.COMMON_ON);
         addCommand(root, "AEB выключить", EcarxVehicleAdapter.ADAS_AEB, EcarxVehicleAdapter.COMMON_OFF);
         addCommand(root, "FCW включить", EcarxVehicleAdapter.ADAS_FCW, EcarxVehicleAdapter.COMMON_ON);
@@ -235,6 +253,7 @@ public class MainActivity extends Activity {
     private void showHud() {
         LinearLayout root = commandRoot("HUD / Cluster / OneOS");
         root.addView(Ui.text(this, "HUD/Cluster пока подключены как сервисные entry points. Следующий этап: com.ecarx.xui.adaptapi.hudinteraction и IHUD.", 14, false));
+        addDiagnostic(root, "HUD", EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.HUD_DISPLAY_NAVI, EcarxVehicleAdapter.HUD_DISPLAY_SAFETY);
         addCommand(root, "HUD включить", EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.COMMON_ON);
         addCommand(root, "HUD выключить", EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.COMMON_OFF);
         addCommand(root, "HUD calibration", EcarxVehicleAdapter.HUD_CALIBRATION, EcarxVehicleAdapter.COMMON_ON);
