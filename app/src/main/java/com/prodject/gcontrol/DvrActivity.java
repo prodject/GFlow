@@ -10,16 +10,23 @@ import java.util.*;
 public class DvrActivity extends Activity {
     private TextView status;
     private LinearLayout root;
+    private EditText camerasInput;
+    private EditText segmentInput;
+    private EditText limitInput;
+    private Spinner storageInput;
 
     @Override public void onCreate(Bundle b) {
         super.onCreate(b);
         root = Ui.root(this, "DVR / Камеры");
         Button start = Ui.button(this, "Старт записи");
         Button stop = Ui.button(this, "Стоп записи");
+        Button save = Ui.button(this, "Сохранить настройки DVR");
         Button refresh = Ui.button(this, "Обновить камеры/архив");
         status = Ui.text(this, "", 14, false);
         root.addView(Ui.text(this, new EcarxDvrAdapter(this).availability(), 14, false));
+        addSettingsUi();
         start.setOnClickListener(v -> {
+            saveSettings();
             startForegroundService(new Intent(this, DvrService.class).setAction(DvrService.ACTION_START));
             refresh();
         });
@@ -27,7 +34,12 @@ public class DvrActivity extends Activity {
             startService(new Intent(this, DvrService.class).setAction(DvrService.ACTION_STOP));
             refresh();
         });
+        save.setOnClickListener(v -> {
+            saveSettings();
+            refresh();
+        });
         refresh.setOnClickListener(v -> refresh());
+        root.addView(save);
         root.addView(start);
         root.addView(stop);
         root.addView(refresh);
@@ -43,6 +55,40 @@ public class DvrActivity extends Activity {
         root.addView(status, new LinearLayout.LayoutParams(-1, 0, 1));
         setContentView(root);
         refresh();
+    }
+
+    private void addSettingsUi() {
+        SharedPreferences prefs = getSharedPreferences(DvrArchive.PREFS, MODE_PRIVATE);
+        camerasInput = new EditText(this);
+        camerasInput.setHint("front,rear,left,right или Camera2 id через запятую");
+        camerasInput.setText(prefs.getString(DvrArchive.KEY_CAMERAS, DvrArchive.DEFAULT_CAMERAS));
+        segmentInput = new EditText(this);
+        segmentInput.setHint("Длина сегмента, сек");
+        segmentInput.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        segmentInput.setText(String.valueOf(prefs.getInt(DvrArchive.KEY_SEGMENT_SECONDS, 60)));
+        limitInput = new EditText(this);
+        limitInput.setHint("Лимит архива, GB");
+        limitInput.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        limitInput.setText(String.valueOf(prefs.getInt(DvrArchive.KEY_LIMIT_GB, 5)));
+        storageInput = new Spinner(this);
+        String[] storage = {DvrArchive.STORAGE_EXTERNAL, DvrArchive.STORAGE_INTERNAL, DvrArchive.STORAGE_USB};
+        storageInput.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, storage));
+        String current = prefs.getString(DvrArchive.KEY_STORAGE, DvrArchive.STORAGE_EXTERNAL);
+        for (int i = 0; i < storage.length; i++) if (storage[i].equals(current)) storageInput.setSelection(i);
+        root.addView(Ui.text(this, "Настройки записи marker-сегментов: камеры, длина сегмента, лимит и целевое хранилище.", 14, false));
+        root.addView(camerasInput);
+        root.addView(segmentInput);
+        root.addView(limitInput);
+        root.addView(storageInput);
+    }
+
+    private void saveSettings() {
+        DvrArchive.saveSettings(this,
+                camerasInput.getText().toString(),
+                parseInt(segmentInput.getText().toString(), 60),
+                parseInt(limitInput.getText().toString(), 5),
+                String.valueOf(storageInput.getSelectedItem()));
+        Ui.toast(this, "Настройки DVR сохранены");
     }
 
     private void addEvs(String label, int cameraId, boolean open) {
@@ -91,5 +137,13 @@ public class DvrActivity extends Activity {
         if (facing == CameraCharacteristics.LENS_FACING_BACK) return "rear";
         if (Build.VERSION.SDK_INT >= 23 && facing == CameraCharacteristics.LENS_FACING_EXTERNAL) return "external";
         return "other";
+    }
+
+    private int parseInt(String value, int fallback) {
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (Exception e) {
+            return fallback;
+        }
     }
 }
