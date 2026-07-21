@@ -137,7 +137,7 @@ Functional coverage
 - Inline help pattern: implemented for the main dashboard. Each dashboard card has a "?" control and long-press help with a short explanation.
 - Animated navigation: implemented as a lightweight fade/scale transition for dashboard card taps.
 - Tesla/settings-style split navigation: implemented. The dashboard follows grouped settings logic, key vehicle areas open second-level hub screens before full command pages, and long command pages include in-page filtering.
-- 3D/vehicle visual layer: partial. The main dashboard now has a lightweight Canvas-rendered perspective vehicle visual in the hero area. A real interactive 3D control model is still pending until command taxonomy and safe touch zones are stabilized.
+- 3D/vehicle visual layer: implemented for the current UI scope. The dashboard now uses Settings/Launcher vehicle artwork with interactive touch zones, and Ambience Light uses OneOS-ControlBoard light-mode vehicle assets with local color preview. APK inspection found no portable mesh model (glb/gltf/obj/fbx/etc.), so this is a Settings-like interactive visual layer rather than an imported real-time 3D mesh renderer.
 - Inner tab redesign: implemented. Shared command screens now use a cleaner header, back action, integration status card, help button, entry animation, developer/user diagnostic filtering, screen maps for core pages, compact Automation panels and grouped Experimental pages.
 - Visual safety states: implemented. Shared command helpers now render dedicated SAFE/DIAG/EXP/PRIV/FIRMWARE badge widgets beside command labels, provide long-press safety explanations and hide raw function IDs in normal mode.
 - End-user mode vs developer diagnostics mode: implemented. Settings has a Developer diagnostics toggle; normal user mode hides diagnostic blocks and raw IDs, while developer mode restores support/readback/HAL diagnostics and hex command details.
@@ -159,6 +159,8 @@ Implementation log
 - 2026-07-22: replaced text safety prefixes with dedicated badge widgets in shared command rows.
 - 2026-07-22: redesigned Automation into compact Create/Templates/Presets/Scenarios/Triggers groups.
 - 2026-07-22: added compact screen maps and grouped sections to Experimental PAS/AVM, AVAS/Digital Key, Scene Modes, Ambience Light and DayMode pages.
+- 2026-07-22: replaced the Canvas-only vehicle hero with Settings/Launcher vehicle assets and preserved touch-zone routing to Climate, Vehicle, ADAS and Parking/APA.
+- 2026-07-22: added OneOS-ControlBoard-based Ambience Light visual preview using light-mode vehicle assets, swatches and touch color changes; confirmed the APKs contain rendered/Lottie assets but no portable 3D mesh files.
 - 2026-07-21: created initial coverage log.
 - 2026-07-21: selected reflection-based ECarX/AdaptAPI vehicle adapter as first real integration layer to avoid compile-time dependency on system APK classes.
 - 2026-07-21: added EcarxVehicleAdapter using reflection against com.ecarx.xui.adaptapi.car.Car and ICarFunction.
