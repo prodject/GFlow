@@ -40,9 +40,9 @@ Functional coverage
 - Share file: implemented.
 - Create folder: implemented.
 - Delete file/folder: implemented.
-- Move file/folder: implemented via File.renameTo; cross-volume copy/delete fallback still needed.
+- Move file/folder: implemented via File.renameTo with copy/delete fallback for cross-volume moves.
 - Internal storage browsing: implemented.
-- USB lookup: partial via /storage scan; StorageManager volume enumeration still needed.
+- USB lookup: implemented through StorageManager volume enumeration with /storage scan fallback.
 - Free/used space: implemented.
 
 3. DVR / cameras
@@ -140,3 +140,5 @@ Implementation log
 - 2026-07-21: expanded voice routing for HVAC fan levels, blowing modes and single/dual climate zone commands.
 - 2026-07-21: added DVR settings for selected cameras, segment duration, archive limit and storage target.
 - 2026-07-21: changed DVR placeholder archive to write per-camera marker segments and prune recursively by configured archive limit.
+- 2026-07-21: added FileManager StorageManager USB volume lookup with /storage fallback.
+- 2026-07-21: added FileManager cross-volume move fallback through recursive copy/delete.
