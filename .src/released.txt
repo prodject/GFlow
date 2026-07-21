@@ -130,7 +130,25 @@ Functional coverage
 - App context automation: partial. Template installer creates navigation app triggers that enable autozoom, HUD navigation display and stock navigation/DIM map custom-key actions. True split-window launch still needs privileged multi-window integration.
 - Scenario engine v2: partial. User-editable scenarios support manual/app/boot/voice/steering-button triggers, conditions, repeat policies, cancel-on-condition-change, sequential steps, delays, wait conditions, notifications, app launch, voice/broadcast commands, smart-preset calls, actions and execution log with skip reasons. Many vehicle-state conditions remain diagnostic placeholders until engine/gear/speed/fuel/door/security/Bluetooth signals are mapped.
 
+13. UX / visual design for 13.2 inch vertical head unit
+- Main information dashboard: implemented. The old flat button grid was replaced with a status-first dashboard, quick actions and grouped navigation sections for vehicle, scenarios, multimedia/system and experimental functions.
+- Menu logic: implemented. High-frequency vehicle controls are first; automation/profile logic is grouped separately; files/browser/ADB/settings are moved into a system/media group; firmware-risk functions remain behind the Experimental features gate.
+- Shared visual UI kit: implemented. Programmatic cards, soft rounded panels, status pills, muted secondary text and styled buttons are centralized in Ui.java so existing screens inherit a cleaner minimal car UI.
+- Inline help pattern: implemented for the main dashboard. Each dashboard card has a "?" control and long-press help with a short explanation.
+- Animated navigation: implemented as a lightweight fade/scale transition for dashboard card taps. Deep in-screen transitions remain pending.
+- Tesla/settings-style split navigation: partial. The dashboard now follows grouped settings logic, but inner vehicle pages still contain long command lists and need second-level category navigation.
+- 3D/vehicle visual layer: partial. The main dashboard now has a lightweight Canvas-rendered perspective vehicle visual in the hero area. A real interactive 3D control model is still pending until command taxonomy and safe touch zones are stabilized.
+- Inner tab redesign: partial. Shared command screens now use a cleaner header, back action, integration status card, help button and entry animation. Climate, vehicle, ADAS, automation and HUD screens still need compact second-level control groups and reduced diagnostic noise for normal users.
+- Visual safety states: pending. Commands need clear "safe", "diagnostic", "experimental", "privileged" and "firmware required" badges throughout inner screens.
+- End-user mode vs developer diagnostics mode: pending. The app still exposes many raw IDs directly in user flows; a clean user mode should hide raw IDs unless diagnostics are enabled.
+
 Implementation log
+- 2026-07-22: added UX / visual design backlog for the 13.2 inch vertical head-unit interface with implemented/partial/pending statuses.
+- 2026-07-22: replaced the main flat dashboard grid with a status-first grouped dashboard: vehicle, scenarios, multimedia/system and experimental sections.
+- 2026-07-22: added shared programmatic UI components in Ui.java: cards, pills, muted text, help buttons, dialog tips and fade/slide entry animation.
+- 2026-07-22: added lightweight dashboard navigation animation and adaptive two-column card sizing for wide vertical screens.
+- 2026-07-22: updated shared command screens with a cleaner header, back action, integration status card and contextual help button.
+- 2026-07-22: added a Canvas-rendered perspective vehicle visual to the main dashboard hero as the first non-decorative automotive visual layer.
 - 2026-07-21: created initial coverage log.
 - 2026-07-21: selected reflection-based ECarX/AdaptAPI vehicle adapter as first real integration layer to avoid compile-time dependency on system APK classes.
 - 2026-07-21: added EcarxVehicleAdapter using reflection against com.ecarx.xui.adaptapi.car.Car and ICarFunction.
