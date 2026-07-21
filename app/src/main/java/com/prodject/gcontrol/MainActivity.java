@@ -258,6 +258,9 @@ public class MainActivity extends Activity {
         LinearLayout root = commandRoot("Климат");
         root.addView(Ui.text(this, "HVAC-функции из IHvac.smali. Для сидений и зон сейчас используется zone=0 fallback.", 14, false));
         addDiagnostic(root, "HVAC", EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.HVAC_AC, EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.HVAC_CIRCULATION, EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.HVAC_TEMP_MIN, EcarxVehicleAdapter.HVAC_TEMP_MAX, EcarxVehicleAdapter.HVAC_TEMP_STEP);
+        Button comfortPanel = Ui.button(this, "Комфортный климат");
+        comfortPanel.setOnClickListener(v -> showComfortClimate());
+        root.addView(comfortPanel);
         Button editor = Ui.button(this, "Создать / редактировать пресет");
         editor.setOnClickListener(v -> showClimatePresetEditor("", defaultPresetText()));
         root.addView(editor);
@@ -323,6 +326,67 @@ public class MainActivity extends Activity {
         addCommand(root, "Массаж сиденья ур.1", EcarxVehicleAdapter.HVAC_SEAT_MASSAGE, EcarxVehicleAdapter.SEAT_LEVEL_1);
         addCommand(root, "Подогрев руля low", EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT, EcarxVehicleAdapter.WHEEL_HEAT_LOW);
         addCommand(root, "Подогрев руля off", EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT, EcarxVehicleAdapter.COMMON_OFF);
+    }
+
+    private void showComfortClimate() {
+        LinearLayout root = commandRoot("Комфортный климат");
+        root.addView(Ui.text(this, "Быстрый HVAC-пульт: питание, auto/A/C, обдув, вентилятор, сиденье и руль.", 14, false));
+        Button fullStatus = Ui.button(this, "Статус климата");
+        fullStatus.setOnClickListener(v -> {
+            EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
+            int[] ids = {
+                    EcarxVehicleAdapter.HVAC_POWER,
+                    EcarxVehicleAdapter.HVAC_AUTO,
+                    EcarxVehicleAdapter.HVAC_AC,
+                    EcarxVehicleAdapter.HVAC_FAN_SPEED,
+                    EcarxVehicleAdapter.HVAC_CIRCULATION,
+                    EcarxVehicleAdapter.HVAC_BLOWING_MODE,
+                    EcarxVehicleAdapter.HVAC_TEMP,
+                    EcarxVehicleAdapter.HVAC_TEMP_MIN,
+                    EcarxVehicleAdapter.HVAC_TEMP_MAX,
+                    EcarxVehicleAdapter.HVAC_TEMP_STEP
+            };
+            StringBuilder sb = new StringBuilder("HVAC status\n");
+            for (int id : ids) sb.append(adapter.get(id).message).append("\n");
+            root.addView(Ui.text(this, sb.toString(), 13, false), 2);
+        });
+        root.addView(fullStatus);
+        addPreset(root, "Комфорт auto 3",
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_ON),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_AUTO, EcarxVehicleAdapter.COMMON_ON),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_AC, EcarxVehicleAdapter.COMMON_ON),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_3),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_FACE_AND_LEG));
+        addPreset(root, "Тихий режим",
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_ON),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_AUTO, EcarxVehicleAdapter.COMMON_ON),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_1),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_FACE));
+        addPreset(root, "Быстрый прогрев",
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_ON),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_5),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_LEG_AND_FRONT_WINDOW),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.SEAT_LEVEL_2),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT, EcarxVehicleAdapter.WHEEL_HEAT_MID));
+        addCommand(root, "Power on", EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "Power off", EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(root, "Auto on", EcarxVehicleAdapter.HVAC_AUTO, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "A/C on", EcarxVehicleAdapter.HVAC_AC, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "A/C off", EcarxVehicleAdapter.HVAC_AC, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(root, "Fan 1", EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_1);
+        addCommand(root, "Fan 3", EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_3);
+        addCommand(root, "Fan 5", EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_5);
+        addCommand(root, "Fan auto", EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_AUTO);
+        addCommand(root, "Обдув лицо", EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_FACE);
+        addCommand(root, "Обдув ноги", EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_LEG);
+        addCommand(root, "Обдув стекло", EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_FRONT_WINDOW);
+        addCommand(root, "Обдув все", EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_ALL);
+        addCommand(root, "Seat heat off", EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(root, "Seat heat 2", EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.SEAT_LEVEL_2);
+        addCommand(root, "Seat vent off", EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(root, "Seat vent 2", EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, EcarxVehicleAdapter.SEAT_LEVEL_2);
+        addCommand(root, "Wheel heat off", EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(root, "Wheel heat mid", EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT, EcarxVehicleAdapter.WHEEL_HEAT_MID);
     }
 
     private void showClimatePresetEditor(String oldName, String commandsText) {

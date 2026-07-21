@@ -76,7 +76,7 @@ Functional coverage
 - Save/edit/delete presets: implemented for HVAC command presets stored in app preferences.
 - Quick templates comfort/cooling/winter: adapter implemented as multi-command HVAC templates.
 - Voice templates comfort/cooling/winter: implemented for explicit preset commands.
-- Comfort climate screen: missing.
+- Comfort climate screen: implemented as a quick HVAC control panel with status, comfort/quiet/warmup presets and common fan/blowing/seat/wheel controls.
 - Vehicle execution: implemented through HVAC function IDs; still needs zone-specific driver/passenger controls and safe temperature write encoding.
 
 7. ADAS / driving
@@ -150,3 +150,4 @@ Implementation log
 - 2026-07-21: expanded ADAS controls from IADAS.smali with off toggles, blind spot detection, traffic sign recognition, lane change assist, PDC volume and AI lane strategy/warning modes.
 - 2026-07-21: replaced fixed Settings split shortcut with launchable app chooser using FLAG_ACTIVITY_LAUNCH_ADJACENT / MULTIPLE_TASK.
 - 2026-07-21: improved steering wheel receiver to parse key/action/command extras, persist the last event and route voice/PTT-like events to VoiceActivity.
+- 2026-07-21: added Comfort Climate quick panel with HVAC status readback, comfort/quiet/warmup presets and common seat/wheel/fan/blowing controls.
