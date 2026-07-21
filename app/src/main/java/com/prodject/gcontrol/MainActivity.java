@@ -757,15 +757,75 @@ public class MainActivity extends Activity {
         addCommand(root, "PDC volume low", EcarxVehicleAdapter.ADAS_PDC_WARNING_VOLUME, EcarxVehicleAdapter.PDC_VOLUME_LOW);
         addCommand(root, "PDC volume mid", EcarxVehicleAdapter.ADAS_PDC_WARNING_VOLUME, EcarxVehicleAdapter.PDC_VOLUME_MID);
         addCommand(root, "PDC volume high", EcarxVehicleAdapter.ADAS_PDC_WARNING_VOLUME, EcarxVehicleAdapter.PDC_VOLUME_HIGH);
+        if (experimentalFeaturesEnabled()) addExperimentalAdasFeatures(root);
+    }
+
+    private void addExperimentalAdasFeatures(LinearLayout root) {
+        root.addView(Ui.text(this, "Experimental ADAS: расширенные IADAS-функции. Сначала запускай диагностику support/readback на конкретной машине.", 14, false));
+        addDiagnostic(root, "Experimental ADAS controls",
+                EcarxVehicleAdapter.ADAS_AI_DRIVER_ASSIST,
+                EcarxVehicleAdapter.ADAS_AI_ASSIST_DEFAULT_ON,
+                EcarxVehicleAdapter.ADAS_AI_ASSIST_FUSION_NAVI,
+                EcarxVehicleAdapter.ADAS_AI_ASSIST_OUT_OVERTAKING_LANE,
+                EcarxVehicleAdapter.ADAS_AI_LANE_CHANGE_STRATEGY,
+                EcarxVehicleAdapter.ADAS_AI_LANE_CHANGE_CONFIRM,
+                EcarxVehicleAdapter.ADAS_AI_LANE_CHANGE_WARNING,
+                EcarxVehicleAdapter.ADAS_DRIVE_PILOT,
+                EcarxVehicleAdapter.ADAS_DRIVE_PILOT_STATUS,
+                EcarxVehicleAdapter.ADAS_DRIVE_NZP_STATUS,
+                EcarxVehicleAdapter.ADAS_DRIVE_PILOT_ALARM_INFO,
+                EcarxVehicleAdapter.ADAS_DRIVE_PILOT_ACC_LCC_SWITCH,
+                EcarxVehicleAdapter.ADAS_APB_SWITCH,
+                EcarxVehicleAdapter.ADAS_APB_MODE,
+                EcarxVehicleAdapter.ADAS_TLB_SWITCH,
+                EcarxVehicleAdapter.ADAS_TLB_MODE,
+                EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION,
+                EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION_SOUND);
+        addDiagnostic(root, "Experimental ADAS fault/readback",
+                EcarxVehicleAdapter.ADAS_TRAFFIC_SIGN_INFORMATION_FAILURE,
+                EcarxVehicleAdapter.ADAS_LANE_KEEPING_ASSISTANCE_FAILURE,
+                EcarxVehicleAdapter.ADAS_EMERGENCY_LANE_OCCUPANCY_FAILURE,
+                EcarxVehicleAdapter.ADAS_EMERGENCY_STEERING_FAILURE,
+                EcarxVehicleAdapter.ADAS_FORWARD_PRECOLLISION_FAULT,
+                EcarxVehicleAdapter.ADAS_FRONT_SIDE_ASSIST_FAILURE,
+                EcarxVehicleAdapter.ADAS_ADAPTIVE_CRUISE_FAILURE,
+                EcarxVehicleAdapter.ADAS_REAR_COLLISION_WARNING_FAILURE,
+                EcarxVehicleAdapter.ADAS_DRIVER_FATIGUE_FAILURE,
+                EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHTS_IDENTIFY_FAULTS,
+                EcarxVehicleAdapter.ADAS_PADDLE_LANE_CHANGE_ASSIST);
         addCommand(root, "AI driver assist вкл", EcarxVehicleAdapter.ADAS_AI_DRIVER_ASSIST, EcarxVehicleAdapter.COMMON_ON);
         addCommand(root, "AI driver assist выкл", EcarxVehicleAdapter.ADAS_AI_DRIVER_ASSIST, EcarxVehicleAdapter.COMMON_OFF);
-        addCommand(root, "AI lane strategy gentle", EcarxVehicleAdapter.ADAS_AI_LANE_CHANGE_STRATEGY, EcarxVehicleAdapter.AI_LANE_CHANGE_STRATEGY_GENTLE);
-        addCommand(root, "AI lane strategy standard", EcarxVehicleAdapter.ADAS_AI_LANE_CHANGE_STRATEGY, EcarxVehicleAdapter.AI_LANE_CHANGE_STRATEGY_STANDARD);
-        addCommand(root, "AI lane strategy radical", EcarxVehicleAdapter.ADAS_AI_LANE_CHANGE_STRATEGY, EcarxVehicleAdapter.AI_LANE_CHANGE_STRATEGY_RADICAL);
-        addCommand(root, "AI lane warning voice", EcarxVehicleAdapter.ADAS_AI_LANE_CHANGE_WARNING, EcarxVehicleAdapter.AI_LANE_CHANGE_WARNING_VOICE);
-        addCommand(root, "AI lane warning vibrate", EcarxVehicleAdapter.ADAS_AI_LANE_CHANGE_WARNING, EcarxVehicleAdapter.AI_LANE_CHANGE_WARNING_VIBRATE);
-        addCommand(root, "AI lane warning both", EcarxVehicleAdapter.ADAS_AI_LANE_CHANGE_WARNING, EcarxVehicleAdapter.AI_LANE_CHANGE_WARNING_BOTH);
-        addCommand(root, "AI lane warning off", EcarxVehicleAdapter.ADAS_AI_LANE_CHANGE_WARNING, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(root, "AI assist default-on вкл", EcarxVehicleAdapter.ADAS_AI_ASSIST_DEFAULT_ON, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "AI assist default-on выкл", EcarxVehicleAdapter.ADAS_AI_ASSIST_DEFAULT_ON, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(root, "Fusion navigation вкл", EcarxVehicleAdapter.ADAS_AI_ASSIST_FUSION_NAVI, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "Fusion navigation выкл", EcarxVehicleAdapter.ADAS_AI_ASSIST_FUSION_NAVI, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(root, "Out overtaking lane вкл", EcarxVehicleAdapter.ADAS_AI_ASSIST_OUT_OVERTAKING_LANE, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "Out overtaking lane выкл", EcarxVehicleAdapter.ADAS_AI_ASSIST_OUT_OVERTAKING_LANE, EcarxVehicleAdapter.COMMON_OFF);
+        addCommandGroup(root, "Experimental: lane-change strategy", EcarxVehicleAdapter.ADAS_AI_LANE_CHANGE_STRATEGY,
+                new String[]{"AI lane strategy off", "AI lane strategy gentle", "AI lane strategy standard", "AI lane strategy radical"},
+                new int[]{EcarxVehicleAdapter.AI_LANE_CHANGE_STRATEGY_OFF, EcarxVehicleAdapter.AI_LANE_CHANGE_STRATEGY_GENTLE, EcarxVehicleAdapter.AI_LANE_CHANGE_STRATEGY_STANDARD, EcarxVehicleAdapter.AI_LANE_CHANGE_STRATEGY_RADICAL});
+        addCommandGroup(root, "Experimental: lane-change warning", EcarxVehicleAdapter.ADAS_AI_LANE_CHANGE_WARNING,
+                new String[]{"AI lane warning off", "AI lane warning voice", "AI lane warning vibrate", "AI lane warning both"},
+                new int[]{EcarxVehicleAdapter.AI_LANE_CHANGE_WARNING_OFF, EcarxVehicleAdapter.AI_LANE_CHANGE_WARNING_VOICE, EcarxVehicleAdapter.AI_LANE_CHANGE_WARNING_VIBRATE, EcarxVehicleAdapter.AI_LANE_CHANGE_WARNING_BOTH});
+        addCommand(root, "Lane-change confirm вкл", EcarxVehicleAdapter.ADAS_AI_LANE_CHANGE_CONFIRM, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "Lane-change confirm выкл", EcarxVehicleAdapter.ADAS_AI_LANE_CHANGE_CONFIRM, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(root, "Drive Pilot вкл", EcarxVehicleAdapter.ADAS_DRIVE_PILOT, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "Drive Pilot выкл", EcarxVehicleAdapter.ADAS_DRIVE_PILOT, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(root, "ACC/LCC switch вкл", EcarxVehicleAdapter.ADAS_DRIVE_PILOT_ACC_LCC_SWITCH, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "ACC/LCC switch выкл", EcarxVehicleAdapter.ADAS_DRIVE_PILOT_ACC_LCC_SWITCH, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(root, "Drive Pilot alarm cancel", EcarxVehicleAdapter.ADAS_DRIVE_PILOT_ALARM_INFO_CANCEL, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "APB switch вкл", EcarxVehicleAdapter.ADAS_APB_SWITCH, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "APB switch выкл", EcarxVehicleAdapter.ADAS_APB_SWITCH, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(root, "APB mode вкл", EcarxVehicleAdapter.ADAS_APB_MODE, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "APB mode выкл", EcarxVehicleAdapter.ADAS_APB_MODE, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(root, "TLB switch вкл", EcarxVehicleAdapter.ADAS_TLB_SWITCH, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "TLB switch выкл", EcarxVehicleAdapter.ADAS_TLB_SWITCH, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(root, "TLB mode вкл", EcarxVehicleAdapter.ADAS_TLB_MODE, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "TLB mode выкл", EcarxVehicleAdapter.ADAS_TLB_MODE, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(root, "Traffic light attention вкл", EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "Traffic light attention выкл", EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(root, "Traffic light sound вкл", EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION_SOUND, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "Traffic light sound выкл", EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION_SOUND, EcarxVehicleAdapter.COMMON_OFF);
     }
 
     private void addExperimentalDriveFeatures(LinearLayout root) {
