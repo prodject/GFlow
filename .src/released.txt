@@ -125,6 +125,7 @@ Functional coverage
 - Parking guard: partial. Template installer creates a smart preset that starts DVR, opens 360 through the custom key, closes windows/sunroof/sun curtain and locks doors. Gear/park-state trigger still needs confirmed vehicle signal mapping.
 - Rain scenario: partial. Template installer creates a smart preset that closes all windows, sunroof and sun curtain, switches wipers to AUTO and enables front defrost. Automatic rain-sensor trigger still needs confirmed signal mapping.
 - Night mode: partial. Template installer creates a smart preset for HUD navigation display, night daymode, low backlight/DIM brightness, blue DIM theme and subdued ambience lighting. Time/sunset trigger still needs scheduling or confirmed vehicle clock/day-night signal wiring.
+- App context automation: partial. Template installer creates navigation app triggers that enable autozoom, HUD navigation display and stock navigation/DIM map custom-key actions. True split-window launch still needs privileged multi-window integration.
 
 Implementation log
 - 2026-07-21: created initial coverage log.
@@ -198,3 +199,4 @@ Implementation log
 - 2026-07-21: added Parking Guard scenario template and smart-preset DVR start/stop actions.
 - 2026-07-21: added Rain Scenario template for window/sunroof closure, automatic wipers and front defrost.
 - 2026-07-21: added Night Mode scenario template for HUD, daymode/brightness, DIM theme and ambience lighting.
+- 2026-07-21: added Navigation App Context scenario template and smart-preset autozoom action.

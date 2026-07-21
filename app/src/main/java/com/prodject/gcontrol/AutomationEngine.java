@@ -52,6 +52,17 @@ final class AutomationEngine {
             context.startService(intent);
             return "DVR stop requested";
         }
+        if ("autozoom".equals(action.name)) {
+            String[] parts = action.value.split(":", 2);
+            String packages = parts.length > 0 && !parts[0].trim().isEmpty() ? parts[0].trim() : "maps,navi,browser";
+            float scale = parts.length > 1 ? parseFloat(parts[1], 1.15f) : 1.15f;
+            context.getSharedPreferences(AppWatchdogAccessibilityService.PREFS, Context.MODE_PRIVATE).edit()
+                    .putBoolean(AppWatchdogAccessibilityService.KEY_ENABLED, true)
+                    .putString(AppWatchdogAccessibilityService.KEY_PACKAGES, packages)
+                    .putFloat(AppWatchdogAccessibilityService.KEY_SCALE, scale)
+                    .apply();
+            return "Autozoom enabled for " + packages + " scale=" + scale;
+        }
         return "Unknown action: " + action.name + "=" + action.value;
     }
 
