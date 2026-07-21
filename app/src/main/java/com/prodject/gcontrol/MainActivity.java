@@ -566,6 +566,8 @@ public class MainActivity extends Activity {
         addHudDimAction(root, "DIM climate unit Celsius", a -> a.climateCelsiusUnit());
         addHudDimAction(root, "DIM climate temp 22.0C", a -> a.climateTemp(22.0f));
         addHudDimAction(root, "DIM avg fuel sample", a -> a.updateAvgFuelRanking(0, "{\"source\":\"GControl\",\"avg\":0}"));
+        addHudDimAction(root, "DIM media mute", a -> a.publishMediaMuteState(1));
+        addHudDimAction(root, "DIM media unmute", a -> a.publishMediaMuteState(0));
         Button hud = Ui.button(this, "Запустить HUD service");
         hud.setOnClickListener(v -> startForegroundService(new Intent(this, HudPresentationService.class)));
         Button observer = Ui.button(this, "Запустить HUD observer");

@@ -1,7 +1,12 @@
 package com.prodject.gcontrol;
 
 import android.content.Context;
+import android.media.MediaMetadata;
+import android.media.session.MediaController;
+import android.media.session.PlaybackState;
+import android.net.Uri;
 import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.util.Locale;
 
 final class EcarxHudDimAdapter {
@@ -21,6 +26,13 @@ final class EcarxHudDimAdapter {
     static final int DIM_TAB_MUSIC = 3;
     static final int DIM_TAB_CONTROL_CENTER = 4;
     static final int DIM_TAB_CLOSE = 5;
+    static final int MEDIA_SOURCE_LOCAL = 0;
+    static final int MEDIA_SOURCE_USB = 1;
+    static final int MEDIA_SOURCE_BT = 2;
+    static final int MEDIA_SOURCE_ONLINE = 6;
+    static final int MEDIA_PLAYBACK_PAUSED = 0;
+    static final int MEDIA_PLAYBACK_PLAYING = 1;
+    static final int MEDIA_LOOP_ALL = 0;
 
     static final int NAVI_MODE_OFF = 1;
     static final int NAVI_MODE_SIMPLIFY = 2;
@@ -189,6 +201,35 @@ final class EcarxHudDimAdapter {
         }
     }
 
+    Result publishMediaSession(MediaController controller) {
+        if (controller == null) return Result.text(false, "MediaController is null");
+        MediaMetadata meta = controller.getMetadata();
+        PlaybackState state = controller.getPlaybackState();
+        int source = sourceType(controller.getPackageName());
+        try {
+            Object media = dimPart("getMediaInteraction");
+            media.getClass().getMethod("updateMediaSourceTypeList", int[].class)
+                    .invoke(media, new int[] { MEDIA_SOURCE_LOCAL, MEDIA_SOURCE_USB, MEDIA_SOURCE_BT, MEDIA_SOURCE_ONLINE });
+            media.getClass().getMethod("updateCurrentSourceType", int.class).invoke(media, source);
+            media.getClass().getMethod("updateCurrentProgress", long.class).invoke(media, progress(state));
+            media.getClass().getMethod("updatePlaybackInfo", playbackInfoClass()).invoke(media, playbackInfo(controller, meta, state, source));
+            return Result.text(true, "DIM media update -> "
+                    + controller.getPackageName() + " · " + text(meta, MediaMetadata.METADATA_KEY_TITLE) + " · source=" + source);
+        } catch (Exception e) {
+            return Result.error("DIM media update", e);
+        }
+    }
+
+    Result publishMediaMuteState(int state) {
+        try {
+            Object media = dimPart("getMediaInteraction");
+            media.getClass().getMethod("updateMediaMuteState", int.class).invoke(media, state);
+            return Result.text(true, "updateMediaMuteState(" + state + ") -> ok");
+        } catch (Exception e) {
+            return Result.error("updateMediaMuteState", e);
+        }
+    }
+
     private String probeHud() {
         try {
             hud();
@@ -232,6 +273,87 @@ final class EcarxHudDimAdapter {
         } catch (Exception e) {
             throw new IllegalStateException(getter + ": " + compact(e), e);
         }
+    }
+
+    private Class<?> playbackInfoClass() throws Exception {
+        return Class.forName("com.ecarx.xui.adaptapi.diminteraction.IMediaInteraction$IPlaybackInfo");
+    }
+
+    private Object playbackInfo(MediaController controller, MediaMetadata meta, PlaybackState state, int source) throws Exception {
+        Class<?> type = playbackInfoClass();
+        return Proxy.newProxyInstance(type.getClassLoader(), new Class<?>[] { type }, (proxy, method, args) -> {
+            String name = method.getName();
+            if ("getAlbum".equals(name)) return text(meta, MediaMetadata.METADATA_KEY_ALBUM);
+            if ("getArtist".equals(name)) return firstText(meta, MediaMetadata.METADATA_KEY_ARTIST, MediaMetadata.METADATA_KEY_ALBUM_ARTIST);
+            if ("getArtwork".equals(name)) return artwork(meta);
+            if ("getCurrentLyricSentence".equals(name)) return "";
+            if ("getDuration".equals(name)) return duration(meta);
+            if ("getFavoriteState".equals(name)) return 0;
+            if ("getLoopMode".equals(name)) return MEDIA_LOOP_ALL;
+            if ("getLyric".equals(name)) return null;
+            if ("getLyricContent".equals(name)) return "";
+            if ("getMediaPath".equals(name)) return null;
+            if ("getNextArtwork".equals(name)) return null;
+            if ("getPlaybackStatus".equals(name)) return playbackStatus(state);
+            if ("getPlayingItemPositionInQueue".equals(name)) return 0;
+            if ("getPreviousArtwork".equals(name)) return null;
+            if ("getRadioFrequency".equals(name)) return "";
+            if ("getRadioMode".equals(name)) return 0;
+            if ("getRadioStationName".equals(name)) return "";
+            if ("getSourceType".equals(name)) return source;
+            if ("getTitle".equals(name)) return firstText(meta, MediaMetadata.METADATA_KEY_TITLE, MediaMetadata.METADATA_KEY_DISPLAY_TITLE);
+            if ("getUUID".equals(name)) return controller.getPackageName();
+            if ("toString".equals(name)) return "GControlPlaybackInfo{" + controller.getPackageName() + "}";
+            if ("hashCode".equals(name)) return controller.getPackageName().hashCode();
+            if ("equals".equals(name)) return proxy == args[0];
+            return defaultValue(method.getReturnType());
+        });
+    }
+
+    private Object defaultValue(Class<?> type) {
+        if (type == boolean.class) return false;
+        if (type == int.class) return 0;
+        if (type == long.class) return 0L;
+        if (type == float.class) return 0f;
+        if (type == double.class) return 0d;
+        return null;
+    }
+
+    private int sourceType(String packageName) {
+        String p = packageName == null ? "" : packageName.toLowerCase(Locale.US);
+        if (p.contains("bluetooth") || p.contains("bt")) return MEDIA_SOURCE_BT;
+        if (p.contains("usb") || p.contains("file") || p.contains("documentsui")) return MEDIA_SOURCE_USB;
+        if (p.contains("radio") || p.contains("music") || p.contains("audio")) return MEDIA_SOURCE_LOCAL;
+        return MEDIA_SOURCE_ONLINE;
+    }
+
+    private int playbackStatus(PlaybackState state) {
+        return state != null && state.getState() == PlaybackState.STATE_PLAYING ? MEDIA_PLAYBACK_PLAYING : MEDIA_PLAYBACK_PAUSED;
+    }
+
+    private long progress(PlaybackState state) {
+        return state == null ? 0L : Math.max(0L, state.getPosition());
+    }
+
+    private long duration(MediaMetadata meta) {
+        return meta == null ? 0L : Math.max(0L, meta.getLong(MediaMetadata.METADATA_KEY_DURATION));
+    }
+
+    private String text(MediaMetadata meta, String key) {
+        if (meta == null) return "";
+        String value = meta.getString(key);
+        return value == null ? "" : value;
+    }
+
+    private String firstText(MediaMetadata meta, String first, String second) {
+        String value = text(meta, first);
+        return value.isEmpty() ? text(meta, second) : value;
+    }
+
+    private Uri artwork(MediaMetadata meta) {
+        if (meta == null) return null;
+        String value = firstText(meta, MediaMetadata.METADATA_KEY_ART_URI, MediaMetadata.METADATA_KEY_ALBUM_ART_URI);
+        return value.isEmpty() ? null : Uri.parse(value);
     }
 
     private Result intCall(Object target, String name) {
