@@ -14,6 +14,7 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
 import android.graphics.Shader;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.*;
@@ -33,10 +34,33 @@ public class MainActivity extends Activity {
     private static final String KEY_EXPERIMENTAL_FEATURES = "experimental_features";
     private static final String KEY_DEVELOPER_MODE = "developer_mode";
     private static final String KEY_LICENSE_ACCEPTED = "license_accepted";
+    private static final String KEY_HOME_WEATHER = "home_weather";
+    private static final String KEY_HOME_WEATHER_DESC = "home_weather_desc";
+    private static final String KEY_HOME_WEATHER_WIND = "home_weather_wind";
+    private static final String KEY_HOME_WEATHER_AT = "home_weather_at";
     private static final String CLIMATE_PRESETS = "climate_presets";
     private static final String CLIMATE_PRESET_ORDER = "order";
     private static final String[] RUNTIME_PERMS = {
             Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO
+    };
+    private final Handler dashboardHandler = new Handler(Looper.getMainLooper());
+    private TextView topProfileValue;
+    private TextView topWeatherValue;
+    private TextView topCabinValue;
+    private TextView topStatusValue;
+    private TextView topTimeValue;
+    private TextView heroWeatherTemp;
+    private TextView heroWeatherDesc;
+    private TextView heroWeatherWind;
+    private TextView heroCarSummary;
+    private LinearLayout dashboardDrawer;
+    private View dashboardDrawerScrim;
+    private boolean dashboardDrawerOpen;
+    private final Runnable dashboardTicker = new Runnable() {
+        @Override public void run() {
+            refreshDashboardLiveState();
+            dashboardHandler.postDelayed(this, 30_000L);
+        }
     };
 
     @Override public void onCreate(Bundle b) {
@@ -44,6 +68,21 @@ public class MainActivity extends Activity {
         if (Build.VERSION.SDK_INT >= 23) requestPermissions(RUNTIME_PERMS, 10);
         if (licenseAccepted()) showDashboard();
         else showOnboarding();
+    }
+
+    @Override protected void onResume() {
+        super.onResume();
+        dashboardHandler.removeCallbacks(dashboardTicker);
+        if (topTimeValue != null || heroWeatherTemp != null) {
+            refreshDashboardLiveState();
+            dashboardHandler.post(dashboardTicker);
+            maybeRefreshHomeWeather();
+        }
+    }
+
+    @Override protected void onPause() {
+        super.onPause();
+        dashboardHandler.removeCallbacks(dashboardTicker);
     }
 
     private void showOnboarding() {
@@ -79,9 +118,11 @@ public class MainActivity extends Activity {
     }
 
     private void showDashboard() {
+        FrameLayout frame = new FrameLayout(this);
+        frame.setBackground(dashboardBg());
+
         LinearLayout shell = new LinearLayout(this);
         shell.setOrientation(LinearLayout.VERTICAL);
-        shell.setBackground(dashboardBg());
         shell.setPadding(Ui.dp(this, 16), Ui.dp(this, 16), Ui.dp(this, 16), Ui.dp(this, 16));
 
         shell.addView(buildDashboardTopBar(), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 72)));
@@ -101,7 +142,27 @@ public class MainActivity extends Activity {
         dockLp.topMargin = Ui.dp(this, 16);
         shell.addView(buildDashboardDock(), dockLp);
 
-        setContentView(shell);
+        frame.addView(shell, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
+        dashboardDrawerScrim = new View(this);
+        dashboardDrawerScrim.setBackgroundColor(Color.argb(150, 3, 7, 12));
+        dashboardDrawerScrim.setAlpha(0f);
+        dashboardDrawerScrim.setVisibility(View.GONE);
+        dashboardDrawerScrim.setOnClickListener(v -> setDashboardDrawerOpen(false));
+        frame.addView(dashboardDrawerScrim, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
+        dashboardDrawer = buildExpandedDashboardDrawer();
+        FrameLayout.LayoutParams drawerLp = new FrameLayout.LayoutParams(Ui.dp(this, 328), ViewGroup.LayoutParams.MATCH_PARENT);
+        drawerLp.gravity = Gravity.START;
+        frame.addView(dashboardDrawer, drawerLp);
+        dashboardDrawer.setTranslationX(-Ui.dp(this, 344));
+
+        setContentView(frame);
+        dashboardDrawerOpen = false;
+        refreshDashboardLiveState();
+        dashboardHandler.removeCallbacks(dashboardTicker);
+        dashboardHandler.post(dashboardTicker);
+        maybeRefreshHomeWeather();
         Ui.animateIn(shell);
     }
 
@@ -111,8 +172,13 @@ public class MainActivity extends Activity {
         bar.setGravity(Gravity.CENTER_VERTICAL);
         bar.setPadding(Ui.dp(this, 20), Ui.dp(this, 10), Ui.dp(this, 20), Ui.dp(this, 10));
 
+        Button menu = Ui.button(this, "Меню");
+        menu.setOnClickListener(v -> setDashboardDrawerOpen(!dashboardDrawerOpen));
+        bar.addView(menu, new LinearLayout.LayoutParams(Ui.dp(this, 110), ViewGroup.LayoutParams.MATCH_PARENT));
+
         LinearLayout titleBlock = new LinearLayout(this);
         titleBlock.setOrientation(LinearLayout.VERTICAL);
+        titleBlock.setPadding(Ui.dp(this, 16), 0, 0, 0);
         TextView eyebrow = Ui.label(this, "GFlow Car Control");
         TextView title = Ui.text(this, "Главная", 28, true);
         title.setPadding(0, 0, 0, 0);
@@ -120,15 +186,15 @@ public class MainActivity extends Activity {
         titleBlock.addView(title);
         bar.addView(titleBlock, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
-        bar.addView(buildTopStat("Профиль", activeProfileName()));
-        bar.addView(buildTopStat("Погода", "18°C · дождь"));
-        bar.addView(buildTopStat("Салон", "22°C"));
-        bar.addView(buildTopStat("Статус", adaptStatus()));
-        bar.addView(buildTopStat("Время", new java.text.SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date())));
+        topProfileValue = buildTopStat(bar, "Профиль", activeProfileName());
+        topWeatherValue = buildTopStat(bar, "Погода", weatherSummary());
+        topCabinValue = buildTopStat(bar, "Салон", cabinSummary());
+        topStatusValue = buildTopStat(bar, "Статус", adaptStatus());
+        topTimeValue = buildTopStat(bar, "Время", new java.text.SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date()));
         return bar;
     }
 
-    private LinearLayout buildTopStat(String label, String value) {
+    private TextView buildTopStat(LinearLayout parent, String label, String value) {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
         card.setPadding(Ui.dp(this, 12), Ui.dp(this, 8), Ui.dp(this, 12), Ui.dp(this, 8));
@@ -141,7 +207,8 @@ public class MainActivity extends Activity {
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         lp.leftMargin = Ui.dp(this, 10);
         card.setLayoutParams(lp);
-        return card;
+        parent.addView(card);
+        return valueView;
     }
 
     private GradientDrawable dashboardBg() {
@@ -154,7 +221,7 @@ public class MainActivity extends Activity {
         LinearLayout rail = Ui.glassCard(this);
         rail.setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL);
         rail.setPadding(Ui.dp(this, 12), Ui.dp(this, 14), Ui.dp(this, 12), Ui.dp(this, 14));
-        addDashboardMenuButton(rail, "M", true, this::showSettings);
+        addDashboardMenuButton(rail, "M", true, () -> setDashboardDrawerOpen(!dashboardDrawerOpen));
         addDashboardMenuButton(rail, "HM", true, this::showDashboard);
         addDashboardMenuButton(rail, "CL", false, this::showClimateMenu);
         addDashboardMenuButton(rail, "CAR", false, this::showVehicleMenu);
@@ -217,11 +284,13 @@ public class MainActivity extends Activity {
         weatherRow.addView(new DashboardWeatherView(this), new LinearLayout.LayoutParams(Ui.dp(this, 116), Ui.dp(this, 88)));
         LinearLayout weatherText = new LinearLayout(this);
         weatherText.setOrientation(LinearLayout.VERTICAL);
-        TextView temp = Ui.text(this, "18°C", 40, true);
-        temp.setPadding(0, 0, 0, 0);
-        weatherText.addView(temp);
-        weatherText.addView(Ui.muted(this, "Небольшой дождь"));
-        weatherText.addView(Ui.muted(this, "Ветер 6 м/с · Москва"));
+        heroWeatherTemp = Ui.text(this, weatherTemperature(), 40, true);
+        heroWeatherTemp.setPadding(0, 0, 0, 0);
+        weatherText.addView(heroWeatherTemp);
+        heroWeatherDesc = Ui.muted(this, weatherDescription());
+        heroWeatherWind = Ui.muted(this, weatherWindSummary());
+        weatherText.addView(heroWeatherDesc);
+        weatherText.addView(heroWeatherWind);
         LinearLayout.LayoutParams textLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         textLp.leftMargin = Ui.dp(this, 12);
         weatherRow.addView(weatherText, textLp);
@@ -229,11 +298,18 @@ public class MainActivity extends Activity {
         top.addView(weather, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
         LinearLayout summary = Ui.glassCard(this);
+        summary.setOnClickListener(v -> showDashboardQuickSheet("Состояние автомобиля", new QuickAction[]{
+                new QuickAction("Открыть климат", this::showClimateMenu),
+                new QuickAction("Открыть автомобиль", this::showVehicleMenu),
+                new QuickAction("Открыть ADAS", this::showAdasMenu),
+                new QuickAction("Открыть парковку", this::openParkingScreen)
+        }));
         summary.addView(Ui.label(this, "Автомобиль"));
-        summary.addView(buildMetricLine("Климат", "Auto · 22°C"));
+        heroCarSummary = buildMetricLine("Климат", dashboardCarSummary());
+        summary.addView(heroCarSummary);
         summary.addView(buildMetricLine("Режим", developerModeEnabled() ? "Developer" : "Comfort"));
-        summary.addView(buildMetricLine("DVR", "Готов"));
-        summary.addView(buildMetricLine("ADAS", "AEB · LKA · PDC"));
+        summary.addView(buildMetricLine("DVR", dvrSummary()));
+        summary.addView(buildMetricLine("ADAS", adasSummary()));
         LinearLayout.LayoutParams summaryLp = new LinearLayout.LayoutParams(Ui.dp(this, 260), ViewGroup.LayoutParams.WRAP_CONTENT);
         summaryLp.leftMargin = Ui.dp(this, 16);
         top.addView(summary, summaryLp);
@@ -273,6 +349,10 @@ public class MainActivity extends Activity {
         LinearLayout card = Ui.glassCard(this);
         card.setClickable(true);
         card.setOnClickListener(v -> transition(action));
+        card.setOnLongClickListener(v -> {
+            showWidgetActionSheet(title, action);
+            return true;
+        });
         card.addView(Ui.label(this, title));
         TextView v = Ui.text(this, value, 20, true);
         v.setTextColor(Ui.primaryText(this));
@@ -296,16 +376,40 @@ public class MainActivity extends Activity {
         dock.setOrientation(LinearLayout.HORIZONTAL);
         dock.setGravity(Gravity.CENTER_VERTICAL);
         dock.setPadding(Ui.dp(this, 18), Ui.dp(this, 14), Ui.dp(this, 18), Ui.dp(this, 14));
-        addDockButton(dock, "Климат", this::showClimateMenu, true);
-        addDockButton(dock, "360", this::openParkingScreen, false);
-        addDockButton(dock, "DVR Rec", () -> startActivity(new Intent(this, CameraActivity.class)), false);
-        addDockButton(dock, "Drive Mode", this::showVehicleMenu, false);
-        addDockButton(dock, "Голос", () -> startActivity(new Intent(this, VoiceActivity.class)), false);
-        addDockButton(dock, "Профиль", this::showUserProfiles, false);
+        addDockButton(dock, "Климат", this::showClimateMenu, true, new QuickAction[]{
+                new QuickAction("Открыть климат", this::showClimateMenu),
+                new QuickAction("Умный климат", this::showSmartClimate),
+                new QuickAction("Пресеты климата", this::showClimate)
+        });
+        addDockButton(dock, "360", this::openParkingScreen, false, new QuickAction[]{
+                new QuickAction("Парковка", this::openParkingScreen),
+                new QuickAction("Камеры", () -> startActivity(new Intent(this, CameraActivity.class))),
+                new QuickAction("ADAS", this::showAdasMenu)
+        });
+        addDockButton(dock, "DVR Rec", () -> startActivity(new Intent(this, CameraActivity.class)), false, new QuickAction[]{
+                new QuickAction("Открыть DVR", () -> startActivity(new Intent(this, CameraActivity.class))),
+                new QuickAction("Парковка", this::openParkingScreen),
+                new QuickAction("Автоматизация", this::showAutomation)
+        });
+        addDockButton(dock, "Drive Mode", this::showVehicleMenu, false, new QuickAction[]{
+                new QuickAction("Открыть кузов", this::showVehicleMenu),
+                new QuickAction("HUD", this::showHudMenu),
+                new QuickAction("Профиль", this::showUserProfiles)
+        });
+        addDockButton(dock, "Голос", () -> startActivity(new Intent(this, VoiceActivity.class)), false, new QuickAction[]{
+                new QuickAction("Открыть голос", () -> startActivity(new Intent(this, VoiceActivity.class))),
+                new QuickAction("Автоматизация", this::showAutomation),
+                new QuickAction("Погода", this::showWeb)
+        });
+        addDockButton(dock, "Профиль", this::showUserProfiles, false, new QuickAction[]{
+                new QuickAction("Открыть профили", this::showUserProfiles),
+                new QuickAction("Автоматизация", this::showAutomation),
+                new QuickAction("Настройки", this::showSettings)
+        });
         return dock;
     }
 
-    private void addDockButton(LinearLayout dock, String label, Runnable action, boolean active) {
+    private void addDockButton(LinearLayout dock, String label, Runnable action, boolean active, QuickAction[] sheetActions) {
         Button button = Ui.button(this, label);
         button.setTextColor(Color.WHITE);
         button.setTextSize(14);
@@ -314,6 +418,10 @@ public class MainActivity extends Activity {
                 Ui.dp(this, 20),
                 active ? Color.argb(100, 77, 163, 255) : Color.TRANSPARENT));
         button.setOnClickListener(v -> transition(action));
+        button.setOnLongClickListener(v -> {
+            showDashboardQuickSheet(label, sheetActions);
+            return true;
+        });
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f);
         lp.leftMargin = Ui.dp(this, 6);
         lp.rightMargin = Ui.dp(this, 6);
@@ -326,6 +434,219 @@ public class MainActivity extends Activity {
 
     private String adaptStatus() {
         return new EcarxVehicleAdapter(this).availability().contains("unavailable") ? "Нет связи" : "AdaptAPI готов";
+    }
+
+    private String weatherSummary() {
+        SharedPreferences prefs = getSharedPreferences(APP_SETTINGS, MODE_PRIVATE);
+        String temp = prefs.getString(KEY_HOME_WEATHER, "...");
+        String desc = prefs.getString(KEY_HOME_WEATHER_DESC, "загрузка");
+        return temp + " · " + desc;
+    }
+
+    private String weatherTemperature() {
+        return getSharedPreferences(APP_SETTINGS, MODE_PRIVATE).getString(KEY_HOME_WEATHER, "--");
+    }
+
+    private String weatherDescription() {
+        return getSharedPreferences(APP_SETTINGS, MODE_PRIVATE).getString(KEY_HOME_WEATHER_DESC, "Нажмите карточку погоды");
+    }
+
+    private String weatherWindSummary() {
+        SharedPreferences prefs = getSharedPreferences(APP_SETTINGS, MODE_PRIVATE);
+        String wind = prefs.getString(KEY_HOME_WEATHER_WIND, "ветер --");
+        long at = prefs.getLong(KEY_HOME_WEATHER_AT, 0L);
+        String stamp = at == 0L ? "Москва" : new java.text.SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date(at));
+        return wind + " · Москва · " + stamp;
+    }
+
+    private String cabinSummary() {
+        SharedPreferences prefs = SmartClimateController.prefs(this);
+        float driver = prefs.getFloat(SmartClimateController.KEY_DRIVER_TARGET, 22.0f);
+        float passenger = prefs.getFloat(SmartClimateController.KEY_PASSENGER_TARGET, 22.0f);
+        return String.format(Locale.US, "%.1f/%.1f°C", driver, passenger);
+    }
+
+    private String dashboardCarSummary() {
+        boolean smart = SmartClimateController.prefs(this).getBoolean(SmartClimateController.KEY_ENABLED, false);
+        return (smart ? "Smart" : "Manual") + " · " + cabinSummary();
+    }
+
+    private String dvrSummary() {
+        return new File(getExternalFilesDir(Environment.DIRECTORY_MOVIES), "MonjiDVR").exists() ? "Архив готов" : "Ожидание";
+    }
+
+    private String adasSummary() {
+        return developerModeEnabled() ? "AEB · LKA · ACC · DEV" : "AEB · LKA · PDC";
+    }
+
+    private void refreshDashboardLiveState() {
+        if (topProfileValue != null) topProfileValue.setText(activeProfileName());
+        if (topWeatherValue != null) topWeatherValue.setText(weatherSummary());
+        if (topCabinValue != null) topCabinValue.setText(cabinSummary());
+        if (topStatusValue != null) topStatusValue.setText(adaptStatus());
+        if (topTimeValue != null) topTimeValue.setText(new java.text.SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date()));
+        if (heroWeatherTemp != null) heroWeatherTemp.setText(weatherTemperature());
+        if (heroWeatherDesc != null) heroWeatherDesc.setText(weatherDescription());
+        if (heroWeatherWind != null) heroWeatherWind.setText(weatherWindSummary());
+        if (heroCarSummary != null) heroCarSummary.setText("Климат: " + dashboardCarSummary());
+    }
+
+    private void maybeRefreshHomeWeather() {
+        long at = getSharedPreferences(APP_SETTINGS, MODE_PRIVATE).getLong(KEY_HOME_WEATHER_AT, 0L);
+        if (at == 0L || System.currentTimeMillis() - at > 20 * 60_000L) loadHomeWeather();
+    }
+
+    private void loadHomeWeather() {
+        new Thread(() -> {
+            try {
+                String url = "https://api.open-meteo.com/v1/forecast?latitude=55.7558&longitude=37.6173&current=temperature_2m,wind_speed_10m,weather_code";
+                JSONObject current = new JSONObject(readUrl(url)).getJSONObject("current");
+                String temp = String.format(Locale.US, "%.1f°C", current.optDouble("temperature_2m"));
+                String wind = String.format(Locale.US, "Ветер %.0f км/ч", current.optDouble("wind_speed_10m"));
+                String desc = weatherName(current.optInt("weather_code"));
+                getSharedPreferences(APP_SETTINGS, MODE_PRIVATE).edit()
+                        .putString(KEY_HOME_WEATHER, temp)
+                        .putString(KEY_HOME_WEATHER_DESC, desc)
+                        .putString(KEY_HOME_WEATHER_WIND, wind)
+                        .putLong(KEY_HOME_WEATHER_AT, System.currentTimeMillis())
+                        .apply();
+                runOnUiThread(this::refreshDashboardLiveState);
+            } catch (Exception ignored) {
+            }
+        }).start();
+    }
+
+    private String weatherName(int code) {
+        if (code == 0) return "Ясно";
+        if (code <= 3) return "Облачно";
+        if (code >= 45 && code <= 48) return "Туман";
+        if (code >= 51 && code <= 67) return "Дождь";
+        if (code >= 71 && code <= 77) return "Снег";
+        if (code >= 80 && code <= 82) return "Ливень";
+        if (code >= 95) return "Гроза";
+        return "Код " + code;
+    }
+
+    private LinearLayout buildExpandedDashboardDrawer() {
+        LinearLayout drawer = Ui.glassCard(this);
+        drawer.setPadding(Ui.dp(this, 20), Ui.dp(this, 24), Ui.dp(this, 20), Ui.dp(this, 24));
+        drawer.addView(Ui.label(this, "Navigation Drawer"));
+        drawer.addView(Ui.text(this, "GFlow Home", 28, true));
+        drawer.addView(Ui.muted(this, "Быстрый доступ к крупным разделам и системным действиям."));
+
+        LinearLayout stats = Ui.row(this);
+        stats.addView(drawerBadge("Профиль", activeProfileName()));
+        stats.addView(drawerBadge("Погода", weatherTemperature()));
+        stats.addView(drawerBadge("Салон", cabinSummary()));
+        drawer.addView(stats, lpMatchWrap(0, 14, 0, 14));
+
+        addDrawerAction(drawer, "Главная", this::showDashboard);
+        addDrawerAction(drawer, "Климат", this::showClimateMenu);
+        addDrawerAction(drawer, "Автомобиль", this::showVehicleMenu);
+        addDrawerAction(drawer, "ADAS", this::showAdasMenu);
+        addDrawerAction(drawer, "Камеры / DVR", () -> startActivity(new Intent(this, CameraActivity.class)));
+        addDrawerAction(drawer, "Парковка / APA", this::openParkingScreen);
+        addDrawerAction(drawer, "HUD / Cluster", this::showHudMenu);
+        addDrawerAction(drawer, "Автоматизация", this::showAutomation);
+        addDrawerAction(drawer, "Профили", this::showUserProfiles);
+        addDrawerAction(drawer, "Голос", () -> startActivity(new Intent(this, VoiceActivity.class)));
+        addDrawerAction(drawer, "Погода / Браузер", this::showWeb);
+        addDrawerAction(drawer, "Настройки", this::showSettings);
+        return drawer;
+    }
+
+    private LinearLayout drawerBadge(String title, String value) {
+        LinearLayout badge = new LinearLayout(this);
+        badge.setOrientation(LinearLayout.VERTICAL);
+        badge.setPadding(Ui.dp(this, 12), Ui.dp(this, 8), Ui.dp(this, 12), Ui.dp(this, 8));
+        badge.setBackground(Ui.cardBg(this, Color.argb(80, 255, 255, 255), Ui.dp(this, 16), Color.TRANSPARENT));
+        badge.addView(Ui.label(this, title));
+        TextView valueView = Ui.text(this, value, 13, true);
+        valueView.setPadding(0, 0, 0, 0);
+        badge.addView(valueView);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        lp.leftMargin = Ui.dp(this, 4);
+        lp.rightMargin = Ui.dp(this, 4);
+        badge.setLayoutParams(lp);
+        return badge;
+    }
+
+    private void addDrawerAction(LinearLayout drawer, String label, Runnable action) {
+        Button button = Ui.button(this, label);
+        button.setGravity(Gravity.CENTER_VERTICAL | Gravity.START);
+        button.setTextColor(Color.WHITE);
+        button.setBackground(Ui.cardBg(this, Color.argb(56, 255, 255, 255), Ui.dp(this, 18), Color.TRANSPARENT));
+        button.setOnClickListener(v -> {
+            setDashboardDrawerOpen(false);
+            transition(action);
+        });
+        drawer.addView(button, lpMatchWrap(0, 6, 0, 6));
+    }
+
+    private void setDashboardDrawerOpen(boolean open) {
+        if (dashboardDrawer == null || dashboardDrawerScrim == null) return;
+        dashboardDrawerOpen = open;
+        if (open) {
+            dashboardDrawerScrim.setVisibility(View.VISIBLE);
+            dashboardDrawerScrim.animate().alpha(1f).setDuration(180).start();
+            dashboardDrawer.animate().translationX(0f).setDuration(220).setInterpolator(new DecelerateInterpolator()).start();
+        } else {
+            dashboardDrawerScrim.animate().alpha(0f).setDuration(160).withEndAction(() -> dashboardDrawerScrim.setVisibility(View.GONE)).start();
+            dashboardDrawer.animate().translationX(-Ui.dp(this, 344)).setDuration(200).setInterpolator(new DecelerateInterpolator()).start();
+        }
+    }
+
+    private void showHeroActionSheet(String label, Runnable primary) {
+        showDashboardQuickSheet(label, new QuickAction[]{
+                new QuickAction("Открыть раздел", primary),
+                new QuickAction("Открыть настройки", this::showSettings),
+                new QuickAction("На главную", this::showDashboard)
+        });
+    }
+
+    private void showWidgetActionSheet(String title, Runnable primary) {
+        showDashboardQuickSheet(title, new QuickAction[]{
+                new QuickAction("Открыть раздел", primary),
+                new QuickAction("Погода / Браузер", this::showWeb),
+                new QuickAction("Настройки", this::showSettings)
+        });
+    }
+
+    private void showDashboardQuickSheet(String title, QuickAction[] actions) {
+        Dialog dialog = new Dialog(this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        LinearLayout sheet = Ui.glassCard(this);
+        sheet.setPadding(Ui.dp(this, 20), Ui.dp(this, 20), Ui.dp(this, 20), Ui.dp(this, 20));
+        sheet.addView(Ui.label(this, "Quick Actions"));
+        sheet.addView(Ui.text(this, title, 24, true));
+        for (QuickAction action : actions) {
+            Button button = Ui.button(this, action.label);
+            button.setTextColor(Color.WHITE);
+            button.setBackground(Ui.cardBg(this, Color.argb(56, 255, 255, 255), Ui.dp(this, 18), Color.TRANSPARENT));
+            button.setOnClickListener(v -> {
+                dialog.dismiss();
+                transition(action.action);
+            });
+            sheet.addView(button, lpMatchWrap(0, 8, 0, 0));
+        }
+        dialog.setContentView(sheet);
+        Window window = dialog.getWindow();
+        if (window != null) {
+            window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            window.setGravity(Gravity.BOTTOM);
+            window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        }
+        dialog.show();
+    }
+
+    private static final class QuickAction {
+        final String label;
+        final Runnable action;
+
+        QuickAction(String label, Runnable action) {
+            this.label = label;
+            this.action = action;
+        }
     }
 
     private void addSideChip(LinearLayout col, String title, String value, int color, Runnable action) {
@@ -361,6 +682,10 @@ public class MainActivity extends Activity {
         b.setGravity(Gravity.CENTER);
         b.setBackground(Ui.cardBg(this, Color.argb(70, 255, 255, 255), Ui.dp(this, 16), Color.argb(80, 255, 255, 255)));
         b.setOnClickListener(v -> transition(action));
+        b.setOnLongClickListener(v -> {
+            showHeroActionSheet(label, action);
+            return true;
+        });
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 54), 1);
         lp.setMargins(Ui.dp(this, 4), 0, Ui.dp(this, 4), 0);
         row.addView(b, lp);
