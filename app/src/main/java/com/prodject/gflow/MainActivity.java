@@ -584,6 +584,7 @@ public class MainActivity extends Activity {
         addDrawerAction(drawer, "HUD / Cluster", this::showHudMenu);
         addDrawerAction(drawer, "Автоматизация", this::showAutomation);
         addDrawerAction(drawer, "Профили", this::showProfilesMenu);
+        addDrawerAction(drawer, "Кнопки руля", this::showSteeringMenu);
         addDrawerAction(drawer, "Голос", () -> startActivity(new Intent(this, VoiceActivity.class)));
         addDrawerAction(drawer, "Погода / Браузер", this::showWeb);
         addDrawerAction(drawer, "Настройки", this::showSettings);
@@ -1299,6 +1300,7 @@ public class MainActivity extends Activity {
         addRailButton(rail, "HUD", this::showHudMenu);
         addRailButton(rail, "Автоматизация", this::showAutomation);
         addRailButton(rail, "Профили", this::showProfilesMenu);
+        addRailButton(rail, "Руль", this::showSteeringMenu);
         addRailButton(rail, "DVR", () -> startActivity(new Intent(this, CameraActivity.class)));
         addRailButton(rail, "Погода", this::showWeb);
         addRailButton(rail, "Настройки", this::showSettings);
@@ -1450,19 +1452,6 @@ public class MainActivity extends Activity {
         addToggleAction(row, "Навигация", () -> CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HUD_DISPLAY_NAVI, EcarxVehicleAdapter.COMMON_ON));
         addToggleAction(row, "Медиа", () -> CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HUD_DISPLAY_MEDIA, EcarxVehicleAdapter.COMMON_ON));
         addToggleAction(row, "DIM night", () -> new EcarxHudDimAdapter(this).requestDayNightMode());
-        card.addView(row);
-        root.addView(card, lpMatchWrap(0, 0, 0, 12));
-    }
-
-    private void addSteeringOverview(LinearLayout root, SharedPreferences steering, SharedPreferences prefs) {
-        LinearLayout card = Ui.card(this);
-        card.addView(Ui.text(this, "Жесты на руле", 22, true));
-        card.addView(Ui.muted(this, "Последнее событие: " + steering.getString("last_event", "нет")));
-        card.addView(Ui.muted(this, "Назначений: " + AutomationEngine.names(prefs, AutomationEngine.KEY_BUTTON_ORDER).size()));
-        LinearLayout row = Ui.row(this);
-        addToggleAction(row, "Hold", () -> showSteeringButtonEditor("", "0", "hold", "", "always", "replace", "preset", AutomationStore.firstPreset(this)));
-        addToggleAction(row, "Double", () -> showSteeringButtonEditor("", "0", "double", "", "always", "replace", "preset", AutomationStore.firstPreset(this)));
-        addToggleAction(row, "Примеры", () -> { installSteeringButtonExamples(); showSteeringButtons(); });
         card.addView(row);
         root.addView(card, lpMatchWrap(0, 0, 0, 12));
     }
@@ -1752,94 +1741,10 @@ public class MainActivity extends Activity {
         startActivity(new Intent(this, ProfileActivity.class));
     }
 
-
-    private void showSteeringButtons() {
-        LinearLayout root = commandRoot("Кнопки руля");
-        SharedPreferences steering = getSharedPreferences("steering", MODE_PRIVATE);
-        SharedPreferences prefs = AutomationEngine.prefs(this);
-        addSteeringOverview(root, steering, prefs);
-        Button add = Ui.button(this, "Назначить кнопку");
-        add.setOnClickListener(v -> showSteeringButtonEditor("", "0", "hold", "", "always", "replace", "preset", AutomationStore.firstPreset(this)));
-        root.addView(add);
-        Button examples = Ui.button(this, "Добавить примеры назначений");
-        examples.setOnClickListener(v -> {
-            installSteeringButtonExamples();
-            showSteeringButtons();
-        });
-        root.addView(examples);
-        for (String name : AutomationEngine.names(prefs, AutomationEngine.KEY_BUTTON_ORDER)) {
-            String raw = prefs.getString("button2:" + name, prefs.getString("button:" + name, ""));
-            Button b = Ui.button(this, "Button: " + raw);
-            b.setOnLongClickListener(v -> {
-                String[] p = raw.split("\\|", -1);
-                if (p.length >= 8) showSteeringButtonEditor(name, p[1], p[2], p[3], p[4], p[5], p[6], p[7]);
-                else showSteeringButtonEditor(name, p.length > 1 ? p[1] : "0", p.length > 2 ? p[2] : "hold", "", "always", "replace", "preset", p.length > 3 ? p[3] : "");
-                return true;
-            });
-            root.addView(b);
-        }
+    private void showSteeringMenu() {
+        startActivity(new Intent(this, SteeringActivity.class));
     }
 
-    private void showSteeringButtonEditor(String oldName, String oldKey, String oldGesture, String oldModifier, String oldCondition, String oldBehavior, String oldTargetType, String oldTarget) {
-        LinearLayout root = commandRoot(oldName.isEmpty() ? "Новое назначение" : "Назначение: " + oldName);
-        EditText name = new EditText(this);
-        name.setHint("Название");
-        name.setText(oldName);
-        EditText key = new EditText(this);
-        key.setHint("keyCode из последнего события");
-        key.setText(oldKey);
-        EditText gesture = new EditText(this);
-        gesture.setHint("press / double / triple / hold");
-        gesture.setText(oldGesture);
-        EditText modifier = new EditText(this);
-        modifier.setHint("Другая удерживаемая кнопка, пусто если не нужно");
-        modifier.setText(oldModifier);
-        EditText condition = new EditText(this);
-        condition.setHint("always / stationary / moving / app=maps / profile=Глеб");
-        condition.setText(oldCondition);
-        EditText behavior = new EditText(this);
-        behavior.setHint("replace / together / hold-only / stationary-only");
-        behavior.setText(oldBehavior);
-        EditText targetType = new EditText(this);
-        targetType.setHint("preset / scenario / action / voice / launch / command");
-        targetType.setText(oldTargetType);
-        EditText target = new EditText(this);
-        target.setHint("Цель: имя preset/scenario или action/команда");
-        target.setText(oldTarget);
-        Button save = Ui.button(this, "Сохранить назначение");
-        save.setOnClickListener(v -> {
-            AutomationStore.saveNamed(this, AutomationEngine.KEY_BUTTON_ORDER, "button:", oldName, name.getText().toString(),
-                    name.getText().toString() + "|" + key.getText().toString().trim() + "|" + gesture.getText().toString().trim().toLowerCase(Locale.ROOT) + "|" + target.getText().toString().trim());
-            AutomationStore.saveNamed(this, AutomationEngine.KEY_BUTTON_ORDER, "button2:", oldName, name.getText().toString(),
-                    name.getText().toString() + "|" + key.getText().toString().trim()
-                            + "|" + gesture.getText().toString().trim().toLowerCase(Locale.ROOT)
-                            + "|" + modifier.getText().toString().trim()
-                            + "|" + condition.getText().toString().trim()
-                            + "|" + behavior.getText().toString().trim()
-                            + "|" + targetType.getText().toString().trim()
-                            + "|" + target.getText().toString().trim());
-            showSteeringButtons();
-        });
-        root.addView(name);
-        root.addView(key);
-        root.addView(gesture);
-        root.addView(modifier);
-        root.addView(condition);
-        root.addView(behavior);
-        root.addView(targetType);
-        root.addView(target);
-        root.addView(save);
-    }
-
-    private void installSteeringButtonExamples() {
-        AutomationStore.saveNamed(this, AutomationEngine.KEY_BUTTON_ORDER, "button2:", "", "M hold 360", "M hold 360|77|hold||always|replace|command|0x21110100/0=0x1");
-        AutomationStore.saveNamed(this, AutomationEngine.KEY_BUTTON_ORDER, "button2:", "", "M double cooling", "M double cooling|77|double||always|replace|preset|Летнее охлаждение");
-        AutomationStore.saveNamed(this, AutomationEngine.KEY_BUTTON_ORDER, "button2:", "", "Voice hold Monji", "Voice hold Monji|231|hold||always|replace|launch|com.prodject.gflow");
-        AutomationStore.saveNamed(this, AutomationEngine.KEY_BUTTON_ORDER, "button2:", "", "Volume down double mute", "Volume down double mute|25|double||always|together|voice|mute media");
-        AutomationStore.saveNamed(this, AutomationEngine.KEY_BUTTON_ORDER, "button2:", "", "Next hold eco comfort", "Next hold eco comfort|87|hold||always|replace|scenario|Eco Comfort toggle");
-        AutomationStore.saveNamed(this, AutomationEngine.KEY_BUTTON_ORDER, "button2:", "", "M stationary trunk", "M stationary trunk|77|press||stationary|stationary-only|command|0x21110100/0=0x64");
-        Ui.toast(this, "Примеры кнопок руля добавлены");
-    }
 
     private void showComfortClimate() {
         startActivity(new Intent(this, ClimateActivity.class));

@@ -306,3 +306,28 @@
 - Экран `Текст`.
 - Экран `ADB / Система`.
 - Экран `Настройки`.
+
+2026-07-22
+
+Этап 16: Экран Кнопки руля
+
+Сделано:
+- Создан отдельный `SteeringActivity` для экрана `Кнопки руля`.
+- Основные входы из `MainActivity` переведены на `SteeringActivity`: drawer и navigation rail.
+- `SteeringActivity` подключен в `AndroidManifest.xml`.
+- Добавлен новый steering shell в стиле `Design.txt`: top bar, hero-panel, overview grid, visual steering block, список назначений и bottom dock.
+- Внутри нового экрана добавлены отдельные flow для списка назначений и editor binding: `press/double/triple/hold`, modifier, conditions, behavior и target types.
+- Добавлен отдельный visual steering-блок с зонами `MODE / VOICE / MENU` и отображением последнего события.
+- В новый экран перенесены быстрые сценарии `Hold`, `Double`, `Triple`, `Press` и установка примеров назначений из `Design.txt`.
+- Добавлены встроенные примеры `hold 360`, `double cooling`, `voice hold`, `mute media`, `eco comfort toggle`, `stationary trunk`.
+- Legacy `showSteeringButtons()`, `showSteeringButtonEditor()`, `installSteeringButtonExamples()` и steering overview helper удалены из `MainActivity`.
+
+Осталось по `Design.txt`:
+- Экран `Голос`.
+- Экран `Рабочий стол`.
+- Экран `Браузер / Погода`.
+- Экран `Файлы`.
+- Экран `Медиа`.
+- Экран `Текст`.
+- Экран `ADB / Система`.
+- Экран `Настройки`.
