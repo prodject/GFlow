@@ -143,10 +143,10 @@
 - Добавлен новый ADAS shell в стиле `Design.txt`: top bar, hero-panel, safety controls, ACC/ICC panel, status cards, bottom dock.
 - Внутри нового экрана добавлены быстрые действия для AEB, FCW, LKA, LDW, RCW, ELKA, ACC, ICC, TSR и PDC.
 - Добавлен отдельный визуальный блок ассистентов движения.
-
-Сделано частично:
-- Экран покрывает основной сценарий `ADAS / Вождение`, но пока не разнесен глубже на отдельные подэкраны парковочных ассистентов, experimental ADAS и диагностических readback-панелей.
-- Legacy `showAdas()` в `MainActivity` пока остаётся как расширенный/raw fallback для полного набора ADAS-команд.
+- Экран расширен до полного покрытия раздела: внутри `AdasActivity` добавлены новые панели `PDC / Parking Assist`, `Experimental ADAS` и `Developer Diagnostics`.
+- Парковочные ассистенты больше не считаются хвостом legacy ADAS: переход в parking-сценарии идет в отдельный `ParkingActivity`.
+- Experimental ADAS-команды, preset `Highway assist ready`, support/readback-карточки и export diagnostics перенесены в новый UI `AdasActivity`.
+- Legacy `showAdas()` и связанные raw/helper-ветки удалены из `MainActivity`.
 
 Осталось по `Design.txt`:
 - Экран `DVR / Камеры`.
