@@ -177,10 +177,8 @@ public class MainActivity extends Activity {
         LinearLayout titleBlock = new LinearLayout(this);
         titleBlock.setOrientation(LinearLayout.VERTICAL);
         titleBlock.setPadding(Ui.dp(this, 16), 0, 0, 0);
-        TextView eyebrow = Ui.label(this, "GFlow Car Control");
         TextView title = Ui.text(this, "Главная", 28, true);
         title.setPadding(0, 0, 0, 0);
-        titleBlock.addView(eyebrow);
         titleBlock.addView(title);
         bar.addView(titleBlock, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
@@ -214,10 +212,11 @@ public class MainActivity extends Activity {
     }
 
     private LinearLayout buildCollapsedNavRail() {
-        LinearLayout rail = Ui.glassCard(this);
+        LinearLayout rail = new LinearLayout(this);
+        rail.setOrientation(LinearLayout.VERTICAL);
         rail.setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL);
-        rail.setPadding(Ui.dp(this, 12), Ui.dp(this, 14), Ui.dp(this, 12), Ui.dp(this, 14));
-        addDashboardMenuButton(rail, "M", true, () -> setDashboardDrawerOpen(!dashboardDrawerOpen));
+        rail.setPadding(Ui.dp(this, 10), Ui.dp(this, 14), Ui.dp(this, 10), Ui.dp(this, 14));
+        addDashboardMenuButton(rail, "☰", true, () -> setDashboardDrawerOpen(!dashboardDrawerOpen));
         return rail;
     }
 
@@ -225,17 +224,16 @@ public class MainActivity extends Activity {
         TextView button = new TextView(this);
         button.setText(symbol);
         button.setGravity(Gravity.CENTER);
-        button.setTextSize(symbol.length() > 2 ? 13 : 24);
-        button.setTextColor(active ? Color.WHITE : Ui.secondaryText(this));
+        button.setTextSize(22);
+        button.setTextColor(Ui.primaryText(this));
         button.setClickable(true);
         button.setFocusable(true);
         button.setBackground(Ui.cardBg(this,
-                active ? Color.argb(90, 77, 163, 255) : Color.argb(46, 255, 255, 255),
+                Ui.dark(this) ? Color.argb(74, 255, 255, 255) : Color.argb(224, 255, 255, 255),
                 Ui.dp(this, 22),
-                active ? Color.argb(90, 77, 163, 255) : Color.TRANSPARENT));
+                Ui.dark(this) ? Color.argb(54, 255, 255, 255) : Color.argb(72, 185, 198, 214)));
         button.setOnClickListener(v -> transition(action));
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 64));
-        lp.bottomMargin = Ui.dp(this, 10);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 56));
         menu.addView(button, lp);
     }
 
@@ -422,7 +420,12 @@ public class MainActivity extends Activity {
     }
 
     private String adaptStatus() {
-        return new EcarxVehicleAdapter(this).availability().contains("unavailable") ? "Нет связи" : "AdaptAPI готов";
+        return vehicleAdapterReady() ? "Интеграция доступна" : "Нет подключения к авто";
+    }
+
+    private boolean vehicleAdapterReady() {
+        String availability = new EcarxVehicleAdapter(this).availability();
+        return availability != null && availability.startsWith("ECarX AdaptAPI доступен:");
     }
 
     private String weatherSummary() {
@@ -744,7 +747,7 @@ public class MainActivity extends Activity {
     private void addStatusStrip(LinearLayout root) {
         LinearLayout strip = new LinearLayout(this);
         strip.setOrientation(LinearLayout.HORIZONTAL);
-        addStatusCard(strip, "Адаптер", new EcarxVehicleAdapter(this).availability().contains("unavailable") ? "нет связи" : "готов", Ui.BLUE);
+        addStatusCard(strip, "Адаптер", vehicleAdapterReady() ? "доступен" : "нет подключения", Ui.BLUE);
         addStatusCard(strip, "DVR", "настройки", Color.rgb(168, 65, 58));
         addStatusCard(strip, "Автоклимат", SmartClimateController.prefs(this).getBoolean(SmartClimateController.KEY_ENABLED, false) ? "включен" : "выключен", Ui.GREEN);
         addStatusCard(strip, "Режим", developerModeEnabled() ? "developer" : "user", developerModeEnabled() ? Ui.BLUE : Ui.GREEN);
