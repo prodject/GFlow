@@ -1012,12 +1012,12 @@ public class MainActivity extends Activity {
     }
 
     private void showClimateMenu() {
-        LinearLayout root = menuRoot("Климат", "Основной путь - комфортная панель и пресеты. Полный список HVAC-команд оставлен отдельно для расширенного управления.");
+        LinearLayout root = menuRoot("Климат", "Основной путь - новый `ClimateActivity`: comfort, advanced HVAC, readback, sheets и детальный control flow без legacy fallback.");
         addNavGrid(root, new NavItem[]{
                 new NavItem("Комфортная панель", "Температура, сиденья, руль и быстрые HVAC-пресеты", "AUTO", Ui.BLUE, this::showComfortClimate),
                 new NavItem("Умный климат", "Автоматические алгоритмы охлаждения, нагрева и просушки", "AI", Color.rgb(41, 136, 150), this::showSmartClimate),
-                new NavItem("Пресеты климата", "Создание и применение сохраненных HVAC-команд", "PRE", Ui.GREEN, this::showClimate),
-                new NavItem("Все HVAC-команды", "Полный firmware-зависимый список команд и диагностика", "DEV", Color.rgb(86, 104, 120), this::showClimate)
+                new NavItem("Пресеты климата", "Comfort flow и готовые HVAC-сценарии в новом экране", "PRE", Ui.GREEN, this::showComfortClimate),
+                new NavItem("Все HVAC-команды", "Advanced HVAC и readback теперь открываются внутри нового climate-экрана", "DEV", Color.rgb(86, 104, 120), this::showClimateAdvanced)
         });
     }
 
@@ -2314,6 +2314,12 @@ public class MainActivity extends Activity {
 
     private void showComfortClimate() {
         startActivity(new Intent(this, ClimateActivity.class));
+    }
+
+    private void showClimateAdvanced() {
+        Intent intent = new Intent(this, ClimateActivity.class);
+        intent.putExtra(ClimateActivity.EXTRA_MODE, ClimateActivity.MODE_ADVANCED);
+        startActivity(intent);
     }
 
     private void showClimatePresetEditor(String oldName, String commandsText) {

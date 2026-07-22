@@ -52,10 +52,11 @@
 - Добавлены быстрые действия для seat heat, seat vent, wheel heat и defrost.
 - Добавлены климатические пресеты быстрого доступа: тихий, комфорт, прогрев.
 - Добавлена нижняя action-панель: Auto, A/C, Defrost, Smart, Расширенно.
-
-Сделано частично:
-- Экран соответствует базовой визуальной структуре из `Design.txt`, но пока без настоящих bottom sheet, сложной анимации и readback-состояний по всем HVAC-параметрам.
-- Переход в `Расширенно` оставляет старый детализированный HVAC-экран как fallback для raw-команд.
+- В `ClimateActivity` добавлен полноценный `Advanced HVAC` flow внутри нового дизайна: air quality, defrost/dry, zones/sync, pre/post climate, rapid cooling/warming и hardkey actions.
+- В экран добавлены настоящие bottom sheets для quick HVAC actions, defrost, temperature presets, readback и dock-context действий.
+- Добавлен live HVAC readback по основным и расширенным параметрам: core HVAC, температуры driver/passenger, seats/wheel, air quality, defrost/dry, advanced modes.
+- Добавлены периодические live-state обновления top bar, hero-summary и HVAC summary внутри `ClimateActivity`.
+- Все основные входы раздела `Климат` из `MainActivity` переведены на новый `ClimateActivity`; `Advanced` теперь открывается в новом экране, а не в legacy HVAC-layout.
 
 Осталось по `Design.txt`:
 - Экран `Автомобиль / Кузов`.
