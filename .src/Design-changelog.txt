@@ -353,3 +353,26 @@
 - Экран `Текст`.
 - Экран `ADB / Система`.
 - Экран `Настройки`.
+
+2026-07-22
+
+Этап 18: Экран Рабочий стол
+
+Сделано:
+- `DesktopActivity` полностью переведен на новый shell в стиле `Design.txt`: top bar, hero-panel, overview grid, weather widget, dock apps, OneOS Dock panel и bottom dock.
+- В верхнюю часть добавлены desktop-статусы: количество pinned apps, размер app library и короткая weather summary.
+- В hero-блок добавлены время, дата, активный профиль, preview dock apps и быстрые действия `Dock apps`, `OneOS Dock`, `Тема`, `Погода`.
+- Пины рабочего стола вынесены в отдельный новый flow: список dock apps, изменение порядка, удаление, очистка и сохранение порядка.
+- App library перенесена в новый flow: запуск приложения, pin в dock и переход к удалению пакета.
+- Погодный виджет встроен в новый экран с сохранением cache/update логики и переходом на `WeatherActivity`.
+- OneOS Dock вынесен в отдельную новую панель со status/hand-over/show-hide/HVAC/media/defrost/volume/custom icon командами.
+- Данные `desktopPins` продолжают сохраняться в том же shared preferences формате, совместимом с `UserProfileEngine`.
+- Legacy desktop-экрана внутри `MainActivity` не оставалось: сохранен только navigation entry `showLauncher()` с переходом в `DesktopActivity`.
+
+Осталось по `Design.txt`:
+- Экран `Браузер / Погода`.
+- Экран `Файлы`.
+- Экран `Медиа`.
+- Экран `Текст`.
+- Экран `ADB / Система`.
+- Экран `Настройки`.
