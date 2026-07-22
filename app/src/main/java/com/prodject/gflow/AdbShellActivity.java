@@ -5,6 +5,7 @@ import android.content.*;
 import android.net.Uri;
 import android.os.*;
 import android.provider.Settings;
+import android.view.*;
 import android.widget.*;
 import java.io.*;
 
@@ -13,6 +14,7 @@ public class AdbShellActivity extends Activity {
 
     @Override public void onCreate(Bundle b) {
         super.onCreate(b);
+        ScrollView scroll = new ScrollView(this);
         LinearLayout root = Ui.root(this, "ADB / Система", this::finish);
         EditText command = new EditText(this);
         command.setHint("Команда shell");
@@ -46,22 +48,55 @@ public class AdbShellActivity extends Activity {
         appInfo.setOnClickListener(v -> openSettings(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + getPackageName())));
         zoom.setOnClickListener(v -> saveAutozoom(zoomPackages.getText().toString(), zoomScale.getText().toString()));
         zoomToggle.setOnClickListener(v -> toggleAutozoom());
-        root.addView(command);
-        root.addView(run);
-        root.addView(adb);
-        root.addView(dpi);
-        root.addView(grants);
-        root.addView(accessibility);
-        root.addView(writeSettings);
-        root.addView(allFiles);
-        root.addView(appInfo);
-        root.addView(Ui.text(this, "Autozoom меняет Settings.System.FONT_SCALE для выбранных приложений через AccessibilityService.", 14, false));
-        root.addView(zoomPackages);
-        root.addView(zoomScale);
-        root.addView(zoom);
-        root.addView(zoomToggle);
-        root.addView(output, new LinearLayout.LayoutParams(-1, 0, 1));
-        setContentView(root);
+        styleInput(command);
+        styleInput(zoomPackages);
+        styleInput(zoomScale);
+        LinearLayout status = Ui.card(this);
+        status.addView(Ui.text(this, "Системные разрешения", 22, true));
+        status.addView(Ui.muted(this, "WRITE_SETTINGS=" + Settings.System.canWrite(this)
+                + " · All files=" + (Build.VERSION.SDK_INT < 30 || Environment.isExternalStorageManager())));
+        root.addView(status, margin(0, 8, 0, 12));
+
+        LinearLayout shell = Ui.card(this);
+        shell.addView(Ui.text(this, "Shell", 18, true));
+        shell.addView(command, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 56)));
+        LinearLayout shellRow = Ui.row(this);
+        shellRow.addView(run, buttonLp());
+        shellRow.addView(adb, buttonLp());
+        shellRow.addView(dpi, buttonLp());
+        shell.addView(shellRow);
+        root.addView(shell, margin(0, 0, 0, 12));
+
+        LinearLayout permissions = Ui.card(this);
+        permissions.addView(Ui.text(this, "Доступы", 18, true));
+        LinearLayout accessRow = Ui.row(this);
+        accessRow.addView(grants, buttonLp());
+        accessRow.addView(accessibility, buttonLp());
+        accessRow.addView(writeSettings, buttonLp());
+        permissions.addView(accessRow);
+        LinearLayout accessRow2 = Ui.row(this);
+        accessRow2.addView(allFiles, buttonLp());
+        accessRow2.addView(appInfo, buttonLp());
+        permissions.addView(accessRow2);
+        root.addView(permissions, margin(0, 0, 0, 12));
+
+        LinearLayout autozoom = Ui.card(this);
+        autozoom.addView(Ui.text(this, "Autozoom", 18, true));
+        autozoom.addView(Ui.muted(this, "Меняет Settings.System.FONT_SCALE для выбранных приложений через AccessibilityService."));
+        autozoom.addView(zoomPackages, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 56)));
+        autozoom.addView(zoomScale, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 56)));
+        LinearLayout zoomRow = Ui.row(this);
+        zoomRow.addView(zoom, buttonLp());
+        zoomRow.addView(zoomToggle, buttonLp());
+        autozoom.addView(zoomRow);
+        root.addView(autozoom, margin(0, 0, 0, 12));
+
+        LinearLayout out = Ui.card(this);
+        out.addView(Ui.text(this, "Вывод", 18, true));
+        out.addView(output);
+        root.addView(out);
+        scroll.addView(root);
+        setContentView(scroll);
     }
 
     private void toggleAdb() {
@@ -146,5 +181,25 @@ public class AdbShellActivity extends Activity {
         byte[] buf = new byte[4096];
         for (int n; (n = in.read(buf)) > 0;) out.write(buf, 0, n);
         return out.toString("UTF-8");
+    }
+
+    private void styleInput(EditText e) {
+        e.setTextColor(Ui.textColor(this));
+        e.setHintTextColor(Ui.mutedColor(this));
+        e.setSingleLine(true);
+        e.setPadding(Ui.dp(this, 14), 0, Ui.dp(this, 14), 0);
+        e.setBackground(Ui.cardBg(this, Ui.panel(this), Ui.dp(this, 14), Ui.lineColor(this)));
+    }
+
+    private LinearLayout.LayoutParams margin(int l, int t, int r, int b) {
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.setMargins(Ui.dp(this, l), Ui.dp(this, t), Ui.dp(this, r), Ui.dp(this, b));
+        return lp;
+    }
+
+    private LinearLayout.LayoutParams buttonLp() {
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 56), 1);
+        lp.setMargins(Ui.dp(this, 4), Ui.dp(this, 8), Ui.dp(this, 4), 0);
+        return lp;
     }
 }
