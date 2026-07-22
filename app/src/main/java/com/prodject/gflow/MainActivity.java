@@ -80,146 +80,252 @@ public class MainActivity extends Activity {
 
     private void showDashboard() {
         LinearLayout shell = new LinearLayout(this);
-        shell.setOrientation(LinearLayout.HORIZONTAL);
+        shell.setOrientation(LinearLayout.VERTICAL);
         shell.setBackground(dashboardBg());
-        shell.setPadding(Ui.dp(this, 18), Ui.dp(this, 18), Ui.dp(this, 18), Ui.dp(this, 18));
-        shell.addView(dashboardMenu(), new LinearLayout.LayoutParams(Ui.dp(this, 220), ViewGroup.LayoutParams.MATCH_PARENT));
+        shell.setPadding(Ui.dp(this, 16), Ui.dp(this, 16), Ui.dp(this, 16), Ui.dp(this, 16));
 
-        LinearLayout content = new LinearLayout(this);
-        content.setOrientation(LinearLayout.VERTICAL);
-        content.setPadding(Ui.dp(this, 20), 0, 0, 0);
-        content.setBackgroundColor(Color.TRANSPARENT);
-        addHero(content);
-        shell.addView(content, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
+        shell.addView(buildDashboardTopBar(), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 72)));
+
+        LinearLayout body = new LinearLayout(this);
+        body.setOrientation(LinearLayout.HORIZONTAL);
+        LinearLayout.LayoutParams bodyLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f);
+        bodyLp.topMargin = Ui.dp(this, 16);
+        shell.addView(body, bodyLp);
+
+        body.addView(buildCollapsedNavRail(), new LinearLayout.LayoutParams(Ui.dp(this, 96), ViewGroup.LayoutParams.MATCH_PARENT));
+        View spacer = new View(this);
+        body.addView(spacer, new LinearLayout.LayoutParams(Ui.dp(this, 16), ViewGroup.LayoutParams.MATCH_PARENT));
+        body.addView(buildDashboardContent(), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f));
+
+        LinearLayout.LayoutParams dockLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 120));
+        dockLp.topMargin = Ui.dp(this, 16);
+        shell.addView(buildDashboardDock(), dockLp);
+
         setContentView(shell);
-        Ui.animateIn(content);
+        Ui.animateIn(shell);
     }
 
-    private LinearLayout dashboardMenu() {
-        LinearLayout menu = new LinearLayout(this);
-        menu.setOrientation(LinearLayout.VERTICAL);
-        menu.setPadding(Ui.dp(this, 14), Ui.dp(this, 16), Ui.dp(this, 14), Ui.dp(this, 16));
-        menu.setBackground(Ui.cardBg(this, Ui.dark(this) ? Color.rgb(28, 34, 40) : Color.argb(218, 255, 255, 255), Ui.dp(this, 24), Color.argb(Ui.dark(this) ? 40 : 160, 255, 255, 255)));
-        ImageView logo = new ImageView(this);
-        logo.setImageResource(R.drawable.gflow_wordmark);
-        logo.setAdjustViewBounds(true);
-        logo.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        LinearLayout.LayoutParams logoLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 58));
-        logoLp.setMargins(Ui.dp(this, 8), 0, Ui.dp(this, 36), Ui.dp(this, 12));
-        menu.addView(logo, logoLp);
-        addDashboardMenuButton(menu, "Главная", "HOME", this::showDashboard);
-        addDashboardMenuButton(menu, "Климат", "22", this::showClimateMenu);
-        addDashboardMenuButton(menu, "Авто", "CAR", this::showVehicleMenu);
-        addDashboardMenuButton(menu, "Камеры", "CAM", () -> startActivity(new Intent(this, DvrActivity.class)));
-        addDashboardMenuButton(menu, "ADAS", "A", this::showAdasMenu);
-        addDashboardMenuButton(menu, "HUD", "HUD", this::showHudMenu);
-        addDashboardMenuButton(menu, "Сценарии", "AUTO", this::showAutomation);
-        addDashboardMenuButton(menu, "Профили", "USER", this::showUserProfiles);
-        addDashboardMenuButton(menu, "Медиа", "APP", this::showLauncher);
-        addDashboardMenuButton(menu, "Система", "SET", this::showSettings);
-        if (experimentalFeaturesEnabled()) addDashboardMenuButton(menu, "Experimental", "EXP", this::showPasAvm);
-        return menu;
+    private LinearLayout buildDashboardTopBar() {
+        LinearLayout bar = Ui.glassCard(this);
+        bar.setOrientation(LinearLayout.HORIZONTAL);
+        bar.setGravity(Gravity.CENTER_VERTICAL);
+        bar.setPadding(Ui.dp(this, 20), Ui.dp(this, 10), Ui.dp(this, 20), Ui.dp(this, 10));
+
+        LinearLayout titleBlock = new LinearLayout(this);
+        titleBlock.setOrientation(LinearLayout.VERTICAL);
+        TextView eyebrow = Ui.label(this, "GFlow Car Control");
+        TextView title = Ui.text(this, "Главная", 28, true);
+        title.setPadding(0, 0, 0, 0);
+        titleBlock.addView(eyebrow);
+        titleBlock.addView(title);
+        bar.addView(titleBlock, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+        bar.addView(buildTopStat("Профиль", activeProfileName()));
+        bar.addView(buildTopStat("Погода", "18°C · дождь"));
+        bar.addView(buildTopStat("Салон", "22°C"));
+        bar.addView(buildTopStat("Статус", adaptStatus()));
+        bar.addView(buildTopStat("Время", new java.text.SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date())));
+        return bar;
     }
 
-    private void addDashboardMenuButton(LinearLayout menu, String title, String badge, Runnable action) {
-        LinearLayout item = Ui.row(this);
-        item.setClickable(true);
-        item.setFocusable(true);
-        item.setPadding(Ui.dp(this, 12), Ui.dp(this, 7), Ui.dp(this, 10), Ui.dp(this, 7));
-        item.setBackground(Ui.cardBg(this, title.equals("Главная") ? Color.argb(Ui.dark(this) ? 52 : 28, 29, 110, 255) : Color.TRANSPARENT, Ui.dp(this, 12), Color.TRANSPARENT));
-        TextView marker = new TextView(this);
-        marker.setBackground(Ui.cardBg(this, title.equals("Главная") ? Ui.BLUE : Color.argb(95, 107, 125, 146), Ui.dp(this, 4), Color.TRANSPARENT));
-        item.addView(marker, new LinearLayout.LayoutParams(Ui.dp(this, 8), Ui.dp(this, 8)));
-        TextView label = Ui.text(this, title, 14, title.equals("Главная"));
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1);
-        lp.setMargins(Ui.dp(this, 14), 0, 0, 0);
-        item.addView(label, lp);
-        item.setOnClickListener(v -> transition(action));
-        LinearLayout.LayoutParams rowLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        rowLp.setMargins(0, Ui.dp(this, 2), 0, Ui.dp(this, 2));
-        menu.addView(item, rowLp);
+    private LinearLayout buildTopStat(String label, String value) {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(Ui.dp(this, 12), Ui.dp(this, 8), Ui.dp(this, 12), Ui.dp(this, 8));
+        card.setBackground(Ui.cardBg(this, Color.argb(84, 255, 255, 255), Ui.dp(this, 18), Color.TRANSPARENT));
+        TextView labelView = Ui.label(this, label);
+        TextView valueView = Ui.text(this, value, 14, true);
+        valueView.setPadding(0, 0, 0, 0);
+        card.addView(labelView);
+        card.addView(valueView);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.leftMargin = Ui.dp(this, 10);
+        card.setLayoutParams(lp);
+        return card;
     }
 
     private GradientDrawable dashboardBg() {
         GradientDrawable g = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
-                Ui.dark(this)
-                        ? new int[]{Color.rgb(12, 15, 19), Color.rgb(20, 29, 38), Color.rgb(18, 38, 42)}
-                        : new int[]{Color.rgb(248, 251, 255), Color.rgb(224, 236, 248), Color.rgb(207, 220, 237)});
+                new int[]{Color.parseColor("#080A0F"), Color.parseColor("#0D1420"), Color.parseColor("#101B2A")});
         return g;
     }
 
-    private void addDashboardWidgets(LinearLayout root) {
+    private LinearLayout buildCollapsedNavRail() {
+        LinearLayout rail = Ui.glassCard(this);
+        rail.setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL);
+        rail.setPadding(Ui.dp(this, 12), Ui.dp(this, 14), Ui.dp(this, 12), Ui.dp(this, 14));
+        addDashboardMenuButton(rail, "M", true, this::showSettings);
+        addDashboardMenuButton(rail, "HM", true, this::showDashboard);
+        addDashboardMenuButton(rail, "CL", false, this::showClimateMenu);
+        addDashboardMenuButton(rail, "CAR", false, this::showVehicleMenu);
+        addDashboardMenuButton(rail, "CAM", false, () -> startActivity(new Intent(this, DvrActivity.class)));
+        addDashboardMenuButton(rail, "ADAS", false, this::showAdasMenu);
+        addDashboardMenuButton(rail, "P", false, this::showParkingApa);
+        addDashboardMenuButton(rail, "SET", false, this::showSettings);
+        if (experimentalFeaturesEnabled()) addDashboardMenuButton(rail, "EXP", false, this::showPasAvm);
+        return rail;
+    }
+
+    private void addDashboardMenuButton(LinearLayout menu, String symbol, boolean active, Runnable action) {
+        TextView button = new TextView(this);
+        button.setText(symbol);
+        button.setGravity(Gravity.CENTER);
+        button.setTextSize(symbol.length() > 2 ? 13 : 24);
+        button.setTextColor(active ? Color.WHITE : Ui.secondaryText(this));
+        button.setClickable(true);
+        button.setFocusable(true);
+        button.setBackground(Ui.cardBg(this,
+                active ? Color.argb(90, 77, 163, 255) : Color.argb(46, 255, 255, 255),
+                Ui.dp(this, 22),
+                active ? Color.argb(90, 77, 163, 255) : Color.TRANSPARENT));
+        button.setOnClickListener(v -> transition(action));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 64));
+        lp.bottomMargin = Ui.dp(this, 10);
+        menu.addView(button, lp);
+    }
+
+    private View buildDashboardContent() {
+        ScrollView scroll = new ScrollView(this);
+        scroll.setVerticalScrollBarEnabled(false);
+        LinearLayout root = new LinearLayout(this);
+        root.setOrientation(LinearLayout.VERTICAL);
+        scroll.addView(root, new ScrollView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        LinearLayout hero = Ui.glassCard(this);
+        hero.setPadding(Ui.dp(this, 24), Ui.dp(this, 24), Ui.dp(this, 24), Ui.dp(this, 24));
+        hero.addView(buildWeatherHeroHeader(), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        VehicleVisualView visual = new VehicleVisualView(this, false);
+        LinearLayout.LayoutParams visualLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 520));
+        visualLp.topMargin = Ui.dp(this, 8);
+        hero.addView(visual, visualLp);
+        hero.addView(buildHeroQuickZones(), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        root.addView(hero, lpMatchWrap(0, 0, 0, 16));
+
+        root.addView(buildStatusGrid(), lpMatchWrap(0, 0, 0, 0));
+        return scroll;
+    }
+
+    private LinearLayout buildWeatherHeroHeader() {
+        LinearLayout top = Ui.row(this);
+        top.setGravity(Gravity.TOP);
+
+        LinearLayout weather = Ui.glassCard(this);
+        weather.setOnClickListener(v -> transition(this::showWeb));
+        weather.addView(Ui.label(this, "Погода"));
+        LinearLayout weatherRow = Ui.row(this);
+        weatherRow.setGravity(Gravity.TOP);
+        weatherRow.addView(new DashboardWeatherView(this), new LinearLayout.LayoutParams(Ui.dp(this, 116), Ui.dp(this, 88)));
+        LinearLayout weatherText = new LinearLayout(this);
+        weatherText.setOrientation(LinearLayout.VERTICAL);
+        TextView temp = Ui.text(this, "18°C", 40, true);
+        temp.setPadding(0, 0, 0, 0);
+        weatherText.addView(temp);
+        weatherText.addView(Ui.muted(this, "Небольшой дождь"));
+        weatherText.addView(Ui.muted(this, "Ветер 6 м/с · Москва"));
+        LinearLayout.LayoutParams textLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        textLp.leftMargin = Ui.dp(this, 12);
+        weatherRow.addView(weatherText, textLp);
+        weather.addView(weatherRow);
+        top.addView(weather, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+        LinearLayout summary = Ui.glassCard(this);
+        summary.addView(Ui.label(this, "Автомобиль"));
+        summary.addView(buildMetricLine("Климат", "Auto · 22°C"));
+        summary.addView(buildMetricLine("Режим", developerModeEnabled() ? "Developer" : "Comfort"));
+        summary.addView(buildMetricLine("DVR", "Готов"));
+        summary.addView(buildMetricLine("ADAS", "AEB · LKA · PDC"));
+        LinearLayout.LayoutParams summaryLp = new LinearLayout.LayoutParams(Ui.dp(this, 260), ViewGroup.LayoutParams.WRAP_CONTENT);
+        summaryLp.leftMargin = Ui.dp(this, 16);
+        top.addView(summary, summaryLp);
+        return top;
+    }
+
+    private TextView buildMetricLine(String key, String value) {
+        TextView line = Ui.text(this, key + ": " + value, 14, false);
+        line.setTextColor(Ui.secondaryText(this));
+        line.setPadding(0, Ui.dp(this, 4), 0, Ui.dp(this, 4));
+        return line;
+    }
+
+    private LinearLayout buildHeroQuickZones() {
+        LinearLayout row = Ui.row(this);
+        row.setWeightSum(4f);
+        addHeroButton(row, "Климат", this::showClimateMenu);
+        addHeroButton(row, "Кузов", this::showVehicleMenu);
+        addHeroButton(row, "ADAS", this::showAdasMenu);
+        addHeroButton(row, "360 / APA", this::showParkingApa);
+        return row;
+    }
+
+    private GridLayout buildStatusGrid() {
         GridLayout grid = new GridLayout(this);
-        grid.setColumnCount(getResources().getConfiguration().screenWidthDp >= 900 ? 3 : 2);
-        addDashboardWidget(grid, "Климат", "22.0 C · Auto", Ui.BLUE, this::showComfortClimate);
-        addDashboardWidget(grid, "Камеры", "DVR и 360 готовы", Color.rgb(168, 65, 58), () -> startActivity(new Intent(this, DvrActivity.class)));
-        addDashboardWidget(grid, "ADAS", "AEB · LKA · PDC", Color.rgb(113, 91, 177), this::showAdasMenu);
-        addDashboardWidget(grid, "HUD", "Навигация и медиа", Color.rgb(58, 106, 156), this::showHudMenu);
-        addDashboardWidget(grid, "Профиль", AutomationEngine.prefs(this).getString(AutomationEngine.KEY_ACTIVE_PROFILE, "не выбран"), Color.rgb(87, 112, 146), this::showUserProfiles);
-        addDashboardWidget(grid, "Погода", "Open-Meteo", Color.rgb(73, 130, 83), this::showWeb);
-        root.addView(grid, lpMatchWrap(0, 0, 0, 14));
+        grid.setColumnCount(2);
+        addDashboardWidget(grid, "Климат", "Водитель 22°C · Пассажир 22°C\nAuto · A/C · Сиденья готовы", Ui.CYAN, this::showComfortClimate);
+        addDashboardWidget(grid, "Готовность авто", adaptStatus() + "\nДвери закрыты · Комфорт", Ui.SUCCESS, this::showVehicleMenu);
+        addDashboardWidget(grid, "DVR", "Запись выкл · USB свободно\nИсточник: Camera2 / EVS", Ui.WARNING, () -> startActivity(new Intent(this, DvrActivity.class)));
+        addDashboardWidget(grid, "ADAS", "AEB · FCW · LKA · ACC\nPDC готов", Color.rgb(123, 104, 238), this::showAdasMenu);
+        addDashboardWidget(grid, "360 / Parking", "AVM standby · Rear ready\nRCTA доступно", Color.rgb(72, 153, 255), this::showParkingApa);
+        addDashboardWidget(grid, "Профиль", activeProfileName() + "\nБыстрый доступ к сиденью и настройкам", Color.rgb(101, 208, 168), this::showUserProfiles);
+        return grid;
     }
 
     private void addDashboardWidget(GridLayout grid, String title, String value, int color, Runnable action) {
-        LinearLayout card = Ui.card(this);
+        LinearLayout card = Ui.glassCard(this);
         card.setClickable(true);
         card.setOnClickListener(v -> transition(action));
-        card.addView(Ui.pill(this, title, color));
+        card.addView(Ui.label(this, title));
         TextView v = Ui.text(this, value, 20, true);
-        v.setTextColor(color);
+        v.setTextColor(Ui.primaryText(this));
+        v.setPadding(0, Ui.dp(this, 8), 0, 0);
         card.addView(v);
+        View accent = new View(this);
+        accent.setBackground(Ui.glassPill(this, color));
+        LinearLayout.LayoutParams accentLp = new LinearLayout.LayoutParams(Ui.dp(this, 56), Ui.dp(this, 6));
+        accentLp.topMargin = Ui.dp(this, 14);
+        card.addView(accent, accentLp);
         GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
-        lp.width = Ui.dp(this, getResources().getConfiguration().screenWidthDp >= 900 ? 220 : 260);
+        lp.width = 0;
+        lp.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
         lp.height = ViewGroup.LayoutParams.WRAP_CONTENT;
-        lp.setMargins(Ui.dp(this, 5), Ui.dp(this, 5), Ui.dp(this, 5), Ui.dp(this, 5));
+        lp.setMargins(0, 0, Ui.dp(this, 16), Ui.dp(this, 16));
         grid.addView(card, lp);
     }
 
-    private void addHero(LinearLayout root) {
-        LinearLayout hero = new LinearLayout(this);
-        hero.setOrientation(LinearLayout.VERTICAL);
-        hero.setPadding(Ui.dp(this, 28), Ui.dp(this, 22), Ui.dp(this, 28), Ui.dp(this, 18));
-        GradientDrawable bg = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
-                Ui.dark(this)
-                        ? new int[]{Color.rgb(23, 28, 33), Color.rgb(29, 39, 45)}
-                        : new int[]{Color.argb(232, 255, 255, 255), Color.argb(218, 232, 241, 251)});
-        bg.setCornerRadius(Ui.dp(this, 24));
-        hero.setBackground(bg);
+    private LinearLayout buildDashboardDock() {
+        LinearLayout dock = Ui.glassCard(this);
+        dock.setOrientation(LinearLayout.HORIZONTAL);
+        dock.setGravity(Gravity.CENTER_VERTICAL);
+        dock.setPadding(Ui.dp(this, 18), Ui.dp(this, 14), Ui.dp(this, 18), Ui.dp(this, 14));
+        addDockButton(dock, "Климат", this::showClimateMenu, true);
+        addDockButton(dock, "360", this::showParkingApa, false);
+        addDockButton(dock, "DVR Rec", () -> startActivity(new Intent(this, DvrActivity.class)), false);
+        addDockButton(dock, "Drive Mode", this::showVehicleMenu, false);
+        addDockButton(dock, "Голос", () -> startActivity(new Intent(this, VoiceActivity.class)), false);
+        addDockButton(dock, "Профиль", this::showUserProfiles, false);
+        return dock;
+    }
 
-        LinearLayout top = Ui.row(this);
-        top.setGravity(Gravity.TOP);
-        LinearLayout weather = Ui.row(this);
-        weather.setGravity(Gravity.TOP);
-        weather.addView(new DashboardWeatherView(this), new LinearLayout.LayoutParams(Ui.dp(this, 110), Ui.dp(this, 82)));
-        LinearLayout weatherText = new LinearLayout(this);
-        weatherText.setOrientation(LinearLayout.VERTICAL);
-        TextView location = Ui.muted(this, "Москва");
-        TextView temp = Ui.text(this, "18 C", 42, false);
-        TextView desc = Ui.muted(this, "Небольшой дождь");
-        weatherText.addView(location);
-        weatherText.addView(temp);
-        weatherText.addView(desc);
-        LinearLayout.LayoutParams weatherTextLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        weatherTextLp.setMargins(Ui.dp(this, 12), 0, 0, 0);
-        weather.addView(weatherText, weatherTextLp);
-        top.addView(weather, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-        LinearLayout cabin = new LinearLayout(this);
-        cabin.setOrientation(LinearLayout.VERTICAL);
-        cabin.setGravity(Gravity.END);
-        TextView cabinLabel = Ui.muted(this, "В салоне");
-        cabinLabel.setGravity(Gravity.END);
-        TextView cabinTemp = Ui.text(this, "22 C", 28, true);
-        cabinTemp.setGravity(Gravity.END);
-        cabin.addView(cabinLabel);
-        cabin.addView(cabinTemp);
-        top.addView(cabin);
-        hero.addView(top);
+    private void addDockButton(LinearLayout dock, String label, Runnable action, boolean active) {
+        Button button = Ui.button(this, label);
+        button.setTextColor(Color.WHITE);
+        button.setTextSize(14);
+        button.setBackground(Ui.cardBg(this,
+                active ? Color.argb(115, 77, 163, 255) : Color.argb(54, 255, 255, 255),
+                Ui.dp(this, 20),
+                active ? Color.argb(100, 77, 163, 255) : Color.TRANSPARENT));
+        button.setOnClickListener(v -> transition(action));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f);
+        lp.leftMargin = Ui.dp(this, 6);
+        lp.rightMargin = Ui.dp(this, 6);
+        dock.addView(button, lp);
+    }
 
-        VehicleVisualView visual = new VehicleVisualView(this, false);
-        LinearLayout.LayoutParams visualLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1);
-        visualLp.setMargins(0, Ui.dp(this, 2), 0, 0);
-        hero.addView(visual, visualLp);
-        root.addView(hero, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+    private String activeProfileName() {
+        return AutomationEngine.prefs(this).getString(AutomationEngine.KEY_ACTIVE_PROFILE, "Водитель 1");
+    }
+
+    private String adaptStatus() {
+        return new EcarxVehicleAdapter(this).availability().contains("unavailable") ? "Нет связи" : "AdaptAPI готов";
     }
 
     private void addSideChip(LinearLayout col, String title, String value, int color, Runnable action) {
