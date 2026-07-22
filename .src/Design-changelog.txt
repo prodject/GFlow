@@ -353,6 +353,9 @@
 - Alias-команды вынесены в отдельный новый flow: добавление, редактирование, удаление, тест alias и установка примеров.
 - Добавлен новый log/fallback flow: неизвестные команды уходят в `broadcast fallback`, логируются и могут быть сразу сохранены как alias.
 - Экран теперь показывает source/event контекст, если голос вызван со steering или другого внешнего trigger.
+- Голосовой слой расширен по мотивам `.example`: добавлены отдельные `VoiceListeningActivity`, `VoiceAssistantActivity`, `VoiceAppLaunchActivity`, `ShareLocationReceiverActivity` и `VoiceTriggerReceiver`.
+- В `AndroidManifest.xml` добавлены отдельные voice entry-points для `app.monji.VOICE`, `VOICE_COMMAND`, `ASSIST` и `SEND`-share сценария.
+- В `VoiceActivity` добавлен новый блок `Voice Flow`, а parser расширен на voice-сценарии `assistant`, `navigation/route`, `app launch` и share-location routing.
 
 Осталось по `Design.txt`:
 - Экран `Рабочий стол`.
