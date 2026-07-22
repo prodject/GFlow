@@ -376,3 +376,24 @@
 - Экран `Текст`.
 - Экран `ADB / Система`.
 - Экран `Настройки`.
+
+2026-07-22
+
+Этап 19: Экран Браузер / Погода
+
+Сделано:
+- `WeatherActivity` полностью переведен на новый shell в стиле `Design.txt`: top bar, hero-panel, overview grid, weather controls, browser panel, forecast/bookmarks panel и bottom dock.
+- В weather-часть добавлены все пункты из `Design.txt`: текущая погода, 3D-подобная иконка, температура, ветер, описание по `Open-Meteo code`, latitude, longitude и обновление погоды.
+- Реализованы действия `обновить`, `изменить координаты`, `использовать текущие координаты` и `открыть прогноз`.
+- Browser-flow вынесен в отдельный новый блок: address/search bar, `открыть сайт`, `поиск`, `reload`, `bookmark`.
+- Список закладок перенесен в отдельный режим с сохранением, быстрым открытием и удалением по долгому нажатию.
+- Weather now uses `Open-Meteo current + daily forecast` и сохраняет короткий forecast summary локально.
+- Сохранены переходы из `DesktopActivity` и `MainActivity` на новый `WeatherActivity`.
+- Legacy browser/weather-экрана внутри `MainActivity` не оставалось: сохранен только navigation entry `showWeb()` с переходом в `WeatherActivity`.
+
+Осталось по `Design.txt`:
+- Экран `Файлы`.
+- Экран `Медиа`.
+- Экран `Текст`.
+- Экран `ADB / Система`.
+- Экран `Настройки`.

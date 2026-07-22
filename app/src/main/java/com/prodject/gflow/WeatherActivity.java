@@ -1,116 +1,438 @@
 package com.prodject.gflow;
 
-import android.app.*;
-import android.content.*;
-import android.graphics.*;
-import android.graphics.drawable.GradientDrawable;
-import android.os.*;
-import android.view.*;
-import android.widget.*;
-import org.json.*;
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.LinearGradient;
+import android.graphics.Paint;
+import android.graphics.RectF;
+import android.graphics.Shader;
+import android.graphics.Typeface;
+import android.location.Location;
+import android.location.LocationManager;
+import android.net.Uri;
+import android.os.Bundle;
+import android.provider.Settings;
+import android.text.InputType;
+import android.view.Gravity;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.GridLayout;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
+import android.widget.TextView;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.util.LinkedHashSet;
+import java.util.Locale;
+import java.util.Set;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class WeatherActivity extends Activity {
-    private TextView result;
-    private WeatherIconView icon;
-    private LinearLayout bookmarks;
+    private static final String KEY_BOOKMARKS = "bookmarks";
+    private static final String KEY_LAT = "lat";
+    private static final String KEY_LON = "lon";
+    private static final String KEY_ADDRESS = "address";
+    private static final String KEY_WEATHER = "weather";
+    private static final String KEY_FORECAST = "forecast";
 
-    @Override public void onCreate(Bundle b) {
-        super.onCreate(b);
-        ScrollView scroll = new ScrollView(this);
-        LinearLayout root = Ui.root(this, "Браузер / Погода", this::finish);
-        icon = new WeatherIconView(this);
-        LinearLayout weatherCard = Ui.card(this);
-        weatherCard.setPadding(Ui.dp(this, 18), Ui.dp(this, 16), Ui.dp(this, 18), Ui.dp(this, 16));
-        LinearLayout weatherRow = Ui.row(this);
-        weatherRow.addView(icon, new LinearLayout.LayoutParams(Ui.dp(this, 150), Ui.dp(this, 130)));
-        LinearLayout weatherText = new LinearLayout(this);
-        weatherText.setOrientation(LinearLayout.VERTICAL);
-        weatherText.addView(Ui.muted(this, "Текущая погода"));
-        result = Ui.text(this, "Нажмите обновить, чтобы загрузить данные Open-Meteo.", 20, true);
-        weatherText.addView(result);
-        weatherRow.addView(weatherText, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-        weatherCard.addView(weatherRow);
-        root.addView(weatherCard, margin(0, 8, 0, 14));
+    private LinearLayout contentHost;
+    private TextView weatherSummaryView;
+    private TextView forecastView;
+    private EditText latInput;
+    private EditText lonInput;
+    private EditText addressInput;
+    private WeatherIconView iconView;
+    private WeatherState state = WeatherState.placeholder();
+    private Mode mode = Mode.HOME;
 
-        EditText lat = new EditText(this);
-        lat.setHint("Широта");
-        lat.setText("55.7558");
-        styleInput(lat);
-        EditText lon = new EditText(this);
-        lon.setHint("Долгота");
-        lon.setText("37.6173");
-        styleInput(lon);
-        EditText address = new EditText(this);
-        address.setHint("Сайт или поисковый запрос");
-        address.setText("https://www.google.com");
-        styleInput(address);
-        Button weather = Ui.button(this, "Обновить погоду");
-        Button browser = Ui.button(this, "Открыть сайт");
-        Button search = Ui.button(this, "Найти");
-        Button bookmark = Ui.button(this, "В закладки");
-        weather.setOnClickListener(v -> load(lat.getText().toString(), lon.getText().toString()));
-        browser.setOnClickListener(v -> open(normalizeUrl(address.getText().toString())));
-        search.setOnClickListener(v -> open("https://www.google.com/search?q=" + encode(address.getText().toString())));
-        bookmark.setOnClickListener(v -> {
-            String url = normalizeUrl(address.getText().toString());
-            LinkedHashSet<String> items = new LinkedHashSet<>(getPreferences(0).getStringSet("bookmarks", new LinkedHashSet<>()));
-            items.add(url);
-            getPreferences(0).edit().putStringSet("bookmarks", items).apply();
-            renderBookmarks(address);
-        });
-        LinearLayout controls = Ui.card(this);
-        controls.addView(Ui.muted(this, "Координаты"));
-        LinearLayout coords = Ui.row(this);
-        coords.addView(lat, new LinearLayout.LayoutParams(0, Ui.dp(this, 54), 1));
-        coords.addView(lon, new LinearLayout.LayoutParams(0, Ui.dp(this, 54), 1));
-        controls.addView(coords);
-        controls.addView(weather, margin(0, 8, 0, 12));
-        controls.addView(Ui.muted(this, "Браузер"));
-        controls.addView(address, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 54)));
-        LinearLayout actions = Ui.row(this);
-        actions.addView(browser, new LinearLayout.LayoutParams(0, Ui.dp(this, 54), 1));
-        actions.addView(search, new LinearLayout.LayoutParams(0, Ui.dp(this, 54), 1));
-        actions.addView(bookmark, new LinearLayout.LayoutParams(0, Ui.dp(this, 54), 1));
-        controls.addView(actions, margin(0, 8, 0, 0));
-        root.addView(controls, margin(0, 0, 0, 14));
-        bookmarks = Ui.card(this);
-        root.addView(bookmarks);
-        renderBookmarks(address);
-        scroll.addView(root);
-        setContentView(scroll);
+    @Override protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(buildShell());
+        restoreInputs();
+        restoreState();
+        renderContent();
+        Ui.animateIn(getWindow().getDecorView());
     }
 
-    private void renderBookmarks(EditText address) {
-        bookmarks.removeAllViews();
-        bookmarks.addView(Ui.text(this, "Закладки", 18, true));
-        Set<String> items = getPreferences(0).getStringSet("bookmarks", new LinkedHashSet<>());
-        if (items.isEmpty()) bookmarks.addView(Ui.muted(this, "Сохраненные сайты появятся здесь."));
-        for (String url : items) {
-            Button b = Ui.button(this, url);
-            b.setOnClickListener(v -> {
-                address.setText(url);
-                open(url);
-            });
-            b.setOnLongClickListener(v -> {
-                LinkedHashSet<String> copy = new LinkedHashSet<>(getPreferences(0).getStringSet("bookmarks", new LinkedHashSet<>()));
-                copy.remove(url);
-                getPreferences(0).edit().putStringSet("bookmarks", copy).apply();
-                renderBookmarks(address);
-                return true;
-            });
-            bookmarks.addView(b, margin(0, 4, 0, 4));
+    @Override protected void onPause() {
+        super.onPause();
+        persistInputs();
+    }
+
+    @Override protected void onResume() {
+        super.onResume();
+        restoreState();
+        renderContent();
+    }
+
+    private View buildShell() {
+        ScrollView scroll = new ScrollView(this);
+        scroll.setVerticalScrollBarEnabled(false);
+        LinearLayout root = new LinearLayout(this);
+        root.setOrientation(LinearLayout.VERTICAL);
+        root.setPadding(Ui.dp(this, 16), Ui.dp(this, 16), Ui.dp(this, 16), Ui.dp(this, 16));
+        root.setBackground(Ui.dashboardBg(this));
+        scroll.addView(root, new ScrollView.LayoutParams(ScrollView.LayoutParams.MATCH_PARENT, ScrollView.LayoutParams.WRAP_CONTENT));
+
+        root.addView(buildTopBar(), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 72)));
+        root.addView(buildHeroPanel(), lpMatchWrap(0, 16, 0, 16));
+
+        contentHost = new LinearLayout(this);
+        contentHost.setOrientation(LinearLayout.VERTICAL);
+        root.addView(contentHost, lpMatchWrap(0, 0, 0, 16));
+
+        root.addView(buildBottomDock(), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 112)));
+        return scroll;
+    }
+
+    private void renderContent() {
+        if (contentHost == null) return;
+        contentHost.removeAllViews();
+        contentHost.addView(buildOverviewGrid(), lpMatchWrap(0, 0, 0, 16));
+        contentHost.addView(buildWeatherPanel(), lpMatchWrap(0, 0, 0, 16));
+        contentHost.addView(buildBrowserPanel(), lpMatchWrap(0, 0, 0, 16));
+        if (mode == Mode.BOOKMARKS) contentHost.addView(buildBookmarksPanel(), lpMatchWrap(0, 0, 0, 16));
+        else contentHost.addView(buildForecastPanel(), lpMatchWrap(0, 0, 0, 16));
+    }
+
+    private LinearLayout buildTopBar() {
+        LinearLayout bar = Ui.glassCard(this);
+        bar.setOrientation(LinearLayout.HORIZONTAL);
+        bar.setGravity(Gravity.CENTER_VERTICAL);
+        bar.setPadding(Ui.dp(this, 20), Ui.dp(this, 10), Ui.dp(this, 20), Ui.dp(this, 10));
+
+        Button back = Ui.button(this, "Назад");
+        back.setOnClickListener(v -> {
+            if (mode == Mode.HOME) finish();
+            else openMode(Mode.HOME);
+        });
+        bar.addView(back, new LinearLayout.LayoutParams(Ui.dp(this, 110), LinearLayout.LayoutParams.MATCH_PARENT));
+
+        LinearLayout titleBlock = new LinearLayout(this);
+        titleBlock.setOrientation(LinearLayout.VERTICAL);
+        titleBlock.setPadding(Ui.dp(this, 16), 0, 0, 0);
+        titleBlock.addView(Ui.label(this, mode == Mode.BOOKMARKS ? "Bookmarks / Browser" : "Weather / Browser"));
+        titleBlock.addView(Ui.text(this, "Браузер / Погода", 28, true));
+        bar.addView(titleBlock, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+
+        bar.addView(buildTopStat("Temp", state.temperatureLabel()));
+        bar.addView(buildTopStat("Wind", state.windLabel()));
+        bar.addView(buildTopStat("Bookmarks", String.valueOf(bookmarks().size())));
+        return bar;
+    }
+
+    private LinearLayout buildTopStat(String label, String value) {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(Ui.dp(this, 12), Ui.dp(this, 8), Ui.dp(this, 12), Ui.dp(this, 8));
+        card.setBackground(Ui.cardBg(this, Color.argb(84, 255, 255, 255), Ui.dp(this, 18), Color.TRANSPARENT));
+        card.addView(Ui.label(this, label));
+        card.addView(Ui.text(this, value, 14, true));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lp.leftMargin = Ui.dp(this, 10);
+        card.setLayoutParams(lp);
+        return card;
+    }
+
+    private LinearLayout buildHeroPanel() {
+        LinearLayout hero = Ui.glassCard(this);
+        hero.addView(Ui.label(this, "Open-Meteo / Browser / Search"));
+
+        LinearLayout row = Ui.row(this);
+        iconView = new WeatherIconView(this);
+        iconView.setWeather(state.code);
+        row.addView(iconView, new LinearLayout.LayoutParams(Ui.dp(this, 210), Ui.dp(this, 180)));
+
+        LinearLayout details = new LinearLayout(this);
+        details.setOrientation(LinearLayout.VERTICAL);
+        details.setPadding(Ui.dp(this, 14), 0, 0, 0);
+        details.addView(metricLine("Погода", state.description));
+        details.addView(metricLine("Температура", state.temperatureLabel()));
+        details.addView(metricLine("Ветер", state.windLabel()));
+        details.addView(metricLine("Latitude", latValue()));
+        details.addView(metricLine("Longitude", lonValue()));
+        row.addView(details, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        hero.addView(row);
+
+        weatherSummaryView = Ui.text(this, state.summary(), 16, true);
+        weatherSummaryView.setPadding(0, Ui.dp(this, 12), 0, Ui.dp(this, 4));
+        hero.addView(weatherSummaryView);
+
+        LinearLayout quick = Ui.row(this);
+        addActionChip(quick, "Обновить", this::refreshWeather);
+        addActionChip(quick, "Координаты", this::editCoordinates);
+        addActionChip(quick, "Текущие", this::useCurrentCoordinates);
+        addActionChip(quick, "Прогноз", this::openForecast);
+        hero.addView(quick, lpMatchWrap(0, 14, 0, 0));
+        return hero;
+    }
+
+    private GridLayout buildOverviewGrid() {
+        GridLayout grid = new GridLayout(this);
+        grid.setColumnCount(2);
+        addStatusCard(grid, "Current", state.summaryShort(), Ui.CYAN);
+        addStatusCard(grid, "Coords", latValue() + " / " + lonValue(), Ui.SUCCESS);
+        addStatusCard(grid, "Forecast", state.forecastShort(), Ui.WARNING);
+        addStatusCard(grid, "Search", addressValue(), Color.rgb(129, 149, 255));
+        addNavCard(grid, "Weather", "Open-Meteo, координаты, forecast", Ui.CYAN, () -> openMode(Mode.HOME));
+        addNavCard(grid, "Browser", "Сайт, поиск, reload и bookmark", Ui.SUCCESS, this::openAddress);
+        addNavCard(grid, "Bookmarks", "Список и удаление long press", Ui.WARNING, () -> openMode(Mode.BOOKMARKS));
+        addNavCard(grid, "Desktop", "Назад к weather widget на desktop", Color.rgb(129, 149, 255), () -> startActivity(new Intent(this, DesktopActivity.class)));
+        return grid;
+    }
+
+    private LinearLayout buildWeatherPanel() {
+        LinearLayout panel = Ui.glassCard(this);
+        panel.addView(Ui.label(this, "Weather Controls"));
+        panel.addView(Ui.text(this, "Текущая погода, координаты, ручное редактирование и обновление через Open-Meteo.", 14, false));
+
+        latInput = edit("Широта", latValue(), InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL | InputType.TYPE_NUMBER_FLAG_SIGNED);
+        lonInput = edit("Долгота", lonValue(), InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL | InputType.TYPE_NUMBER_FLAG_SIGNED);
+        panel.addView(latInput);
+        panel.addView(lonInput);
+
+        LinearLayout row = Ui.row(this);
+        addActionChip(row, "Обновить", this::refreshWeather);
+        addActionChip(row, "Изменить", this::editCoordinates);
+        addActionChip(row, "Текущие", this::useCurrentCoordinates);
+        addActionChip(row, "Прогноз", this::openForecast);
+        panel.addView(row, lpMatchWrap(0, 12, 0, 0));
+        return panel;
+    }
+
+    private LinearLayout buildBrowserPanel() {
+        LinearLayout panel = Ui.glassCard(this);
+        panel.addView(Ui.label(this, "Browser"));
+        panel.addView(Ui.text(this, "Address/search bar, открыть сайт, поиск, reload и добавление закладки.", 14, false));
+
+        addressInput = edit("Сайт или поисковый запрос", addressValue(), InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
+        panel.addView(addressInput);
+
+        LinearLayout row = Ui.row(this);
+        addActionChip(row, "Back", () -> Ui.toast(this, "Используется внешний браузер"));
+        addActionChip(row, "Forward", () -> Ui.toast(this, "Используется внешний браузер"));
+        addActionChip(row, "Reload", this::openAddress);
+        addActionChip(row, "Bookmark", this::addBookmark);
+        panel.addView(row, lpMatchWrap(0, 12, 0, 0));
+
+        LinearLayout row2 = Ui.row(this);
+        addActionChip(row2, "Открыть", this::openAddress);
+        addActionChip(row2, "Поиск", this::searchAddress);
+        addActionChip(row2, "Закладки", () -> openMode(Mode.BOOKMARKS));
+        addActionChip(row2, "Google", () -> {
+            if (addressInput != null) addressInput.setText("https://www.google.com");
+            openAddress();
+        });
+        panel.addView(row2, lpMatchWrap(0, 12, 0, 0));
+        return panel;
+    }
+
+    private LinearLayout buildForecastPanel() {
+        LinearLayout panel = Ui.glassCard(this);
+        panel.addView(Ui.label(this, "Forecast"));
+        panel.addView(Ui.text(this, "Краткий forecast summary и быстрый переход к расширенному прогнозу в браузере.", 14, false));
+        forecastView = Ui.text(this, state.forecast, 16, true);
+        forecastView.setPadding(0, Ui.dp(this, 10), 0, Ui.dp(this, 4));
+        panel.addView(forecastView);
+
+        LinearLayout row = Ui.row(this);
+        addActionChip(row, "Открыть прогноз", this::openForecast);
+        addActionChip(row, "Обновить", this::refreshWeather);
+        panel.addView(row, lpMatchWrap(0, 10, 0, 0));
+        return panel;
+    }
+
+    private LinearLayout buildBookmarksPanel() {
+        LinearLayout panel = Ui.glassCard(this);
+        panel.addView(Ui.label(this, "Bookmarks"));
+        panel.addView(Ui.text(this, "Список закладок браузера. Долгое нажатие удаляет запись.", 14, false));
+
+        Set<String> items = bookmarks();
+        if (items.isEmpty()) {
+            panel.addView(emptyState("Сохраненные сайты появятся здесь"));
+            return panel;
+        }
+        for (String url : items) panel.addView(buildBookmarkCard(url), lpMatchWrap(0, 0, 0, 14));
+        return panel;
+    }
+
+    private LinearLayout buildBookmarkCard(String url) {
+        LinearLayout card = Ui.glassCard(this);
+        card.addView(Ui.text(this, url, 16, true));
+        card.addView(Ui.muted(this, "Tap: open / Long press: delete"));
+        card.setOnClickListener(v -> {
+            if (addressInput != null) addressInput.setText(url);
+            open(url);
+        });
+        card.setOnLongClickListener(v -> {
+            LinkedHashSet<String> copy = new LinkedHashSet<>(bookmarks());
+            copy.remove(url);
+            getPreferences(0).edit().putStringSet(KEY_BOOKMARKS, copy).apply();
+            renderContent();
+            return true;
+        });
+        return card;
+    }
+
+    private LinearLayout buildBottomDock() {
+        LinearLayout dock = Ui.glassCard(this);
+        dock.setOrientation(LinearLayout.HORIZONTAL);
+        dock.setGravity(Gravity.CENTER_VERTICAL);
+        dock.setPadding(Ui.dp(this, 18), Ui.dp(this, 14), Ui.dp(this, 18), Ui.dp(this, 14));
+        addDockButton(dock, "Weather", () -> openMode(Mode.HOME), mode == Mode.HOME);
+        addDockButton(dock, "Forecast", this::openForecast, false);
+        addDockButton(dock, "Search", this::searchAddress, false);
+        addDockButton(dock, "Bookmarks", () -> openMode(Mode.BOOKMARKS), mode == Mode.BOOKMARKS);
+        addDockButton(dock, "Back", this::finish, false);
+        return dock;
+    }
+
+    private void restoreInputs() {
+        latInput = null;
+        lonInput = null;
+        addressInput = null;
+    }
+
+    private void restoreState() {
+        String raw = getPreferences(0).getString(KEY_WEATHER, "");
+        String forecast = getPreferences(0).getString(KEY_FORECAST, "Прогноз не загружался");
+        if (raw == null || raw.trim().isEmpty()) {
+            state = WeatherState.placeholder();
+            state.forecast = forecast;
+            return;
+        }
+        state = WeatherState.parse(raw, forecast);
+    }
+
+    private void persistInputs() {
+        SharedPreferences.Editor editor = getPreferences(0).edit();
+        editor.putString(KEY_LAT, latValue());
+        editor.putString(KEY_LON, lonValue());
+        editor.putString(KEY_ADDRESS, addressValue());
+        editor.apply();
+    }
+
+    private void openMode(Mode next) {
+        persistInputs();
+        mode = next;
+        renderContent();
+    }
+
+    private String latValue() {
+        if (latInput != null) return latInput.getText().toString().trim();
+        return getPreferences(0).getString(KEY_LAT, "55.7558");
+    }
+
+    private String lonValue() {
+        if (lonInput != null) return lonInput.getText().toString().trim();
+        return getPreferences(0).getString(KEY_LON, "37.6173");
+    }
+
+    private String addressValue() {
+        if (addressInput != null) return addressInput.getText().toString().trim();
+        return getPreferences(0).getString(KEY_ADDRESS, "https://www.google.com");
+    }
+
+    private void refreshWeather() {
+        persistInputs();
+        if (weatherSummaryView != null) weatherSummaryView.setText("Загружаю погоду…");
+        if (forecastView != null) forecastView.setText("Загружаю прогноз…");
+        load(latValue(), lonValue());
+    }
+
+    private void editCoordinates() {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        int p = Ui.dp(this, 18);
+        box.setPadding(p, p, p, 0);
+        EditText lat = edit("Широта", latValue(), InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL | InputType.TYPE_NUMBER_FLAG_SIGNED);
+        EditText lon = edit("Долгота", lonValue(), InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL | InputType.TYPE_NUMBER_FLAG_SIGNED);
+        box.addView(lat);
+        box.addView(lon);
+        new AlertDialog.Builder(this)
+                .setTitle("Изменить координаты")
+                .setView(box)
+                .setPositiveButton("Сохранить", (d, w) -> {
+                    getPreferences(0).edit()
+                            .putString(KEY_LAT, lat.getText().toString().trim())
+                            .putString(KEY_LON, lon.getText().toString().trim())
+                            .apply();
+                    renderContent();
+                })
+                .setNegativeButton("Отмена", null)
+                .show();
+    }
+
+    private void useCurrentCoordinates() {
+        try {
+            LocationManager manager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+            Location location = null;
+            if (manager != null) {
+                location = manager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                if (location == null) location = manager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+            }
+            if (location == null) {
+                Ui.toast(this, "Нет last known location. Откройте настройки геолокации.");
+                startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+                return;
+            }
+            getPreferences(0).edit()
+                    .putString(KEY_LAT, String.format(Locale.US, "%.4f", location.getLatitude()))
+                    .putString(KEY_LON, String.format(Locale.US, "%.4f", location.getLongitude()))
+                    .apply();
+            renderContent();
+            refreshWeather();
+        } catch (SecurityException e) {
+            Ui.toast(this, "Нет разрешения location");
+            startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
         }
     }
 
+    private void openForecast() {
+        String url = "https://www.open-meteo.com/en/docs?latitude=" + encode(latValue()) + "&longitude=" + encode(lonValue());
+        open(url);
+    }
+
+    private void openAddress() {
+        persistInputs();
+        open(normalizeUrl(addressValue()));
+    }
+
+    private void searchAddress() {
+        persistInputs();
+        open("https://www.google.com/search?q=" + encode(addressValue()));
+    }
+
+    private void addBookmark() {
+        persistInputs();
+        LinkedHashSet<String> items = new LinkedHashSet<>(bookmarks());
+        items.add(normalizeUrl(addressValue()));
+        getPreferences(0).edit().putStringSet(KEY_BOOKMARKS, items).apply();
+        renderContent();
+    }
+
+    private Set<String> bookmarks() {
+        return getPreferences(0).getStringSet(KEY_BOOKMARKS, new LinkedHashSet<>());
+    }
+
     private void open(String url) {
-        startActivity(new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)));
+        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
     }
 
     private String normalizeUrl(String input) {
-        String value = input.trim();
+        String value = input == null ? "" : input.trim();
         if (value.isEmpty()) return "https://www.google.com";
         if (value.startsWith("http://") || value.startsWith("https://")) return value;
         if (value.contains(".") && !value.contains(" ")) return "https://" + value;
@@ -126,39 +448,152 @@ public class WeatherActivity extends Activity {
     }
 
     private void load(String lat, String lon) {
-        result.setText("Загружаю...");
         new Thread(() -> {
             try {
-                String url = "https://api.open-meteo.com/v1/forecast?latitude=" + URLEncoder.encode(lat, "UTF-8") +
-                        "&longitude=" + URLEncoder.encode(lon, "UTF-8") + "&current=temperature_2m,wind_speed_10m,weather_code";
+                String url = "https://api.open-meteo.com/v1/forecast?latitude=" + encode(lat)
+                        + "&longitude=" + encode(lon)
+                        + "&current=temperature_2m,wind_speed_10m,weather_code"
+                        + "&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=3";
                 JSONObject json = new JSONObject(read(new URL(url)));
                 JSONObject current = json.getJSONObject("current");
                 double temp = current.optDouble("temperature_2m");
                 double wind = current.optDouble("wind_speed_10m");
                 int code = current.optInt("weather_code");
-                String text = String.format(Locale.US, "%.1f C\nВетер %.0f км/ч\n%s", temp, wind, weatherName(code));
+                String description = weatherName(code);
+                String summary = String.format(Locale.US, "%.1f C | Ветер %.0f км/ч | %s", temp, wind, description);
+                String forecast = dailySummary(json.optJSONObject("daily"));
+                String raw = temp + "|" + wind + "|" + code + "|" + description + "|" + summary;
+                getPreferences(0).edit().putString(KEY_WEATHER, raw).putString(KEY_FORECAST, forecast).apply();
                 runOnUiThread(() -> {
-                    result.setText(text);
-                    icon.setWeather(code);
+                    restoreState();
+                    if (iconView != null) iconView.setWeather(state.code);
+                    if (weatherSummaryView != null) weatherSummaryView.setText(state.summary());
+                    if (forecastView != null) forecastView.setText(state.forecast);
+                    renderContent();
                 });
             } catch (Exception e) {
-                runOnUiThread(() -> result.setText("Ошибка погоды: " + e.getMessage()));
+                runOnUiThread(() -> {
+                    if (weatherSummaryView != null) weatherSummaryView.setText("Ошибка погоды: " + e.getMessage());
+                    if (forecastView != null) forecastView.setText("Ошибка прогноза: " + e.getMessage());
+                });
             }
         }).start();
     }
 
-    private void styleInput(EditText e) {
-        e.setTextColor(Ui.textColor(this));
-        e.setHintTextColor(Ui.mutedColor(this));
-        e.setTextSize(15);
-        e.setSingleLine(true);
-        e.setPadding(Ui.dp(this, 14), 0, Ui.dp(this, 14), 0);
-        e.setBackground(Ui.cardBg(this, Ui.panel(this), Ui.dp(this, 14), Ui.lineColor(this)));
+    private String dailySummary(JSONObject daily) {
+        if (daily == null) return "Прогноз не загружен";
+        JSONArray times = daily.optJSONArray("time");
+        JSONArray max = daily.optJSONArray("temperature_2m_max");
+        JSONArray min = daily.optJSONArray("temperature_2m_min");
+        JSONArray codes = daily.optJSONArray("weather_code");
+        if (times == null || max == null || min == null || codes == null) return "Прогноз не загружен";
+        StringBuilder sb = new StringBuilder();
+        int limit = Math.min(3, times.length());
+        for (int i = 0; i < limit; i++) {
+            if (i > 0) sb.append('\n');
+            sb.append(times.optString(i))
+                    .append("  ")
+                    .append(Math.round(min.optDouble(i)))
+                    .append("..")
+                    .append(Math.round(max.optDouble(i)))
+                    .append(" C  ")
+                    .append(weatherName(codes.optInt(i)));
+        }
+        return sb.length() == 0 ? "Прогноз не загружен" : sb.toString();
     }
 
-    private LinearLayout.LayoutParams margin(int l, int t, int r, int b) {
+    private EditText edit(String hint, String value, int inputType) {
+        EditText field = new EditText(this);
+        field.setHint(hint);
+        field.setText(value == null ? "" : value);
+        field.setTextColor(Ui.primaryText(this));
+        field.setHintTextColor(Ui.secondaryText(this));
+        field.setInputType(inputType);
+        field.setTypeface(Typeface.MONOSPACE);
+        field.setBackground(Ui.cardBg(this, Color.argb(42, 255, 255, 255), Ui.dp(this, 18), Ui.glassLine(this)));
+        field.setPadding(Ui.dp(this, 14), Ui.dp(this, 12), Ui.dp(this, 14), Ui.dp(this, 12));
+        field.setLayoutParams(lpMatchWrap(0, 12, 0, 0));
+        return field;
+    }
+
+    private void addActionChip(LinearLayout row, String label, Runnable action) {
+        Button b = Ui.button(this, label);
+        b.setTextColor(Color.WHITE);
+        b.setBackground(Ui.cardBg(this, Color.argb(70, 255, 255, 255), Ui.dp(this, 18), Color.TRANSPARENT));
+        b.setOnClickListener(v -> action.run());
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 58), 1f);
+        lp.leftMargin = Ui.dp(this, 6);
+        lp.rightMargin = Ui.dp(this, 6);
+        row.addView(b, lp);
+    }
+
+    private void addDockButton(LinearLayout dock, String label, Runnable action, boolean active) {
+        Button button = Ui.button(this, label);
+        button.setTextColor(Color.WHITE);
+        button.setTextSize(14);
+        button.setBackground(Ui.cardBg(this,
+                active ? Color.argb(115, 77, 163, 255) : Color.argb(54, 255, 255, 255),
+                Ui.dp(this, 20),
+                active ? Color.argb(100, 77, 163, 255) : Color.TRANSPARENT));
+        button.setOnClickListener(v -> action.run());
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f);
+        lp.leftMargin = Ui.dp(this, 6);
+        lp.rightMargin = Ui.dp(this, 6);
+        dock.addView(button, lp);
+    }
+
+    private void addStatusCard(GridLayout grid, String title, String value, int color) {
+        LinearLayout card = Ui.glassCard(this);
+        card.addView(Ui.label(this, title));
+        card.addView(Ui.text(this, value, 18, true));
+        View accent = new View(this);
+        accent.setBackground(Ui.glassPill(this, color));
+        LinearLayout.LayoutParams accentLp = new LinearLayout.LayoutParams(Ui.dp(this, 56), Ui.dp(this, 6));
+        accentLp.topMargin = Ui.dp(this, 14);
+        card.addView(accent, accentLp);
+        GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
+        lp.width = 0;
+        lp.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
+        lp.setMargins(0, 0, Ui.dp(this, 16), Ui.dp(this, 16));
+        grid.addView(card, lp);
+    }
+
+    private void addNavCard(GridLayout grid, String title, String body, int color, Runnable action) {
+        LinearLayout card = Ui.glassCard(this);
+        card.addView(Ui.text(this, title, 18, true));
+        card.addView(Ui.muted(this, body));
+        Button open = Ui.button(this, "Открыть");
+        open.setOnClickListener(v -> action.run());
+        card.addView(open, lpMatchWrap(0, 12, 0, 0));
+        View accent = new View(this);
+        accent.setBackground(Ui.glassPill(this, color));
+        LinearLayout.LayoutParams accentLp = new LinearLayout.LayoutParams(Ui.dp(this, 56), Ui.dp(this, 6));
+        accentLp.topMargin = Ui.dp(this, 14);
+        card.addView(accent, accentLp);
+        GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
+        lp.width = 0;
+        lp.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
+        lp.setMargins(0, 0, Ui.dp(this, 16), Ui.dp(this, 16));
+        grid.addView(card, lp);
+    }
+
+    private TextView metricLine(String key, String value) {
+        TextView line = Ui.text(this, key + ": " + value, 14, false);
+        line.setTextColor(Ui.secondaryText(this));
+        line.setPadding(0, Ui.dp(this, 4), 0, Ui.dp(this, 4));
+        return line;
+    }
+
+    private TextView emptyState(String text) {
+        TextView view = Ui.text(this, text, 16, true);
+        view.setGravity(Gravity.CENTER);
+        view.setPadding(0, Ui.dp(this, 24), 0, Ui.dp(this, 24));
+        return view;
+    }
+
+    private LinearLayout.LayoutParams lpMatchWrap(int left, int top, int right, int bottom) {
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        lp.setMargins(Ui.dp(this, l), Ui.dp(this, t), Ui.dp(this, r), Ui.dp(this, b));
+        lp.setMargins(Ui.dp(this, left), Ui.dp(this, top), Ui.dp(this, right), Ui.dp(this, bottom));
         return lp;
     }
 
@@ -174,15 +609,87 @@ public class WeatherActivity extends Activity {
     }
 
     private String read(URL url) throws IOException {
-        HttpURLConnection c = (HttpURLConnection) url.openConnection();
-        c.setConnectTimeout(8000);
-        c.setReadTimeout(8000);
-        try (InputStream in = c.getInputStream(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setConnectTimeout(8000);
+        connection.setReadTimeout(8000);
+        try (InputStream in = connection.getInputStream(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             byte[] buf = new byte[8192];
-            for (int n; (n = in.read(buf)) > 0;) out.write(buf, 0, n);
+            for (int n; (n = in.read(buf)) > 0; ) out.write(buf, 0, n);
             return out.toString("UTF-8");
         } finally {
-            c.disconnect();
+            connection.disconnect();
+        }
+    }
+
+    private enum Mode {
+        HOME,
+        BOOKMARKS
+    }
+
+    private static final class WeatherState {
+        final double temp;
+        final double wind;
+        final int code;
+        final String description;
+        final String summaryRaw;
+        String forecast;
+
+        WeatherState(double temp, double wind, int code, String description, String summaryRaw, String forecast) {
+            this.temp = temp;
+            this.wind = wind;
+            this.code = code;
+            this.description = description;
+            this.summaryRaw = summaryRaw;
+            this.forecast = forecast;
+        }
+
+        static WeatherState placeholder() {
+            return new WeatherState(Double.NaN, Double.NaN, 2, "Данные не загружены", "Нажмите обновить, чтобы загрузить данные Open-Meteo.", "Прогноз не загружался");
+        }
+
+        static WeatherState parse(String raw, String forecast) {
+            String[] parts = raw.split("\\|", 5);
+            if (parts.length < 5) {
+                WeatherState fallback = placeholder();
+                fallback.forecast = forecast;
+                return fallback;
+            }
+            try {
+                return new WeatherState(
+                        Double.parseDouble(parts[0]),
+                        Double.parseDouble(parts[1]),
+                        Integer.parseInt(parts[2]),
+                        parts[3],
+                        parts[4],
+                        forecast
+                );
+            } catch (Exception e) {
+                WeatherState fallback = placeholder();
+                fallback.forecast = forecast;
+                return fallback;
+            }
+        }
+
+        String temperatureLabel() {
+            return Double.isNaN(temp) ? "n/a" : String.format(Locale.US, "%.1f C", temp);
+        }
+
+        String windLabel() {
+            return Double.isNaN(wind) ? "n/a" : String.format(Locale.US, "%.0f км/ч", wind);
+        }
+
+        String summary() {
+            return summaryRaw;
+        }
+
+        String summaryShort() {
+            return temperatureLabel() + " · " + description;
+        }
+
+        String forecastShort() {
+            if (forecast == null || forecast.trim().isEmpty()) return "n/a";
+            String first = forecast.split("\n")[0];
+            return first.length() > 28 ? first.substring(0, 28) + "…" : first;
         }
     }
 
@@ -190,31 +697,43 @@ public class WeatherActivity extends Activity {
         private final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
         private int code = 2;
 
-        WeatherIconView(Context c) { super(c); }
+        WeatherIconView(Context c) {
+            super(c);
+        }
 
-        void setWeather(int code) {
-            this.code = code;
+        void setWeather(int value) {
+            code = value;
             invalidate();
         }
 
         @Override protected void onDraw(Canvas canvas) {
-            float w = getWidth(), h = getHeight();
+            float w = getWidth();
+            float h = getHeight();
             boolean rainy = code >= 51 && code <= 99;
             p.setStyle(Paint.Style.FILL);
-            p.setShader(new LinearGradient(0, 0, w, h, Color.rgb(58, 134, 218), rainy ? Color.rgb(70, 88, 126) : Color.rgb(242, 181, 76), Shader.TileMode.CLAMP));
-            canvas.drawRoundRect(new RectF(w * .08f, h * .08f, w * .92f, h * .92f), Ui.dp(getContext(), 26), Ui.dp(getContext(), 26), p);
+            p.setShader(new LinearGradient(0, 0, w, h,
+                    Color.rgb(58, 134, 218),
+                    rainy ? Color.rgb(70, 88, 126) : Color.rgb(242, 181, 76),
+                    Shader.TileMode.CLAMP));
+            canvas.drawRoundRect(new RectF(w * .06f, h * .06f, w * .94f, h * .94f), dp(getContext(), 30), dp(getContext(), 30), p);
             p.setShader(null);
             p.setColor(Color.argb(90, 255, 255, 255));
-            canvas.drawCircle(w * .34f, h * .36f, w * .18f, p);
+            canvas.drawCircle(w * .34f, h * .34f, w * .16f, p);
             p.setColor(Color.WHITE);
-            canvas.drawCircle(w * .44f, h * .55f, w * .22f, p);
-            canvas.drawCircle(w * .58f, h * .50f, w * .18f, p);
-            canvas.drawRoundRect(new RectF(w * .28f, h * .52f, w * .75f, h * .70f), Ui.dp(getContext(), 18), Ui.dp(getContext(), 18), p);
+            canvas.drawCircle(w * .40f, h * .55f, w * .18f, p);
+            canvas.drawCircle(w * .57f, h * .49f, w * .16f, p);
+            canvas.drawRoundRect(new RectF(w * .26f, h * .52f, w * .76f, h * .70f), dp(getContext(), 18), dp(getContext(), 18), p);
             if (rainy) {
                 p.setColor(Color.rgb(176, 220, 255));
-                p.setStrokeWidth(Ui.dp(getContext(), 4));
-                for (int i = 0; i < 4; i++) canvas.drawLine(w * (.32f + i * .11f), h * .76f, w * (.27f + i * .11f), h * .90f, p);
+                p.setStrokeWidth(dp(getContext(), 4));
+                for (int i = 0; i < 4; i++) {
+                    canvas.drawLine(w * (.32f + i * .11f), h * .77f, w * (.28f + i * .11f), h * .90f, p);
+                }
             }
+        }
+
+        private int dp(Context context, int value) {
+            return Ui.dp(context, value);
         }
     }
 }
