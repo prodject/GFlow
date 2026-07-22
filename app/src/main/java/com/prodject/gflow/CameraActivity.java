@@ -3,6 +3,7 @@ package com.prodject.gflow;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -14,10 +15,13 @@ import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.GridLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
+import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.ArrayAdapter;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -26,6 +30,13 @@ import java.util.Locale;
 public class CameraActivity extends Activity {
     private TextView archiveSummary;
     private TextView cameraSummary;
+    private TextView diagSummary;
+    private EditText camerasInput;
+    private EditText segmentInput;
+    private EditText limitInput;
+    private EditText storagePathInput;
+    private Spinner storageInput;
+    private Spinner qualityInput;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -46,6 +57,7 @@ public class CameraActivity extends Activity {
         root.addView(buildTopBar(), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 72)));
         root.addView(buildHeroPanel(), lpMatchWrap(0, 16, 0, 16));
         root.addView(buildControlPanel(), lpMatchWrap(0, 0, 0, 16));
+        root.addView(buildArchiveSettingsPanel(), lpMatchWrap(0, 0, 0, 16));
         root.addView(buildStatusGrid(), lpMatchWrap(0, 0, 0, 16));
         root.addView(buildBottomDock(), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 112)));
         return scroll;
@@ -113,8 +125,8 @@ public class CameraActivity extends Activity {
         LinearLayout quick = Ui.row(this);
         addActionChip(quick, "Старт", this::startRecording);
         addActionChip(quick, "Стоп", this::stopRecording);
-        addActionChip(quick, "360", () -> openLegacyDvr("avm"));
-        addActionChip(quick, "Архив", () -> openLegacyDvr("archive"));
+        addActionChip(quick, "360", () -> runEvs(EcarxDvrAdapter.EVS_CAMERA_AVM, true));
+        addActionChip(quick, "Архив", this::refreshStatus);
         hero.addView(quick, lpMatchWrap(0, 14, 0, 0));
         return hero;
     }
@@ -140,8 +152,63 @@ public class CameraActivity extends Activity {
         addTile(grid, "EVS DVR", Color.rgb(95, 133, 255), () -> runEvs(EcarxDvrAdapter.EVS_CAMERA_DVR, true));
         addTile(grid, "Закрыть Rear", Color.rgb(120, 136, 156), () -> runEvs(EcarxDvrAdapter.EVS_CAMERA_REAR, false));
         addTile(grid, "Закрыть 360", Color.rgb(120, 136, 156), () -> runEvs(EcarxDvrAdapter.EVS_CAMERA_AVM, false));
-        addTile(grid, "Настройки", Ui.WARNING, () -> openLegacyDvr("settings"));
+        addTile(grid, "Сохранить", Ui.WARNING, this::saveArchiveSettings);
         panel.addView(grid, lpMatchWrap(0, 12, 0, 0));
+        return panel;
+    }
+
+    private LinearLayout buildArchiveSettingsPanel() {
+        SharedPreferences prefs = getSharedPreferences(DvrArchive.PREFS, MODE_PRIVATE);
+        LinearLayout panel = Ui.glassCard(this);
+        panel.addView(Ui.label(this, "Archive Settings"));
+        panel.addView(Ui.muted(this, "Camera2 источники, сегменты, лимит архива, storage и EVS/DVR diagnostics теперь живут в новом экране."));
+
+        camerasInput = new EditText(this);
+        camerasInput.setHint("front,rear,camera2:0,evs:360,evs:rear,evs:dvr");
+        camerasInput.setText(prefs.getString(DvrArchive.KEY_CAMERAS, DvrArchive.DEFAULT_CAMERAS));
+        segmentInput = new EditText(this);
+        segmentInput.setHint("Сегмент, сек");
+        segmentInput.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        segmentInput.setText(String.valueOf(prefs.getInt(DvrArchive.KEY_SEGMENT_SECONDS, 60)));
+        limitInput = new EditText(this);
+        limitInput.setHint("Лимит архива, GB");
+        limitInput.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        limitInput.setText(String.valueOf(prefs.getInt(DvrArchive.KEY_LIMIT_GB, 5)));
+        storagePathInput = new EditText(this);
+        storagePathInput.setHint("Путь записи");
+        storagePathInput.setText(prefs.getString(DvrArchive.KEY_STORAGE_PATH, ""));
+        styleInput(camerasInput);
+        styleInput(segmentInput);
+        styleInput(limitInput);
+        styleInput(storagePathInput);
+
+        storageInput = new Spinner(this);
+        String[] storage = {DvrArchive.STORAGE_EXTERNAL, DvrArchive.STORAGE_INTERNAL, DvrArchive.STORAGE_USB};
+        storageInput.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, storage));
+        String currentStorage = prefs.getString(DvrArchive.KEY_STORAGE, DvrArchive.STORAGE_EXTERNAL);
+        for (int i = 0; i < storage.length; i++) if (storage[i].equals(currentStorage)) storageInput.setSelection(i);
+
+        qualityInput = new Spinner(this);
+        String[] quality = {DvrArchive.QUALITY_720P, DvrArchive.QUALITY_1080P, DvrArchive.QUALITY_480P};
+        qualityInput.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, quality));
+        String currentQuality = prefs.getString(DvrArchive.KEY_QUALITY, DvrArchive.QUALITY_720P);
+        for (int i = 0; i < quality.length; i++) if (quality[i].equals(currentQuality)) qualityInput.setSelection(i);
+
+        panel.addView(camerasInput, lpMatchWrap(0, 12, 0, 8));
+        LinearLayout numbers = Ui.row(this);
+        numbers.addView(segmentInput, buttonLp());
+        numbers.addView(limitInput, buttonLp());
+        panel.addView(numbers);
+        panel.addView(storageInput, lpMatchWrap(0, 8, 0, 8));
+        panel.addView(storagePathInput, lpMatchWrap(0, 0, 0, 8));
+        panel.addView(qualityInput, lpMatchWrap(0, 0, 0, 12));
+
+        LinearLayout actions = Ui.row(this);
+        addActionChip(actions, "Сохранить", this::saveArchiveSettings);
+        addActionChip(actions, "Prune", this::pruneArchive);
+        addActionChip(actions, "DVR Mode", () -> runDvrCall("DVR mode", EcarxDvrAdapter::dvrCurrentMode));
+        addActionChip(actions, "SD", () -> runDvrCall("DVR SD", EcarxDvrAdapter::dvrSdcardStatus));
+        panel.addView(actions);
         return panel;
     }
 
@@ -163,6 +230,13 @@ public class CameraActivity extends Activity {
         cameras.addView(cameraSummary);
         addCard(grid, cameras);
 
+        LinearLayout diag = Ui.glassCard(this);
+        diag.addView(Ui.label(this, "EVS / DVR Diagnostics"));
+        diagSummary = Ui.text(this, "", 15, false);
+        diagSummary.setPadding(0, Ui.dp(this, 8), 0, 0);
+        diag.addView(diagSummary);
+        addCard(grid, diag);
+
         return grid;
     }
 
@@ -183,7 +257,7 @@ public class CameraActivity extends Activity {
         addDockButton(dock, "Stop", this::stopRecording, false);
         addDockButton(dock, "360", () -> runEvs(EcarxDvrAdapter.EVS_CAMERA_AVM, true), false);
         addDockButton(dock, "Rear", () -> runEvs(EcarxDvrAdapter.EVS_CAMERA_REAR, true), false);
-        addDockButton(dock, "Legacy", () -> openLegacyDvr("legacy"), false);
+        addDockButton(dock, "Save", this::saveArchiveSettings, false);
         return dock;
     }
 
@@ -252,15 +326,38 @@ public class CameraActivity extends Activity {
         refreshStatus();
     }
 
-    private void openLegacyDvr(String mode) {
-        Intent intent = new Intent(this, DvrActivity.class);
-        intent.putExtra("mode", mode);
-        startActivity(intent);
+    private void saveArchiveSettings() {
+        DvrArchive.saveSettings(this,
+                camerasInput.getText().toString(),
+                parseInt(segmentInput.getText().toString(), 60),
+                parseInt(limitInput.getText().toString(), 5),
+                String.valueOf(storageInput.getSelectedItem()),
+                String.valueOf(qualityInput.getSelectedItem()),
+                storagePathInput.getText().toString());
+        Ui.toast(this, "Настройки DVR сохранены");
+        refreshStatus();
+    }
+
+    private void pruneArchive() {
+        int removed = DvrArchive.prune(this, DvrArchive.limitBytes(this));
+        Ui.toast(this, removed > 0 ? "Удалено сегментов: " + removed : "Архив в лимите");
+        refreshStatus();
+    }
+
+    private void runDvrCall(String label, DvrCall call) {
+        EcarxDvrAdapter.Result result = call.run(new EcarxDvrAdapter(this));
+        Ui.toast(this, result.success ? label + " выполнен" : label + " ошибка");
+        refreshStatus();
+    }
+
+    private interface DvrCall {
+        EcarxDvrAdapter.Result run(EcarxDvrAdapter adapter);
     }
 
     private void refreshStatus() {
         if (archiveSummary != null) archiveSummary.setText(DvrArchive.summary(this));
         if (cameraSummary != null) cameraSummary.setText(cameraSummaryText());
+        if (diagSummary != null) diagSummary.setText(diagnosticSummaryText());
     }
 
     private String cameraSummaryText() {
@@ -277,6 +374,17 @@ public class CameraActivity extends Activity {
         }
         sb.append("EVS: rear, 360, dvr\n");
         sb.append("USB:\n").append(usbRootsSummary());
+        return sb.toString().trim();
+    }
+
+    private String diagnosticSummaryText() {
+        StringBuilder sb = new StringBuilder();
+        EcarxDvrAdapter adapter = new EcarxDvrAdapter(this);
+        sb.append("Availability: ").append(adapter.availability()).append("\n");
+        sb.append("DVR online: ").append(adapter.dvrCameraOnline().message).append("\n");
+        sb.append("DVR capture: ").append(adapter.dvrCapture().message).append("\n");
+        sb.append("DVR mode: ").append(adapter.dvrCurrentMode().message).append("\n");
+        sb.append("DVR SD: ").append(adapter.dvrSdcardStatus().message);
         return sb.toString().trim();
     }
 
@@ -306,9 +414,31 @@ public class CameraActivity extends Activity {
         return "other";
     }
 
+    private int parseInt(String value, int fallback) {
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (Exception e) {
+            return fallback;
+        }
+    }
+
+    private void styleInput(EditText e) {
+        e.setTextColor(Ui.textColor(this));
+        e.setHintTextColor(Ui.mutedColor(this));
+        e.setSingleLine(true);
+        e.setPadding(Ui.dp(this, 14), 0, Ui.dp(this, 14), 0);
+        e.setBackground(Ui.cardBg(this, Ui.panel(this), Ui.dp(this, 14), Ui.lineColor(this)));
+    }
+
     private LinearLayout.LayoutParams lpMatchWrap(int l, int t, int r, int b) {
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         lp.setMargins(Ui.dp(this, l), Ui.dp(this, t), Ui.dp(this, r), Ui.dp(this, b));
+        return lp;
+    }
+
+    private LinearLayout.LayoutParams buttonLp() {
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 56), 1f);
+        lp.setMargins(Ui.dp(this, 5), Ui.dp(this, 5), Ui.dp(this, 5), Ui.dp(this, 5));
         return lp;
     }
 

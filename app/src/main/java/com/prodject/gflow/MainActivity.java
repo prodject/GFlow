@@ -1757,11 +1757,6 @@ public class MainActivity extends Activity {
         });
     }
 
-    private void showDvr() {
-        startForegroundService(new Intent(this, DvrService.class));
-        panel("Monji DVR", "Запись со штатных камер: передняя ADAS, левая, задняя, правая. Настройки: выбор камер, длина сегмента, лимит диска, внутренняя память или USB. Сервис DVR запущен.");
-    }
-
     private void showAutomation() {
         startActivity(new Intent(this, AutomationActivity.class));
     }
