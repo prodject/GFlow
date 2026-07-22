@@ -173,12 +173,12 @@
 - Основные входы из `MainActivity` переведены с `DvrActivity` на `CameraActivity`.
 - `CameraActivity` подключен в `AndroidManifest.xml`.
 - Добавлен новый camera shell в стиле `Design.txt`: top bar, hero-panel, recording controls, status cards, bottom dock.
-- Внутри нового экрана добавлены быстрые действия для старта/остановки записи, EVS rear, EVS 360, EVS DVR и перехода в legacy-настройки.
+- Внутри нового экрана добавлены быстрые действия для старта/остановки записи, EVS rear, EVS 360 и EVS DVR.
 - В экран встроены live summary по архиву и доступным Camera2 / EVS источникам.
-
-Сделано частично:
-- Новый экран теперь является основным UI раздела, но `DvrActivity` оставлен как legacy fallback для детальных настроек, архива и низкоуровневой диагностики.
-- Полноэкранный режим 360 / парковочной камеры и отдельные advanced camera-sheets пока не вынесены в самостоятельные новые подэкраны.
+- В `CameraActivity` перенесены детальные настройки архива: cameras, segment, limit, storage, storage path и quality.
+- В `CameraActivity` перенесены EVS / DVR diagnostics: availability, camera online, capture, current mode и SD status.
+- Из нового экрана удалены переходы в legacy `DvrActivity`; fallback-маршрут больше не используется в основном пользовательском flow.
+- Из `MainActivity` удален старый `showDvr()`-экран, который больше не участвовал в пользовательской навигации.
 
 Осталось по `Design.txt`:
 - Экран `Парковка / APA`.
@@ -206,10 +206,9 @@
 - Добавлен новый parking shell в стиле `Design.txt`: top bar, hero-panel, parking controls, status cards, bottom dock.
 - Внутри нового экрана добавлены быстрые действия для Auto Park, 360, PDC, RCTA и выбора parking mode.
 - Добавлен отдельный визуальный parking-блок.
-
-Сделано частично:
-- Новый экран покрывает основной пользовательский сценарий парковки, но raw APA/RPA и PAS/AVM команды пока оставлены в legacy fallback внутри `MainActivity`.
-- Глубокие experimental parking controls пока не вынесены в отдельные новые подэкраны.
+- В `ParkingActivity` добавлен новый advanced parking flow для `APA / RPA`: raw park modes, button actions, remote parking и HAL diagnostics.
+- В `ParkingActivity` добавлен новый advanced parking flow для `PAS / AVM`: PAC/AVM camera state, radar work modes, overlays, SAP и RCTA.
+- Legacy `showParkingApa()` и `showPasAvm()` удалены из `MainActivity`; parking experimental/raw сценарии больше не живут в старом экране.
 
 Осталось по `Design.txt`:
 - Экран `HUD / Cluster / OneOS`.
