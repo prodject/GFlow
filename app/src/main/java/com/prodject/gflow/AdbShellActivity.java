@@ -91,12 +91,12 @@ public class AdbShellActivity extends Activity {
         LinearLayout titleBlock = new LinearLayout(this);
         titleBlock.setOrientation(LinearLayout.VERTICAL);
         titleBlock.setPadding(Ui.dp(this, 16), 0, 0, 0);
-        titleBlock.addView(Ui.label(this, "Permissions / Shell / Autozoom"));
+        titleBlock.addView(Ui.label(this, "Разрешения / Shell / Autozoom"));
         titleBlock.addView(Ui.text(this, "ADB / Система", 28, true));
         bar.addView(titleBlock, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
         bar.addView(buildTopStat("Write", String.valueOf(Settings.System.canWrite(this))));
-        bar.addView(buildTopStat("Files", String.valueOf(Build.VERSION.SDK_INT < 30 || Environment.isExternalStorageManager())));
+        bar.addView(buildTopStat("Файлы", String.valueOf(Build.VERSION.SDK_INT < 30 || Environment.isExternalStorageManager())));
         bar.addView(buildTopStat("Autozoom", String.valueOf(watchdogPrefs().getBoolean(AppWatchdogAccessibilityService.KEY_ENABLED, false))));
         return bar;
     }
@@ -116,7 +116,7 @@ public class AdbShellActivity extends Activity {
 
     private LinearLayout buildHeroPanel() {
         LinearLayout hero = Ui.glassCard(this);
-        hero.addView(Ui.label(this, "Permissions / Shell / DPI / Autozoom"));
+        hero.addView(Ui.label(this, "Разрешения / Shell / DPI / Autozoom"));
 
         LinearLayout row = Ui.row(this);
         LinearLayout left = new LinearLayout(this);
@@ -124,7 +124,7 @@ public class AdbShellActivity extends Activity {
         left.addView(metricLine("Accessibility", String.valueOf(accessibilitySummary())));
         left.addView(metricLine("WRITE_SETTINGS", String.valueOf(Settings.System.canWrite(this))));
         left.addView(metricLine("All files", String.valueOf(Build.VERSION.SDK_INT < 30 || Environment.isExternalStorageManager())));
-        left.addView(metricLine("Last foreground", watchdogPrefs().getString(AppWatchdogAccessibilityService.KEY_LAST_PACKAGE, "")));
+        left.addView(metricLine("Последнее приложение", watchdogPrefs().getString(AppWatchdogAccessibilityService.KEY_LAST_PACKAGE, "")));
         row.addView(left, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
         LinearLayout badge = Ui.glassCard(this);
@@ -162,7 +162,7 @@ public class AdbShellActivity extends Activity {
 
     private LinearLayout buildPermissionsPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Permissions Card"));
+        panel.addView(Ui.label(this, "Карта разрешений"));
         panel.addView(Ui.text(this, "Accessibility, WRITE_SETTINGS, All files access, app card и grants check.", 14, false));
         panel.addView(Ui.muted(this, "Accessibility: " + accessibilitySummary()), lpMatchWrap(0, 8, 0, 0));
         panel.addView(Ui.muted(this, "WRITE_SETTINGS: " + Settings.System.canWrite(this)), lpMatchWrap(0, 4, 0, 0));
@@ -176,7 +176,7 @@ public class AdbShellActivity extends Activity {
         panel.addView(row, lpMatchWrap(0, 12, 0, 0));
 
         LinearLayout row2 = Ui.row(this);
-        addActionChip(row2, "Check grants", this::showGrants);
+        addActionChip(row2, "Проверить grants", this::showGrants);
         panel.addView(row2, lpMatchWrap(0, 12, 0, 0));
         return panel;
     }
@@ -226,8 +226,8 @@ public class AdbShellActivity extends Activity {
         panel.addView(zoomScaleInput);
 
         LinearLayout row = Ui.row(this);
-        addActionChip(row, "Save autozoom", this::saveAutozoomNow);
-        addActionChip(row, "Autozoom on/off", this::toggleAutozoom);
+        addActionChip(row, "Сохранить Autozoom", this::saveAutozoomNow);
+        addActionChip(row, "Autozoom вкл/выкл", this::toggleAutozoom);
         panel.addView(row, lpMatchWrap(0, 12, 0, 0));
         return panel;
     }
@@ -249,10 +249,10 @@ public class AdbShellActivity extends Activity {
         dock.setGravity(Gravity.CENTER_VERTICAL);
         dock.setPadding(Ui.dp(this, 18), Ui.dp(this, 14), Ui.dp(this, 18), Ui.dp(this, 14));
         addDockButton(dock, "Shell", this::runCurrentCommand, false);
-        addDockButton(dock, "Grants", this::showGrants, false);
+        addDockButton(dock, "Права", this::showGrants, false);
         addDockButton(dock, "ADB", this::toggleAdb, false);
         addDockButton(dock, "Autozoom", this::toggleAutozoom, false);
-        addDockButton(dock, "Back", this::finish, false);
+        addDockButton(dock, "Назад", this::finish, false);
         return dock;
     }
 

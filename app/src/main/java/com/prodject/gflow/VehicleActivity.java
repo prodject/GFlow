@@ -155,12 +155,12 @@ public class VehicleActivity extends Activity {
 
     private String modeLabel() {
         switch (mode) {
-            case SEATS: return "Seats / Memory";
-            case MIRRORS: return "Mirrors / Roof";
-            case LIGHTS: return "Lights / Exterior";
-            case DRIVE: return "Drive / Profiles";
+            case SEATS: return "Сиденья / Память";
+            case MIRRORS: return "Зеркала / Крыша";
+            case LIGHTS: return "Свет / Экстерьер";
+            case DRIVE: return "Drive / Профили";
             case HOME:
-            default: return "Body / Access";
+            default: return "Кузов / Доступ";
         }
     }
 
@@ -181,7 +181,7 @@ public class VehicleActivity extends Activity {
 
     private LinearLayout buildHeroPanel() {
         LinearLayout hero = Ui.glassCard(this);
-        hero.addView(Ui.label(this, "Vehicle Visual"));
+        hero.addView(Ui.label(this, "Схема автомобиля"));
 
         LinearLayout top = Ui.row(this);
         LinearLayout left = new LinearLayout(this);
@@ -220,7 +220,7 @@ public class VehicleActivity extends Activity {
 
     private LinearLayout buildBodyControls() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Body Controls"));
+        panel.addView(Ui.label(this, "Управление кузовом"));
 
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(3);
@@ -254,29 +254,29 @@ public class VehicleActivity extends Activity {
 
     private LinearLayout buildSeatsPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Seats / Memory"));
+        panel.addView(Ui.label(this, "Сиденья / Память"));
         panel.addView(Ui.text(this, "Регулировка длины, высоты, спинки, memory positions и переход в полноценные профили.", 14, false));
 
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(2);
-        addAdvancedCard(grid, "Driver seat", "Длина, высота, спинка", new QuickItem[]{
+        addAdvancedCard(grid, "Сиденье водителя", "Длина, высота, спинка", new QuickItem[]{
                 new QuickItem("Вперед", () -> sendVehicle(EcarxVehicleAdapter.SEAT_LENGTH, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_FORWARD)),
                 new QuickItem("Назад", () -> sendVehicle(EcarxVehicleAdapter.SEAT_LENGTH, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_BACKWARD)),
                 new QuickItem("Выше", () -> sendVehicle(EcarxVehicleAdapter.SEAT_HEIGHT, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_HEIGHT_UP)),
                 new QuickItem("Ниже", () -> sendVehicle(EcarxVehicleAdapter.SEAT_HEIGHT, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_HEIGHT_DOWN))
         });
-        addAdvancedCard(grid, "Backrest / Memory", "Спинка, save/set", new QuickItem[]{
+        addAdvancedCard(grid, "Спинка / Память", "Спинка, сохранение и вызов", new QuickItem[]{
                 new QuickItem("Спинка +", () -> sendVehicle(EcarxVehicleAdapter.SEAT_BACKREST, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_BACKREST_FORWARD)),
                 new QuickItem("Спинка -", () -> sendVehicle(EcarxVehicleAdapter.SEAT_BACKREST, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_BACKREST_BACKWARD)),
-                new QuickItem("Save P1", () -> sendVehicle(EcarxVehicleAdapter.SEAT_POSITION_SAVE, EcarxVehicleAdapter.SEAT_POSITION_1)),
-                new QuickItem("Recall P1", () -> sendVehicle(EcarxVehicleAdapter.SEAT_POSITION_SET, EcarxVehicleAdapter.SEAT_POSITION_1))
+                new QuickItem("Сохранить P1", () -> sendVehicle(EcarxVehicleAdapter.SEAT_POSITION_SAVE, EcarxVehicleAdapter.SEAT_POSITION_1)),
+                new QuickItem("Вызвать P1", () -> sendVehicle(EcarxVehicleAdapter.SEAT_POSITION_SET, EcarxVehicleAdapter.SEAT_POSITION_1))
         });
         panel.addView(grid, lpMatchWrap(0, 12, 0, 12));
 
         LinearLayout memory = Ui.row(this);
-        addActionChip(memory, "Save P2", () -> sendVehicle(EcarxVehicleAdapter.SEAT_POSITION_SAVE, EcarxVehicleAdapter.SEAT_POSITION_2));
-        addActionChip(memory, "Recall P2", () -> sendVehicle(EcarxVehicleAdapter.SEAT_POSITION_SET, EcarxVehicleAdapter.SEAT_POSITION_2));
-        addActionChip(memory, "Comfort", () -> sendVehicle(EcarxVehicleAdapter.SEAT_ONE_KEY_COMFORT, EcarxVehicleAdapter.COMMON_ON));
+        addActionChip(memory, "Сохранить P2", () -> sendVehicle(EcarxVehicleAdapter.SEAT_POSITION_SAVE, EcarxVehicleAdapter.SEAT_POSITION_2));
+        addActionChip(memory, "Вызвать P2", () -> sendVehicle(EcarxVehicleAdapter.SEAT_POSITION_SET, EcarxVehicleAdapter.SEAT_POSITION_2));
+        addActionChip(memory, "Комфорт", () -> sendVehicle(EcarxVehicleAdapter.SEAT_ONE_KEY_COMFORT, EcarxVehicleAdapter.COMMON_ON));
         addActionChip(memory, "Профили", () -> startActivity(new Intent(this, ProfileActivity.class)));
         panel.addView(memory, lpMatchWrap(0, 0, 0, 0));
         return panel;
@@ -284,37 +284,37 @@ public class VehicleActivity extends Activity {
 
     private LinearLayout buildMirrorsPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Mirrors / Roof"));
-        panel.addView(Ui.text(this, "Зеркала, defrost, roof, sun curtain и штатный mirror dialog.", 14, false));
+        panel.addView(Ui.label(this, "Зеркала / Крыша"));
+        panel.addView(Ui.text(this, "Зеркала, обогрев, люк, шторка и штатный диалог зеркал.", 14, false));
 
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(2);
-        addAdvancedCard(grid, "Mirrors", "Fold, adjust, defrost", new QuickItem[]{
-                new QuickItem("Fold", () -> sendVehicle(EcarxVehicleAdapter.BCM_MIRROR_FOLD, EcarxVehicleAdapter.COMMON_ON)),
-                new QuickItem("Left adjust", () -> sendVehicle(EcarxVehicleAdapter.BCM_REAR_MIRROR_ADJUST, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.MIRROR_ADJUST_ACTIVE)),
-                new QuickItem("Right adjust", () -> sendVehicle(EcarxVehicleAdapter.BCM_REAR_MIRROR_ADJUST, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.MIRROR_ADJUST_ACTIVE)),
-                new QuickItem("Defrost", () -> sendVehicle(EcarxVehicleAdapter.BCM_MIRROR_DEFROST, EcarxVehicleAdapter.COMMON_ON))
+        addAdvancedCard(grid, "Зеркала", "Складывание, регулировка, обогрев", new QuickItem[]{
+                new QuickItem("Сложить", () -> sendVehicle(EcarxVehicleAdapter.BCM_MIRROR_FOLD, EcarxVehicleAdapter.COMMON_ON)),
+                new QuickItem("Левое", () -> sendVehicle(EcarxVehicleAdapter.BCM_REAR_MIRROR_ADJUST, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.MIRROR_ADJUST_ACTIVE)),
+                new QuickItem("Правое", () -> sendVehicle(EcarxVehicleAdapter.BCM_REAR_MIRROR_ADJUST, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.MIRROR_ADJUST_ACTIVE)),
+                new QuickItem("Обогрев", () -> sendVehicle(EcarxVehicleAdapter.BCM_MIRROR_DEFROST, EcarxVehicleAdapter.COMMON_ON))
         });
-        addAdvancedCard(grid, "Roof / Curtain", "Sunroof and sun curtain", new QuickItem[]{
-                new QuickItem("Sunroof Open", () -> sendVehicle(EcarxVehicleAdapter.BCM_SUNROOF_OPEN, EcarxVehicleAdapter.COMMON_ON)),
-                new QuickItem("Sunroof Close", () -> sendVehicle(EcarxVehicleAdapter.BCM_SUNROOF_CLOSE, EcarxVehicleAdapter.COMMON_ON)),
-                new QuickItem("Curtain Open", () -> sendVehicle(EcarxVehicleAdapter.BCM_SUNCURT_OPEN, EcarxVehicleAdapter.COMMON_ON)),
-                new QuickItem("Curtain Close", () -> sendVehicle(EcarxVehicleAdapter.BCM_SUNCURT_CLOSE, EcarxVehicleAdapter.COMMON_ON))
+        addAdvancedCard(grid, "Люк / Шторка", "Люк и солнцезащитная шторка", new QuickItem[]{
+                new QuickItem("Люк открыть", () -> sendVehicle(EcarxVehicleAdapter.BCM_SUNROOF_OPEN, EcarxVehicleAdapter.COMMON_ON)),
+                new QuickItem("Люк закрыть", () -> sendVehicle(EcarxVehicleAdapter.BCM_SUNROOF_CLOSE, EcarxVehicleAdapter.COMMON_ON)),
+                new QuickItem("Шторка открыть", () -> sendVehicle(EcarxVehicleAdapter.BCM_SUNCURT_OPEN, EcarxVehicleAdapter.COMMON_ON)),
+                new QuickItem("Шторка закрыть", () -> sendVehicle(EcarxVehicleAdapter.BCM_SUNCURT_CLOSE, EcarxVehicleAdapter.COMMON_ON))
         });
         panel.addView(grid, lpMatchWrap(0, 12, 0, 12));
 
         LinearLayout actions = Ui.row(this);
-        addActionChip(actions, "Mirror Dialog", this::showMirrorDialogSheet);
-        addActionChip(actions, "Display A", () -> sendVehicle(EcarxVehicleAdapter.BCM_DISPLAY_POSITION, EcarxVehicleAdapter.DISPLAY_POSITION_A));
-        addActionChip(actions, "Display B", () -> sendVehicle(EcarxVehicleAdapter.BCM_DISPLAY_POSITION, EcarxVehicleAdapter.DISPLAY_POSITION_B));
-        addActionChip(actions, "Back", () -> openMode(Mode.HOME));
+        addActionChip(actions, "Диалог зеркал", this::showMirrorDialogSheet);
+        addActionChip(actions, "Позиция A", () -> sendVehicle(EcarxVehicleAdapter.BCM_DISPLAY_POSITION, EcarxVehicleAdapter.DISPLAY_POSITION_A));
+        addActionChip(actions, "Позиция B", () -> sendVehicle(EcarxVehicleAdapter.BCM_DISPLAY_POSITION, EcarxVehicleAdapter.DISPLAY_POSITION_B));
+        addActionChip(actions, "Назад", () -> openMode(Mode.HOME));
         panel.addView(actions, lpMatchWrap(0, 0, 0, 0));
         return panel;
     }
 
     private LinearLayout buildLightsPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Lights / Exterior"));
+        panel.addView(Ui.label(this, "Свет / Экстерьер"));
         panel.addView(Ui.text(this, "Наружный свет, поворотники, grille/welcome и atmosphere lamp перенесены в новый экран.", 14, false));
 
         GridLayout grid = new GridLayout(this);
@@ -349,20 +349,20 @@ public class VehicleActivity extends Activity {
 
     private LinearLayout buildDrivePanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Drive / Profiles"));
+        panel.addView(Ui.label(this, "Drive / Профили"));
         panel.addView(Ui.text(this, experimentalFeaturesEnabled()
                 ? "Drive modes, steering feel, custom keys и расширенный experimental drive flow вынесены в новый экран."
                 : "Drive modes, steering feel, custom keys и переход в отдельные пользовательские профили.", 14, false));
 
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(2);
-        addAdvancedCard(grid, "Drive Modes", "Eco, Comfort, Dynamic, Snow", new QuickItem[]{
+        addAdvancedCard(grid, "Режимы движения", "Eco, Comfort, Dynamic, Snow", new QuickItem[]{
                 new QuickItem("Eco", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_ECO)),
                 new QuickItem("Comfort", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_COMFORT)),
                 new QuickItem("Dynamic", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_DYNAMIC)),
                 new QuickItem("Snow", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_SNOW))
         });
-        addAdvancedCard(grid, "Steering / Custom", "Feel and shortcut keys", new QuickItem[]{
+        addAdvancedCard(grid, "Руль / Кастом", "Усилие и пользовательские кнопки", new QuickItem[]{
                 new QuickItem("Soft", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_STEERING_MODE, EcarxVehicleAdapter.STEERING_MODE_SOFT)),
                 new QuickItem("Dynamic", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_STEERING_MODE, EcarxVehicleAdapter.STEERING_MODE_DYNAMIC)),
                 new QuickItem("Custom 360", () -> sendVehicle(EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_360)),
@@ -387,7 +387,7 @@ public class VehicleActivity extends Activity {
 
     private LinearLayout buildExperimentalDrivePanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Experimental Drive"));
+        panel.addView(Ui.label(this, "Экспериментальный drive"));
         panel.addView(Ui.muted(this, "Полный набор drive-mode и custom-profile команд перенесен из legacy-ветки и доступен только при включенном experimental gate."));
 
         GridLayout grid = new GridLayout(this);
@@ -448,35 +448,35 @@ public class VehicleActivity extends Activity {
 
     private LinearLayout buildDriveThemeAndStartPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Cluster Theme / Start"));
-        panel.addView(Ui.muted(this, "Experimental controls для темы приборки, синхронизации с drive mode, стиля driver info и стартового поведения силовой установки."));
+        panel.addView(Ui.label(this, "Тема приборки / Старт"));
+        panel.addView(Ui.muted(this, "Экспериментальные элементы для темы приборки, синхронизации с drive mode, стиля driver info и стартового поведения силовой установки."));
 
         LinearLayout syncRow = Ui.row(this);
-        addActionChip(syncRow, "Sync Theme On", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_DIM_THEME_SYNC, EcarxVehicleAdapter.COMMON_ON));
-        addActionChip(syncRow, "Sync Theme Off", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_DIM_THEME_SYNC, EcarxVehicleAdapter.COMMON_OFF));
+        addActionChip(syncRow, "Синхр. темы вкл", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_DIM_THEME_SYNC, EcarxVehicleAdapter.COMMON_ON));
+        addActionChip(syncRow, "Синхр. темы выкл", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_DIM_THEME_SYNC, EcarxVehicleAdapter.COMMON_OFF));
         addActionChip(syncRow, "Driver Info Standard", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_CUSTOM_DRIVER_INFO, EcarxVehicleAdapter.CUSTOM_DRIVER_INFO_STANDARD));
         addActionChip(syncRow, "Driver Info Eco", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_CUSTOM_DRIVER_INFO, EcarxVehicleAdapter.CUSTOM_DRIVER_INFO_ECO));
         panel.addView(syncRow, lpMatchWrap(0, 12, 0, 0));
 
         LinearLayout dimThemes = Ui.row(this);
-        addActionChip(dimThemes, "Cluster Red", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_DIM_THEME_SET, EcarxVehicleAdapter.DIM_THEME_RED));
-        addActionChip(dimThemes, "Cluster Gold", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_DIM_THEME_SET, EcarxVehicleAdapter.DIM_THEME_GOLD));
-        addActionChip(dimThemes, "Cluster Blue", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_DIM_THEME_SET, EcarxVehicleAdapter.DIM_THEME_BLUE));
-        addActionChip(dimThemes, "Cluster Off", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_DIM_THEME_SET, EcarxVehicleAdapter.COMMON_OFF));
+        addActionChip(dimThemes, "DIM Red", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_DIM_THEME_SET, EcarxVehicleAdapter.DIM_THEME_RED));
+        addActionChip(dimThemes, "DIM Gold", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_DIM_THEME_SET, EcarxVehicleAdapter.DIM_THEME_GOLD));
+        addActionChip(dimThemes, "DIM Blue", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_DIM_THEME_SET, EcarxVehicleAdapter.DIM_THEME_BLUE));
+        addActionChip(dimThemes, "DIM Off", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_DIM_THEME_SET, EcarxVehicleAdapter.COMMON_OFF));
         panel.addView(dimThemes, lpMatchWrap(0, 12, 0, 0));
 
         LinearLayout infoRow = Ui.row(this);
         addActionChip(infoRow, "Driver Info Sport", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_CUSTOM_DRIVER_INFO, EcarxVehicleAdapter.CUSTOM_DRIVER_INFO_SPORT));
         addActionChip(infoRow, "Driver Info Offroad", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_CUSTOM_DRIVER_INFO, EcarxVehicleAdapter.CUSTOM_DRIVER_INFO_OFFROAD));
         addActionChip(infoRow, "Driver Info Off", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_CUSTOM_DRIVER_INFO, EcarxVehicleAdapter.COMMON_OFF));
-        addActionChip(infoRow, "Info Theme Clear", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_CUSTOM_INFOR_THEME, EcarxVehicleAdapter.CUSTOM_INFOR_THEME_CLEAR));
+        addActionChip(infoRow, "Тема info Clear", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_CUSTOM_INFOR_THEME, EcarxVehicleAdapter.CUSTOM_INFOR_THEME_CLEAR));
         panel.addView(infoRow, lpMatchWrap(0, 12, 0, 0));
 
         LinearLayout creepRow = Ui.row(this);
-        addActionChip(creepRow, "Creep On", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_CREEP_SET, EcarxVehicleAdapter.COMMON_ON));
-        addActionChip(creepRow, "Creep Off", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_CREEP_SET, EcarxVehicleAdapter.COMMON_OFF));
-        addActionChip(creepRow, "Launch On", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_LAUNCH_CONTROL, EcarxVehicleAdapter.COMMON_ON));
-        addActionChip(creepRow, "Launch Off", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_LAUNCH_CONTROL, EcarxVehicleAdapter.COMMON_OFF));
+        addActionChip(creepRow, "Creep вкл", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_CREEP_SET, EcarxVehicleAdapter.COMMON_ON));
+        addActionChip(creepRow, "Creep выкл", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_CREEP_SET, EcarxVehicleAdapter.COMMON_OFF));
+        addActionChip(creepRow, "Launch вкл", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_LAUNCH_CONTROL, EcarxVehicleAdapter.COMMON_ON));
+        addActionChip(creepRow, "Launch выкл", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_LAUNCH_CONTROL, EcarxVehicleAdapter.COMMON_OFF));
         panel.addView(creepRow, lpMatchWrap(0, 12, 0, 0));
         return panel;
     }
@@ -486,8 +486,8 @@ public class VehicleActivity extends Activity {
         grid.setColumnCount(2);
         addStatusCard(grid, "Кузов", readback(EcarxVehicleAdapter.BCM_DOOR, EcarxVehicleAdapter.BCM_DOOR_LOCK, EcarxVehicleAdapter.BCM_WINDOW), Ui.SUCCESS);
         addStatusCard(grid, "Свет", readback(EcarxVehicleAdapter.BCM_LIGHT_DIPPED_BEAM, EcarxVehicleAdapter.BCM_LIGHT_HAZARD, EcarxVehicleAdapter.BCM_LIGHT_GRILLE), Ui.CYAN);
-        addStatusCard(grid, "Drive / Seats", readback(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_STEERING_MODE, EcarxVehicleAdapter.SEAT_POSITION_SET), Ui.WARNING);
-        addStatusCard(grid, "Roof / Mirror", readback(EcarxVehicleAdapter.BCM_SUNROOF_OPEN, EcarxVehicleAdapter.BCM_SUNCURT_OPEN, EcarxVehicleAdapter.BCM_MIRROR_FOLD), Color.rgb(129, 149, 255));
+        addStatusCard(grid, "Drive / Сиденья", readback(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_STEERING_MODE, EcarxVehicleAdapter.SEAT_POSITION_SET), Ui.WARNING);
+        addStatusCard(grid, "Люк / Зеркала", readback(EcarxVehicleAdapter.BCM_SUNROOF_OPEN, EcarxVehicleAdapter.BCM_SUNCURT_OPEN, EcarxVehicleAdapter.BCM_MIRROR_FOLD), Color.rgb(129, 149, 255));
         return grid;
     }
 
@@ -515,24 +515,24 @@ public class VehicleActivity extends Activity {
         dock.setOrientation(LinearLayout.HORIZONTAL);
         dock.setGravity(Gravity.CENTER_VERTICAL);
         dock.setPadding(Ui.dp(this, 18), Ui.dp(this, 14), Ui.dp(this, 18), Ui.dp(this, 14));
-        addDockButton(dock, "Body", () -> openMode(Mode.HOME), mode == Mode.HOME, new QuickItem[]{
-                new QuickItem("Locks", () -> sendVehicle(EcarxVehicleAdapter.BCM_DOOR_LOCK, EcarxVehicleAdapter.COMMON_ON)),
-                new QuickItem("Windows", () -> sendVehicle(EcarxVehicleAdapter.BCM_WINDOW, EcarxVehicleAdapter.WINDOW_OPEN)),
-                new QuickItem("Trunk", () -> sendVehicle(EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_TRUNK))
+        addDockButton(dock, "Кузов", () -> openMode(Mode.HOME), mode == Mode.HOME, new QuickItem[]{
+                new QuickItem("Замки", () -> sendVehicle(EcarxVehicleAdapter.BCM_DOOR_LOCK, EcarxVehicleAdapter.COMMON_ON)),
+                new QuickItem("Окна", () -> sendVehicle(EcarxVehicleAdapter.BCM_WINDOW, EcarxVehicleAdapter.WINDOW_OPEN)),
+                new QuickItem("Багажник", () -> sendVehicle(EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_TRUNK))
         });
-        addDockButton(dock, "Seats", () -> openMode(Mode.SEATS), mode == Mode.SEATS, new QuickItem[]{
-                new QuickItem("Seat P1", () -> sendVehicle(EcarxVehicleAdapter.SEAT_POSITION_SET, EcarxVehicleAdapter.SEAT_POSITION_1)),
-                new QuickItem("Seat P2", () -> sendVehicle(EcarxVehicleAdapter.SEAT_POSITION_SET, EcarxVehicleAdapter.SEAT_POSITION_2)),
-                new QuickItem("Comfort", () -> sendVehicle(EcarxVehicleAdapter.SEAT_ONE_KEY_COMFORT, EcarxVehicleAdapter.COMMON_ON))
+        addDockButton(dock, "Сиденья", () -> openMode(Mode.SEATS), mode == Mode.SEATS, new QuickItem[]{
+                new QuickItem("Сиденье P1", () -> sendVehicle(EcarxVehicleAdapter.SEAT_POSITION_SET, EcarxVehicleAdapter.SEAT_POSITION_1)),
+                new QuickItem("Сиденье P2", () -> sendVehicle(EcarxVehicleAdapter.SEAT_POSITION_SET, EcarxVehicleAdapter.SEAT_POSITION_2)),
+                new QuickItem("Комфорт", () -> sendVehicle(EcarxVehicleAdapter.SEAT_ONE_KEY_COMFORT, EcarxVehicleAdapter.COMMON_ON))
         });
-        addDockButton(dock, "Mirrors", () -> openMode(Mode.MIRRORS), mode == Mode.MIRRORS, new QuickItem[]{
-                new QuickItem("Fold", () -> sendVehicle(EcarxVehicleAdapter.BCM_MIRROR_FOLD, EcarxVehicleAdapter.COMMON_ON)),
-                new QuickItem("Defrost", () -> sendVehicle(EcarxVehicleAdapter.BCM_MIRROR_DEFROST, EcarxVehicleAdapter.COMMON_ON)),
-                new QuickItem("Sunroof", () -> sendVehicle(EcarxVehicleAdapter.BCM_SUNROOF_OPEN, EcarxVehicleAdapter.COMMON_ON))
+        addDockButton(dock, "Зеркала", () -> openMode(Mode.MIRRORS), mode == Mode.MIRRORS, new QuickItem[]{
+                new QuickItem("Сложить", () -> sendVehicle(EcarxVehicleAdapter.BCM_MIRROR_FOLD, EcarxVehicleAdapter.COMMON_ON)),
+                new QuickItem("Обогрев", () -> sendVehicle(EcarxVehicleAdapter.BCM_MIRROR_DEFROST, EcarxVehicleAdapter.COMMON_ON)),
+                new QuickItem("Люк", () -> sendVehicle(EcarxVehicleAdapter.BCM_SUNROOF_OPEN, EcarxVehicleAdapter.COMMON_ON))
         });
-        addDockButton(dock, "Lights", () -> openMode(Mode.LIGHTS), mode == Mode.LIGHTS, new QuickItem[]{
-                new QuickItem("Dipped", () -> sendVehicle(EcarxVehicleAdapter.BCM_LIGHT_DIPPED_BEAM, EcarxVehicleAdapter.COMMON_ON)),
-                new QuickItem("Hazard", () -> sendVehicle(EcarxVehicleAdapter.BCM_LIGHT_HAZARD, EcarxVehicleAdapter.COMMON_ON)),
+        addDockButton(dock, "Свет", () -> openMode(Mode.LIGHTS), mode == Mode.LIGHTS, new QuickItem[]{
+                new QuickItem("Ближний", () -> sendVehicle(EcarxVehicleAdapter.BCM_LIGHT_DIPPED_BEAM, EcarxVehicleAdapter.COMMON_ON)),
+                new QuickItem("Аварийка", () -> sendVehicle(EcarxVehicleAdapter.BCM_LIGHT_HAZARD, EcarxVehicleAdapter.COMMON_ON)),
                 new QuickItem("Welcome", () -> sendVehicle(EcarxVehicleAdapter.BCM_LIGHT_WELCOME, EcarxVehicleAdapter.COMMON_ON))
         });
         addDockButton(dock, "Drive", () -> openMode(Mode.DRIVE), mode == Mode.DRIVE, new QuickItem[]{
@@ -554,8 +554,8 @@ public class VehicleActivity extends Activity {
         tile.setOnClickListener(v -> action.run());
         tile.setOnLongClickListener(v -> {
             showActionSheet(label, new QuickItem[]{
-                    new QuickItem("Open section", () -> openMode(Mode.HOME)),
-                    new QuickItem("Lights", () -> openMode(Mode.LIGHTS)),
+                    new QuickItem("Открыть раздел", () -> openMode(Mode.HOME)),
+                    new QuickItem("Свет", () -> openMode(Mode.LIGHTS)),
                     new QuickItem("Drive", () -> openMode(Mode.DRIVE))
             });
             return true;
@@ -640,13 +640,13 @@ public class VehicleActivity extends Activity {
     }
 
     private void showMirrorDialogSheet() {
-        showActionSheet("Mirror Dialog", new QuickItem[]{
-                new QuickItem("Open OEM dialog", () -> {
+        showActionSheet("Диалог зеркал", new QuickItem[]{
+                new QuickItem("Открыть OEM-диалог", () -> {
                     EcarxControlBoardAdapter.Result result = new EcarxControlBoardAdapter(this).showMirrorDialog();
                     Ui.toast(this, result.success ? "Диалог открыт" : "Диалог не открыт");
                 }),
-                new QuickItem("Left adjust", () -> sendVehicle(EcarxVehicleAdapter.BCM_REAR_MIRROR_ADJUST, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.MIRROR_ADJUST_ACTIVE)),
-                new QuickItem("Right adjust", () -> sendVehicle(EcarxVehicleAdapter.BCM_REAR_MIRROR_ADJUST, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.MIRROR_ADJUST_ACTIVE))
+                new QuickItem("Левое", () -> sendVehicle(EcarxVehicleAdapter.BCM_REAR_MIRROR_ADJUST, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.MIRROR_ADJUST_ACTIVE)),
+                new QuickItem("Правое", () -> sendVehicle(EcarxVehicleAdapter.BCM_REAR_MIRROR_ADJUST, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.MIRROR_ADJUST_ACTIVE))
         });
     }
 
@@ -654,7 +654,7 @@ public class VehicleActivity extends Activity {
         showActionSheet(title, new QuickItem[]{
                 new QuickItem(value, this::refreshState),
                 new QuickItem("Обновить", this::refreshState),
-                new QuickItem("Body", () -> openMode(Mode.HOME))
+                new QuickItem("Кузов", () -> openMode(Mode.HOME))
         });
     }
 
@@ -663,7 +663,7 @@ public class VehicleActivity extends Activity {
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         LinearLayout sheet = Ui.glassCard(this);
         sheet.setPadding(Ui.dp(this, 20), Ui.dp(this, 20), Ui.dp(this, 20), Ui.dp(this, 20));
-        sheet.addView(Ui.label(this, "Vehicle Actions"));
+        sheet.addView(Ui.label(this, "Действия автомобиля"));
         sheet.addView(Ui.text(this, title, 24, true));
         for (QuickItem item : items) {
             Button button = Ui.button(this, item.label);

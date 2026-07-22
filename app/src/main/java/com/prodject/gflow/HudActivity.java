@@ -86,7 +86,7 @@ public class HudActivity extends Activity {
 
     private LinearLayout buildHeroPanel() {
         LinearLayout hero = Ui.glassCard(this);
-        hero.addView(Ui.label(this, "Projection Visual"));
+        hero.addView(Ui.label(this, "Проекция"));
 
         LinearLayout row = Ui.row(this);
         LinearLayout left = new LinearLayout(this);
@@ -104,10 +104,10 @@ public class HudActivity extends Activity {
         hero.addView(row);
 
         LinearLayout quick = Ui.row(this);
-        addActionChip(quick, "HUD On", () -> sendVehicle(EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.COMMON_ON));
+        addActionChip(quick, "HUD вкл", () -> sendVehicle(EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.COMMON_ON));
         addActionChip(quick, "Навигация", () -> sendVehicle(EcarxVehicleAdapter.HUD_DISPLAY_NAVI, EcarxVehicleAdapter.COMMON_ON));
         addActionChip(quick, "DIM Night", this::requestDimNight);
-        addActionChip(quick, "Advanced", this::openAdvancedHud);
+        addActionChip(quick, "Расширенно", this::openAdvancedHud);
         hero.addView(quick, lpMatchWrap(0, 14, 0, 0));
         return hero;
     }
@@ -121,37 +121,37 @@ public class HudActivity extends Activity {
 
     private LinearLayout buildControlPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Projection Controls"));
+        panel.addView(Ui.label(this, "Управление проекцией"));
 
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(3);
-        addTile(grid, "HUD On", Ui.CYAN, () -> sendVehicle(EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.COMMON_ON));
-        addTile(grid, "HUD Off", Ui.ERROR, () -> sendVehicle(EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.COMMON_OFF));
-        addTile(grid, "Calibration", Ui.WARNING, () -> sendVehicle(EcarxVehicleAdapter.HUD_CALIBRATION, EcarxVehicleAdapter.COMMON_ON));
+        addTile(grid, "HUD вкл", Ui.CYAN, () -> sendVehicle(EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.COMMON_ON));
+        addTile(grid, "HUD выкл", Ui.ERROR, () -> sendVehicle(EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.COMMON_OFF));
+        addTile(grid, "Калибровка", Ui.WARNING, () -> sendVehicle(EcarxVehicleAdapter.HUD_CALIBRATION, EcarxVehicleAdapter.COMMON_ON));
         addTile(grid, "Media", Color.rgb(119, 83, 132), () -> sendVehicle(EcarxVehicleAdapter.HUD_DISPLAY_MEDIA, EcarxVehicleAdapter.COMMON_ON));
-        addTile(grid, "Navigation", Color.rgb(72, 153, 255), () -> sendVehicle(EcarxVehicleAdapter.HUD_DISPLAY_NAVI, EcarxVehicleAdapter.COMMON_ON));
+        addTile(grid, "Навигация", Color.rgb(72, 153, 255), () -> sendVehicle(EcarxVehicleAdapter.HUD_DISPLAY_NAVI, EcarxVehicleAdapter.COMMON_ON));
         addTile(grid, "Safety", Ui.SUCCESS, () -> sendVehicle(EcarxVehicleAdapter.HUD_DISPLAY_SAFETY, EcarxVehicleAdapter.COMMON_ON));
         panel.addView(grid, lpMatchWrap(0, 12, 0, 0));
 
         LinearLayout dim = Ui.row(this);
         addActionChip(dim, "DIM Night", this::requestDimNight);
-        addActionChip(dim, "Presentation", () -> setDimPresentation(true));
-        addActionChip(dim, "Music Tab", () -> dimTab(EcarxHudDimAdapter.DIM_TAB_MUSIC));
-        addActionChip(dim, "Control", () -> dimTab(EcarxHudDimAdapter.DIM_TAB_CONTROL_CENTER));
+        addActionChip(dim, "Презентация", () -> setDimPresentation(true));
+        addActionChip(dim, "Вкладка Music", () -> dimTab(EcarxHudDimAdapter.DIM_TAB_MUSIC));
+        addActionChip(dim, "Control center", () -> dimTab(EcarxHudDimAdapter.DIM_TAB_CONTROL_CENTER));
         panel.addView(dim, lpMatchWrap(0, 14, 0, 0));
 
         LinearLayout services = Ui.row(this);
         addActionChip(services, "HUD SVC", () -> startForegroundService(new Intent(this, HudPresentationService.class)));
         addActionChip(services, "Observer", () -> startForegroundService(new Intent(this, HudObserverService.class)));
         addActionChip(services, "Cluster", () -> startForegroundService(new Intent(this, ClusterBridgeService.class)));
-        addActionChip(services, "Advanced", this::openAdvancedHud);
+        addActionChip(services, "Расширенно", this::openAdvancedHud);
         panel.addView(services, lpMatchWrap(0, 12, 0, 0));
         return panel;
     }
 
     private LinearLayout buildAdvancedPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Advanced Projection"));
+        panel.addView(Ui.label(this, "Расширенная проекция"));
         panel.addView(Ui.muted(this, "Полный набор OneOS / DIM / AudioExt / Cluster перенесен в новый HUD-экран без legacy fallback."));
         advancedHost = new LinearLayout(this);
         advancedHost.setOrientation(LinearLayout.VERTICAL);
@@ -167,11 +167,11 @@ public class HudActivity extends Activity {
         LinearLayout hud = Ui.glassCard(this);
         hud.addView(Ui.text(this, "HUD / DIM Bridge", 18, true));
         hud.addView(Ui.muted(this, new EcarxHudDimAdapter(this).availability()));
-        hud.addView(Ui.muted(this, "Cluster navigation view определяет, как навигация отображается на приборке: off, simplified, full, AR или 3D lane guidance."));
+        hud.addView(Ui.muted(this, "Вид навигации на приборке определяет, как маршрут отображается на DIM: выключено, упрощенно, полно, AR или 3D-полосы."));
         addCommand(hud, "HUD включить", EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.COMMON_ON);
         addCommand(hud, "HUD выключить", EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.COMMON_OFF);
-        addCommand(hud, "HUD calibration", EcarxVehicleAdapter.HUD_CALIBRATION, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(hud, "HUD angle reset", EcarxVehicleAdapter.HUD_ANGLE_RESET, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(hud, "HUD калибровка", EcarxVehicleAdapter.HUD_CALIBRATION, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(hud, "HUD сброс угла", EcarxVehicleAdapter.HUD_ANGLE_RESET, EcarxVehicleAdapter.COMMON_ON);
         addCommand(hud, "HUD snow mode", EcarxVehicleAdapter.HUD_SNOW_MODE, EcarxVehicleAdapter.COMMON_ON);
         addCommand(hud, "HUD safety on", EcarxVehicleAdapter.HUD_DISPLAY_SAFETY, EcarxVehicleAdapter.COMMON_ON);
         addCommand(hud, "HUD media on", EcarxVehicleAdapter.HUD_DISPLAY_MEDIA, EcarxVehicleAdapter.COMMON_ON);
@@ -189,22 +189,22 @@ public class HudActivity extends Activity {
         addHudDimAction(hud, "DIM Menu: вкладка навигации", a -> a.dimMenuTab(EcarxHudDimAdapter.DIM_TAB_NAVIGATION));
         addHudDimAction(hud, "DIM Menu: вкладка музыки", a -> a.dimMenuTab(EcarxHudDimAdapter.DIM_TAB_MUSIC));
         addHudDimAction(hud, "DIM Menu: control center", a -> a.dimMenuTab(EcarxHudDimAdapter.DIM_TAB_CONTROL_CENTER));
-        addHudDimAction(hud, "Cluster Navi View: Off", a -> a.switchNaviMode(EcarxHudDimAdapter.NAVI_MODE_OFF));
-        addHudDimAction(hud, "Cluster Navi View: Simplified", a -> a.switchNaviMode(EcarxHudDimAdapter.NAVI_MODE_SIMPLIFY));
-        addHudDimAction(hud, "Cluster Navi View: Full", a -> a.switchNaviMode(EcarxHudDimAdapter.NAVI_MODE_FULL));
-        addHudDimAction(hud, "Cluster Navi View: AR", a -> a.switchNaviMode(EcarxHudDimAdapter.NAVI_MODE_AR));
-        addHudDimAction(hud, "Cluster Navi View: 3D Lane", a -> a.switchNaviMode(EcarxHudDimAdapter.NAVI_MODE_3D_LANE));
-        addHudDimAction(hud, "DIM volume 10", a -> a.setDimVolume(false, 10));
-        addHudDimAction(hud, "DIM climate unit Celsius", EcarxHudDimAdapter::climateCelsiusUnit);
-        addHudDimAction(hud, "DIM climate temp 22.0C", a -> a.climateTemp(22.0f));
-        addHudDimAction(hud, "DIM avg fuel sample", a -> a.updateAvgFuelRanking(0, "{\"source\":\"GFlow\",\"avg\":0}"));
-        addHudDimAction(hud, "DIM media mute", a -> a.publishMediaMuteState(1));
-        addHudDimAction(hud, "DIM media unmute", a -> a.publishMediaMuteState(0));
+        addHudDimAction(hud, "Навигация на приборке: выкл", a -> a.switchNaviMode(EcarxHudDimAdapter.NAVI_MODE_OFF));
+        addHudDimAction(hud, "Навигация на приборке: упрощенно", a -> a.switchNaviMode(EcarxHudDimAdapter.NAVI_MODE_SIMPLIFY));
+        addHudDimAction(hud, "Навигация на приборке: полно", a -> a.switchNaviMode(EcarxHudDimAdapter.NAVI_MODE_FULL));
+        addHudDimAction(hud, "Навигация на приборке: AR", a -> a.switchNaviMode(EcarxHudDimAdapter.NAVI_MODE_AR));
+        addHudDimAction(hud, "Навигация на приборке: 3D-полосы", a -> a.switchNaviMode(EcarxHudDimAdapter.NAVI_MODE_3D_LANE));
+        addHudDimAction(hud, "DIM громкость 10", a -> a.setDimVolume(false, 10));
+        addHudDimAction(hud, "DIM климат: Celsius", EcarxHudDimAdapter::climateCelsiusUnit);
+        addHudDimAction(hud, "DIM климат: 22.0C", a -> a.climateTemp(22.0f));
+        addHudDimAction(hud, "DIM средний расход: пример", a -> a.updateAvgFuelRanking(0, "{\"source\":\"GFlow\",\"avg\":0}"));
+        addHudDimAction(hud, "DIM медиа: mute", a -> a.publishMediaMuteState(1));
+        addHudDimAction(hud, "DIM медиа: unmute", a -> a.publishMediaMuteState(0));
         advancedHost.addView(hud, lpMatchWrap(0, 0, 0, 16));
 
         LinearLayout audio = Ui.glassCard(this);
-        audio.addView(Ui.text(this, "AudioExt / Services", 18, true));
-        audio.addView(Ui.muted(this, "Media bridge, VR, PDC volume, anti-shake, loudness и service actions внутри нового UI."));
+        audio.addView(Ui.text(this, "AudioExt / Сервисы", 18, true));
+        audio.addView(Ui.muted(this, "Media bridge, VR, громкость PDC, anti-shake, loudness и сервисные действия внутри нового UI."));
         addAudioExtAction(audio, "AudioExt: bind services", AudioExtServiceAdapter::bindAudioExt);
         addAudioExtAction(audio, "AudioExt: visualizer status", AudioExtServiceAdapter::visualizerStatus);
         addAudioExtAction(audio, "AudioExt: media playing", a -> a.notifyMediaStatus(1, getPackageName()));
