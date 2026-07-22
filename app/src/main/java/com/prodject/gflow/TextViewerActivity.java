@@ -8,7 +8,7 @@ import java.io.*;
 public class TextViewerActivity extends Activity {
     @Override public void onCreate(Bundle b) {
         super.onCreate(b);
-        LinearLayout root = Ui.root(this, "Текстовый файл");
+        LinearLayout root = Ui.root(this, "Текстовый файл", this::finish);
         TextView text = Ui.text(this, read(), 15, false);
         ScrollView scroll = new ScrollView(this);
         scroll.addView(text);
