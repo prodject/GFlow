@@ -869,6 +869,84 @@ public class MainActivity extends Activity {
         });
     }
 
+    private void addAdasOverview(LinearLayout root) {
+        LinearLayout card = Ui.card(this);
+        card.addView(Ui.text(this, "Ассистенты водителя", 22, true));
+        card.addView(Ui.muted(this, "Основные переключатели вынесены наверх. Подробные firmware-команды и диагностика находятся ниже."));
+        LinearLayout safety = Ui.row(this);
+        addToggleAction(safety, "AEB", () -> CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.ADAS_AEB, EcarxVehicleAdapter.COMMON_ON));
+        addToggleAction(safety, "FCW", () -> CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.ADAS_FCW, EcarxVehicleAdapter.COMMON_ON));
+        addToggleAction(safety, "LKA", () -> CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.ADAS_LKA, EcarxVehicleAdapter.COMMON_ON));
+        addToggleAction(safety, "PDC", () -> CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.COMMON_ON));
+        card.addView(safety);
+        SeekBar gap = new SeekBar(this);
+        gap.setMax(4);
+        gap.setProgress(2);
+        TextView gapText = Ui.muted(this, "ACC дистанция: средняя");
+        gap.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                gapText.setText("ACC дистанция: " + (progress + 1));
+                if (fromUser) CarCommandBus.sendVehicle(MainActivity.this, EcarxVehicleAdapter.ADAS_ACC_TIME_GAP, progress + 1);
+            }
+            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+        card.addView(gapText);
+        card.addView(gap);
+        root.addView(card, lpMatchWrap(0, 0, 0, 12));
+    }
+
+    private void addHudOverview(LinearLayout root) {
+        LinearLayout card = Ui.card(this);
+        card.addView(Ui.text(this, "Проектор и OneOS", 22, true));
+        card.addView(Ui.muted(this, new EcarxHudDimAdapter(this).availability()));
+        LinearLayout row = Ui.row(this);
+        addToggleAction(row, "HUD on", () -> CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.COMMON_ON));
+        addToggleAction(row, "Навигация", () -> CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HUD_DISPLAY_NAVI, EcarxVehicleAdapter.COMMON_ON));
+        addToggleAction(row, "Медиа", () -> CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HUD_DISPLAY_MEDIA, EcarxVehicleAdapter.COMMON_ON));
+        addToggleAction(row, "DIM night", () -> new EcarxHudDimAdapter(this).requestDayNightMode());
+        card.addView(row);
+        root.addView(card, lpMatchWrap(0, 0, 0, 12));
+    }
+
+    private void addProfilesOverview(LinearLayout root, SharedPreferences prefs) {
+        LinearLayout card = Ui.card(this);
+        card.addView(Ui.text(this, "Водитель и пассажир", 22, true));
+        card.addView(Ui.muted(this, "Активный профиль: " + AutomationEngine.prefs(this).getString(AutomationEngine.KEY_ACTIVE_PROFILE, "не выбран")));
+        card.addView(Ui.muted(this, "Последний профиль: " + prefs.getString(UserProfileEngine.KEY_LAST_USED, "нет")));
+        LinearLayout row = Ui.row(this);
+        addToggleAction(row, "Водитель", () -> showUserProfileEditor("", "driver", "manual=", UserProfileEngine.defaultDriverBody()));
+        addToggleAction(row, "Пассажир", () -> showUserProfileEditor("", "passenger", "manual=", UserProfileEngine.defaultPassengerBody()));
+        addToggleAction(row, "Последний", () -> root.addView(Ui.text(this, UserProfileEngine.apply(this, prefs.getString(UserProfileEngine.KEY_LAST_USED, "")), 13, false), 2));
+        card.addView(row);
+        root.addView(card, lpMatchWrap(0, 0, 0, 12));
+    }
+
+    private void addSteeringOverview(LinearLayout root, SharedPreferences steering, SharedPreferences prefs) {
+        LinearLayout card = Ui.card(this);
+        card.addView(Ui.text(this, "Жесты на руле", 22, true));
+        card.addView(Ui.muted(this, "Последнее событие: " + steering.getString("last_event", "нет")));
+        card.addView(Ui.muted(this, "Назначений: " + AutomationEngine.names(prefs, AutomationEngine.KEY_BUTTON_ORDER).size()));
+        LinearLayout row = Ui.row(this);
+        addToggleAction(row, "Hold", () -> showSteeringButtonEditor("", "0", "hold", "", "always", "replace", "preset", firstAutomationPreset()));
+        addToggleAction(row, "Double", () -> showSteeringButtonEditor("", "0", "double", "", "always", "replace", "preset", firstAutomationPreset()));
+        addToggleAction(row, "Примеры", () -> { installSteeringButtonExamples(); showSteeringButtons(); });
+        card.addView(row);
+        root.addView(card, lpMatchWrap(0, 0, 0, 12));
+    }
+
+    private void addToggleAction(LinearLayout row, String label, Runnable action) {
+        Button b = Ui.button(this, label);
+        b.setGravity(Gravity.CENTER);
+        b.setOnClickListener(v -> {
+            action.run();
+            Ui.toast(this, label);
+        });
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 54), 1);
+        lp.setMargins(Ui.dp(this, 4), Ui.dp(this, 8), Ui.dp(this, 4), 0);
+        row.addView(b, lp);
+    }
+
     private void filterCommandViews(View view, String query) {
         String q = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
         Object tag = view.getTag();
@@ -1336,7 +1414,7 @@ public class MainActivity extends Activity {
         LinearLayout root = commandRoot("Кнопки руля");
         SharedPreferences steering = getSharedPreferences("steering", MODE_PRIVATE);
         SharedPreferences prefs = AutomationEngine.prefs(this);
-        root.addView(Ui.text(this, "Последнее событие: " + steering.getString("last_event", "нет") + "\nЖесты: press, double, triple, hold. Поведение: replace, together, hold-only, stationary-only. Условия: always, stationary, moving, app=package, profile=Имя, cabinTemp<25.", 14, false));
+        addSteeringOverview(root, steering, prefs);
         Button add = Ui.button(this, "Назначить кнопку");
         add.setOnClickListener(v -> showSteeringButtonEditor("", "0", "hold", "", "always", "replace", "preset", firstAutomationPreset()));
         root.addView(add);
@@ -1423,9 +1501,7 @@ public class MainActivity extends Activity {
     private void showUserProfiles() {
         LinearLayout root = commandRoot("Профили пользователей");
         SharedPreferences prefs = UserProfileEngine.prefs(this);
-        root.addView(Ui.text(this, "Активный профиль: " + AutomationEngine.prefs(this).getString(AutomationEngine.KEY_ACTIVE_PROFILE, "не выбран")
-                + "\nПоследний: " + prefs.getString(UserProfileEngine.KEY_LAST_USED, "нет")
-                + "\nИдентификация: Face ID / телефон / Bluetooth / цифровой ключ сохраняются как правила профиля; автоматическое применение включается после появления соответствующего системного события.", 14, false));
+        addProfilesOverview(root, prefs);
         Button addDriver = Ui.button(this, "Создать профиль водителя");
         addDriver.setOnClickListener(v -> showUserProfileEditor("", "driver", "manual=", UserProfileEngine.defaultDriverBody()));
         Button addPassenger = Ui.button(this, "Создать профиль пассажира");
@@ -2592,6 +2668,7 @@ public class MainActivity extends Activity {
 
     private void showAdas() {
         LinearLayout root = commandRoot("ADAS / Вождение");
+        addAdasOverview(root);
         addScreenMap(root, "Карта вкладки", "Сначала базовые ассистенты безопасности и полосы, затем ACC/ICC и парковочные предупреждения. Расширенные AI/Drive Pilot настройки доступны только через Experimental features.",
                 "Safety", "Lane", "ACC", "PDC");
         root.addView(Ui.text(this, "ADAS-функции из IADAS.smali.", 14, false));
@@ -2820,6 +2897,7 @@ public class MainActivity extends Activity {
 
     private void showHud() {
         LinearLayout root = commandRoot("HUD / Cluster / OneOS");
+        addHudOverview(root);
         addScreenMap(root, "Карта вкладки", "HUD-команды управляют отображением на проекторе, DIM и OneOS media bridge. Service-кнопки запускают фоновые мосты и нужны в основном для проверки интеграции.",
                 "HUD", "DIM", "Media", "Service");
         root.addView(Ui.text(this, new EcarxHudDimAdapter(this).availability(), 14, false));

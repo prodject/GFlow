@@ -6,6 +6,7 @@ import android.content.pm.*;
 import android.graphics.Color;
 import android.net.*;
 import android.os.*;
+import android.view.*;
 import android.widget.*;
 import org.json.*;
 import java.io.*;
@@ -31,22 +32,34 @@ public class DesktopActivity extends Activity {
         ScrollView scroll = new ScrollView(this);
         root = Ui.root(this, "Рабочий стол", this::finish);
         applyTheme(root);
-        root.addView(Ui.text(this, new SimpleDateFormat("HH:mm · dd.MM.yyyy", Locale.getDefault()).format(new Date()), 20, true));
-        addWeatherWidget();
+        addHomeHero();
         Button theme = Ui.button(this, "Тема / обои");
         theme.setOnClickListener(v -> chooseTheme());
-        root.addView(theme);
+        root.addView(theme, margin(0, 0, 0, 12));
         addOneOsDockPanel();
-        root.addView(Ui.text(this, "Док приложений", 18, true));
+        LinearLayout pinnedCard = Ui.card(this);
+        pinnedCard.addView(Ui.text(this, "Док приложений", 18, true));
+        LinearLayout oldRoot = root;
+        root = pinnedCard;
         for (String pkg : pinned) addAppRow(pkg, true);
-        root.addView(Ui.text(this, "Все приложения", 18, true));
+        root = oldRoot;
+        oldRoot.addView(pinnedCard, margin(0, 0, 0, 12));
+        LinearLayout allCard = Ui.card(this);
+        allCard.addView(Ui.text(this, "Все приложения", 18, true));
+        root = allCard;
         for (ResolveInfo info : apps()) addAppRow(info.activityInfo.packageName, false);
+        root = oldRoot;
+        oldRoot.addView(allCard);
         scroll.addView(root);
         setContentView(scroll);
     }
 
     private void addOneOsDockPanel() {
-        root.addView(Ui.text(this, new EcarxDockAdapter(this).availability(), 14, false));
+        LinearLayout card = Ui.card(this);
+        card.addView(Ui.text(this, "OneOS Dock", 18, true));
+        card.addView(Ui.muted(this, new EcarxDockAdapter(this).availability()));
+        LinearLayout oldRoot = root;
+        root = card;
         addDockAction("OneOS Dock: hand over on", a -> a.handOver(true));
         addDockAction("OneOS Dock: hand over off", a -> a.handOver(false));
         addDockAction("OneOS Dock: status", EcarxDockAdapter::deviceStatus);
@@ -59,6 +72,8 @@ public class DesktopActivity extends Activity {
         addDockAction("OneOS Dock: defrost open", a -> a.notifyItem(EcarxDockAdapter.TYPE_DEFROSTING, EcarxDockAdapter.STATE_OPEN));
         addDockAction("OneOS Dock: custom HVAC icon 0", a -> a.customHvacIcon(0));
         addDockAction("OneOS Dock: custom app icon marker", a -> a.customAppIcon(0, getPackageName().getBytes()));
+        root = oldRoot;
+        oldRoot.addView(card, margin(0, 0, 0, 12));
     }
 
     private void addDockAction(String label, DockAction action) {
@@ -173,6 +188,14 @@ public class DesktopActivity extends Activity {
         root.addView(refresh);
     }
 
+    private void addHomeHero() {
+        LinearLayout card = Ui.card(this);
+        card.addView(Ui.text(this, new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date()), 36, true));
+        card.addView(Ui.muted(this, new SimpleDateFormat("EEEE, dd.MM.yyyy", Locale.getDefault()).format(new Date())));
+        root.addView(card, margin(0, 8, 0, 12));
+        addWeatherWidget();
+    }
+
     private void loadWeather(TextView weather) {
         new Thread(() -> {
             try {
@@ -198,5 +221,11 @@ public class DesktopActivity extends Activity {
         } finally {
             c.disconnect();
         }
+    }
+
+    private LinearLayout.LayoutParams margin(int l, int t, int r, int b) {
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.setMargins(Ui.dp(this, l), Ui.dp(this, t), Ui.dp(this, r), Ui.dp(this, b));
+        return lp;
     }
 }
