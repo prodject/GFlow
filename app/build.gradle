@@ -2,6 +2,9 @@ plugins {
     id "com.android.application"
 }
 
+def resolvedVersionCode = (System.getenv("VERSION_CODE") ?: System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInteger()
+def resolvedVersionName = System.getenv("VERSION_NAME") ?: "1.0"
+
 android {
     namespace "com.prodject.gflow"
     compileSdk 35
@@ -10,8 +13,8 @@ android {
         applicationId "com.prodject.gflow"
         minSdk 30
         targetSdk 35
-        versionCode (System.getenv("VERSION_CODE") ?: System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInteger()
-        versionName System.getenv("VERSION_NAME") ?: "1.0"
+        versionCode = resolvedVersionCode
+        versionName = resolvedVersionName
     }
 
     buildTypes {
