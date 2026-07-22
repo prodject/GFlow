@@ -406,6 +406,38 @@ public class MainActivity extends Activity {
         }
     }
 
+    private static final class AirFlowView extends View {
+        private final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
+
+        AirFlowView(Context context) {
+            super(context);
+        }
+
+        @Override protected void onDraw(Canvas canvas) {
+            float w = getWidth(), h = getHeight();
+            p.setStyle(Paint.Style.FILL);
+            p.setShader(new LinearGradient(0, 0, w, h, Color.rgb(33, 128, 204), Color.rgb(72, 184, 164), Shader.TileMode.CLAMP));
+            canvas.drawRoundRect(new RectF(w * .04f, h * .10f, w * .96f, h * .90f), Ui.dp(getContext(), 24), Ui.dp(getContext(), 24), p);
+            p.setShader(null);
+            p.setStyle(Paint.Style.STROKE);
+            p.setStrokeCap(Paint.Cap.ROUND);
+            for (int i = 0; i < 4; i++) {
+                p.setStrokeWidth(Ui.dp(getContext(), 4 + i));
+                p.setColor(Color.argb(190 - i * 28, 255, 255, 255));
+                float y = h * (.30f + i * .13f);
+                Path path = new Path();
+                path.moveTo(w * .16f, y);
+                path.cubicTo(w * .34f, y - h * .18f, w * .58f, y + h * .18f, w * .84f, y - h * .04f);
+                canvas.drawPath(path, p);
+            }
+            p.setStyle(Paint.Style.FILL);
+            p.setColor(Color.argb(220, 255, 255, 255));
+            canvas.drawCircle(w * .20f, h * .72f, Ui.dp(getContext(), 11), p);
+            canvas.drawCircle(w * .50f, h * .72f, Ui.dp(getContext(), 11), p);
+            canvas.drawCircle(w * .80f, h * .72f, Ui.dp(getContext(), 11), p);
+        }
+    }
+
     private void panel(String title, String body) {
         LinearLayout root = Ui.root(this, title);
         LinearLayout card = Ui.card(this);
@@ -577,6 +609,108 @@ public class MainActivity extends Activity {
         b.setGravity(Gravity.CENTER_VERTICAL | Gravity.START);
         b.setOnClickListener(v -> transition(action));
         rail.addView(b, lpMatchWrap(0, 4, 0, 4));
+    }
+
+    private void addClimateControlPanel(LinearLayout root) {
+        LinearLayout panel = Ui.card(this);
+        panel.addView(Ui.text(this, "Комфорт", 22, true));
+        panel.addView(new AirFlowView(this), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 150)));
+        LinearLayout temps = Ui.row(this);
+        addTempDial(temps, "Водитель", 22.0f, EcarxVehicleAdapter.ZONE_DRIVER_LEFT);
+        addTempDial(temps, "Пассажир", 22.0f, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT);
+        panel.addView(temps);
+        SeekBar fan = new SeekBar(this);
+        fan.setMax(8);
+        fan.setProgress(2);
+        TextView fanLabel = Ui.muted(this, "Вентилятор: 3");
+        fan.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                fanLabel.setText("Вентилятор: " + (progress + 1));
+                if (fromUser) new EcarxVehicleAdapter(MainActivity.this).set(EcarxVehicleAdapter.HVAC_FAN_SPEED, progress + 1);
+            }
+            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+        panel.addView(fanLabel);
+        panel.addView(fan);
+        LinearLayout actions = Ui.row(this);
+        addMiniAction(actions, "Auto", () -> new EcarxVehicleAdapter(this).set(EcarxVehicleAdapter.HVAC_AUTO, EcarxVehicleAdapter.COMMON_ON));
+        addMiniAction(actions, "A/C", () -> new EcarxVehicleAdapter(this).set(EcarxVehicleAdapter.HVAC_AC, EcarxVehicleAdapter.COMMON_ON));
+        addMiniAction(actions, "Стекло", () -> new EcarxVehicleAdapter(this).set(EcarxVehicleAdapter.HVAC_DEFROST_FRONT, EcarxVehicleAdapter.COMMON_ON));
+        panel.addView(actions);
+        root.addView(panel, lpMatchWrap(0, 0, 0, 12));
+    }
+
+    private void addSmartClimatePanel(LinearLayout root, SharedPreferences prefs) {
+        LinearLayout panel = Ui.card(this);
+        panel.addView(Ui.text(this, "Алгоритм климата", 22, true));
+        String mode = prefs.getString(SmartClimateController.KEY_MODE, SmartClimateController.MODE_OFF);
+        panel.addView(Ui.muted(this, "Текущий режим: " + mode));
+        SeekBar target = new SeekBar(this);
+        target.setMax(120);
+        float saved = prefs.getFloat(SmartClimateController.KEY_DRIVER_TARGET, 22.0f);
+        target.setProgress(Math.max(0, Math.min(120, Math.round((saved - 16f) * 10f))));
+        TextView targetLabel = Ui.text(this, String.format(Locale.US, "%.1f C", saved), 30, true);
+        target.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                float value = 16f + progress / 10f;
+                targetLabel.setText(String.format(Locale.US, "%.1f C", value));
+                if (fromUser) prefs.edit()
+                        .putFloat(SmartClimateController.KEY_DRIVER_TARGET, value)
+                        .putFloat(SmartClimateController.KEY_PASSENGER_TARGET, value)
+                        .apply();
+            }
+            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+        panel.addView(targetLabel);
+        panel.addView(target);
+        LinearLayout modes = Ui.row(this);
+        addModeAction(modes, prefs, "Охладить", SmartClimateController.MODE_FAST_COOL);
+        addModeAction(modes, prefs, "Согреть", SmartClimateController.MODE_FAST_HEAT);
+        addModeAction(modes, prefs, "Держать", SmartClimateController.MODE_MAINTAIN);
+        panel.addView(modes);
+        root.addView(panel, lpMatchWrap(0, 0, 0, 12));
+    }
+
+    private void addTempDial(LinearLayout row, String label, float value, int zone) {
+        LinearLayout card = Ui.card(this);
+        TextView title = Ui.muted(this, label);
+        TextView temp = Ui.text(this, String.format(Locale.US, "%.1f C", value), 28, true);
+        SeekBar seek = new SeekBar(this);
+        seek.setMax(120);
+        seek.setProgress(Math.round((value - 16f) * 10f));
+        seek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                float t = 16f + progress / 10f;
+                temp.setText(String.format(Locale.US, "%.1f C", t));
+                if (fromUser) new EcarxVehicleAdapter(MainActivity.this).setFloat(EcarxVehicleAdapter.HVAC_TEMP, zone, t);
+            }
+            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+        card.addView(title);
+        card.addView(temp);
+        card.addView(seek);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1);
+        lp.setMargins(Ui.dp(this, 4), Ui.dp(this, 4), Ui.dp(this, 4), Ui.dp(this, 4));
+        row.addView(card, lp);
+    }
+
+    private void addMiniAction(LinearLayout row, String label, Runnable action) {
+        Button b = Ui.button(this, label);
+        b.setGravity(Gravity.CENTER);
+        b.setOnClickListener(v -> action.run());
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 54), 1);
+        lp.setMargins(Ui.dp(this, 4), Ui.dp(this, 8), Ui.dp(this, 4), 0);
+        row.addView(b, lp);
+    }
+
+    private void addModeAction(LinearLayout row, SharedPreferences prefs, String label, String mode) {
+        addMiniAction(row, label, () -> {
+            prefs.edit().putString(SmartClimateController.KEY_MODE, mode).putBoolean(SmartClimateController.KEY_ENABLED, true).apply();
+            Ui.toast(this, label);
+        });
     }
 
     private void filterCommandViews(View view, String query) {
@@ -1209,6 +1343,7 @@ public class MainActivity extends Activity {
     private void showSmartClimate() {
         LinearLayout root = commandRoot("Умный кондиционер");
         SharedPreferences prefs = SmartClimateController.prefs(this);
+        addSmartClimatePanel(root, prefs);
         CheckBox enabled = new CheckBox(this);
         enabled.setText("Контроллер включен");
         enabled.setTextSize(16);
@@ -1638,6 +1773,7 @@ public class MainActivity extends Activity {
 
     private void showClimate() {
         LinearLayout root = commandRoot("Климат");
+        addClimateControlPanel(root);
         addScreenMap(root, "Карта вкладки", "Верхняя часть - комфортный климат и пресеты. Далее идут базовое включение, температура, вентилятор, рециркуляция, обдув и дополнительные HVAC-функции.",
                 "Пресеты", "Температура", "Обдув", "Сиденья");
         root.addView(Ui.text(this, "HVAC-функции из IHvac.smali и OneOS-Dock: обычные int-команды плюс float-температура driver zone=1 / passenger zone=4.", 14, false));
@@ -1766,7 +1902,7 @@ public class MainActivity extends Activity {
 
     private void showComfortClimate() {
         LinearLayout root = commandRoot("Комфортный климат");
-        root.addView(Ui.text(this, "Быстрый HVAC-пульт: питание, auto/A/C, обдув, вентилятор, сиденье и руль.", 14, false));
+        addClimateControlPanel(root);
         Button fullStatus = Ui.button(this, "Статус климата");
         fullStatus.setOnClickListener(v -> {
             EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
