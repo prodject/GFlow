@@ -94,9 +94,9 @@ public class TextViewerActivity extends Activity {
         dock.setOrientation(LinearLayout.HORIZONTAL);
         dock.setGravity(Gravity.CENTER_VERTICAL);
         dock.setPadding(Ui.dp(this, 18), Ui.dp(this, 14), Ui.dp(this, 18), Ui.dp(this, 14));
-        addDockButton(dock, "Search", this::runSearch, true);
+        addDockButton(dock, "Search", this::findNext, true);
         addDockButton(dock, "Copy", this::copyText, false);
-        addDockButton(dock, "Share", this::shareFile, false);
+        addDockButton(dock, "Share", this::shareCurrent, false);
         addDockButton(dock, "Wrap", () -> {
             wrapLines = !wrapLines;
             renderContent();
