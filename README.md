@@ -19,20 +19,32 @@ The app provides a single car-control workspace with:
 
 Implemented:
 
-- Open-Meteo weather request screen;
+- full Design.txt migration for the main user-facing app shell and major sections;
+- dedicated new-style screens for Home, Climate, Vehicle, ADAS, DVR/Cameras, Parking/APA, HUD/Cluster/OneOS, Profiles, Steering Wheel Buttons, Voice, Desktop, Browser/Weather, Files, Media, Text, ADB/System and Settings;
+- climate controls with comfort, advanced HVAC, smart climate and preset flows;
+- vehicle/body controls including windows, locks, sunroof, mirrors, lights, seats and drive-mode entry points;
+- extended drive-mode support including experimental modes and custom-profile groups;
+- ADAS controls for high-confidence functions plus experimental ADAS toggles and readback blocks;
+- parking and AVM/APA coverage including PAS, PAC, SAP, RCTA, radar/overlay controls and raw APA/RPA diagnostics;
+- HUD/DIM/OneOS bridge coverage including HUD, DIM navigation modes, AudioExt hooks and service actions;
+- voice flows with preset routing, app launch routing and structured custom voice command editor;
+- desktop/app launcher with pinned dock, OneOS Dock bridge and app uninstall intent;
+- file manager with internal storage, USB lookup, move/copy flows, text/media open, share and delete;
+- media and text viewers in the new UI;
+- local shell command screen, ADB setting toggle attempt, DPI shortcut and system tools;
+- settings screen with experimental/developer toggles, GitHub release updater, full app backup/restore and full reset flow;
+- unified auto diagnostics report covering current UI-exposed vehicle functions plus Parking signals/HAL, HUD/DIM, AudioExt, DVR/EVS, Camera2 inventory, OneOS Dock and ControlBoard availability;
+- DVR archive directory, segment naming, storage settings and disk-limit pruning;
 - Android notification/media session listener service;
-- local shell command screen, ADB setting toggle attempt, DPI command shortcut;
-- launchable-app desktop with pinned dock, app launch, shortcut removal and uninstall intent;
-- Vosk recording pipeline over the bundled Russian model;
-- DVR screen with Camera2 camera discovery;
-- DVR archive directory, segment naming and disk-limit pruning;
-- ECARX/Geely/OneOS intent broadcast attempts for vehicle commands.
+- Vosk recording pipeline over the bundled Russian model.
 
 Still firmware-dependent:
 
-- real stock-camera recording depends on whether the head unit exposes those cameras through Camera2;
-- climate, windows, seats, ADAS, HUD and vehicle sensor commands need the exact Geely/ECARX/OneOS binder or intent contract for the target firmware;
-- privileged settings require system signature, root, or ADB grants.
+- actual execution of vehicle functions depends on the target firmware exposing compatible Geely/ECARX/OneOS APIs and permissions;
+- some experimental drive, ADAS, parking, HUD and OneOS bridge functions are implemented as researched integrations, but still need validation on real firmware;
+- real stock-camera recording depends on whether the head unit exposes those cameras through Camera2 or EVS in a usable way;
+- privileged settings and some system-level operations require system signature, root, or ADB grants;
+- unsupported firmware may show the UI and diagnostics successfully while rejecting the underlying command path.
 
 Some vehicle functions depend on firmware-specific Geely/ECARX/OneOS APIs, privileged Android permissions, or ADB grants. Unsupported firmware will show the UI but may not execute the underlying vehicle command until the matching integration layer is added.
 
