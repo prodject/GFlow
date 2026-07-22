@@ -452,3 +452,19 @@
 Осталось по `Design.txt`:
 - Экран `ADB / Система`.
 - Экран `Настройки`.
+
+2026-07-22
+
+Этап 23: Экран ADB / Система
+
+Сделано:
+- `AdbShellActivity` полностью переведен на новый shell в стиле `Design.txt`: top bar, hero-panel, overview grid, permissions card, shell panel, ADB/DPI panel, autozoom panel, output panel и bottom dock.
+- В permissions card добавлены `Accessibility`, `WRITE_SETTINGS`, `All files access`, `app card` и `grants check`.
+- Shell-flow вынесен в отдельный новый блок: ввод команды, `выполнить`, показать результат, `скопировать`, `очистить`.
+- Добавлен отдельный `ADB / DPI` блок с `ADB toggle attempt`, `DPI 440` и проверкой `adb_enabled`.
+- Autozoom-flow перенесен в новый экран: `packages`, `scale`, `save autozoom`, `autozoom on/off`.
+- Системный output теперь собирается в единый новый result panel и hero status.
+- Legacy заглушка `showSystem()` удалена из `MainActivity`: navigation теперь открывает `AdbShellActivity` напрямую.
+
+Осталось по `Design.txt`:
+- Экран `Настройки`.
