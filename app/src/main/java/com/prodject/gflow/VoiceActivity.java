@@ -87,6 +87,7 @@ public class VoiceActivity extends Activity {
         if (contentHost == null) return;
         contentHost.removeAllViews();
         contentHost.addView(buildOverviewGrid(), lpMatchWrap(0, 0, 0, 16));
+        contentHost.addView(buildAssistantPanel(), lpMatchWrap(0, 0, 0, 16));
         contentHost.addView(buildCommandPanel(), lpMatchWrap(0, 0, 0, 16));
         contentHost.addView(buildAliasPanel(), lpMatchWrap(0, 0, 0, 16));
         contentHost.addView(buildLogPanel(), lpMatchWrap(0, 0, 0, 16));
@@ -172,9 +173,25 @@ public class VoiceActivity extends Activity {
         grid.setColumnCount(2);
         addStatusCard(grid, "Сервис", serviceStatus(), Ui.CYAN);
         addStatusCard(grid, "Vosk", voskStatus(), Ui.SUCCESS);
-        addStatusCard(grid, "Команды", "climate · body · HUD · drive · DVR", Ui.WARNING);
+        addStatusCard(grid, "Команды", "climate · body · HUD · drive · DVR · nav · apps", Ui.WARNING);
         addStatusCard(grid, "Алиасы / Лог", aliases().size() + " alias · " + logCount() + " log", Color.rgb(129, 149, 255));
         return grid;
+    }
+
+    private LinearLayout buildAssistantPanel() {
+        LinearLayout panel = Ui.glassCard(this);
+        panel.addView(Ui.label(this, "Voice Flow"));
+        panel.addView(Ui.text(this, "Расширенный voice-сценарий: отдельный listening entry, assistant flow, запуск приложений и прием share-location.", 14, false));
+
+        LinearLayout row = Ui.row(this);
+        addActionChip(row, "Listening", () -> showResultSheet("Listening", VoiceFlowRouter.launchVoiceUi(this, "manual", latestRecognition, "listening")));
+        addActionChip(row, "Assistant", () -> showResultSheet("Assistant", VoiceFlowRouter.openAssistant(this)));
+        addActionChip(row, "Навигация", () -> showResultSheet("Навигация", VoiceFlowRouter.openNavigation(this, latestRecognition)));
+        addActionChip(row, "Запуск app", this::launchAppFromInput);
+        panel.addView(row, lpMatchWrap(0, 12, 0, 0));
+
+        panel.addView(Ui.muted(this, "Поддерживаются фразы вроде `открой навигацию`, `маршрут до дома`, `запусти yandex`, `открой браузер`."));
+        return panel;
     }
 
     private LinearLayout buildCommandPanel() {
@@ -338,6 +355,15 @@ public class VoiceActivity extends Activity {
         editAlias(phrase, "");
     }
 
+    private void launchAppFromInput() {
+        String raw = commandInput == null ? latestRecognition : commandInput.getText().toString();
+        if (raw == null || raw.trim().isEmpty()) {
+            Ui.toast(this, "Сначала введите app или навигацию");
+            return;
+        }
+        showResultSheet("Запуск app", VoiceFlowRouter.launchByToken(this, raw));
+    }
+
     private void editAlias(String oldPhrase, String oldAction) {
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
@@ -468,6 +494,29 @@ public class VoiceActivity extends Activity {
         return value == null ? "" : value.replace('\n', ' ').trim();
     }
 
+    private EcarxVehicleAdapter.Result simpleResult(String message) {
+        return new EcarxVehicleAdapter.Result(true, message);
+    }
+
+    private String stripCommandPrefix(String cmd, String... prefixes) {
+        String value = cmd == null ? "" : cmd.trim();
+        String normalized = value.toLowerCase(Locale.ROOT);
+        for (String prefix : prefixes) {
+            String p = prefix.toLowerCase(Locale.ROOT);
+            if (normalized.startsWith(p)) return value.substring(Math.min(value.length(), p.length())).trim();
+        }
+        return value;
+    }
+
+    private String extractAfterKeyword(String cmd, String... markers) {
+        String normalized = cmd == null ? "" : cmd.toLowerCase(Locale.ROOT);
+        for (String marker : markers) {
+            int index = normalized.indexOf(marker);
+            if (index >= 0) return cmd.substring(index + marker.length()).trim();
+        }
+        return "";
+    }
+
     private String join(Iterable<String> values) {
         StringBuilder sb = new StringBuilder();
         for (String value : values) {
@@ -584,6 +633,21 @@ public class VoiceActivity extends Activity {
     private EcarxVehicleAdapter.Result parseVehicleCommand(String cmd) {
         EcarxVehicleAdapter.Result temperature = parseTemperatureCommand(cmd);
         if (temperature != null) return temperature;
+
+        if ((has(cmd, "ассист") || has(cmd, "assistant")) && (has(cmd, "откр") || has(cmd, "open") || has(cmd, "запу"))) {
+            return simpleResult(VoiceFlowRouter.openAssistant(this));
+        }
+        if ((has(cmd, "нави") || has(cmd, "maps")) && (has(cmd, "откр") || has(cmd, "open") || has(cmd, "запу"))) {
+            return simpleResult(VoiceFlowRouter.openNavigation(this, extractAfterKeyword(cmd, "в ", "to ", "до ")));
+        }
+        if (has(cmd, "маршрут") || has(cmd, "navigate to") || has(cmd, "route to")) {
+            return simpleResult(VoiceFlowRouter.openNavigation(this, stripCommandPrefix(cmd,
+                    "маршрут", "navigate to", "route to", "до", "в")));
+        }
+        if (has(cmd, "запусти") || has(cmd, "открой приложение") || has(cmd, "open app") || has(cmd, "launch")) {
+            return simpleResult(VoiceFlowRouter.launchByToken(this, stripCommandPrefix(cmd,
+                    "запусти", "открой приложение", "open app", "launch", "открой")));
+        }
 
         if (has(cmd, "климат") && off(cmd)) {
             return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_OFF);

@@ -65,9 +65,24 @@
         <activity android:name=".VoiceActivity" android:exported="true">
             <intent-filter>
                 <action android:name="app.monji.VOICE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".VoiceListeningActivity" android:exported="true" android:excludeFromRecents="true" android:launchMode="singleTop">
+            <intent-filter>
+                <action android:name="app.monji.VOICE" />
                 <action android:name="android.intent.action.VOICE_COMMAND" />
                 <action android:name="android.intent.action.ASSIST" />
                 <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".VoiceAppLaunchActivity" android:exported="false" android:excludeFromRecents="true" />
+        <activity android:name=".VoiceAssistantActivity" android:exported="false" />
+        <activity android:name=".ShareLocationReceiverActivity" android:exported="true" android:excludeFromRecents="true">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/*" />
             </intent-filter>
         </activity>
         <activity android:name=".MainActivity" android:exported="true" android:resizeableActivity="true">
@@ -112,6 +127,11 @@
                 <action android:name="geely.intent.action.STEERING_WHEEL_KEY" />
                 <action android:name="ecarx.intent.action.STEERING_WHEEL_KEY" />
                 <action android:name="app.monji.STEERING_WHEEL_KEY" />
+            </intent-filter>
+        </receiver>
+        <receiver android:name=".VoiceTriggerReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="app.monji.VOICE" />
             </intent-filter>
         </receiver>
         <provider
