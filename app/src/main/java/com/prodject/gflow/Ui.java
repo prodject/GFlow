@@ -76,10 +76,10 @@ final class Ui {
         b.setAllCaps(false);
         b.setTextColor(textColor(c));
         b.setTextSize(15);
-        b.setGravity(Gravity.CENTER_VERTICAL | Gravity.START);
+        b.setGravity(Gravity.CENTER);
         b.setPadding(dp(c, 18), 0, dp(c, 18), 0);
-        b.setMinHeight(dp(c, 54));
-        b.setBackground(cardBg(c, panel(c), dp(c, 14), lineColor(c)));
+        b.setMinHeight(dp(c, 50));
+        b.setBackground(cardBg(c, dark(c) ? Color.rgb(39, 45, 51) : Color.argb(232, 255, 255, 255), dp(c, 12), dark(c) ? Color.rgb(62, 70, 78) : Color.rgb(222, 231, 240)));
         if (Build.VERSION.SDK_INT >= 21) b.setStateListAnimator(null);
         return b;
     }
@@ -102,8 +102,8 @@ final class Ui {
     static LinearLayout card(Context c) {
         LinearLayout v = new LinearLayout(c);
         v.setOrientation(LinearLayout.VERTICAL);
-        v.setPadding(dp(c, 16), dp(c, 14), dp(c, 16), dp(c, 14));
-        v.setBackground(cardBg(c, panel(c), dp(c, 18), lineColor(c)));
+        v.setPadding(dp(c, 18), dp(c, 16), dp(c, 18), dp(c, 16));
+        v.setBackground(cardBg(c, dark(c) ? Color.rgb(30, 35, 40) : Color.argb(238, 255, 255, 255), dp(c, 14), dark(c) ? Color.rgb(54, 61, 68) : Color.rgb(225, 233, 241)));
         return v;
     }
 

@@ -82,20 +82,15 @@ public class MainActivity extends Activity {
         LinearLayout shell = new LinearLayout(this);
         shell.setOrientation(LinearLayout.HORIZONTAL);
         shell.setBackground(dashboardBg());
-        shell.setPadding(Ui.dp(this, 16), Ui.dp(this, 16), Ui.dp(this, 16), Ui.dp(this, 16));
-        shell.addView(dashboardMenu(), new LinearLayout.LayoutParams(Ui.dp(this, 235), ViewGroup.LayoutParams.MATCH_PARENT));
+        shell.setPadding(Ui.dp(this, 18), Ui.dp(this, 18), Ui.dp(this, 18), Ui.dp(this, 18));
+        shell.addView(dashboardMenu(), new LinearLayout.LayoutParams(Ui.dp(this, 220), ViewGroup.LayoutParams.MATCH_PARENT));
 
-        ScrollView scroll = new ScrollView(this);
-        scroll.setFillViewport(true);
         LinearLayout content = new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
         content.setPadding(Ui.dp(this, 20), 0, 0, 0);
         content.setBackgroundColor(Color.TRANSPARENT);
-
         addHero(content);
-
-        scroll.addView(content);
-        shell.addView(scroll, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
+        shell.addView(content, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
         setContentView(shell);
         Ui.animateIn(content);
     }
@@ -103,13 +98,15 @@ public class MainActivity extends Activity {
     private LinearLayout dashboardMenu() {
         LinearLayout menu = new LinearLayout(this);
         menu.setOrientation(LinearLayout.VERTICAL);
-        menu.setPadding(Ui.dp(this, 16), Ui.dp(this, 18), Ui.dp(this, 16), Ui.dp(this, 18));
-        menu.setBackground(Ui.cardBg(this, Color.argb(Ui.dark(this) ? 210 : 190, 255, 255, 255), Ui.dp(this, 32), Color.argb(150, 255, 255, 255)));
+        menu.setPadding(Ui.dp(this, 14), Ui.dp(this, 16), Ui.dp(this, 14), Ui.dp(this, 16));
+        menu.setBackground(Ui.cardBg(this, Ui.dark(this) ? Color.rgb(28, 34, 40) : Color.argb(218, 255, 255, 255), Ui.dp(this, 24), Color.argb(Ui.dark(this) ? 40 : 160, 255, 255, 255)));
         ImageView logo = new ImageView(this);
         logo.setImageResource(R.drawable.gflow_wordmark);
         logo.setAdjustViewBounds(true);
         logo.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        menu.addView(logo, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 72)));
+        LinearLayout.LayoutParams logoLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 58));
+        logoLp.setMargins(Ui.dp(this, 8), 0, Ui.dp(this, 36), Ui.dp(this, 12));
+        menu.addView(logo, logoLp);
         addDashboardMenuButton(menu, "Главная", "HOME", this::showDashboard);
         addDashboardMenuButton(menu, "Климат", "22", this::showClimateMenu);
         addDashboardMenuButton(menu, "Авто", "CAR", this::showVehicleMenu);
@@ -127,17 +124,19 @@ public class MainActivity extends Activity {
     private void addDashboardMenuButton(LinearLayout menu, String title, String badge, Runnable action) {
         LinearLayout item = Ui.row(this);
         item.setClickable(true);
-        item.setPadding(Ui.dp(this, 10), Ui.dp(this, 8), Ui.dp(this, 10), Ui.dp(this, 8));
-        item.setBackground(Ui.cardBg(this, Color.argb(120, 255, 255, 255), Ui.dp(this, 18), Color.TRANSPARENT));
-        TextView icon = Ui.pill(this, badge, Ui.BLUE);
-        TextView label = Ui.text(this, title, 15, true);
-        item.addView(icon);
+        item.setFocusable(true);
+        item.setPadding(Ui.dp(this, 12), Ui.dp(this, 7), Ui.dp(this, 10), Ui.dp(this, 7));
+        item.setBackground(Ui.cardBg(this, title.equals("Главная") ? Color.argb(Ui.dark(this) ? 52 : 28, 29, 110, 255) : Color.TRANSPARENT, Ui.dp(this, 12), Color.TRANSPARENT));
+        TextView marker = new TextView(this);
+        marker.setBackground(Ui.cardBg(this, title.equals("Главная") ? Ui.BLUE : Color.argb(95, 107, 125, 146), Ui.dp(this, 4), Color.TRANSPARENT));
+        item.addView(marker, new LinearLayout.LayoutParams(Ui.dp(this, 8), Ui.dp(this, 8)));
+        TextView label = Ui.text(this, title, 14, title.equals("Главная"));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1);
-        lp.setMargins(Ui.dp(this, 10), 0, 0, 0);
+        lp.setMargins(Ui.dp(this, 14), 0, 0, 0);
         item.addView(label, lp);
         item.setOnClickListener(v -> transition(action));
         LinearLayout.LayoutParams rowLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        rowLp.setMargins(0, Ui.dp(this, 4), 0, Ui.dp(this, 4));
+        rowLp.setMargins(0, Ui.dp(this, 2), 0, Ui.dp(this, 2));
         menu.addView(item, rowLp);
     }
 
@@ -177,50 +176,49 @@ public class MainActivity extends Activity {
     }
 
     private void addHero(LinearLayout root) {
-        LinearLayout hero = Ui.card(this);
-        hero.setPadding(Ui.dp(this, 22), Ui.dp(this, 20), Ui.dp(this, 22), Ui.dp(this, 20));
+        LinearLayout hero = new LinearLayout(this);
+        hero.setOrientation(LinearLayout.VERTICAL);
+        hero.setPadding(Ui.dp(this, 28), Ui.dp(this, 22), Ui.dp(this, 28), Ui.dp(this, 18));
         GradientDrawable bg = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
                 Ui.dark(this)
-                        ? new int[]{Color.argb(225, 22, 27, 32), Color.argb(225, 30, 39, 45)}
-                        : new int[]{Color.argb(210, 255, 255, 255), Color.argb(205, 237, 244, 252)});
-        bg.setCornerRadius(Ui.dp(this, 30));
+                        ? new int[]{Color.rgb(23, 28, 33), Color.rgb(29, 39, 45)}
+                        : new int[]{Color.argb(232, 255, 255, 255), Color.argb(218, 232, 241, 251)});
+        bg.setCornerRadius(Ui.dp(this, 24));
         hero.setBackground(bg);
 
         LinearLayout top = Ui.row(this);
+        top.setGravity(Gravity.TOP);
         LinearLayout weather = Ui.row(this);
-        weather.setPadding(Ui.dp(this, 12), Ui.dp(this, 8), Ui.dp(this, 12), Ui.dp(this, 8));
-        weather.setBackground(Ui.cardBg(this, Color.argb(Ui.dark(this) ? 80 : 185, 255, 255, 255), Ui.dp(this, 22), Color.TRANSPARENT));
-        weather.addView(new DashboardWeatherView(this), new LinearLayout.LayoutParams(Ui.dp(this, 68), Ui.dp(this, 58)));
+        weather.setGravity(Gravity.TOP);
+        weather.addView(new DashboardWeatherView(this), new LinearLayout.LayoutParams(Ui.dp(this, 110), Ui.dp(this, 82)));
         LinearLayout weatherText = new LinearLayout(this);
         weatherText.setOrientation(LinearLayout.VERTICAL);
-        TextView temp = Ui.text(this, "18 C", 26, true);
-        TextView desc = Ui.muted(this, "Солнечно · салон 22 C");
+        TextView location = Ui.muted(this, "Москва");
+        TextView temp = Ui.text(this, "18 C", 42, false);
+        TextView desc = Ui.muted(this, "Небольшой дождь");
+        weatherText.addView(location);
         weatherText.addView(temp);
         weatherText.addView(desc);
-        weather.addView(weatherText);
-        TextView badge = Ui.pill(this, developerModeEnabled() ? "DEVELOPER MODE" : (experimentalFeaturesEnabled() ? "EXPERIMENTAL ON" : "USER MODE"), developerModeEnabled() ? Ui.BLUE : (experimentalFeaturesEnabled() ? Ui.AMBER : Ui.GREEN));
+        LinearLayout.LayoutParams weatherTextLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        weatherTextLp.setMargins(Ui.dp(this, 12), 0, 0, 0);
+        weather.addView(weatherText, weatherTextLp);
         top.addView(weather, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-        top.addView(badge);
+        LinearLayout cabin = new LinearLayout(this);
+        cabin.setOrientation(LinearLayout.VERTICAL);
+        cabin.setGravity(Gravity.END);
+        TextView cabinLabel = Ui.muted(this, "В салоне");
+        cabinLabel.setGravity(Gravity.END);
+        TextView cabinTemp = Ui.text(this, "22 C", 28, true);
+        cabinTemp.setGravity(Gravity.END);
+        cabin.addView(cabinLabel);
+        cabin.addView(cabinTemp);
+        top.addView(cabin);
         hero.addView(top);
 
-        LinearLayout center = Ui.row(this);
         VehicleVisualView visual = new VehicleVisualView(this, false);
-        center.addView(visual, new LinearLayout.LayoutParams(0, Ui.dp(this, 430), 1));
-        LinearLayout side = new LinearLayout(this);
-        side.setOrientation(LinearLayout.VERTICAL);
-        addSideChip(side, "Кузов", "закрыто", Ui.BLUE, this::showVehicleMenu);
-        addSideChip(side, "Давление", "2.4 bar", Ui.GREEN, this::showCar);
-        addSideChip(side, "DVR", "готов", Color.rgb(168, 65, 58), () -> startActivity(new Intent(this, DvrActivity.class)));
-        addSideChip(side, "Запас", "320 км", Ui.AMBER, this::showVehicleMenu);
-        center.addView(side, new LinearLayout.LayoutParams(Ui.dp(this, 170), ViewGroup.LayoutParams.WRAP_CONTENT));
-        hero.addView(center);
-
-        LinearLayout meters = Ui.row(this);
-        addMainMetric(meters, "Климат", "22.0 C", Ui.BLUE, this::showComfortClimate);
-        addMainMetric(meters, "Батарея", "готово", Ui.GREEN, this::showVehicleMenu);
-        addMainMetric(meters, "DVR", "standby", Color.rgb(168, 65, 58), () -> startActivity(new Intent(this, DvrActivity.class)));
-        addMainMetric(meters, "ADAS", "активно", Color.rgb(113, 91, 177), this::showAdasMenu);
-        hero.addView(meters);
+        LinearLayout.LayoutParams visualLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1);
+        visualLp.setMargins(0, Ui.dp(this, 2), 0, 0);
+        hero.addView(visual, visualLp);
         root.addView(hero, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
     }
 
@@ -430,16 +428,8 @@ public class MainActivity extends Activity {
             }
 
             if (!ambienceMode && (model != null || underlay != null)) {
-                paint.setStyle(Paint.Style.FILL);
-                paint.setColor(Color.argb(Ui.dark(getContext()) ? 80 : 95, 120, 135, 145));
-                canvas.drawOval(new RectF(w * 0.18f, h * 0.76f, w * 0.82f, h * 0.95f), paint);
-                RectF bounds = new RectF(w * 0.12f, h * 0.03f, w * 0.88f, h * 0.93f);
-                if (underlay != null) drawBitmapFit(canvas, underlay, bounds, 70);
+                RectF bounds = new RectF(w * 0.04f, h * 0.02f, w * 0.96f, h * 0.98f);
                 if (model != null) drawBitmapFit(canvas, model, bounds, 255);
-                drawTouchHint(canvas, "Климат", w * 0.50f, h * 0.12f, Ui.BLUE);
-                drawTouchHint(canvas, "Кузов", w * 0.50f, h * 0.52f, Ui.GREEN);
-                drawTouchHint(canvas, "ADAS", w * 0.28f, h * 0.82f, Color.rgb(113, 91, 177));
-                drawTouchHint(canvas, "360", w * 0.72f, h * 0.82f, Ui.AMBER);
                 return;
             }
 
@@ -548,17 +538,21 @@ public class MainActivity extends Activity {
             float w = getWidth();
             float h = getHeight();
             p.setStyle(Paint.Style.FILL);
-            p.setShader(new LinearGradient(0, 0, w, h, Color.rgb(255, 196, 76), Color.rgb(255, 132, 82), Shader.TileMode.CLAMP));
-            canvas.drawCircle(w * .38f, h * .38f, w * .24f, p);
+            p.setColor(Color.argb(35, 72, 151, 235));
+            canvas.drawCircle(w * .51f, h * .43f, w * .39f, p);
+            p.setShader(new LinearGradient(0, 0, 0, h, Color.rgb(252, 254, 255), Color.rgb(180, 201, 224), Shader.TileMode.CLAMP));
+            canvas.drawCircle(w * .38f, h * .45f, w * .22f, p);
+            canvas.drawCircle(w * .56f, h * .35f, w * .29f, p);
+            canvas.drawCircle(w * .73f, h * .48f, w * .20f, p);
+            canvas.drawRoundRect(new RectF(w * .20f, h * .44f, w * .88f, h * .66f), Ui.dp(getContext(), 18), Ui.dp(getContext(), 18), p);
             p.setShader(null);
-            p.setColor(Color.argb(70, 255, 196, 76));
-            canvas.drawCircle(w * .38f, h * .38f, w * .36f, p);
-            p.setColor(Color.WHITE);
-            canvas.drawCircle(w * .48f, h * .60f, w * .22f, p);
-            canvas.drawCircle(w * .64f, h * .56f, w * .18f, p);
-            canvas.drawRoundRect(new RectF(w * .30f, h * .56f, w * .82f, h * .78f), Ui.dp(getContext(), 16), Ui.dp(getContext(), 16), p);
-            p.setColor(Color.argb(45, 0, 0, 0));
-            canvas.drawOval(new RectF(w * .28f, h * .76f, w * .86f, h * .92f), p);
+            p.setStrokeCap(Paint.Cap.ROUND);
+            p.setStrokeWidth(Ui.dp(getContext(), 3));
+            p.setColor(Color.rgb(59, 139, 238));
+            for (int i = 0; i < 4; i++) {
+                float x = w * (.31f + i * .15f);
+                canvas.drawLine(x, h * .72f, x - w * .035f, h * .86f, p);
+            }
         }
     }
 
