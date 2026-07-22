@@ -701,13 +701,7 @@ public class MainActivity extends Activity {
     }
 
     private void showAdasMenu() {
-        LinearLayout root = menuRoot("ADAS / Вождение", "Ассистенты разделены на базовую безопасность, парковочные предупреждения и ACC/ICC. Расширенные функции остаются за Experimental features.");
-        addNavGrid(root, new NavItem[]{
-                new NavItem("Ассистенты", "AEB, FCW, LKA, LDW, RCW, ELKA и знаки", "SAFE", Color.rgb(113, 91, 177), this::showAdas),
-                new NavItem("ACC / ICC", "Круиз, дистанция, TSR и speed control настройки", "ACC", Ui.BLUE, this::showAdas),
-                new NavItem("Парковка", "PDC и переход к APA/AVM", "PDC", Ui.AMBER, this::showParkingApa),
-                new NavItem("Все ADAS-команды", "Полный firmware-зависимый список ADAS-команд", "DEV", Color.rgb(86, 104, 120), this::showAdas)
-        });
+        startActivity(new Intent(this, AdasActivity.class));
     }
 
     private void showHudMenu() {
