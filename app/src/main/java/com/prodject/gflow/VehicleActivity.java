@@ -435,16 +435,35 @@ public class VehicleActivity extends Activity {
         profileRows.addView(buildDriveActionRow(new QuickItem[]{
                 new QuickItem("Climate Normal", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_CUSTOM_CLIMATE, EcarxVehicleAdapter.CUSTOM_CLIMATE_NORMAL)),
                 new QuickItem("Climate Eco", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_CUSTOM_CLIMATE, EcarxVehicleAdapter.CUSTOM_CLIMATE_ECO)),
-                new QuickItem("Theme Blue", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_DIM_THEME_SET, EcarxVehicleAdapter.DIM_THEME_BLUE)),
                 new QuickItem("Energy Sport", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_ENERGY_MODE, EcarxVehicleAdapter.ENERGY_MODE_SPORT))
         }), lpMatchWrap(0, 0, 0, 10));
         profileRows.addView(buildDriveActionRow(new QuickItem[]{
-                new QuickItem("Launch", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_LAUNCH_CONTROL, EcarxVehicleAdapter.COMMON_ON)),
-                new QuickItem("Creep Off", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_CREEP_SET, EcarxVehicleAdapter.COMMON_OFF)),
                 new QuickItem("Perf Save", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_PERFORMANCE_SAVING, EcarxVehicleAdapter.COMMON_ON)),
                 new QuickItem("PTS Ready", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_POWER_TRAIN_STOP, EcarxVehicleAdapter.POWER_TRAIN_STOP_NOT_BLOCKED))
         }), lpMatchWrap(0, 0, 0, 0));
         panel.addView(profileRows);
+        panel.addView(buildDriveThemeAndStartPanel(), lpMatchWrap(0, 16, 0, 0));
+        return panel;
+    }
+
+    private LinearLayout buildDriveThemeAndStartPanel() {
+        LinearLayout panel = Ui.glassCard(this);
+        panel.addView(Ui.label(this, "Theme / Start Behavior"));
+        panel.addView(Ui.muted(this, "Подтвержденные experimental controls для визуальной темы кластера и стартового поведения силовой установки."));
+
+        LinearLayout dimThemes = Ui.row(this);
+        addActionChip(dimThemes, "DIM Red", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_DIM_THEME_SET, EcarxVehicleAdapter.DIM_THEME_RED));
+        addActionChip(dimThemes, "DIM Gold", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_DIM_THEME_SET, EcarxVehicleAdapter.DIM_THEME_GOLD));
+        addActionChip(dimThemes, "DIM Blue", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_DIM_THEME_SET, EcarxVehicleAdapter.DIM_THEME_BLUE));
+        addActionChip(dimThemes, "DIM Off", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_DIM_THEME_SET, EcarxVehicleAdapter.COMMON_OFF));
+        panel.addView(dimThemes, lpMatchWrap(0, 12, 0, 0));
+
+        LinearLayout creepRow = Ui.row(this);
+        addActionChip(creepRow, "Creep On", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_CREEP_SET, EcarxVehicleAdapter.COMMON_ON));
+        addActionChip(creepRow, "Creep Off", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_CREEP_SET, EcarxVehicleAdapter.COMMON_OFF));
+        addActionChip(creepRow, "Launch On", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_LAUNCH_CONTROL, EcarxVehicleAdapter.COMMON_ON));
+        addActionChip(creepRow, "Launch Off", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_LAUNCH_CONTROL, EcarxVehicleAdapter.COMMON_OFF));
+        panel.addView(creepRow, lpMatchWrap(0, 12, 0, 0));
         return panel;
     }
 
