@@ -397,3 +397,23 @@
 - Экран `Текст`.
 - Экран `ADB / Система`.
 - Экран `Настройки`.
+
+2026-07-22
+
+Этап 20: Экран Файлы
+
+Сделано:
+- `FileManagerActivity` полностью переведен на новый shell в стиле `Design.txt`: top bar, hero-panel, overview grid, storage card, actions panel, file list и bottom dock.
+- В верхнюю часть добавлены путь, storage status, USB lookup и move queue статус.
+- Реализована отдельная `Storage Card` с показом `свободно / занято / всего`, internal storage path и USB candidates.
+- Список файлов вынесен в новый card-flow с действиями `открыть`, `поделиться`, `удалить`, `выбрать для перемещения`, `открыть как text`, `открыть как media`.
+- Сохранены и встроены действия `создать папку`, `переход вверх`, `USB lookup` и `переместить сюда`.
+- Cross-volume move fallback теперь явно отражен в UI: если `renameTo()` не сработал, выполняется `copy/delete`, показывается progress/status и при ошибке delete исходник не удаляется.
+- Переходы на `TextViewerActivity` и `MediaViewerActivity` сохранены через новый file action flow.
+- Legacy file-manager shell удален; экран больше не использует старую утилитарную разметку.
+
+Осталось по `Design.txt`:
+- Экран `Медиа`.
+- Экран `Текст`.
+- Экран `ADB / Система`.
+- Экран `Настройки`.
