@@ -697,13 +697,7 @@ public class MainActivity extends Activity {
     }
 
     private void showVehicleMenu() {
-        LinearLayout root = menuRoot("Автомобиль", "Повседневные действия вынесены наверх; полный BCM/Drive/Seat список остается в расширенной вкладке.");
-        addNavGrid(root, new NavItem[]{
-                new NavItem("Кузов и доступ", "Окна, двери, замки, люк, шторка и зеркала", "BCM", Color.rgb(56, 124, 95), this::showCar),
-                new NavItem("Парковка / APA", "360, штатные parking views и APA/RPA", "P", Ui.AMBER, this::showParkingApa),
-                new NavItem("Профили", "Водитель, пассажир, сиденья и сохраненные настройки", "USER", Color.rgb(87, 112, 146), this::showUserProfiles),
-                new NavItem("Все команды авто", "Полный список BCM, drive mode, light и seat команд", "DEV", Color.rgb(86, 104, 120), this::showCar)
-        });
+        startActivity(new Intent(this, VehicleActivity.class));
     }
 
     private void showAdasMenu() {
