@@ -1,6 +1,6 @@
 <resources>
-    <string name="app_name">GControl</string>
-    <string name="legal_text">GControl управляет функциями Android-головного устройства и автомобиля через доступные системные, Android Automotive, ECARX/Geely и локальные интерфейсы. Используйте только когда это безопасно. Часть функций требует системных разрешений, ADB-grants или поддержки конкретной прошивки.</string>
-    <string name="accessibility_service_label">GControl Watchdog</string>
-    <string name="accessibility_service_description">Отслеживает активное приложение и помогает удерживать фоновые сервисы GControl после сна головного устройства.</string>
+    <string name="app_name">GFlow</string>
+    <string name="legal_text">GFlow управляет функциями Android-головного устройства и автомобиля через доступные системные, Android Automotive, ECARX/Geely и локальные интерфейсы. Используйте только когда это безопасно. Часть функций требует системных разрешений, ADB-grants или поддержки конкретной прошивки.</string>
+    <string name="accessibility_service_label">GFlow Watchdog</string>
+    <string name="accessibility_service_description">Отслеживает активное приложение и помогает удерживать фоновые сервисы GFlow после сна головного устройства.</string>
 </resources>
