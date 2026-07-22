@@ -92,8 +92,6 @@ public class MainActivity extends Activity {
         content.setBackgroundColor(Ui.bg(this));
 
         addHero(content);
-        addStatusStrip(content);
-        addDashboardWidgets(content);
 
         scroll.addView(content);
         shell.addView(scroll, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
@@ -171,34 +169,55 @@ public class MainActivity extends Activity {
 
     private void addHero(LinearLayout root) {
         LinearLayout hero = Ui.card(this);
-        hero.setPadding(Ui.dp(this, 20), Ui.dp(this, 18), Ui.dp(this, 20), Ui.dp(this, 18));
+        hero.setPadding(Ui.dp(this, 24), Ui.dp(this, 22), Ui.dp(this, 24), Ui.dp(this, 22));
         GradientDrawable bg = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
-                new int[]{Color.rgb(24, 30, 36), Color.rgb(42, 54, 62), Color.rgb(245, 248, 250)});
-        bg.setCornerRadius(Ui.dp(this, 22));
+                Ui.dark(this)
+                        ? new int[]{Color.rgb(16, 19, 23), Color.rgb(28, 35, 40), Color.rgb(42, 48, 52)}
+                        : new int[]{Color.rgb(236, 242, 247), Color.rgb(248, 250, 252), Color.rgb(220, 229, 236)});
+        bg.setCornerRadius(Ui.dp(this, 24));
         hero.setBackground(bg);
 
         LinearLayout top = Ui.row(this);
-        ImageView logo = new ImageView(this);
-        logo.setImageResource(R.drawable.gflow_wordmark);
-        logo.setAdjustViewBounds(true);
-        logo.setScaleType(ImageView.ScaleType.FIT_START);
+        LinearLayout weather = Ui.row(this);
+        weather.setPadding(Ui.dp(this, 12), Ui.dp(this, 8), Ui.dp(this, 12), Ui.dp(this, 8));
+        weather.setBackground(Ui.cardBg(this, Color.argb(Ui.dark(this) ? 80 : 185, 255, 255, 255), Ui.dp(this, 22), Color.TRANSPARENT));
+        weather.addView(new DashboardWeatherView(this), new LinearLayout.LayoutParams(Ui.dp(this, 68), Ui.dp(this, 58)));
+        LinearLayout weatherText = new LinearLayout(this);
+        weatherText.setOrientation(LinearLayout.VERTICAL);
+        TextView temp = Ui.text(this, "18 C", 26, true);
+        TextView desc = Ui.muted(this, "Солнечно · салон 22 C");
+        weatherText.addView(temp);
+        weatherText.addView(desc);
+        weather.addView(weatherText);
         TextView badge = Ui.pill(this, developerModeEnabled() ? "DEVELOPER MODE" : (experimentalFeaturesEnabled() ? "EXPERIMENTAL ON" : "USER MODE"), developerModeEnabled() ? Ui.BLUE : (experimentalFeaturesEnabled() ? Ui.AMBER : Ui.GREEN));
-        top.addView(logo, new LinearLayout.LayoutParams(0, Ui.dp(this, 104), 1));
+        top.addView(weather, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
         top.addView(badge);
         hero.addView(top);
 
-        TextView subtitle = Ui.text(this, "Управление автомобилем, мультимедиа и сценариями", 16, false);
-        subtitle.setTextColor(Color.rgb(222, 229, 235));
-        hero.addView(subtitle);
-        hero.addView(new VehicleVisualView(this, false), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 190)));
+        VehicleVisualView visual = new VehicleVisualView(this, false);
+        hero.addView(visual, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 430)));
 
-        LinearLayout quick = Ui.row(this);
-        quick.setPadding(0, Ui.dp(this, 10), 0, 0);
-        addHeroButton(quick, "Климат", this::showClimateMenu);
-        addHeroButton(quick, "Камера 360", this::showParkingApa);
-        addHeroButton(quick, "Голос", () -> startActivity(new Intent(this, VoiceActivity.class)));
-        hero.addView(quick);
-        root.addView(hero, lpMatchWrap(0, 0, 0, 14));
+        LinearLayout meters = Ui.row(this);
+        addMainMetric(meters, "Климат", "22.0 C", Ui.BLUE, this::showComfortClimate);
+        addMainMetric(meters, "Батарея", "готово", Ui.GREEN, this::showVehicleMenu);
+        addMainMetric(meters, "DVR", "standby", Color.rgb(168, 65, 58), () -> startActivity(new Intent(this, DvrActivity.class)));
+        addMainMetric(meters, "ADAS", "активно", Color.rgb(113, 91, 177), this::showAdasMenu);
+        hero.addView(meters);
+        root.addView(hero, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+    }
+
+    private void addMainMetric(LinearLayout row, String title, String value, int color, Runnable action) {
+        LinearLayout card = Ui.card(this);
+        card.setClickable(true);
+        card.setOnClickListener(v -> transition(action));
+        TextView t = Ui.muted(this, title);
+        TextView v = Ui.text(this, value, 20, true);
+        v.setTextColor(color);
+        card.addView(t);
+        card.addView(v);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1);
+        lp.setMargins(Ui.dp(this, 5), Ui.dp(this, 4), Ui.dp(this, 5), 0);
+        row.addView(card, lp);
     }
 
     private void addHeroButton(LinearLayout row, String label, Runnable action) {
@@ -381,15 +400,15 @@ public class MainActivity extends Activity {
 
             if (!ambienceMode && (model != null || underlay != null)) {
                 paint.setStyle(Paint.Style.FILL);
-                paint.setColor(Color.argb(42, 255, 255, 255));
-                canvas.drawOval(new RectF(w * 0.08f, h * 0.70f, w * 0.92f, h * 0.97f), paint);
-                RectF bounds = new RectF(w * 0.02f, h * 0.02f, w * 0.98f, h * 0.92f);
+                paint.setColor(Color.argb(Ui.dark(getContext()) ? 80 : 95, 120, 135, 145));
+                canvas.drawOval(new RectF(w * 0.18f, h * 0.76f, w * 0.82f, h * 0.95f), paint);
+                RectF bounds = new RectF(w * 0.12f, h * 0.03f, w * 0.88f, h * 0.93f);
                 if (model != null) drawBitmapFit(canvas, model, bounds, 255);
                 else if (underlay != null) drawBitmapFit(canvas, underlay, bounds, 220);
-                drawTouchHint(canvas, "Климат", w * 0.50f, h * 0.18f, Ui.BLUE);
-                drawTouchHint(canvas, "Кузов", w * 0.50f, h * 0.54f, Ui.GREEN);
-                drawTouchHint(canvas, "ADAS", w * 0.27f, h * 0.83f, Color.rgb(113, 91, 177));
-                drawTouchHint(canvas, "360", w * 0.73f, h * 0.83f, Ui.AMBER);
+                drawTouchHint(canvas, "Климат", w * 0.50f, h * 0.12f, Ui.BLUE);
+                drawTouchHint(canvas, "Кузов", w * 0.50f, h * 0.52f, Ui.GREEN);
+                drawTouchHint(canvas, "ADAS", w * 0.28f, h * 0.82f, Color.rgb(113, 91, 177));
+                drawTouchHint(canvas, "360", w * 0.72f, h * 0.82f, Ui.AMBER);
                 return;
             }
 
@@ -484,6 +503,31 @@ public class MainActivity extends Activity {
             canvas.drawCircle(w * .20f, h * .72f, Ui.dp(getContext(), 11), p);
             canvas.drawCircle(w * .50f, h * .72f, Ui.dp(getContext(), 11), p);
             canvas.drawCircle(w * .80f, h * .72f, Ui.dp(getContext(), 11), p);
+        }
+    }
+
+    private static final class DashboardWeatherView extends View {
+        private final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
+
+        DashboardWeatherView(Context context) {
+            super(context);
+        }
+
+        @Override protected void onDraw(Canvas canvas) {
+            float w = getWidth();
+            float h = getHeight();
+            p.setStyle(Paint.Style.FILL);
+            p.setShader(new LinearGradient(0, 0, w, h, Color.rgb(255, 196, 76), Color.rgb(255, 132, 82), Shader.TileMode.CLAMP));
+            canvas.drawCircle(w * .38f, h * .38f, w * .24f, p);
+            p.setShader(null);
+            p.setColor(Color.argb(70, 255, 196, 76));
+            canvas.drawCircle(w * .38f, h * .38f, w * .36f, p);
+            p.setColor(Color.WHITE);
+            canvas.drawCircle(w * .48f, h * .60f, w * .22f, p);
+            canvas.drawCircle(w * .64f, h * .56f, w * .18f, p);
+            canvas.drawRoundRect(new RectF(w * .30f, h * .56f, w * .82f, h * .78f), Ui.dp(getContext(), 16), Ui.dp(getContext(), 16), p);
+            p.setColor(Color.argb(45, 0, 0, 0));
+            canvas.drawOval(new RectF(w * .28f, h * .76f, w * .86f, h * .92f), p);
         }
     }
 
