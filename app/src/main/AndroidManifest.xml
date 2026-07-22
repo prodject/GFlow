@@ -72,7 +72,7 @@
         <service android:name=".VoiceForegroundService" android:exported="false" android:foregroundServiceType="microphone" />
         <service android:name=".HudPresentationService" android:exported="false" />
         <service android:name=".HudObserverService" android:exported="false" />
-        <service android:name=".GControlMediaSessionListener" android:exported="true" android:label="GControl Media" android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+        <service android:name=".GFlowMediaSessionListener" android:exported="true" android:label="GFlow Media" android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
             <intent-filter>
                 <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>

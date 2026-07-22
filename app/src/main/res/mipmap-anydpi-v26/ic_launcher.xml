@@ -1,4 +1,4 @@
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@color/gcontrol_white" />
-    <foreground android:drawable="@drawable/gcontrol_logo" />
+    <background android:drawable="@color/gflow_white" />
+    <foreground android:drawable="@drawable/gflow_icon" />
 </adaptive-icon>
