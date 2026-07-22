@@ -169,10 +169,10 @@ public class ClimateActivity extends Activity {
         hero.addView(row);
 
         LinearLayout actions = Ui.row(this);
-        addActionChip(actions, "Comfort", () -> openMode(Mode.HOME));
-        addActionChip(actions, "Advanced", () -> openMode(Mode.ADVANCED));
-        addActionChip(actions, "Readback", this::showReadbackSheet);
-        addActionChip(actions, "Quick HVAC", this::showQuickHvacSheet);
+        addClimateActionChip(actions, "Comfort", () -> openMode(Mode.HOME));
+        addClimateActionChip(actions, "Advanced", () -> openMode(Mode.ADVANCED));
+        addClimateActionChip(actions, "Readback", this::showReadbackSheet);
+        addClimateActionChip(actions, "Quick HVAC", this::showQuickHvacSheet);
         hero.addView(actions, lpMatchWrap(0, 14, 0, 0));
         return hero;
     }
@@ -224,9 +224,9 @@ public class ClimateActivity extends Activity {
         });
         center.addView(fan);
         LinearLayout quickModes = Ui.row(this);
-        addActionChip(quickModes, "Лицо", () -> command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_FACE));
-        addActionChip(quickModes, "Ноги", () -> command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_LEG));
-        addActionChip(quickModes, "Стекло", () -> command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_FRONT_WINDOW));
+        addClimateActionChip(quickModes, "Лицо", () -> command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_FACE));
+        addClimateActionChip(quickModes, "Ноги", () -> command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_LEG));
+        addClimateActionChip(quickModes, "Стекло", () -> command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_FRONT_WINDOW));
         center.addView(quickModes, lpMatchWrap(0, 8, 0, 0));
         LinearLayout.LayoutParams centerLp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.2f);
         centerLp.leftMargin = Ui.dp(this, 12);
@@ -296,10 +296,10 @@ public class ClimateActivity extends Activity {
         panel.addView(grid, lpMatchWrap(0, 12, 0, 12));
 
         LinearLayout hardkeys = Ui.row(this);
-        addActionChip(hardkeys, "Fan +", () -> command(EcarxVehicleAdapter.HVAC_HARDKEY, EcarxVehicleAdapter.HVAC_HARDKEY_FAN_UP));
-        addActionChip(hardkeys, "Fan -", () -> command(EcarxVehicleAdapter.HVAC_HARDKEY, EcarxVehicleAdapter.HVAC_HARDKEY_FAN_DOWN));
-        addActionChip(hardkeys, "Temp Sync", () -> command(EcarxVehicleAdapter.HVAC_HARDKEY, EcarxVehicleAdapter.HVAC_HARDKEY_TEMP_SYNC));
-        addActionChip(hardkeys, "A/C Key", () -> command(EcarxVehicleAdapter.HVAC_HARDKEY, EcarxVehicleAdapter.HVAC_HARDKEY_AC));
+        addClimateActionChip(hardkeys, "Fan +", () -> command(EcarxVehicleAdapter.HVAC_HARDKEY, EcarxVehicleAdapter.HVAC_HARDKEY_FAN_UP));
+        addClimateActionChip(hardkeys, "Fan -", () -> command(EcarxVehicleAdapter.HVAC_HARDKEY, EcarxVehicleAdapter.HVAC_HARDKEY_FAN_DOWN));
+        addClimateActionChip(hardkeys, "Temp Sync", () -> command(EcarxVehicleAdapter.HVAC_HARDKEY, EcarxVehicleAdapter.HVAC_HARDKEY_TEMP_SYNC));
+        addClimateActionChip(hardkeys, "A/C Key", () -> command(EcarxVehicleAdapter.HVAC_HARDKEY, EcarxVehicleAdapter.HVAC_HARDKEY_AC));
         panel.addView(hardkeys, lpMatchWrap(0, 0, 0, 0));
         return panel;
     }
@@ -307,7 +307,7 @@ public class ClimateActivity extends Activity {
     private View buildClimateReadbackGrid() {
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(2);
-        addReadbackCard(grid, "HVAC Core", readback(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.HVAC_AUTO, EcarxVehicleAdapter.HVAC_AC, EcarxVehicleAdapter.HVAC_FAN_SPEED));
+        addReadbackCard(grid, "HVAC Core", readbackByIds(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.HVAC_AUTO, EcarxVehicleAdapter.HVAC_AC, EcarxVehicleAdapter.HVAC_FAN_SPEED));
         addReadbackCard(grid, "Temperature", readback(
                 floatReadback(EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_DRIVER_LEFT),
                 floatReadback(EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT),
@@ -628,6 +628,16 @@ public class ClimateActivity extends Activity {
         for (String line : lines) {
             if (sb.length() > 0) sb.append("\n");
             sb.append(line);
+        }
+        return sb.toString();
+    }
+
+    private String readbackByIds(int... ids) {
+        EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
+        StringBuilder sb = new StringBuilder();
+        for (int id : ids) {
+            if (sb.length() > 0) sb.append("\n");
+            sb.append(compact(adapter.get(id).message));
         }
         return sb.toString();
     }
