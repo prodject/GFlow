@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ResolveInfo;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.text.InputType;
@@ -16,7 +17,10 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -26,6 +30,9 @@ public class VoiceActivity extends Activity {
     private static final String APP_SETTINGS = "app_settings";
     private static final String KEY_EXPERIMENTAL_FEATURES = "experimental_features";
     private static final String PREF_LOG = "voice_log";
+    private static final String PREF_ALIASES = "aliases";
+    private static final String ALIAS_V2 = "v2";
+    private static final String ALIAS_SEP = "\u001f";
     private static final int LOG_LIMIT = 16;
 
     private final VoskVoiceRecognizer recognizer = new VoskVoiceRecognizer();
@@ -112,7 +119,7 @@ public class VoiceActivity extends Activity {
 
         bar.addView(buildTopStat("Сервис", serviceStatus()));
         bar.addView(buildTopStat("Vosk", voskStatus()));
-        bar.addView(buildTopStat("Алиасы", String.valueOf(aliases().size())));
+        bar.addView(buildTopStat("Алиасы", String.valueOf(aliasEntries().size())));
         return bar;
     }
 
@@ -174,7 +181,7 @@ public class VoiceActivity extends Activity {
         addStatusCard(grid, "Сервис", serviceStatus(), Ui.CYAN);
         addStatusCard(grid, "Vosk", voskStatus(), Ui.SUCCESS);
         addStatusCard(grid, "Команды", "climate · body · HUD · drive · DVR · nav · apps", Ui.WARNING);
-        addStatusCard(grid, "Алиасы / Лог", aliases().size() + " alias · " + logCount() + " log", Color.rgb(129, 149, 255));
+        addStatusCard(grid, "Алиасы / Лог", aliasEntries().size() + " alias · " + logCount() + " log", Color.rgb(129, 149, 255));
         return grid;
     }
 
@@ -228,34 +235,29 @@ public class VoiceActivity extends Activity {
         panel.addView(Ui.text(this, "Alias может запускать preset, scenario, action или broadcast command. Долгое нажатие — редактирование.", 14, false));
 
         LinearLayout row = Ui.row(this);
-        addActionChip(row, "Добавить", () -> editAlias("", ""));
+        addActionChip(row, "Добавить", () -> editAlias(null));
         addActionChip(row, "Проверить", this::testAliasCommand);
         addActionChip(row, "Примеры", this::installAliasExamples);
         addActionChip(row, "Обновить", this::renderContent);
         panel.addView(row, lpMatchWrap(0, 12, 0, 12));
 
-        for (String item : aliases()) {
-            String[] parts = item.split("\\|", 2);
-            String phrase = parts[0];
-            String action = parts.length > 1 ? parts[1] : parts[0];
-            panel.addView(buildAliasCard(phrase, action), lpMatchWrap(0, 0, 0, 14));
-        }
+        for (AliasEntry item : aliasEntries()) panel.addView(buildAliasCard(item), lpMatchWrap(0, 0, 0, 14));
         return panel;
     }
 
-    private LinearLayout buildAliasCard(String phrase, String action) {
+    private LinearLayout buildAliasCard(AliasEntry entry) {
         LinearLayout card = Ui.glassCard(this);
-        card.addView(Ui.text(this, phrase, 18, true));
-        card.addView(Ui.muted(this, "→ " + action));
+        card.addView(Ui.text(this, entry.phrase, 18, true));
+        card.addView(Ui.muted(this, aliasTypeLabel(entry.type) + " → " + entry.displayTarget()));
 
         LinearLayout row = Ui.row(this);
         addMiniAction(row, "Исп.", () -> {
-            latestRecognition = phrase;
-            if (commandInput != null) commandInput.setText(phrase);
+            latestRecognition = entry.phrase;
+            if (commandInput != null) commandInput.setText(entry.phrase);
             if (recognitionView != null) recognitionView.setText(recognitionSummary());
         });
-        addMiniAction(row, "Тест", () -> showResultSheet("Alias test", runVoiceCommand(phrase.toLowerCase(Locale.ROOT))));
-        addMiniAction(row, "Изм.", () -> editAlias(phrase, action));
+        addMiniAction(row, "Тест", () -> showResultSheet("Alias test", runVoiceCommand(entry.phrase.toLowerCase(Locale.ROOT))));
+        addMiniAction(row, "Изм.", () -> editAlias(entry));
         card.addView(row, lpMatchWrap(0, 12, 0, 0));
         return card;
     }
@@ -291,7 +293,7 @@ public class VoiceActivity extends Activity {
         dock.setPadding(Ui.dp(this, 18), Ui.dp(this, 14), Ui.dp(this, 18), Ui.dp(this, 14));
         addDockButton(dock, "Слушать", this::startListening, listening);
         addDockButton(dock, "Выполнить", this::runInputCommand, false);
-        addDockButton(dock, "Alias", () -> editAlias("", ""), false);
+        addDockButton(dock, "Alias", () -> editAlias(null), false);
         addDockButton(dock, "Log", this::showLogSheet, false);
         addDockButton(dock, "Назад", this::finish, false);
         return dock;
@@ -342,6 +344,8 @@ public class VoiceActivity extends Activity {
         items.add("замёрз|зима");
         items.add("проветри|окно водитель открыть");
         items.add("паркуюсь|камера 360");
+        items.add(AliasEntry.encoded("навигатор", "launch", "ru.yandex.yandexnavi", "Yandex Navi"));
+        items.add(AliasEntry.encoded("режим спорт", "drive", "dynamic", "Dynamic"));
         prefs.edit().putStringSet("aliases", items).apply();
         renderContent();
     }
@@ -352,7 +356,7 @@ public class VoiceActivity extends Activity {
             Ui.toast(this, "Нет последней команды");
             return;
         }
-        editAlias(phrase, "");
+        editAlias(new AliasEntry(phrase, "voice", "", ""));
     }
 
     private void launchAppFromInput() {
@@ -364,30 +368,41 @@ public class VoiceActivity extends Activity {
         showResultSheet("Запуск app", VoiceFlowRouter.launchByToken(this, raw));
     }
 
-    private void editAlias(String oldPhrase, String oldAction) {
+    private void editAlias(AliasEntry source) {
+        AliasEntry entry = source == null ? new AliasEntry("", "voice", "", "") : source;
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
         int p = Ui.dp(this, 18);
         box.setPadding(p, p, p, 0);
 
-        EditText phrase = edit("Фраза", oldPhrase);
-        EditText action = edit("preset / scenario / action / broadcast command", oldAction);
+        EditText phrase = edit("Фраза", entry.phrase);
+        final String[] typeHolder = new String[]{entry.type};
+        final String[] targetHolder = new String[]{entry.target};
+        final String[] labelHolder = new String[]{entry.label};
+        TextView typeView = Ui.muted(this, "Тип: " + aliasTypeLabel(typeHolder[0]));
+        TextView targetView = Ui.muted(this, "Цель: " + (entry.displayTarget().isEmpty() ? "не выбрана" : entry.displayTarget()));
+        Button pickType = Ui.button(this, "Выбрать тип действия");
+        Button pickTarget = Ui.button(this, "Выбрать цель");
+        pickType.setOnClickListener(v -> chooseAliasType(typeHolder, labelHolder, typeView, targetHolder, targetView));
+        pickTarget.setOnClickListener(v -> chooseAliasTarget(typeHolder, targetHolder, labelHolder, targetView));
         box.addView(phrase);
-        box.addView(action);
+        box.addView(typeView);
+        box.addView(targetView);
+        box.addView(pickType);
+        box.addView(pickTarget);
 
         new AlertDialog.Builder(this)
                 .setView(box)
                 .setPositiveButton("Сохранить", (d, w) -> {
-                    LinkedHashSet<String> items = new LinkedHashSet<>(aliases());
-                    if (!oldPhrase.isEmpty()) items.remove(oldPhrase + "|" + oldAction);
-                    items.add(phrase.getText().toString().trim() + "|" + action.getText().toString().trim());
-                    prefs.edit().putStringSet("aliases", items).apply();
+                    saveAliasEntry(new AliasEntry(
+                            phrase.getText().toString().trim(),
+                            typeHolder[0],
+                            targetHolder[0],
+                            labelHolder[0]), entry);
                     renderContent();
                 })
                 .setNegativeButton("Удалить", (d, w) -> {
-                    LinkedHashSet<String> items = new LinkedHashSet<>(aliases());
-                    items.remove(oldPhrase + "|" + oldAction);
-                    prefs.edit().putStringSet("aliases", items).apply();
+                    deleteAliasEntry(entry);
                     renderContent();
                 })
                 .show();
@@ -396,9 +411,14 @@ public class VoiceActivity extends Activity {
     private String runVoiceCommand(String cmd) {
         if (cmd.trim().isEmpty()) return "Пустая команда";
         String initial = cmd.trim().toLowerCase(Locale.ROOT);
-        String alias = aliasFor(initial);
-        boolean aliasHit = alias != null && !alias.equals(initial);
-        String resolved = aliasHit ? alias.toLowerCase(Locale.ROOT) : initial;
+        AliasEntry alias = aliasEntryFor(initial);
+        if (alias != null && !alias.isLegacy()) {
+            String result = executeAlias(alias);
+            appendVoiceLog("alias->" + alias.type, initial, result);
+            return result;
+        }
+        boolean aliasHit = alias != null && alias.isLegacy() && !alias.target.equals(initial);
+        String resolved = aliasHit ? alias.target.toLowerCase(Locale.ROOT) : initial;
         AutomationEngine.runTrigger(this, "voice", resolved);
 
         EcarxVehicleAdapter.Result[] preset = parsePreset(resolved);
@@ -427,15 +447,21 @@ public class VoiceActivity extends Activity {
         defaults.add("зимний режим|зима");
         defaults.add("открой камеры|камера 360");
         defaults.add("включи подогрев руля|подогрев руля");
-        return prefs.getStringSet("aliases", defaults);
+        return prefs.getStringSet(PREF_ALIASES, defaults);
     }
 
-    private String aliasFor(String cmd) {
-        String normalized = cmd.trim().toLowerCase(Locale.ROOT);
+    private List<AliasEntry> aliasEntries() {
+        ArrayList<AliasEntry> list = new ArrayList<>();
         for (String item : aliases()) {
-            String[] parts = item.split("\\|", 2);
-            if (parts.length == 2 && normalized.equals(parts[0].trim().toLowerCase(Locale.ROOT))) return parts[1];
+            AliasEntry entry = AliasEntry.parse(item);
+            if (entry.phrase.length() > 0) list.add(entry);
         }
+        return list;
+    }
+
+    private AliasEntry aliasEntryFor(String cmd) {
+        String normalized = cmd.trim().toLowerCase(Locale.ROOT);
+        for (AliasEntry item : aliasEntries()) if (normalized.equals(item.phrase.trim().toLowerCase(Locale.ROOT))) return item;
         return null;
     }
 
@@ -943,6 +969,251 @@ public class VoiceActivity extends Activity {
 
     private boolean has(String cmd, String value) {
         return cmd.contains(value);
+    }
+
+    private void saveAliasEntry(AliasEntry fresh, AliasEntry oldEntry) {
+        if (fresh.phrase.trim().isEmpty()) return;
+        LinkedHashSet<String> items = new LinkedHashSet<>(aliases());
+        if (oldEntry != null && oldEntry.phrase.length() > 0) items.remove(oldEntry.encode());
+        items.add(fresh.encode());
+        prefs.edit().putStringSet(PREF_ALIASES, items).apply();
+    }
+
+    private void deleteAliasEntry(AliasEntry entry) {
+        if (entry == null || entry.phrase.trim().isEmpty()) return;
+        LinkedHashSet<String> items = new LinkedHashSet<>(aliases());
+        items.remove(entry.encode());
+        prefs.edit().putStringSet(PREF_ALIASES, items).apply();
+    }
+
+    private void chooseAliasType(String[] typeHolder, String[] labelHolder, TextView typeView, String[] targetHolder, TextView targetView) {
+        final String[] ids = new String[]{"launch", "preset", "scenario", "drive", "screen", "voice", "command"};
+        final String[] labels = new String[]{"Открыть приложение", "Запустить пресет", "Запустить сценарий", "Сменить режим вождения", "Открыть экран", "Broadcast / voice command", "Vehicle raw command"};
+        new AlertDialog.Builder(this)
+                .setTitle("Тип действия")
+                .setItems(labels, (d, which) -> {
+                    typeHolder[0] = ids[which];
+                    labelHolder[0] = "";
+                    targetHolder[0] = "";
+                    typeView.setText("Тип: " + labels[which]);
+                    targetView.setText("Цель: не выбрана");
+                })
+                .show();
+    }
+
+    private void chooseAliasTarget(String[] typeHolder, String[] targetHolder, String[] labelHolder, TextView targetView) {
+        String type = typeHolder[0] == null ? "" : typeHolder[0];
+        if ("launch".equals(type)) {
+            chooseFromLabels("Приложение", launcherLabels(), (target, label) -> updateAliasTarget(targetHolder, labelHolder, targetView, target, label));
+            return;
+        }
+        if ("preset".equals(type)) {
+            chooseFromStrings("Пресет", AutomationEngine.names(AutomationEngine.prefs(this), AutomationEngine.KEY_PRESET_ORDER), value -> updateAliasTarget(targetHolder, labelHolder, targetView, value, value));
+            return;
+        }
+        if ("scenario".equals(type)) {
+            chooseFromStrings("Сценарий", AutomationEngine.names(AutomationEngine.prefs(this), AutomationEngine.KEY_SCENARIO_ORDER), value -> updateAliasTarget(targetHolder, labelHolder, targetView, value, value));
+            return;
+        }
+        if ("drive".equals(type)) {
+            chooseFromLabels("Режим вождения", driveOptions(), (target, label) -> updateAliasTarget(targetHolder, labelHolder, targetView, target, label));
+            return;
+        }
+        if ("screen".equals(type)) {
+            chooseFromLabels("Экран", screenOptions(), (target, label) -> updateAliasTarget(targetHolder, labelHolder, targetView, target, label));
+            return;
+        }
+        promptAliasTarget(type, targetHolder, labelHolder, targetView);
+    }
+
+    private void promptAliasTarget(String type, String[] targetHolder, String[] labelHolder, TextView targetView) {
+        EditText value = edit("voice".equals(type) ? "Текст команды" : "Raw command", targetHolder[0]);
+        new AlertDialog.Builder(this)
+                .setTitle("Цель")
+                .setView(value)
+                .setPositiveButton("Сохранить", (d, w) -> updateAliasTarget(targetHolder, labelHolder, targetView, value.getText().toString().trim(), value.getText().toString().trim()))
+                .setNegativeButton("Отмена", null)
+                .show();
+    }
+
+    private void updateAliasTarget(String[] targetHolder, String[] labelHolder, TextView targetView, String target, String label) {
+        targetHolder[0] = target == null ? "" : target;
+        labelHolder[0] = label == null ? "" : label;
+        targetView.setText("Цель: " + (labelHolder[0].isEmpty() ? targetHolder[0] : labelHolder[0]));
+    }
+
+    private interface StringConsumer { void accept(String value); }
+    private interface LabelConsumer { void accept(String target, String label); }
+
+    private void chooseFromStrings(String title, List<String> values, StringConsumer consumer) {
+        if (values == null || values.isEmpty()) {
+            Ui.toast(this, "Список пуст");
+            return;
+        }
+        String[] items = values.toArray(new String[0]);
+        new AlertDialog.Builder(this).setTitle(title).setItems(items, (d, which) -> consumer.accept(items[which])).show();
+    }
+
+    private void chooseFromLabels(String title, List<AliasOption> values, LabelConsumer consumer) {
+        if (values == null || values.isEmpty()) {
+            Ui.toast(this, "Список пуст");
+            return;
+        }
+        String[] items = new String[values.size()];
+        for (int i = 0; i < values.size(); i++) items[i] = values.get(i).label;
+        new AlertDialog.Builder(this).setTitle(title).setItems(items, (d, which) -> consumer.accept(values.get(which).value, values.get(which).label)).show();
+    }
+
+    private List<AliasOption> launcherLabels() {
+        Intent query = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER);
+        List<ResolveInfo> apps = getPackageManager().queryIntentActivities(query, 0);
+        Collections.sort(apps, Comparator.comparing(a -> a.loadLabel(getPackageManager()).toString().toLowerCase(Locale.ROOT)));
+        ArrayList<AliasOption> items = new ArrayList<>();
+        for (ResolveInfo info : apps) items.add(new AliasOption(info.activityInfo.packageName, info.loadLabel(getPackageManager()).toString()));
+        return items;
+    }
+
+    private List<AliasOption> driveOptions() {
+        ArrayList<AliasOption> items = new ArrayList<>();
+        items.add(new AliasOption("eco", "Eco"));
+        items.add(new AliasOption("comfort", "Comfort"));
+        items.add(new AliasOption("dynamic", "Dynamic"));
+        items.add(new AliasOption("snow", "Snow"));
+        items.add(new AliasOption("offroad", "Offroad"));
+        if (experimentalFeaturesEnabled()) {
+            items.add(new AliasOption("pure", "Pure"));
+            items.add(new AliasOption("hybrid", "Hybrid"));
+            items.add(new AliasOption("power", "Power"));
+            items.add(new AliasOption("mud", "Mud"));
+            items.add(new AliasOption("rock", "Rock"));
+            items.add(new AliasOption("sand", "Sand"));
+            items.add(new AliasOption("save", "Save"));
+            items.add(new AliasOption("adaptive", "Adaptive"));
+            items.add(new AliasOption("awd", "AWD"));
+            items.add(new AliasOption("custom mode", "Custom"));
+        }
+        return items;
+    }
+
+    private List<AliasOption> screenOptions() {
+        ArrayList<AliasOption> items = new ArrayList<>();
+        items.add(new AliasOption("climate", "Климат"));
+        items.add(new AliasOption("vehicle", "Автомобиль"));
+        items.add(new AliasOption("adas", "ADAS"));
+        items.add(new AliasOption("parking", "Парковка"));
+        items.add(new AliasOption("hud", "HUD / Cluster"));
+        items.add(new AliasOption("automation", "Автоматизация"));
+        items.add(new AliasOption("profile", "Профили"));
+        items.add(new AliasOption("steering", "Кнопки руля"));
+        items.add(new AliasOption("desktop", "Рабочий стол"));
+        items.add(new AliasOption("weather", "Браузер / Погода"));
+        items.add(new AliasOption("media", "Медиа"));
+        items.add(new AliasOption("files", "Файлы"));
+        items.add(new AliasOption("system", "ADB / Система"));
+        items.add(new AliasOption("settings", "Настройки"));
+        items.add(new AliasOption("voice", "Голос"));
+        return items;
+    }
+
+    private String aliasTypeLabel(String type) {
+        if ("launch".equals(type)) return "Открыть приложение";
+        if ("preset".equals(type)) return "Запустить пресет";
+        if ("scenario".equals(type)) return "Запустить сценарий";
+        if ("drive".equals(type)) return "Сменить режим вождения";
+        if ("screen".equals(type)) return "Открыть экран";
+        if ("voice".equals(type)) return "Broadcast / voice command";
+        if ("command".equals(type)) return "Vehicle raw command";
+        return "Legacy alias";
+    }
+
+    private String executeAlias(AliasEntry entry) {
+        if ("launch".equals(entry.type)) return VoiceFlowRouter.launchByToken(this, entry.target);
+        if ("preset".equals(entry.type)) return AutomationEngine.runPreset(this, entry.target);
+        if ("scenario".equals(entry.type)) return AutomationEngine.runScenario(this, entry.target, "voice", entry.phrase);
+        if ("drive".equals(entry.type)) {
+            EcarxVehicleAdapter.Result result = parseVehicleCommand(entry.target.toLowerCase(Locale.ROOT));
+            return result == null ? "Не удалось выполнить режим: " + entry.target : result.message;
+        }
+        if ("screen".equals(entry.type)) return openAliasScreen(entry.target);
+        if ("voice".equals(entry.type)) {
+            CarCommandBus.send(this, "voice", entry.target);
+            return "Broadcast command: " + entry.target;
+        }
+        if ("command".equals(entry.type)) return AutomationEngine.runStep(this, new AutomationEngine.ScenarioStep("command", entry.target));
+        return "Неизвестный тип alias: " + entry.type;
+    }
+
+    private String openAliasScreen(String target) {
+        Class<?> cls = null;
+        if ("climate".equals(target)) cls = ClimateActivity.class;
+        else if ("vehicle".equals(target)) cls = VehicleActivity.class;
+        else if ("adas".equals(target)) cls = AdasActivity.class;
+        else if ("parking".equals(target)) cls = ParkingActivity.class;
+        else if ("hud".equals(target)) cls = HudActivity.class;
+        else if ("automation".equals(target)) cls = AutomationActivity.class;
+        else if ("profile".equals(target)) cls = ProfileActivity.class;
+        else if ("steering".equals(target)) cls = SteeringActivity.class;
+        else if ("desktop".equals(target)) cls = DesktopActivity.class;
+        else if ("weather".equals(target)) cls = WeatherActivity.class;
+        else if ("media".equals(target)) cls = MediaViewerActivity.class;
+        else if ("files".equals(target)) cls = FileManagerActivity.class;
+        else if ("system".equals(target)) cls = AdbShellActivity.class;
+        else if ("settings".equals(target)) cls = SettingsActivity.class;
+        else if ("voice".equals(target)) cls = VoiceActivity.class;
+        if (cls == null) return "Неизвестный экран: " + target;
+        startActivity(new Intent(this, cls));
+        return "Открыт экран: " + target;
+    }
+
+    private static final class AliasOption {
+        final String value;
+        final String label;
+
+        AliasOption(String value, String label) {
+            this.value = value;
+            this.label = label;
+        }
+    }
+
+    private static final class AliasEntry {
+        final String phrase;
+        final String type;
+        final String target;
+        final String label;
+
+        AliasEntry(String phrase, String type, String target, String label) {
+            this.phrase = phrase == null ? "" : phrase;
+            this.type = type == null || type.trim().isEmpty() ? "legacy" : type;
+            this.target = target == null ? "" : target;
+            this.label = label == null ? "" : label;
+        }
+
+        static AliasEntry parse(String raw) {
+            if (raw == null || raw.trim().isEmpty()) return new AliasEntry("", "legacy", "", "");
+            if (raw.startsWith(ALIAS_V2 + ALIAS_SEP)) {
+                String[] p = raw.split(ALIAS_SEP, -1);
+                return new AliasEntry(p.length > 1 ? p[1] : "", p.length > 2 ? p[2] : "voice", p.length > 3 ? p[3] : "", p.length > 4 ? p[4] : "");
+            }
+            String[] p = raw.split("\\|", 2);
+            return new AliasEntry(p.length > 0 ? p[0] : "", "legacy", p.length > 1 ? p[1] : "", p.length > 1 ? p[1] : "");
+        }
+
+        static String encoded(String phrase, String type, String target, String label) {
+            return new AliasEntry(phrase, type, target, label).encode();
+        }
+
+        boolean isLegacy() {
+            return "legacy".equals(type);
+        }
+
+        String displayTarget() {
+            return label.isEmpty() ? target : label;
+        }
+
+        String encode() {
+            if (isLegacy()) return phrase + "|" + target;
+            return ALIAS_V2 + ALIAS_SEP + phrase + ALIAS_SEP + type + ALIAS_SEP + target + ALIAS_SEP + label;
+        }
     }
 
     private boolean experimentalFeaturesEnabled() {
