@@ -2032,7 +2032,7 @@ public class MainActivity extends Activity {
     }
 
     private void showLauncher() { startActivity(new Intent(this, DesktopActivity.class)); }
-    private void showSystem() { panel("ADB / Система", "ADB toggle, локальный shell, adb-grants, DPI/масштаб, автозум, автозапуск, watchdog и accessibility tracking."); }
+    private void showSystem() { startActivity(new Intent(this, AdbShellActivity.class)); }
     private void showWeb() { startActivity(new Intent(this, WeatherActivity.class)); }
     private void openSplitLauncher() {
         Intent query = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER);
