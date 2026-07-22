@@ -327,7 +327,7 @@ public class MainActivity extends Activity {
         addDashboardWidget(grid, "DVR", dvrDashboardDetails(), Ui.WARNING, () -> startActivity(new Intent(this, CameraActivity.class)));
         addDashboardWidget(grid, "ADAS", adasDashboardDetails(), Color.rgb(123, 104, 238), this::showAdasMenu);
         addDashboardWidget(grid, "360 / Parking", parkingDashboardDetails(), Color.rgb(72, 153, 255), this::openParkingScreen);
-        addDashboardWidget(grid, "Профиль", profileDashboardDetails(), Color.rgb(101, 208, 168), this::showUserProfiles);
+        addDashboardWidget(grid, "Профиль", profileDashboardDetails(), Color.rgb(101, 208, 168), this::showProfilesMenu);
         return grid;
     }
 
@@ -380,15 +380,15 @@ public class MainActivity extends Activity {
         addDockButton(dock, "Drive Mode", this::showVehicleMenu, false, new QuickAction[]{
                 new QuickAction("Открыть кузов", this::showVehicleMenu),
                 new QuickAction("HUD", this::showHudMenu),
-                new QuickAction("Профиль", this::showUserProfiles)
+                new QuickAction("Профиль", this::showProfilesMenu)
         });
         addDockButton(dock, "Голос", () -> startActivity(new Intent(this, VoiceActivity.class)), false, new QuickAction[]{
                 new QuickAction("Открыть голос", () -> startActivity(new Intent(this, VoiceActivity.class))),
                 new QuickAction("Автоматизация", this::showAutomation),
                 new QuickAction("Погода", this::showWeb)
         });
-        addDockButton(dock, "Профиль", this::showUserProfiles, false, new QuickAction[]{
-                new QuickAction("Открыть профили", this::showUserProfiles),
+        addDockButton(dock, "Профиль", this::showProfilesMenu, false, new QuickAction[]{
+                new QuickAction("Открыть профили", this::showProfilesMenu),
                 new QuickAction("Автоматизация", this::showAutomation),
                 new QuickAction("Настройки", this::showSettings)
         });
@@ -583,7 +583,7 @@ public class MainActivity extends Activity {
         addDrawerAction(drawer, "Парковка / APA", this::openParkingScreen);
         addDrawerAction(drawer, "HUD / Cluster", this::showHudMenu);
         addDrawerAction(drawer, "Автоматизация", this::showAutomation);
-        addDrawerAction(drawer, "Профили", this::showUserProfiles);
+        addDrawerAction(drawer, "Профили", this::showProfilesMenu);
         addDrawerAction(drawer, "Голос", () -> startActivity(new Intent(this, VoiceActivity.class)));
         addDrawerAction(drawer, "Погода / Браузер", this::showWeb);
         addDrawerAction(drawer, "Настройки", this::showSettings);
@@ -1298,7 +1298,7 @@ public class MainActivity extends Activity {
         addRailButton(rail, "ADAS", this::showAdasMenu);
         addRailButton(rail, "HUD", this::showHudMenu);
         addRailButton(rail, "Автоматизация", this::showAutomation);
-        addRailButton(rail, "Профили", this::showUserProfiles);
+        addRailButton(rail, "Профили", this::showProfilesMenu);
         addRailButton(rail, "DVR", () -> startActivity(new Intent(this, CameraActivity.class)));
         addRailButton(rail, "Погода", this::showWeb);
         addRailButton(rail, "Настройки", this::showSettings);
@@ -1450,19 +1450,6 @@ public class MainActivity extends Activity {
         addToggleAction(row, "Навигация", () -> CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HUD_DISPLAY_NAVI, EcarxVehicleAdapter.COMMON_ON));
         addToggleAction(row, "Медиа", () -> CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HUD_DISPLAY_MEDIA, EcarxVehicleAdapter.COMMON_ON));
         addToggleAction(row, "DIM night", () -> new EcarxHudDimAdapter(this).requestDayNightMode());
-        card.addView(row);
-        root.addView(card, lpMatchWrap(0, 0, 0, 12));
-    }
-
-    private void addProfilesOverview(LinearLayout root, SharedPreferences prefs) {
-        LinearLayout card = Ui.card(this);
-        card.addView(Ui.text(this, "Водитель и пассажир", 22, true));
-        card.addView(Ui.muted(this, "Активный профиль: " + AutomationEngine.prefs(this).getString(AutomationEngine.KEY_ACTIVE_PROFILE, "не выбран")));
-        card.addView(Ui.muted(this, "Последний профиль: " + prefs.getString(UserProfileEngine.KEY_LAST_USED, "нет")));
-        LinearLayout row = Ui.row(this);
-        addToggleAction(row, "Водитель", () -> showUserProfileEditor("", "driver", "manual=", UserProfileEngine.defaultDriverBody()));
-        addToggleAction(row, "Пассажир", () -> showUserProfileEditor("", "passenger", "manual=", UserProfileEngine.defaultPassengerBody()));
-        addToggleAction(row, "Последний", () -> root.addView(Ui.text(this, UserProfileEngine.apply(this, prefs.getString(UserProfileEngine.KEY_LAST_USED, "")), 13, false), 2));
         card.addView(row);
         root.addView(card, lpMatchWrap(0, 0, 0, 12));
     }
@@ -1761,6 +1748,10 @@ public class MainActivity extends Activity {
         startActivity(new Intent(this, AutomationActivity.class));
     }
 
+    private void showProfilesMenu() {
+        startActivity(new Intent(this, ProfileActivity.class));
+    }
+
 
     private void showSteeringButtons() {
         LinearLayout root = commandRoot("Кнопки руля");
@@ -1848,82 +1839,6 @@ public class MainActivity extends Activity {
         AutomationStore.saveNamed(this, AutomationEngine.KEY_BUTTON_ORDER, "button2:", "", "Next hold eco comfort", "Next hold eco comfort|87|hold||always|replace|scenario|Eco Comfort toggle");
         AutomationStore.saveNamed(this, AutomationEngine.KEY_BUTTON_ORDER, "button2:", "", "M stationary trunk", "M stationary trunk|77|press||stationary|stationary-only|command|0x21110100/0=0x64");
         Ui.toast(this, "Примеры кнопок руля добавлены");
-    }
-
-    private void showUserProfiles() {
-        LinearLayout root = commandRoot("Профили пользователей");
-        SharedPreferences prefs = UserProfileEngine.prefs(this);
-        addProfilesOverview(root, prefs);
-        Button addDriver = Ui.button(this, "Создать профиль водителя");
-        addDriver.setOnClickListener(v -> showUserProfileEditor("", "driver", "manual=", UserProfileEngine.defaultDriverBody()));
-        Button addPassenger = Ui.button(this, "Создать профиль пассажира");
-        addPassenger.setOnClickListener(v -> showUserProfileEditor("", "passenger", "manual=", UserProfileEngine.defaultPassengerBody()));
-        Button last = Ui.button(this, "Применить последний профиль");
-        last.setOnClickListener(v -> root.addView(Ui.text(this, UserProfileEngine.apply(this, prefs.getString(UserProfileEngine.KEY_LAST_USED, "")), 13, false), 2));
-        root.addView(addDriver);
-        root.addView(addPassenger);
-        root.addView(last);
-        addProfileSection(root, "Водители", "driver");
-        addProfileSection(root, "Пассажиры", "passenger");
-    }
-
-    private void addProfileSection(LinearLayout root, String title, String type) {
-        root.addView(Ui.text(this, title, 18, true));
-        for (String name : UserProfileEngine.names(this, type)) {
-            String raw = UserProfileEngine.raw(this, name);
-            Button b = Ui.button(this, name + " · " + type);
-            b.setOnClickListener(v -> root.addView(Ui.text(this, UserProfileEngine.apply(this, name), 13, false), 2));
-            b.setOnLongClickListener(v -> {
-                String identity = "";
-                String body = "";
-                for (String line : raw.split("\\n")) {
-                    if (line.startsWith("identity:")) identity = line.substring("identity:".length());
-                    else if (!line.startsWith("name:") && !line.startsWith("type:")) body += line + "\n";
-                }
-                showUserProfileEditor(name, type, identity, body);
-                return true;
-            });
-            root.addView(b);
-        }
-    }
-
-    private void showUserProfileEditor(String oldName, String oldType, String oldIdentity, String oldBody) {
-        LinearLayout root = commandRoot(oldName.isEmpty() ? "Новый профиль" : "Профиль: " + oldName);
-        EditText name = new EditText(this);
-        name.setHint("Имя профиля");
-        name.setText(oldName);
-        EditText type = new EditText(this);
-        type.setHint("driver / passenger");
-        type.setText(oldType);
-        EditText identity = new EditText(this);
-        identity.setHint("manual=Глеб; phone=Pixel; bluetooth=AA:BB; face=gleb; digitalKey=id");
-        identity.setText(oldIdentity);
-        EditText body = new EditText(this);
-        body.setMinLines(16);
-        body.setGravity(Gravity.TOP);
-        body.setHint(UserProfileEngine.defaultDriverBody());
-        body.setText(oldBody);
-        Button save = Ui.button(this, "Сохранить профиль");
-        save.setOnClickListener(v -> {
-            String result = UserProfileEngine.save(this, oldName, name.getText().toString(), type.getText().toString().trim(), identity.getText().toString(), body.getText().toString());
-            Ui.toast(this, "Профиль сохранен");
-            root.addView(Ui.text(this, result, 13, false), 2);
-        });
-        Button apply = Ui.button(this, "Применить");
-        apply.setOnClickListener(v -> root.addView(Ui.text(this, UserProfileEngine.apply(this, name.getText().toString().trim()), 13, false), 2));
-        Button delete = Ui.button(this, "Удалить");
-        delete.setOnClickListener(v -> {
-            UserProfileEngine.delete(this, oldName, oldType);
-            showUserProfiles();
-        });
-        root.addView(Ui.text(this, "Доступные строки: seatMemory, seatLength, seatHeight, seatBackrest, mirror, climateTemp, fan, seatHeat, seatVent, drive, steering, hud, brightness, ambience, volume, mediaSource, desktopPins, buttonPreset, preset, scenario, adas.", 13, false));
-        root.addView(name);
-        root.addView(type);
-        root.addView(identity);
-        root.addView(body);
-        root.addView(save);
-        root.addView(apply);
-        if (!oldName.isEmpty()) root.addView(delete);
     }
 
     private void showComfortClimate() {

@@ -274,7 +274,7 @@ public class VehicleActivity extends Activity {
         addActionChip(memory, "Save P2", () -> sendVehicle(EcarxVehicleAdapter.SEAT_POSITION_SAVE, EcarxVehicleAdapter.SEAT_POSITION_2));
         addActionChip(memory, "Recall P2", () -> sendVehicle(EcarxVehicleAdapter.SEAT_POSITION_SET, EcarxVehicleAdapter.SEAT_POSITION_2));
         addActionChip(memory, "Comfort", () -> sendVehicle(EcarxVehicleAdapter.SEAT_ONE_KEY_COMFORT, EcarxVehicleAdapter.COMMON_ON));
-        addActionChip(memory, "Профили", () -> startActivity(new Intent(this, MainActivity.class)));
+        addActionChip(memory, "Профили", () -> startActivity(new Intent(this, ProfileActivity.class)));
         panel.addView(memory, lpMatchWrap(0, 0, 0, 0));
         return panel;
     }
@@ -366,7 +366,7 @@ public class VehicleActivity extends Activity {
         panel.addView(grid, lpMatchWrap(0, 12, 0, 12));
 
         LinearLayout actions = Ui.row(this);
-        addActionChip(actions, "Профили", () -> Ui.toast(this, "Профили вынесены в отдельный раздел"));
+        addActionChip(actions, "Профили", () -> startActivity(new Intent(this, ProfileActivity.class)));
         addActionChip(actions, "Seats", () -> openMode(Mode.SEATS));
         addActionChip(actions, "Lights", () -> openMode(Mode.LIGHTS));
         addActionChip(actions, "Home", () -> openMode(Mode.HOME));

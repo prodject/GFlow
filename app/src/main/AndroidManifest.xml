@@ -52,6 +52,7 @@
         <activity android:name=".ParkingActivity" android:exported="false" />
         <activity android:name=".HudActivity" android:exported="false" />
         <activity android:name=".AutomationActivity" android:exported="false" />
+        <activity android:name=".ProfileActivity" android:exported="false" />
         <activity android:name=".DesktopActivity" android:exported="false" />
         <activity android:name=".WeatherActivity" android:exported="false" />
         <activity android:name=".AdbShellActivity" android:exported="false" />
