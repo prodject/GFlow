@@ -417,3 +417,21 @@
 - Экран `Текст`.
 - Экран `ADB / Система`.
 - Экран `Настройки`.
+
+2026-07-22
+
+Этап 21: Экран Медиа
+
+Сделано:
+- `MediaViewerActivity` полностью переведен на новый shell в стиле `Design.txt`: top bar, hero-panel, overview grid, viewer panel, info panel и bottom dock.
+- Для изображений добавлен fullscreen viewer с pinch zoom, swipe `next/prev`, `share`, `delete` и `info`.
+- Для видео добавлен `VideoView + MediaController` с playback/seek и fullscreen toggle внутри нового viewer flow.
+- Реализована gallery-навигация по соседним media-файлам из той же папки, чтобы `prev/next` работали при открытии из `FileManagerActivity`.
+- Добавлены отдельные быстрые действия `Prev`, `Next`, `Share`, `Delete`, `Fullscreen`, `Info`.
+- В info-панель и info-sheet вынесены путь, имя, размер, тип и gallery position.
+- Legacy media-viewer shell удален; экран больше не использует старую минимальную разметку.
+
+Осталось по `Design.txt`:
+- Экран `Текст`.
+- Экран `ADB / Система`.
+- Экран `Настройки`.
