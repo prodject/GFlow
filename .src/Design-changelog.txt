@@ -57,6 +57,11 @@
 - Добавлен live HVAC readback по основным и расширенным параметрам: core HVAC, температуры driver/passenger, seats/wheel, air quality, defrost/dry, advanced modes.
 - Добавлены периодические live-state обновления top bar, hero-summary и HVAC summary внутри `ClimateActivity`.
 - Все основные входы раздела `Климат` из `MainActivity` переведены на новый `ClimateActivity`; `Advanced` теперь открывается в новом экране, а не в legacy HVAC-layout.
+- Внутрь `ClimateActivity` перенесены сохраненные пользовательские climate presets: отдельный экран списка, карточки применения/редактирования/удаления и встроенный preset editor.
+- Внутрь `ClimateActivity` перенесен `Smart Climate`: отдельный mode-flow с настройками контроллера и ручным запуском шага алгоритма.
+- `ClimateActivity` расширен до многоэкранного раздела `Comfort / Advanced / Presets / Preset Editor / Smart` без возврата в старый `MainActivity`-экран.
+- Верхнеуровневые climate quick-actions на главном экране (`Климат`, `Умный климат`, `Пресеты климата`) теперь открывают только новый `ClimateActivity`.
+- Legacy climate UI и climate preset/storage helper-ветки удалены из `MainActivity`; старый климатический экран больше не используется как fallback.
 
 Осталось по `Design.txt`:
 - Экран `Автомобиль / Кузов`.
@@ -106,7 +111,9 @@
 - Внутри нового экрана добавлены вложенные flow для сидений и memory, зеркал и roof, света и внешних сигналов, drive modes / steering / custom keys.
 - Добавлены `bottom sheets` и context actions для body/seat/mirror/light/drive сценариев.
 - Добавлен live readback по кузову, свету, drive/seats и roof/mirror прямо в новом экране.
-- Legacy `showCar()` в `MainActivity` больше не используется как пользовательский raw fallback и теперь только перенаправляет в новый `VehicleActivity`.
+- Лишний legacy-router `showCar()` удален из `MainActivity`.
+- Пользовательский экран `Автомобиль / Кузов` полностью живет в `VehicleActivity`; `MainActivity` больше не содержит отдельного vehicle-screen/fallback для этого раздела.
+- Raw vehicle-команды и диагностические блоки, которые еще остаются в `MainActivity`, относятся только к experimental/system-сценариям и не являются старым экраном `Автомобиль`.
 
 Осталось по `Design.txt`:
 - Экран `DVR / Камеры`.
