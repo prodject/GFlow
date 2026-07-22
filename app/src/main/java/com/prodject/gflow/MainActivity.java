@@ -575,12 +575,6 @@ public class MainActivity extends Activity {
         drawer.addView(Ui.text(this, "GFlow Home", 28, true));
         drawer.addView(Ui.muted(this, "Быстрый доступ к крупным разделам и системным действиям."));
 
-        LinearLayout stats = Ui.row(this);
-        stats.addView(drawerBadge("Профиль", activeProfileName()));
-        stats.addView(drawerBadge("Погода", weatherTemperature()));
-        stats.addView(drawerBadge("Салон", cabinSummary()));
-        drawer.addView(stats, lpMatchWrap(0, 14, 0, 14));
-
         addDrawerAction(drawer, "Главная", this::showDashboard);
         addDrawerAction(drawer, "Климат", this::showClimateMenu);
         addDrawerAction(drawer, "Автомобиль", this::showVehicleMenu);
@@ -594,25 +588,6 @@ public class MainActivity extends Activity {
         addDrawerAction(drawer, "Погода / Браузер", this::showWeb);
         addDrawerAction(drawer, "Настройки", this::showSettings);
         return drawer;
-    }
-
-    private LinearLayout drawerBadge(String title, String value) {
-        LinearLayout badge = new LinearLayout(this);
-        badge.setOrientation(LinearLayout.VERTICAL);
-        badge.setPadding(Ui.dp(this, 12), Ui.dp(this, 8), Ui.dp(this, 12), Ui.dp(this, 8));
-        badge.setBackground(Ui.cardBg(this,
-                Ui.dark(this) ? Color.argb(80, 255, 255, 255) : Color.argb(214, 255, 255, 255),
-                Ui.dp(this, 16),
-                Ui.dark(this) ? Color.TRANSPARENT : Color.argb(72, 185, 198, 214)));
-        badge.addView(Ui.label(this, title));
-        TextView valueView = Ui.text(this, value, 13, true);
-        valueView.setPadding(0, 0, 0, 0);
-        badge.addView(valueView);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
-        lp.leftMargin = Ui.dp(this, 4);
-        lp.rightMargin = Ui.dp(this, 4);
-        badge.setLayoutParams(lp);
-        return badge;
     }
 
     private void addDrawerAction(LinearLayout drawer, String label, Runnable action) {
