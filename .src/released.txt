@@ -1,5 +1,5 @@
 GFlow coverage log
-Updated: 2026-07-21
+Updated: 2026-07-22
 
 Source inventory
 - .example: old Monji APK decompile and bundled resources.
@@ -33,6 +33,7 @@ Functional coverage
 - File manager: implemented.
 - Media viewer: implemented.
 - Text viewer: implemented.
+- Design.txt migration of main user-facing screens: implemented. Home, Climate, Vehicle, ADAS, DVR/Cameras, Parking/APA, HUD/Cluster/OneOS, Profiles, Steering Buttons, Voice, Desktop, Browser/Weather, Files, Media, Text, ADB/System and Settings now use dedicated new-style shells instead of the old flat utility layout.
 - Split launcher: partial. App chooser launches selected apps with launch-adjacent flags; privileged multi-window control still needed.
 
 2. File manager
@@ -49,6 +50,7 @@ Functional coverage
 - Camera2 discovery: implemented.
 - Archive directory and size summary: implemented.
 - Segment naming and pruning: implemented.
+- Dedicated CameraActivity in new UI: implemented. Recording controls, archive settings, EVS/DVR diagnostics and Camera2 inventory are moved out of the legacy flow.
 - Foreground camera service: partial. It attempts selected Camera2/MediaRecorder sources, then EVS/screenrecord sources, and falls back to marker files.
 - Real video recording: partial. Camera2/MediaRecorder path records selected Camera2 ids or facing aliases when permission/device support allows.
 - Stock camera integration: partial. com.ecarx.xui.adaptapi.evs.EVS can open rear/AVM-360/DVR views, and GFlow can experimentally record the displayed EVS/360 view through Android screenrecord when firmware permissions allow. Direct EVS encoder/surface capture is still pending because the decompiled IEvsCamera contract exposes preview SurfaceHolder methods but no recording surface or file writer.
@@ -59,6 +61,7 @@ Functional coverage
 - Foreground microphone service: implemented as foreground scaffold.
 - Local Vosk model pipeline: implemented.
 - Command routing to car controls: partial. Parser now maps high-confidence Russian/English commands to real ECarX function IDs for climate, presets, windows, doors/locks, sunroof/sun curtain, trunk/custom key, 360/DVR, wipers/washer, exterior/interior lights, seat/wheel heating, HUD and drive modes. Unknown commands still use the legacy broadcast path.
+- Custom voice command editor: implemented. Users can create structured commands from UI and bind them to app launch, preset and vehicle-control flows.
 
 5. Vehicle controls
 - Real contract found: com.ecarx.xui.adaptapi.car.Car.create(Context), ICar.getICarFunction(), ICarFunction.getFunctionValue/setFunctionValue/isFunctionSupported.
@@ -69,6 +72,7 @@ Functional coverage
 - Seat IDs found in ISeat.smali: seat position, height, backrest, cushion, headrest, massage-related controls.
 - Current GFlow status: reflection adapter and UI buttons are implemented for high-confidence HVAC, BCM, ADAS, HUD, drive mode and seat int functions. HVAC coverage includes power/AC/auto/eco, full fan scale, circulation, blowing modes, defrost, climate zone, zoned seat heating/ventilation/massage, steering wheel heat and direct driver/passenger temperature writes. BCM coverage includes zoned windows, doors, locks, child lock/scene lock, sunroof/sun curtain, mirror fold/defrost, mirror adjust activation through ControlBoard-confirmed zones, display/power buttons, reading lights, wipers, washer, custom key enums, grille colors/FPL/ICC enums and the lamp set with clear ON/OFF values from IBcm.smali.
 - Readback/support diagnostics: implemented for selected HVAC, BCM, ADAS, HUD, drive and seat IDs through getFunctionValue/isFunctionSupported.
+- VehicleActivity in new UI: implemented. Vehicle/body controls, seats, mirrors, lights and drive sections now live in a dedicated screen, including experimental drive controls and cluster-related drive settings.
 - Next implementation target: firmware validation of which row-2 zones are supported on target cars, and enabling steering wheel adjust / raw cap actions only after a confirmed write value is found outside support/readback mapping.
 
 6. Climate presets
@@ -83,6 +87,7 @@ Functional coverage
 - UI text: scaffold.
 - Real function IDs found in IADAS.smali.
 - Direct toggles/readback: partial. On/off toggles, selected mode values and readback/support diagnostics are wired through EcarxVehicleAdapter for the high-confidence ADAS IDs. ACC/ICC controls now include switch mode, following time gap, ACC-with-TSR, speed-control mode, speed-limitation mode, experimental max cruising speed commands, TLB switch/mode LOW/MIDDLE/HIGH, traffic-light attention/sound, ACC/ICC activation/TTS status diagnostics and an experimental Highway assist ready smart preset installer that only prepares ADAS settings.
+- Dedicated AdasActivity in new UI: implemented. High-confidence ADAS controls, parking assist bridge, experimental readable toggles and developer diagnostics are moved out of MainActivity.
 
 8. HUD / Cluster / OneOS
 - Media session listener: implemented.
@@ -90,6 +95,7 @@ Functional coverage
 - HUD presentation/observer services: scaffold.
 - Cluster bridge service: scaffold.
 - Real HUD/cluster contracts: partial. HUD vehicle function buttons and selected readback/support diagnostics added from IHUD.smali. HUDInteraction status/sync requests, DIMInteraction status/day-night/presentation bridge, IDimMenuInteraction tab/theme/nav/volume commands, IClimateInteraction temperature/unit writes and IMediaInteraction MediaSession publishing are wired through reflection from OneOS-SystemUIPlugin. AudioExtService exported binder control is partially wired through raw AIDL transactions; native FDBus/protobuf low-level control and real cluster/HUD render surfaces are still pending.
+- Dedicated HudActivity in new UI: implemented. HUD, DIM navigation display mode, AudioExt bridge and service actions are routed through a separate screen instead of legacy main-screen helpers.
 
 9. Browser / weather / internet
 - Weather via Open-Meteo: implemented.
@@ -114,6 +120,7 @@ Functional coverage
 - Autostart after boot: partial; BootReceiver starts VoiceForegroundService.
 - Watchdog accessibility service: partial. It tracks foreground package from TYPE_WINDOW_STATE_CHANGED events.
 - Active app tracking/autozoom: partial. ADB/System screen stores package filters and scale; AccessibilityService applies Settings.System.FONT_SCALE for matching foreground packages when enabled.
+- System backup/restore/reset tools: implemented. SettingsActivity can export all shared preferences to JSON, restore them from a chosen file and run a full app reset with uninstall flow.
 
 12. Automation / smart logic
 - Smart presets: implemented. Users can create app-defined command presets from AdaptAPI function/zone/value lines, including float HVAC temperature writes.
@@ -141,8 +148,13 @@ Functional coverage
 - Inner tab redesign: implemented. Shared command screens now use a cleaner header, back action, integration status card, help button, entry animation, developer/user diagnostic filtering, screen maps for core pages, compact Automation panels and grouped Experimental pages.
 - Visual safety states: implemented. Shared command helpers now render dedicated SAFE/DIAG/EXP/PRIV/FIRMWARE badge widgets beside command labels, provide long-press safety explanations and hide raw function IDs in normal mode.
 - End-user mode vs developer diagnostics mode: implemented. Settings has a Developer diagnostics toggle; normal user mode hides diagnostic blocks and raw IDs, while developer mode restores support/readback/HAL diagnostics and hex command details.
+- Unified diagnostics report: implemented. Settings -> Auto diagnostics now exports grouped support/readback coverage for all major UI-exposed vehicle functions plus Parking signals/HAL, HUD/DIM, AudioExt, DVR/EVS, Camera2 inventory, OneOS Dock and ControlBoard availability.
 
 Implementation log
+- 2026-07-22: migrated the remaining major user-facing sections to dedicated new-style activities based on Design.txt, including Camera, Parking, HUD/Cluster, Voice, Profiles, Steering Buttons, Files, Media, Text, ADB/System and Settings.
+- 2026-07-22: added SettingsActivity backup/restore/full reset tools with JSON shared-preferences export/import and uninstall flow.
+- 2026-07-22: expanded Settings auto diagnostics from a small fixed probe set to a unified grouped report covering UI-exposed vehicle functions and secondary raw/service layers: Parking signals/HAL, HUD/DIM, AudioExt, DVR/EVS, Camera2, OneOS Dock and ControlBoard.
+- 2026-07-22: updated README Current Implementation Status to reflect the completed Design.txt migration and unified diagnostics coverage.
 - 2026-07-22: added UX / visual design backlog for the 13.2 inch vertical head-unit interface with implemented/partial/pending statuses.
 - 2026-07-22: replaced the main flat dashboard grid with a status-first grouped dashboard: vehicle, scenarios, multimedia/system and experimental sections.
 - 2026-07-22: added shared programmatic UI components in Ui.java: cards, pills, muted text, help buttons, dialog tips and fade/slide entry animation.
