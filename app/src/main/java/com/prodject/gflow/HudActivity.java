@@ -18,6 +18,8 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 
 public class HudActivity extends Activity {
+    private LinearLayout advancedHost;
+
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(buildHudShell());
@@ -36,6 +38,7 @@ public class HudActivity extends Activity {
         root.addView(buildTopBar(), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 72)));
         root.addView(buildHeroPanel(), lpMatchWrap(0, 16, 0, 16));
         root.addView(buildControlPanel(), lpMatchWrap(0, 0, 0, 16));
+        root.addView(buildAdvancedPanel(), lpMatchWrap(0, 0, 0, 16));
         root.addView(buildStatusGrid(), lpMatchWrap(0, 0, 0, 16));
         root.addView(buildBottomDock(), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 112)));
         return scroll;
@@ -104,7 +107,7 @@ public class HudActivity extends Activity {
         addActionChip(quick, "HUD On", () -> sendVehicle(EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.COMMON_ON));
         addActionChip(quick, "Навигация", () -> sendVehicle(EcarxVehicleAdapter.HUD_DISPLAY_NAVI, EcarxVehicleAdapter.COMMON_ON));
         addActionChip(quick, "DIM Night", this::requestDimNight);
-        addActionChip(quick, "Service", this::openLegacyHud);
+        addActionChip(quick, "Advanced", this::openAdvancedHud);
         hero.addView(quick, lpMatchWrap(0, 14, 0, 0));
         return hero;
     }
@@ -141,9 +144,80 @@ public class HudActivity extends Activity {
         addActionChip(services, "HUD SVC", () -> startForegroundService(new Intent(this, HudPresentationService.class)));
         addActionChip(services, "Observer", () -> startForegroundService(new Intent(this, HudObserverService.class)));
         addActionChip(services, "Cluster", () -> startForegroundService(new Intent(this, ClusterBridgeService.class)));
-        addActionChip(services, "Legacy", this::openLegacyHud);
+        addActionChip(services, "Advanced", this::openAdvancedHud);
         panel.addView(services, lpMatchWrap(0, 12, 0, 0));
         return panel;
+    }
+
+    private LinearLayout buildAdvancedPanel() {
+        LinearLayout panel = Ui.glassCard(this);
+        panel.addView(Ui.label(this, "Advanced Projection"));
+        panel.addView(Ui.muted(this, "Полный набор OneOS / DIM / AudioExt / Cluster перенесен в новый HUD-экран без legacy fallback."));
+        advancedHost = new LinearLayout(this);
+        advancedHost.setOrientation(LinearLayout.VERTICAL);
+        panel.addView(advancedHost, lpMatchWrap(0, 12, 0, 0));
+        renderAdvancedPanel();
+        return panel;
+    }
+
+    private void renderAdvancedPanel() {
+        if (advancedHost == null) return;
+        advancedHost.removeAllViews();
+
+        LinearLayout hud = Ui.glassCard(this);
+        hud.addView(Ui.text(this, "HUD / DIM Bridge", 18, true));
+        hud.addView(Ui.muted(this, new EcarxHudDimAdapter(this).availability()));
+        addCommand(hud, "HUD включить", EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(hud, "HUD выключить", EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(hud, "HUD calibration", EcarxVehicleAdapter.HUD_CALIBRATION, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(hud, "HUD angle reset", EcarxVehicleAdapter.HUD_ANGLE_RESET, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(hud, "HUD snow mode", EcarxVehicleAdapter.HUD_SNOW_MODE, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(hud, "HUD safety on", EcarxVehicleAdapter.HUD_DISPLAY_SAFETY, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(hud, "HUD media on", EcarxVehicleAdapter.HUD_DISPLAY_MEDIA, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(hud, "HUD navi on", EcarxVehicleAdapter.HUD_DISPLAY_NAVI, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(hud, "HUD phone on", EcarxVehicleAdapter.HUD_DISPLAY_BTPHONE, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(hud, "HUD drive env on", EcarxVehicleAdapter.HUD_DISPLAY_DRIVE_ENVIRONMENT, EcarxVehicleAdapter.COMMON_ON);
+        addDiagnostic(hud, "HUD", EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.HUD_DISPLAY_NAVI, EcarxVehicleAdapter.HUD_DISPLAY_SAFETY);
+        addHudDimAction(hud, "HUDInteraction: статус", a -> a.hudStatus());
+        addHudDimAction(hud, "HUDInteraction: height/sync", a -> a.hudSync());
+        addHudDimAction(hud, "DIMInteraction: статус", a -> a.dimStatus());
+        addHudDimAction(hud, "DIM: запрос day/night", EcarxHudDimAdapter::requestDayNightMode);
+        addHudDimAction(hud, "DIM: presentation on", a -> a.setPresentation(true));
+        addHudDimAction(hud, "DIM: presentation off", a -> a.setPresentation(false));
+        addHudDimAction(hud, "DIM Menu: IHU ready/theme", EcarxHudDimAdapter::dimMenuReadyAndTheme);
+        addHudDimAction(hud, "DIM Menu: вкладка навигации", a -> a.dimMenuTab(EcarxHudDimAdapter.DIM_TAB_NAVIGATION));
+        addHudDimAction(hud, "DIM Menu: вкладка музыки", a -> a.dimMenuTab(EcarxHudDimAdapter.DIM_TAB_MUSIC));
+        addHudDimAction(hud, "DIM Menu: control center", a -> a.dimMenuTab(EcarxHudDimAdapter.DIM_TAB_CONTROL_CENTER));
+        addHudDimAction(hud, "DIM Navi: simplify", a -> a.switchNaviMode(EcarxHudDimAdapter.NAVI_MODE_SIMPLIFY));
+        addHudDimAction(hud, "DIM Navi: AR", a -> a.switchNaviMode(EcarxHudDimAdapter.NAVI_MODE_AR));
+        addHudDimAction(hud, "DIM volume 10", a -> a.setDimVolume(false, 10));
+        addHudDimAction(hud, "DIM climate unit Celsius", EcarxHudDimAdapter::climateCelsiusUnit);
+        addHudDimAction(hud, "DIM climate temp 22.0C", a -> a.climateTemp(22.0f));
+        addHudDimAction(hud, "DIM avg fuel sample", a -> a.updateAvgFuelRanking(0, "{\"source\":\"GFlow\",\"avg\":0}"));
+        addHudDimAction(hud, "DIM media mute", a -> a.publishMediaMuteState(1));
+        addHudDimAction(hud, "DIM media unmute", a -> a.publishMediaMuteState(0));
+        advancedHost.addView(hud, lpMatchWrap(0, 0, 0, 16));
+
+        LinearLayout audio = Ui.glassCard(this);
+        audio.addView(Ui.text(this, "AudioExt / Services", 18, true));
+        audio.addView(Ui.muted(this, "Media bridge, VR, PDC volume, anti-shake, loudness и service actions внутри нового UI."));
+        addAudioExtAction(audio, "AudioExt: bind services", AudioExtServiceAdapter::bindAudioExt);
+        addAudioExtAction(audio, "AudioExt: visualizer status", AudioExtServiceAdapter::visualizerStatus);
+        addAudioExtAction(audio, "AudioExt: media playing", a -> a.notifyMediaStatus(1, getPackageName()));
+        addAudioExtAction(audio, "AudioExt: media paused", a -> a.notifyMediaStatus(0, getPackageName()));
+        addAudioExtAction(audio, "AudioExt: VR active", a -> a.notifyVrStatus(1, 0));
+        addAudioExtAction(audio, "AudioExt: VR inactive", a -> a.notifyVrStatus(0, 0));
+        addAudioExtAction(audio, "AudioExt: PDC volume on", a -> a.notifyPdcVolumeSwitch(1));
+        addAudioExtAction(audio, "AudioExt: voice light 0.8", a -> a.voiceLight(0.8f));
+        addAudioExtAction(audio, "AudioExt: anti-shake on", a -> a.antiShake(true, 0.5f));
+        addAudioExtAction(audio, "AudioExt: loudness on", a -> a.loudness(true));
+        addAudioExtAction(audio, "AudioExt: section max on", a -> a.useSectionMax(true));
+        addAudioExtAction(audio, "AudioExt: voice base -35dB", a -> a.voiceDb(-35));
+        addAudioExtAction(audio, "AudioExt: spectrum preset", a -> a.spectrumPreset(0, 1, 1.0f, 1.0f));
+        addServiceAction(audio, "Запустить HUD service", () -> startForegroundService(new Intent(this, HudPresentationService.class)));
+        addServiceAction(audio, "Запустить HUD observer", () -> startForegroundService(new Intent(this, HudObserverService.class)));
+        addServiceAction(audio, "Запустить Cluster bridge", () -> startForegroundService(new Intent(this, ClusterBridgeService.class)));
+        advancedHost.addView(audio, lpMatchWrap(0, 0, 0, 0));
     }
 
     private GridLayout buildStatusGrid() {
@@ -255,8 +329,80 @@ public class HudActivity extends Activity {
         Ui.toast(this, result.success ? "DIM tab отправлен" : "DIM tab ошибка");
     }
 
-    private void openLegacyHud() {
-        Ui.toast(this, "Raw HUD/DIM/AudioExt команды пока оставлены в legacy fallback");
+    private void openAdvancedHud() {
+        if (advancedHost != null) advancedHost.requestFocus();
+        Ui.toast(this, "Открыт advanced HUD flow");
+    }
+
+    private void addCommand(LinearLayout root, String label, int functionId, int value) {
+        Button b = Ui.button(this, label);
+        b.setOnClickListener(v -> {
+            EcarxVehicleAdapter.Result result = CarCommandBus.sendVehicle(this, functionId, value);
+            Ui.toast(this, result.success ? "Команда отправлена" : "Команда не выполнена");
+            root.addView(Ui.text(this, result.message, 13, false), Math.min(3, root.getChildCount()));
+        });
+        root.addView(b, lpMatchWrap(0, 6, 0, 0));
+    }
+
+    private void addDiagnostic(LinearLayout root, String label, int... functionIds) {
+        Button b = Ui.button(this, "Диагностика: " + label);
+        b.setOnClickListener(v -> {
+            EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
+            StringBuilder sb = new StringBuilder(label).append("\n");
+            for (int functionId : functionIds) {
+                sb.append(adapter.support(functionId).message).append("\n");
+                sb.append(adapter.get(functionId).message).append("\n");
+            }
+            root.addView(Ui.text(this, sb.toString(), 13, false), Math.min(3, root.getChildCount()));
+        });
+        root.addView(b, lpMatchWrap(0, 6, 0, 0));
+    }
+
+    private void addHudDimAction(LinearLayout root, String label, HudDimAction action) {
+        Button b = Ui.button(this, label);
+        b.setOnClickListener(v -> {
+            EcarxHudDimAdapter.Result result;
+            try {
+                result = action.run(new EcarxHudDimAdapter(this));
+            } catch (Exception e) {
+                result = EcarxHudDimAdapter.Result.text(false, e.getClass().getSimpleName() + ": " + e.getMessage());
+            }
+            Ui.toast(this, result.success ? "OneOS команда отправлена" : "OneOS команда не выполнена");
+            root.addView(Ui.text(this, result.message, 13, false), Math.min(3, root.getChildCount()));
+        });
+        root.addView(b, lpMatchWrap(0, 6, 0, 0));
+    }
+
+    interface HudDimAction {
+        EcarxHudDimAdapter.Result run(EcarxHudDimAdapter adapter);
+    }
+
+    private void addAudioExtAction(LinearLayout root, String label, AudioExtAction action) {
+        Button b = Ui.button(this, label);
+        b.setOnClickListener(v -> {
+            AudioExtServiceAdapter.Result result;
+            try {
+                result = action.run(new AudioExtServiceAdapter(this));
+            } catch (Exception e) {
+                result = AudioExtServiceAdapter.Result.text(false, e.getClass().getSimpleName() + ": " + e.getMessage());
+            }
+            Ui.toast(this, result.success ? "AudioExt команда отправлена" : "AudioExt команда не выполнена");
+            root.addView(Ui.text(this, result.message, 13, false), Math.min(3, root.getChildCount()));
+        });
+        root.addView(b, lpMatchWrap(0, 6, 0, 0));
+    }
+
+    interface AudioExtAction {
+        AudioExtServiceAdapter.Result run(AudioExtServiceAdapter adapter);
+    }
+
+    private void addServiceAction(LinearLayout root, String label, Runnable action) {
+        Button b = Ui.button(this, label);
+        b.setOnClickListener(v -> {
+            action.run();
+            Ui.toast(this, label);
+        });
+        root.addView(b, lpMatchWrap(0, 6, 0, 0));
     }
 
     private LinearLayout.LayoutParams lpMatchWrap(int l, int t, int r, int b) {

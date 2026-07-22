@@ -235,10 +235,9 @@
 - Добавлен новый HUD shell в стиле `Design.txt`: top bar, hero-panel, projection controls, status cards, bottom dock.
 - Внутри нового экрана добавлены быстрые действия для HUD, navigation/media/safety display, DIM night, presentation, tab switching и сервисов.
 - Добавлен отдельный визуальный projection-блок.
-
-Сделано частично:
-- Новый экран покрывает основной пользовательский сценарий HUD / DIM / Cluster, но raw-команды OneOS, AudioExt и полная диагностика пока оставлены в legacy fallback внутри `MainActivity`.
-- Media bridge и service-monitoring пока не вынесены в отдельные вложенные экраны.
+- В `HudActivity` добавлен новый advanced flow для `HUD / DIM Bridge`: raw HUD commands, DIM menu, navigation modes, climate readback и media mute state.
+- В `HudActivity` добавлен новый advanced flow для `AudioExt / Services`: media bridge, VR, PDC volume, anti-shake, loudness, spectrum preset и service actions.
+- Legacy `showHud()` и связанные `HudDim` / `AudioExt` helper-ветки удалены из `MainActivity`.
 
 Осталось по `Design.txt`:
 - Экран `Автоматизация`.
