@@ -24,7 +24,7 @@ public class FileManagerActivity extends Activity {
     }
 
     private void render() {
-        LinearLayout root = Ui.root(this, "Файловый менеджер");
+        LinearLayout root = Ui.root(this, "Файловый менеджер", this::finish);
         path = Ui.text(this, current.getAbsolutePath() + "\n" + storageInfo(current) + (moveCandidate == null ? "" : "\nК перемещению: " + moveCandidate.getName()), 14, false);
         root.addView(path);
         LinearLayout bar = new LinearLayout(this);

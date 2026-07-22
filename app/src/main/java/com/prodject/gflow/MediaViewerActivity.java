@@ -10,7 +10,7 @@ public class MediaViewerActivity extends Activity {
     @Override public void onCreate(Bundle b) {
         super.onCreate(b);
         String path = getIntent().getStringExtra("path");
-        LinearLayout root = Ui.root(this, "Медиа");
+        LinearLayout root = Ui.root(this, "Медиа", this::finish);
         if (path == null) {
             root.addView(Ui.text(this, "Откройте фото, видео или аудио из файлового менеджера.", 16, false));
         } else if (path.matches("(?i).+\\.(png|jpg|jpeg|webp|gif)$")) {

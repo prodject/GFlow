@@ -13,7 +13,7 @@ public class AdbShellActivity extends Activity {
 
     @Override public void onCreate(Bundle b) {
         super.onCreate(b);
-        LinearLayout root = Ui.root(this, "ADB / Система");
+        LinearLayout root = Ui.root(this, "ADB / Система", this::finish);
         EditText command = new EditText(this);
         command.setHint("Команда shell");
         command.setText("settings get global adb_enabled");

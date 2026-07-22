@@ -29,7 +29,7 @@ public class DesktopActivity extends Activity {
 
     private void render() {
         ScrollView scroll = new ScrollView(this);
-        root = Ui.root(this, "Рабочий стол");
+        root = Ui.root(this, "Рабочий стол", this::finish);
         applyTheme(root);
         root.addView(Ui.text(this, new SimpleDateFormat("HH:mm · dd.MM.yyyy", Locale.getDefault()).format(new Date()), 20, true));
         addWeatherWidget();
