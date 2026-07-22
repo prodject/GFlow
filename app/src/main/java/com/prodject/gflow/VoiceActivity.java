@@ -3,6 +3,7 @@ package com.prodject.gflow;
 import android.app.*;
 import android.content.*;
 import android.os.*;
+import android.view.*;
 import android.widget.*;
 import java.util.*;
 import java.util.regex.*;
@@ -10,15 +11,23 @@ import java.util.regex.*;
 public class VoiceActivity extends Activity {
     private final VoskVoiceRecognizer recognizer = new VoskVoiceRecognizer();
     private TextView result;
+    private LinearLayout commands;
+    private EditText commandInput;
 
     @Override public void onCreate(Bundle b) {
         super.onCreate(b);
         startForegroundService(new Intent(this, VoiceForegroundService.class));
-        LinearLayout root = Ui.root(this, "Голосовой ассистент");
-        root.addView(Ui.text(this, "Экран прослушивания. Локальная модель: assets/vosk-model-ru, нативная библиотека: libvosk.so. Поддерживаются app.monji.VOICE, VOICE_COMMAND и ASSIST.", 16, false));
+        ScrollView scroll = new ScrollView(this);
+        LinearLayout root = Ui.root(this, "Голосовой ассистент", this::finish);
+        LinearLayout hero = Ui.card(this);
+        hero.addView(Ui.text(this, "Голосовые команды", 22, true));
+        hero.addView(Ui.muted(this, "Vosk работает локально. Команды можно редактировать: фраза слева, действие справа."));
+        root.addView(hero, margin(0, 8, 0, 12));
         EditText input = new EditText(this);
+        commandInput = input;
         input.setHint("Введите или продиктуйте команду");
         input.setText(getIntent().getStringExtra("command"));
+        styleInput(input);
         Button run = Ui.button(this, "Выполнить");
         result = Ui.text(this, "", 16, true);
         String source = getIntent().getStringExtra("source");
@@ -34,16 +43,26 @@ public class VoiceActivity extends Activity {
         });
         listen.setOnClickListener(v -> recognizer.start(this, text -> runOnUiThread(() -> result.setText(text))));
         stop.setOnClickListener(v -> recognizer.stop());
-        root.addView(input);
-        root.addView(run);
-        root.addView(listen);
-        root.addView(stop);
-        root.addView(result);
-        setContentView(root);
+        LinearLayout commandCard = Ui.card(this);
+        commandCard.addView(input, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 56)));
+        LinearLayout row = Ui.row(this);
+        row.addView(run, buttonLp());
+        row.addView(listen, buttonLp());
+        row.addView(stop, buttonLp());
+        commandCard.addView(row);
+        commandCard.addView(result);
+        root.addView(commandCard, margin(0, 0, 0, 12));
+        commands = Ui.card(this);
+        root.addView(commands);
+        renderCommands(input);
+        scroll.addView(root);
+        setContentView(scroll);
     }
 
     private String runVoiceCommand(String cmd) {
         if (cmd.trim().isEmpty()) return "Пустая команда";
+        String alias = aliasFor(cmd);
+        if (alias != null && !alias.equals(cmd)) cmd = alias.toLowerCase(Locale.ROOT);
         AutomationEngine.runTrigger(this, "voice", cmd);
 
         EcarxVehicleAdapter.Result[] preset = parsePreset(cmd);
@@ -54,6 +73,100 @@ public class VoiceActivity extends Activity {
 
         CarCommandBus.send(this, "voice", cmd);
         return "Команда отправлена в broadcast: " + cmd;
+    }
+
+    private void renderCommands(EditText input) {
+        commands.removeAllViews();
+        LinearLayout head = Ui.row(this);
+        head.addView(Ui.text(this, "Доступные команды", 18, true), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        Button add = Ui.iconButton(this, "+", "Добавить команду");
+        add.setOnClickListener(v -> editAlias("", ""));
+        head.addView(add, new LinearLayout.LayoutParams(Ui.dp(this, 44), Ui.dp(this, 44)));
+        commands.addView(head);
+        for (String item : aliases()) {
+            String[] parts = item.split("\\|", 2);
+            String phrase = parts[0];
+            String action = parts.length > 1 ? parts[1] : parts[0];
+            Button b = Ui.button(this, phrase + "  ->  " + action);
+            b.setOnClickListener(v -> {
+                EditText target = input != null ? input : commandInput;
+                if (target != null) target.setText(phrase);
+            });
+            b.setOnLongClickListener(v -> { editAlias(phrase, action); return true; });
+            commands.addView(b, margin(0, 4, 0, 4));
+        }
+    }
+
+    private Set<String> aliases() {
+        LinkedHashSet<String> defaults = new LinkedHashSet<>();
+        defaults.add("включи климат|климат включить");
+        defaults.add("охлади салон|пресет охлаждение");
+        defaults.add("зимний режим|зима");
+        defaults.add("открой камеры|камера 360");
+        defaults.add("включи подогрев руля|подогрев руля");
+        return getPreferences(0).getStringSet("aliases", defaults);
+    }
+
+    private String aliasFor(String cmd) {
+        String normalized = cmd.trim().toLowerCase(Locale.ROOT);
+        for (String item : aliases()) {
+            String[] parts = item.split("\\|", 2);
+            if (parts.length == 2 && normalized.equals(parts[0].trim().toLowerCase(Locale.ROOT))) return parts[1];
+        }
+        return null;
+    }
+
+    private void editAlias(String oldPhrase, String oldAction) {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        int p = Ui.dp(this, 18);
+        box.setPadding(p, p, p, 0);
+        EditText phrase = new EditText(this);
+        phrase.setHint("Фраза");
+        phrase.setText(oldPhrase);
+        styleInput(phrase);
+        EditText action = new EditText(this);
+        action.setHint("Команда для выполнения");
+        action.setText(oldAction);
+        styleInput(action);
+        box.addView(phrase, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 56)));
+        box.addView(action, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 56)));
+        new AlertDialog.Builder(this)
+                .setView(box)
+                .setPositiveButton("Сохранить", (d, w) -> {
+                    LinkedHashSet<String> items = new LinkedHashSet<>(aliases());
+                    if (!oldPhrase.isEmpty()) items.remove(oldPhrase + "|" + oldAction);
+                    items.add(phrase.getText().toString().trim() + "|" + action.getText().toString().trim());
+                    getPreferences(0).edit().putStringSet("aliases", items).apply();
+                    renderCommands(null);
+                })
+                .setNegativeButton("Удалить", (d, w) -> {
+                    LinkedHashSet<String> items = new LinkedHashSet<>(aliases());
+                    items.remove(oldPhrase + "|" + oldAction);
+                    getPreferences(0).edit().putStringSet("aliases", items).apply();
+                    renderCommands(null);
+                })
+                .show();
+    }
+
+    private void styleInput(EditText e) {
+        e.setTextColor(Ui.textColor(this));
+        e.setHintTextColor(Ui.mutedColor(this));
+        e.setSingleLine(true);
+        e.setPadding(Ui.dp(this, 14), 0, Ui.dp(this, 14), 0);
+        e.setBackground(Ui.cardBg(this, Ui.panel(this), Ui.dp(this, 14), Ui.lineColor(this)));
+    }
+
+    private LinearLayout.LayoutParams margin(int l, int t, int r, int b) {
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.setMargins(Ui.dp(this, l), Ui.dp(this, t), Ui.dp(this, r), Ui.dp(this, b));
+        return lp;
+    }
+
+    private LinearLayout.LayoutParams buttonLp() {
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 56), 1);
+        lp.setMargins(Ui.dp(this, 4), Ui.dp(this, 8), Ui.dp(this, 4), 0);
+        return lp;
     }
 
     private EcarxVehicleAdapter.Result parseVehicleCommand(String cmd) {
