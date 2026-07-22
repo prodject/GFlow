@@ -77,7 +77,7 @@ public class AdbShellActivity extends Activity {
     private void execute(String cmd) {
         new Thread(() -> {
             try {
-                Process p = new ProcessBuilder("sh", "-c", cmd).redirectErrorStream(true).start();
+                java.lang.Process p = new ProcessBuilder("sh", "-c", cmd).redirectErrorStream(true).start();
                 String text = read(p.getInputStream());
                 int code = p.waitFor();
                 runOnUiThread(() -> output.setText("$ " + cmd + "\nexit " + code + "\n" + text));

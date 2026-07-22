@@ -1,8 +1,8 @@
-# GControl
+# GFlow
 
-GControl is an Android 11+ application for an Android-based car head unit.
+GFlow is an Android 11+ application for an Android-based car head unit.
 
-Package: `com.prodject.gcontrol`
+Package: `com.prodject.gflow`
 
 The app provides a single car-control workspace with:
 
@@ -40,10 +40,10 @@ Some vehicle functions depend on firmware-specific Geely/ECARX/OneOS APIs, privi
 
 GitHub Actions builds the APK on every push to `main`/`master` and on manual workflow runs.
 
-Release versions use the format `1.X`, where `X` is the GitHub Actions run number. The generated APK is attached to the GitHub Release as `GControl-1X.apk`.
+Prerelease versions use the format `1.X`, starting from `1.0` and incrementing from the latest existing GitHub prerelease. The generated APK is attached to the GitHub prerelease as `GFlow-1.X.apk`.
 
 ## Warranty Disclaimer
 
-GControl is an independent project and is not affiliated with, endorsed by, or certified by Geely, ECARX, OneOS, or any vehicle manufacturer.
+GFlow is an independent project and is not affiliated with, endorsed by, or certified by Geely, ECARX, OneOS, or any vehicle manufacturer.
 
 Using third-party software, ADB grants, privileged permissions, system settings changes, camera recording, or vehicle-control integrations may affect the warranty, service eligibility, safety behavior, or legal compliance of a Geely vehicle. You use this application at your own risk. Before installing or enabling vehicle-control functions, check the warranty terms, local laws, and service requirements for your specific vehicle and head-unit firmware.
