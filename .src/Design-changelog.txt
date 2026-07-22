@@ -495,6 +495,9 @@
 - В general settings вынесены `Experimental features toggle`, `Developer diagnostics toggle`, `Theme`, `Accent color` и `Start screen`.
 - В updates flow перенесены `проверить GitHub releases`, поиск APK asset, `скачать APK` и `установить скачанный APK`.
 - В diagnostics flow перенесены `автодиагностика`, генерация `gflow-diagnostics.txt` и отправка лога.
+- `Автодиагностика` расширена с базового набора до full coverage по функциям, уже выведенным в проекте: `HVAC`, `Vehicle Body`, `Drive / Cluster`, `ADAS`, `ADAS Experimental`, `Parking / APA / AVM`, `HUD / OneOS`, `Ambience / DayMode`, `AVAS / Digital Key / Seat`.
+- Лог `gflow-diagnostics.txt` теперь формируется по группам экранов и содержит support/readback для полного текущего UI-покрытия, чтобы по ответам прошивки можно было дальше дописывать проект.
+- В unified diagnostics-лог дополнительно включены сервисные и raw-источники вне `EcarxVehicleAdapter`: `CarSignalManager` (`APA/RPA` сигналы), `HAL mobile RPA properties`, `HUD/DIM availability + status/sync`, `AudioExt bind + visualizer status`, `DVR/EVS availability + mode/status`, `Camera2 inventory`, `OneOS Dock status`, `ControlBoard availability`.
 - Все основные входы из `MainActivity` на `Настройки` переведены на новый `SettingsActivity`.
 - Legacy встроенный settings/update/diagnostics shell удален из `MainActivity`.
 - `SettingsActivity` подключен в `AndroidManifest.xml`.

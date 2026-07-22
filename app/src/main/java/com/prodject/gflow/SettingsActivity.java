@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -23,9 +25,14 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Field;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Date;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
 import org.json.JSONArray;
@@ -43,7 +50,7 @@ public class SettingsActivity extends Activity {
 
     private LinearLayout contentHost;
     private String releaseState = "Источник: github.com/prodject/GFlow/releases";
-    private String diagnosticsState = "Проверяет AdaptAPI availability, support/readback по HVAC/BCM/ADAS/HUD/seat и формирует лог.";
+    private String diagnosticsState = "Проверяет availability и полный support/readback по функциям, уже выведенным в проекте, и формирует лог.";
     private String systemState = "Backup / restore / reset приложения.";
     private final String[] latestApkUrl = {""};
     private byte[] pendingBackupBytes;
@@ -256,7 +263,7 @@ public class SettingsActivity extends Activity {
     private LinearLayout buildDiagnosticsPanel() {
         LinearLayout panel = Ui.glassCard(this);
         panel.addView(Ui.label(this, "Автодиагностика"));
-        panel.addView(Ui.text(this, "Проверка AdaptAPI availability, support/readback по HVAC/BCM/ADAS/HUD/Seat, генерация и отправка лога.", 14, false));
+        panel.addView(Ui.text(this, "Проверка availability и support/readback по всем основным функциям, уже добавленным в новый UI: HVAC, кузов, drive, ADAS, parking, HUD, ambience, daymode, AVAS, digital key и seat.", 14, false));
         panel.addView(Ui.muted(this, diagnosticsState), lpMatchWrap(0, 8, 0, 0));
 
         LinearLayout row = Ui.row(this);
@@ -374,26 +381,28 @@ public class SettingsActivity extends Activity {
         renderContent();
         new Thread(() -> {
             EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
-            int[] ids = {
-                    EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.HVAC_AC, EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.HVAC_TEMP,
-                    EcarxVehicleAdapter.BCM_WINDOW, EcarxVehicleAdapter.BCM_DOOR, EcarxVehicleAdapter.BCM_DOOR_LOCK, EcarxVehicleAdapter.BCM_LIGHT_DIPPED_BEAM,
-                    EcarxVehicleAdapter.ADAS_AEB, EcarxVehicleAdapter.ADAS_FCW, EcarxVehicleAdapter.ADAS_LKA, EcarxVehicleAdapter.ADAS_PDC,
-                    EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.SEAT_POSITION_SET
-            };
             StringBuilder log = new StringBuilder();
             log.append("GFlow auto diagnostics\n").append(new Date()).append("\n\n");
             log.append(adapter.availability()).append("\n\n");
-            for (int id : ids) {
-                log.append(adapter.support(id).message).append("\n");
-                log.append(adapter.get(id).message).append("\n\n");
+            LinkedHashMap<String, int[]> groups = buildDiagnosticsGroups();
+            int total = 0;
+            for (Map.Entry<String, int[]> entry : groups.entrySet()) {
+                log.append("== ").append(entry.getKey()).append(" ==\n");
+                for (int id : entry.getValue()) {
+                    total++;
+                    log.append(adapter.support(id).message).append("\n");
+                    log.append(adapter.get(id).message).append("\n\n");
+                }
             }
+            appendAdvancedDiagnostics(log);
+            final int totalCount = total;
             try {
                 File file = new File(getCacheDir(), "gflow-diagnostics.txt");
                 try (FileOutputStream out = new FileOutputStream(file)) {
                     out.write(log.toString().getBytes("UTF-8"));
                 }
                 runOnUiThread(() -> {
-                    diagnosticsState = "Лог готов: " + file.getAbsolutePath();
+                    diagnosticsState = "Лог готов: " + file.getAbsolutePath() + " · " + totalCount + " function IDs";
                     renderContent();
                     shareFile(file);
                 });
@@ -422,6 +431,235 @@ public class SettingsActivity extends Activity {
         intent.putExtra(Intent.EXTRA_STREAM, uri);
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         startActivity(Intent.createChooser(intent, "Сохранить или отправить лог"));
+    }
+
+    private void appendAdvancedDiagnostics(StringBuilder log) {
+        appendSection(log, "Parking Signals", collectParkingSignalsDiagnostics());
+        appendSection(log, "Parking HAL", collectParkingHalDiagnostics());
+        appendSection(log, "HUD / DIM", collectHudDimDiagnostics());
+        appendSection(log, "AudioExt", collectAudioExtDiagnostics());
+        appendSection(log, "DVR / EVS", collectDvrDiagnostics());
+        appendSection(log, "Camera2 Inventory", collectCameraInventoryDiagnostics());
+        appendSection(log, "OneOS Dock", collectDockDiagnostics());
+        appendSection(log, "ControlBoard", collectControlBoardDiagnostics());
+    }
+
+    private void appendSection(StringBuilder log, String title, String body) {
+        log.append("== ").append(title).append(" ==\n");
+        log.append(body == null || body.trim().isEmpty() ? "No data\n\n" : body.trim() + "\n\n");
+    }
+
+    private LinkedHashMap<String, int[]> buildDiagnosticsGroups() {
+        LinkedHashMap<String, int[]> groups = new LinkedHashMap<>();
+        groups.put("HVAC Core", resolveFunctionIds(
+                "HVAC_POWER", "HVAC_AUTO", "HVAC_AC", "HVAC_FAN_SPEED", "HVAC_TEMP",
+                "HVAC_TEMP_UNIT", "HVAC_CLIMATE_ZONE", "HVAC_DEFROST_FRONT", "HVAC_DEFROST_FRONT_MAX",
+                "HVAC_DEFROST_REAR", "HVAC_SEAT_HEATING", "HVAC_SEAT_VENTILATION",
+                "HVAC_STEERING_WHEEL_HEAT", "HVAC_IONS_SWITCH", "HVAC_AQS_SWITCH",
+                "HVAC_PRE_CLIMATISATION", "HVAC_POST_CLIMATISATION", "HVAC_CO2_SWITCH",
+                "HVAC_RAPID_COOLING", "HVAC_RAPID_WARMING", "HVAC_AUTOMATIC_VENTILATION_DRY",
+                "HVAC_AIR_FRAGRANCE"
+        ));
+        groups.put("Vehicle Body", resolveFunctionIds(
+                "BCM_WINDOW", "BCM_DOOR", "BCM_DOOR_LOCK", "BCM_DOOR_STATUS",
+                "BCM_SUNROOF_OPEN", "BCM_MIRROR_FOLD", "BCM_LIGHT_DIPPED_BEAM", "BCM_LIGHT_GRILLE"
+        ));
+        groups.put("Drive / Cluster", resolveFunctionIds(
+                "DRIVE_MODE_SELECT", "DRIVE_CUSTOM_PROPULSION", "DRIVE_CUSTOM_SUSPENSION",
+                "DRIVE_CUSTOM_STEERING_FEEL", "DRIVE_CUSTOM_CLIMATE", "DRIVE_DIM_THEME_SET",
+                "DRIVE_ENERGY_MODE", "DRIVE_CREEP_SET", "DRIVE_LAUNCH_CONTROL",
+                "DRIVE_NOISE_CONTROL", "DRIVE_ESC_LEVEL", "DRIVE_STARTRACK_MODE",
+                "DRIVE_PERFORMANCE_SAVING", "DRIVE_POWER_TRAIN_STOP"
+        ));
+        groups.put("ADAS", resolveFunctionIds(
+                "ADAS_AEB", "ADAS_FCW", "ADAS_LKA", "ADAS_LDW", "ADAS_RCW", "ADAS_ELKA",
+                "ADAS_ACC_ICC_SWITCH", "ADAS_ACC_TIME_GAP", "ADAS_ACC_WITH_TSR", "ADAS_PDC",
+                "ADAS_PDC_WARNING_VOLUME", "ADAS_DRIVE_PILOT", "ADAS_DRIVE_PILOT_STATUS",
+                "ADAS_DRIVE_PILOT_ALARM_INFO", "ADAS_DRIVE_PILOT_ACC_LCC_SWITCH",
+                "ADAS_DRIVE_NZP_STATUS", "ADAS_MAX_CRUISING_SPEED", "ADAS_APB_MODE",
+                "ADAS_TRAFFIC_LIGHT_ATTENTION", "ADAS_TRAFFIC_LIGHT_ATTENTION_SOUND",
+                "ADAS_PADDLE_LANE_CHANGE_ASSIST", "ADAS_SPEED_LIMIT_WARNING_MODE",
+                "ADAS_ADAPTIVE_CRUISE_FAILURE", "ADAS_EMERGENCY_LANE_OCCUPANCY_FAILURE",
+                "ADAS_EMERGENCY_STEERING_FAILURE", "ADAS_FORWARD_PRECOLLISION_FAULT",
+                "ADAS_FRONT_SIDE_ASSIST_FAILURE", "ADAS_LANE_KEEPING_ASSISTANCE_FAILURE",
+                "ADAS_REAR_COLLISION_WARNING_FAILURE", "ADAS_TRAFFIC_SIGN_INFORMATION_FAILURE"
+        ));
+        groups.put("ADAS Experimental", resolveFunctionIds(
+                "ADAS_AI_DRIVER_ASSIST", "ADAS_AI_ASSIST_DEFAULT_ON", "ADAS_AI_ASSIST_FUSION_NAVI",
+                "ADAS_AI_ASSIST_OUT_OVERTAKING_LANE", "ADAS_AI_LANE_CHANGE_STRATEGY",
+                "ADAS_AI_LANE_CHANGE_CONFIRM", "ADAS_AI_LANE_CHANGE_WARNING",
+                "ADAS_APB_SWITCH", "ADAS_TLB_SWITCH", "ADAS_TLB_MODE",
+                "ADAS_TTS_ACC_ACTIVATE", "ADAS_TTS_ACC_ACTIVATE_SOUND", "ADAS_TTS_ACC_EXIT",
+                "ADAS_TTS_ICC_ACTIVATE", "ADAS_TTS_ICC_ACTIVATE_REMINDER",
+                "ADAS_TTS_ICC_ACTIVATE_SOUND", "ADAS_TTS_ICC_DRIVING_STATUS",
+                "ADAS_TTS_ICC_EXIT", "ADAS_TTS_ICC_NOA_DRIVING_STATUS",
+                "ADAS_DRIVER_FATIGUE_FAILURE", "ADAS_TRAFFIC_LIGHTS_IDENTIFY_FAULTS"
+        ));
+        groups.put("Parking / APA / AVM", resolveFunctionIds(
+                "PAS_ACTIVATED", "PAS_STATUS", "PAS_SHOW_GRAPHICS", "PAS_RADAR_FRONT_CENTER",
+                "PAS_RADAR_REAR_CENTER", "PAS_RADAR_WORK_MODE", "PAS_RADAR_WORK_STATUS",
+                "PAS_PAC_ACTIVATION", "PAS_PAC_STATUS", "PAS_PAC_AUTO_REVERSE_CAMERA",
+                "PAS_PAC_VIEW_SELECTION", "PAS_PAC_3DVIEW_POSITION", "PAS_PAC_OVERLAY_STEERPATH",
+                "PAS_PAC_OVERLAY_TOWBAR", "PAS_PAC_OVERLAY_DSTINFO", "PAS_PAC_CAR_MODE_TRANSPARENT",
+                "PAS_PAC_TOP_VIEW_ZOOM_IN", "PAS_PAC_TOURING_VIEW", "PAS_SAP_ACTIVATION",
+                "PAS_SAP_PARK_TYPE", "PAS_SAP_PARK_IN_TYPE", "PAS_RCTA_ACTIVATION",
+                "PAS_RCTA_LEFT_WARNING", "PAS_RCTA_RIGHT_WARNING", "PAS_RCTA_WARNING_VOLUME",
+                "PAS_AVM_OR_APA_ACTIVATION"
+        ));
+        groups.put("HUD / OneOS", resolveFunctionIds(
+                "HUD_ACTIVE", "HUD_DISPLAY_SAFETY", "HUD_DISPLAY_MEDIA", "HUD_DISPLAY_NAVI",
+                "HUD_DISPLAY_BTPHONE", "HUD_DISPLAY_DRIVE_ENVIRONMENT"
+        ));
+        groups.put("Ambience / DayMode", resolveFunctionIds(
+                "AMBIENCE_LIGHT_THEME_COLOR", "AMBIENCE_LIGHT_EFFECT", "AMBIENCE_LIGHT_CONTROL_MODE",
+                "AMBIENCE_LIGHT_MUSIC", "AMBIENCE_LIGHT_MUSIC_SHOW_MODE", "AMBIENCE_LIGHT_WELCOME_SHOW",
+                "AMBIENCE_LIGHT_WELCOME_SHOW_MODE", "AMBIENCE_LIGHT_VOICE", "AMBIENCE_LIGHT_ZONE_EXPERIENCE",
+                "AMBIENCE_LIGHT_MAIN_ZONES", "AMBIENCE_LIGHT_TOP_ZONES", "AMBIENCE_LIGHT_BOT_ZONES",
+                "AMBIENCE_LIGHT_COLOR_WEATHER", "DAYMODE_SETTING", "DAYMODE_SYNC",
+                "DAYMODE_BRIGHTNESS_DAY", "DAYMODE_BRIGHTNESS_NIGHT", "DAYMODE_BRIGHTNESS_MAX",
+                "DAYMODE_BRIGHTNESS_MIN", "DAYMODE_BRIGHTNESS_STEP", "DAYMODE_BACKLIGHT_LINKAGE",
+                "DAYMODE_BACKLIGHT_BRIGHTNESS", "DAYMODE_DIM_BRIGHTNESS", "DAYMODE_FLOODLIGHT_BRIGHTNESS",
+                "DAYMODE_ELECTRIC_REAR_VIEW_MIRROR", "DAYMODE_BRIGHTNESS_SCREEN", "DAYMODE_CUSTOM_DAY_TIME",
+                "DAYMODE_CUSTOM_NIGHT_TIME", "DAYMODE_SUN_TIME", "DAYMODE_TIME_CONTROL_THEME_SWITCH",
+                "DAYMODE_PSD_BRIGHTNESS_DAYMODE", "DAYMODE_PSD_BRIGHTNESS_SCREEN"
+        ));
+        groups.put("AVAS / Digital Key / Seat", resolveFunctionIds(
+                "VEHICLE_AVAS_SWITCH", "VEHICLE_AVAS_VOLUME", "VEHICLE_AVAS_SOUND_TYPE",
+                "VEHICLE_AVAS_SOUND_TYPE_NAME", "VEHICLE_AVAS_SOUND_TYPE_PATH",
+                "VEHICLE_DIGITAL_KEY", "VEHICLE_DIGITAL_KEY_REQ_STS", "VEHICLE_DIGITAL_KEY_UNPAIR",
+                "VEHICLE_DIGITAL_KEY_TERMINATION", "VEHICLE_DIGITAL_KEY_SUSPENSION",
+                "VEHICLE_DIGITAL_KEY_PAIRING_FAILED", "VEHICLE_DIGITAL_KEY_TRACKING_WAIT",
+                "VEHICLE_DIGITAL_KEY_TRACKING_RESULT", "VEHICLE_DIGITAL_KEY_RES_TIMEOUT",
+                "SEAT_LENGTH", "SEAT_HEIGHT", "SEAT_BACKREST", "SEAT_POSITION_SAVE",
+                "SEAT_POSITION_SET", "SEAT_RESTORE", "SEAT_ONE_KEY_COMFORT"
+        ));
+        return groups;
+    }
+
+    private int[] resolveFunctionIds(String... fieldNames) {
+        LinkedHashSet<Integer> values = new LinkedHashSet<>();
+        List<String> missing = new ArrayList<>();
+        for (String fieldName : fieldNames) {
+            try {
+                Field field = EcarxVehicleAdapter.class.getDeclaredField(fieldName);
+                field.setAccessible(true);
+                values.add(field.getInt(null));
+            } catch (Exception e) {
+                missing.add(fieldName);
+            }
+        }
+        if (!missing.isEmpty()) {
+            android.util.Log.w("GFlow", "Diagnostics fields missing: " + missing);
+        }
+        int[] result = new int[values.size()];
+        int index = 0;
+        for (Integer value : values) result[index++] = value;
+        return result;
+    }
+
+    private String collectParkingSignalsDiagnostics() {
+        StringBuilder sb = new StringBuilder();
+        CarSignalManagerAdapter adapter = new CarSignalManagerAdapter(this);
+        Object[] pairs = {
+                "getDrvrAsscSysDisp", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_DISP,
+                "getDrvrAsscSysSts", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_STS,
+                "getRemPrkgEnaSts", CarSignalManagerAdapter.SIG_REM_PRKG_ENA_STS,
+                "getICCVehSts", CarSignalManagerAdapter.SIG_ICC_VEH_STS
+        };
+        for (int i = 0; i + 1 < pairs.length; i += 2) {
+            sb.append(adapter.get(String.valueOf(pairs[i]), (Integer) pairs[i + 1]).message).append("\n");
+        }
+        return sb.toString();
+    }
+
+    private String collectParkingHalDiagnostics() {
+        StringBuilder sb = new StringBuilder();
+        CarSignalManagerAdapter adapter = new CarSignalManagerAdapter(this);
+        int[] properties = {
+                CarSignalManagerAdapter.VEH_MOBDEV_RPA_AUTHENT_REQ1_AUTHENT_STS,
+                CarSignalManagerAdapter.VEH_MOBDEV_RPA_AUTHENT_REQ1_CHKS,
+                CarSignalManagerAdapter.VEH_MOBDEV_RPA_AUTHENT_REQ1_CNTR,
+                CarSignalManagerAdapter.VEH_MOBDEV_RPA_AUTHENT_REQ1_RNDX,
+                CarSignalManagerAdapter.VEH_MOBDEV_RPA_AUTHENT_REQ1_RNDY,
+                CarSignalManagerAdapter.VEH_MOBDEV_RPA_REQ_RESP,
+                CarSignalManagerAdapter.VEH_MOBDEV_RPA_STS_ON_OFF1,
+                CarSignalManagerAdapter.VEH_MOBDEV_RPA_STS_UINT8,
+                CarSignalManagerAdapter.VEH_PUSH_APA_INFO_REQ
+        };
+        for (int property : properties) {
+            sb.append(adapter.rawHalProperty(property, "VehiclePropertyVEH2").message).append("\n");
+        }
+        return sb.toString();
+    }
+
+    private String collectHudDimDiagnostics() {
+        StringBuilder sb = new StringBuilder();
+        EcarxHudDimAdapter adapter = new EcarxHudDimAdapter(this);
+        sb.append(adapter.availability()).append("\n");
+        sb.append(adapter.hudStatus().message).append("\n");
+        sb.append(adapter.hudSync().message).append("\n");
+        sb.append(adapter.dimStatus().message).append("\n");
+        sb.append(adapter.dimMenuReadyAndTheme().message).append("\n");
+        return sb.toString();
+    }
+
+    private String collectAudioExtDiagnostics() {
+        StringBuilder sb = new StringBuilder();
+        AudioExtServiceAdapter adapter = new AudioExtServiceAdapter(this);
+        sb.append(adapter.bindAudioExt().message).append("\n");
+        sb.append(adapter.visualizerStatus().message).append("\n");
+        return sb.toString();
+    }
+
+    private String collectDvrDiagnostics() {
+        StringBuilder sb = new StringBuilder();
+        EcarxDvrAdapter adapter = new EcarxDvrAdapter(this);
+        sb.append(adapter.availability()).append("\n");
+        sb.append(adapter.isEvsOpened(EcarxDvrAdapter.EVS_CAMERA_REAR).message).append("\n");
+        sb.append(adapter.isEvsOpened(EcarxDvrAdapter.EVS_CAMERA_AVM).message).append("\n");
+        sb.append(adapter.isEvsOpened(EcarxDvrAdapter.EVS_CAMERA_DVR).message).append("\n");
+        sb.append(adapter.dvrCameraOnline().message).append("\n");
+        sb.append(adapter.dvrCapture().message).append("\n");
+        sb.append(adapter.dvrCurrentMode().message).append("\n");
+        sb.append(adapter.dvrSdcardStatus().message).append("\n");
+        return sb.toString();
+    }
+
+    private String collectCameraInventoryDiagnostics() {
+        StringBuilder sb = new StringBuilder();
+        try {
+            CameraManager manager = getSystemService(CameraManager.class);
+            if (manager == null) return "CameraManager unavailable";
+            for (String id : manager.getCameraIdList()) {
+                CameraCharacteristics cc = manager.getCameraCharacteristics(id);
+                Integer facing = cc.get(CameraCharacteristics.LENS_FACING);
+                sb.append("camera2:").append(id).append(" · ").append(facingName(facing)).append("\n");
+            }
+        } catch (Exception e) {
+            sb.append("Camera2 error: ").append(e.getClass().getSimpleName()).append(": ").append(e.getMessage()).append("\n");
+        }
+        sb.append("EVS: rear, 360, dvr");
+        return sb.toString();
+    }
+
+    private String collectDockDiagnostics() {
+        StringBuilder sb = new StringBuilder();
+        EcarxDockAdapter adapter = new EcarxDockAdapter(this);
+        sb.append(adapter.availability()).append("\n");
+        sb.append(adapter.deviceStatus().message).append("\n");
+        return sb.toString();
+    }
+
+    private String collectControlBoardDiagnostics() {
+        return new EcarxControlBoardAdapter(this).availability();
+    }
+
+    private String facingName(Integer facing) {
+        if (facing == null) return "unknown";
+        if (facing == CameraCharacteristics.LENS_FACING_FRONT) return "front";
+        if (facing == CameraCharacteristics.LENS_FACING_BACK) return "rear";
+        if (android.os.Build.VERSION.SDK_INT >= 23 && facing == CameraCharacteristics.LENS_FACING_EXTERNAL) return "external";
+        return "other";
     }
 
     private String readUrl(String url) throws IOException {
