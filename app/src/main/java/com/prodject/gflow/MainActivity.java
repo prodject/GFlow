@@ -26,6 +26,7 @@ public class MainActivity extends Activity {
     private static final String APP_SETTINGS = "app_settings";
     private static final String KEY_EXPERIMENTAL_FEATURES = "experimental_features";
     private static final String KEY_DEVELOPER_MODE = "developer_mode";
+    private static final String KEY_LICENSE_ACCEPTED = "license_accepted";
     private static final String CLIMATE_PRESETS = "climate_presets";
     private static final String CLIMATE_PRESET_ORDER = "order";
     private static final String[] RUNTIME_PERMS = {
@@ -35,27 +36,39 @@ public class MainActivity extends Activity {
     @Override public void onCreate(Bundle b) {
         super.onCreate(b);
         if (Build.VERSION.SDK_INT >= 23) requestPermissions(RUNTIME_PERMS, 10);
-        showOnboarding();
+        if (licenseAccepted()) showDashboard();
+        else showOnboarding();
     }
 
     private void showOnboarding() {
-        LinearLayout root = Ui.root(this, getString(R.string.app_name));
-        root.addView(Ui.text(this, "Автомобильный центр управления для Android 11+: файлы, камеры, голос, климат, ADAS, HUD, рабочий стол, ADB и системные функции.", 16, false));
+        LinearLayout root = Ui.root(this, "");
+        root.setGravity(Gravity.CENTER_HORIZONTAL);
+        ImageView logo = new ImageView(this);
+        logo.setImageResource(R.drawable.gflow_wordmark);
+        logo.setAdjustViewBounds(true);
+        logo.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        root.addView(logo, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 130)));
+        TextView title = Ui.text(this, "GFlow", 32, true);
+        title.setGravity(Gravity.CENTER);
+        root.addView(title);
+        TextView intro = Ui.muted(this, "Автомобильный центр управления для Android 11+: файлы, камеры, голос, климат, ADAS, HUD, рабочий стол, ADB и системные функции.");
+        intro.setGravity(Gravity.CENTER);
+        root.addView(intro, lpMatchWrap(8, 4, 8, 18));
         Button start = Ui.button(this, "Принять и открыть приложение");
         Button legal = Ui.button(this, "Лицензия и юридические документы");
-        root.addView(legal);
-        root.addView(start);
+        root.addView(start, lpMatchWrap(0, 8, 0, 8));
+        root.addView(legal, lpMatchWrap(0, 0, 0, 0));
         legal.setOnClickListener(v -> showLegal());
-        start.setOnClickListener(v -> showDashboard());
+        start.setOnClickListener(v -> {
+            getSharedPreferences(APP_SETTINGS, MODE_PRIVATE).edit().putBoolean(KEY_LICENSE_ACCEPTED, true).apply();
+            showDashboard();
+        });
         setContentView(root);
     }
 
     private void showLegal() {
-        LinearLayout root = Ui.root(this, "Документы");
+        LinearLayout root = Ui.root(this, "Документы", this::showOnboarding);
         root.addView(Ui.text(this, getString(com.prodject.gflow.R.string.legal_text), 16, false));
-        Button ok = Ui.button(this, "Назад");
-        ok.setOnClickListener(v -> showOnboarding());
-        root.addView(ok);
         setContentView(root);
     }
 
@@ -65,7 +78,7 @@ public class MainActivity extends Activity {
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setPadding(Ui.dp(this, 22), Ui.dp(this, 18), Ui.dp(this, 22), Ui.dp(this, 20));
-        root.setBackgroundColor(Ui.BG);
+        root.setBackgroundColor(Ui.bg(this));
 
         addHero(root);
         addStatusStrip(root);
@@ -203,7 +216,9 @@ public class MainActivity extends Activity {
         TextView title = Ui.text(this, item.title, 18, true);
         Button help = Ui.help(this, item.title, item.help());
         row.addView(icon);
-        row.addView(title, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        LinearLayout.LayoutParams titleLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1);
+        titleLp.setMargins(Ui.dp(this, 12), 0, Ui.dp(this, 8), 0);
+        row.addView(title, titleLp);
         row.addView(help);
         card.addView(row);
         card.addView(Ui.muted(this, item.subtitle));
@@ -320,8 +335,8 @@ public class MainActivity extends Activity {
                 paint.setColor(Color.argb(42, 255, 255, 255));
                 canvas.drawOval(new RectF(w * 0.08f, h * 0.70f, w * 0.92f, h * 0.97f), paint);
                 RectF bounds = new RectF(w * 0.02f, h * 0.02f, w * 0.98f, h * 0.92f);
-                if (underlay != null) drawBitmapFit(canvas, underlay, bounds, 178);
                 if (model != null) drawBitmapFit(canvas, model, bounds, 255);
+                else if (underlay != null) drawBitmapFit(canvas, underlay, bounds, 220);
                 drawTouchHint(canvas, "Климат", w * 0.50f, h * 0.18f, Ui.BLUE);
                 drawTouchHint(canvas, "Кузов", w * 0.50f, h * 0.54f, Ui.GREEN);
                 drawTouchHint(canvas, "ADAS", w * 0.27f, h * 0.83f, Color.rgb(113, 91, 177));
@@ -502,6 +517,10 @@ public class MainActivity extends Activity {
     private boolean developerModeEnabled() {
         return getSharedPreferences(APP_SETTINGS, MODE_PRIVATE)
                 .getBoolean(KEY_DEVELOPER_MODE, false);
+    }
+
+    private boolean licenseAccepted() {
+        return getSharedPreferences(APP_SETTINGS, MODE_PRIVATE).getBoolean(KEY_LICENSE_ACCEPTED, false);
     }
 
     private LinearLayout commandRoot(String title) {
