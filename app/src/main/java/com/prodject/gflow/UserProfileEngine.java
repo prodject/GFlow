@@ -9,6 +9,7 @@ final class UserProfileEngine {
     static final String KEY_DRIVER_ORDER = "driver_order";
     static final String KEY_PASSENGER_ORDER = "passenger_order";
     static final String KEY_LAST_USED = "last_used";
+    static final String KEY_LAST_APPLIED_AT = "last_applied_at";
 
     private UserProfileEngine() {}
 
@@ -21,6 +22,10 @@ final class UserProfileEngine {
     }
 
     static String save(Context context, String oldName, String name, String type, String identity, String body) {
+        return save(context, oldName, name, type, "D1", identity, body);
+    }
+
+    static String save(Context context, String oldName, String name, String type, String avatar, String identity, String body) {
         String clean = name.trim();
         if (clean.isEmpty()) return "Имя профиля пустое";
         String orderKey = "passenger".equals(type) ? KEY_PASSENGER_ORDER : KEY_DRIVER_ORDER;
@@ -30,6 +35,7 @@ final class UserProfileEngine {
         if (!order.contains(clean)) order.add(clean);
         String encoded = "name:" + clean + "\n"
                 + "type:" + type + "\n"
+                + "avatar:" + avatar.trim() + "\n"
                 + "identity:" + identity.trim() + "\n"
                 + body.trim();
         SharedPreferences.Editor editor = p.edit()
@@ -58,7 +64,10 @@ final class UserProfileEngine {
         EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(context);
         StringBuilder sb = new StringBuilder("Профиль ").append(profile.type).append(": ").append(profile.name).append("\n");
         for (String line : profile.commands) sb.append(runLine(context, adapter, line)).append("\n");
-        prefs(context).edit().putString(KEY_LAST_USED, profile.name).apply();
+        prefs(context).edit()
+                .putString(KEY_LAST_USED, profile.name)
+                .putLong(KEY_LAST_APPLIED_AT, System.currentTimeMillis())
+                .apply();
         AutomationEngine.prefs(context).edit().putString(AutomationEngine.KEY_ACTIVE_PROFILE, profile.name).apply();
         return sb.toString();
     }
@@ -107,6 +116,77 @@ final class UserProfileEngine {
                 + "hud:on\n"
                 + "ambience:ice\n"
                 + "volume:6\n";
+    }
+
+    static String captureBody(Context context, String type, Set<String> settings) {
+        LinkedHashSet<String> include = new LinkedHashSet<>();
+        if (settings != null) include.addAll(settings);
+        if (include.isEmpty()) {
+            include.add("seat");
+            include.add("climate");
+            include.add("comfort");
+            include.add("drive");
+            include.add("hud");
+            include.add("cabin");
+            include.add("media");
+            include.add("desktop");
+            include.add("automation");
+            include.add("adas");
+        }
+        ArrayList<String> lines = new ArrayList<>();
+        boolean passenger = "passenger".equals(type);
+        String zone = passenger ? "passenger" : "driver";
+        if (include.contains("seat")) {
+            lines.add("seatMemory:" + zone + ":1");
+            if (!passenger) {
+                lines.add("seatLength:driver:save1");
+                lines.add("seatHeight:driver:save1");
+                lines.add("seatBackrest:driver:save1");
+            }
+            lines.add("mirror:" + zone);
+        }
+        if (include.contains("climate")) {
+            SharedPreferences smart = SmartClimateController.prefs(context);
+            float temp = smart.getFloat(passenger ? SmartClimateController.KEY_PASSENGER_TARGET : SmartClimateController.KEY_DRIVER_TARGET, 22.0f);
+            lines.add("climateTemp:" + zone + ":" + String.format(Locale.US, "%.1f", temp));
+            if (!passenger) {
+                float other = smart.getFloat(SmartClimateController.KEY_PASSENGER_TARGET, temp);
+                lines.add("climateTemp:passenger:" + String.format(Locale.US, "%.1f", other));
+            }
+            lines.add("fan:3");
+        }
+        if (include.contains("comfort")) {
+            lines.add("seatHeat:" + zone + ":" + (passenger ? "1" : "2"));
+            lines.add("seatVent:" + zone + ":0");
+        }
+        if (include.contains("drive") && !passenger) {
+            lines.add("drive:comfort");
+            lines.add("steering:soft");
+        }
+        if (include.contains("hud")) lines.add("hud:on");
+        if (include.contains("cabin")) {
+            lines.add("brightness:night");
+            lines.add("ambience:" + (passenger ? "ice" : "blue"));
+        }
+        if (include.contains("media")) {
+            lines.add("volume:" + (passenger ? "6" : "8"));
+            lines.add("mediaSource:resume");
+        }
+        if (include.contains("desktop")) {
+            String pins = context.getSharedPreferences("com.prodject.gflow.DesktopActivity", Context.MODE_PRIVATE)
+                    .getString("pinned_order", "com.prodject.gflow");
+            lines.add("desktopPins:" + pins.replace("\n", ","));
+        }
+        if (include.contains("automation") && !passenger) {
+            String preset = AutomationStore.firstPreset(context);
+            if (preset != null && !preset.trim().isEmpty()) lines.add("preset:" + preset.trim());
+        }
+        if (include.contains("adas") && !passenger) lines.add("adas:aeb:on");
+        return AutomationEngine.join(lines);
+    }
+
+    static String updateFromCurrent(Context context, String oldName, String name, String type, String avatar, String identity, Set<String> settings) {
+        return save(context, oldName, name, type, avatar, identity, captureBody(context, type, settings));
     }
 
     private static String runLine(Context context, EcarxVehicleAdapter adapter, String raw) {
@@ -233,6 +313,7 @@ final class UserProfileEngine {
     static final class Profile {
         String name = "";
         String type = "driver";
+        String avatar = "";
         String identity = "";
         final ArrayList<String> commands = new ArrayList<>();
 
@@ -243,6 +324,7 @@ final class UserProfileEngine {
                 if (item.isEmpty()) continue;
                 if (item.startsWith("name:")) profile.name = item.substring("name:".length()).trim();
                 else if (item.startsWith("type:")) profile.type = item.substring("type:".length()).trim();
+                else if (item.startsWith("avatar:")) profile.avatar = item.substring("avatar:".length()).trim();
                 else if (item.startsWith("identity:")) profile.identity = item.substring("identity:".length()).trim();
                 else profile.commands.add(item);
             }

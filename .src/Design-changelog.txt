@@ -279,3 +279,30 @@
 - Экран `Текст`.
 - Экран `ADB / Система`.
 - Экран `Настройки`.
+
+2026-07-22
+
+Этап 15: Экран Профили
+
+Сделано:
+- Создан отдельный `ProfileActivity` для экрана `Профили пользователей`.
+- Все основные входы из `MainActivity` переведены на `ProfileActivity`: dashboard widget, bottom dock, drawer и rail.
+- `ProfileActivity` подключен в `AndroidManifest.xml`.
+- Добавлен новый profiles shell в стиле `Design.txt`: top bar, hero-panel, overview grid, списки driver/passenger, bottom dock.
+- Внутри нового экрана добавлена активная карточка профиля: имя, тип, identity metadata, avatar и время последнего применения.
+- Реализованы отдельные list/editor flow для driver и passenger профилей: создание, выбор, применение, редактирование и удаление.
+- Добавлен create/capture flow `Сохранить текущее`: имя, тип, avatar, source identity и выбор, какие настройки сохранить в профиль.
+- `UserProfileEngine` расширен metadata-полями `avatar` и `last applied timestamp`, а также helper-логикой для capture текущих настроек в новое тело профиля.
+- Переходы в `Профили` из `VehicleActivity` переведены на новый `ProfileActivity`.
+- Legacy `showUserProfiles()` и связанные profile editor/helper-ветки удалены из `MainActivity`.
+
+Осталось по `Design.txt`:
+- Экран `Кнопки руля`.
+- Экран `Голос`.
+- Экран `Рабочий стол`.
+- Экран `Браузер / Погода`.
+- Экран `Файлы`.
+- Экран `Медиа`.
+- Экран `Текст`.
+- Экран `ADB / Система`.
+- Экран `Настройки`.
