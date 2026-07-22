@@ -420,13 +420,7 @@ public class MainActivity extends Activity {
 
     private LinearLayout menuRoot(String title, String body) {
         ScrollView scroll = new ScrollView(this);
-        LinearLayout root = Ui.root(this, title);
-        LinearLayout tools = Ui.row(this);
-        Button back = Ui.button(this, "Назад");
-        back.setOnClickListener(v -> transition(this::showDashboard));
-        tools.addView(back, new LinearLayout.LayoutParams(0, Ui.dp(this, 52), 1));
-        tools.addView(Ui.help(this, title, body), new LinearLayout.LayoutParams(Ui.dp(this, 52), Ui.dp(this, 52)));
-        root.addView(tools, lpMatchWrap(0, 4, 0, 10));
+        LinearLayout root = Ui.root(this, title, () -> transition(this::showDashboard));
         addScreenMap(root, "Раздел", body);
         scroll.addView(root);
         setContentView(scroll);
@@ -524,14 +518,12 @@ public class MainActivity extends Activity {
     }
 
     private LinearLayout commandRoot(String title) {
+        LinearLayout shell = new LinearLayout(this);
+        shell.setOrientation(LinearLayout.HORIZONTAL);
+        shell.setBackgroundColor(Ui.bg(this));
+        LinearLayout left = settingsRail();
         ScrollView scroll = new ScrollView(this);
-        LinearLayout root = Ui.root(this, title);
-        LinearLayout tools = Ui.row(this);
-        Button back = Ui.button(this, "Назад");
-        back.setOnClickListener(v -> transition(this::showDashboard));
-        tools.addView(back, new LinearLayout.LayoutParams(0, Ui.dp(this, 52), 1));
-        tools.addView(Ui.help(this, title, "Вкладка содержит обычные команды, диагностику и firmware-dependent действия. Если команда не сработала, сначала проверьте блоки диагностики support/readback и разрешения ADB/system."), new LinearLayout.LayoutParams(Ui.dp(this, 52), Ui.dp(this, 52)));
-        root.addView(tools, lpMatchWrap(0, 4, 0, 10));
+        LinearLayout root = Ui.root(this, title, () -> transition(this::showDashboard));
 
         LinearLayout status = Ui.card(this);
         status.addView(Ui.muted(this, "Статус интеграции"));
@@ -555,9 +547,36 @@ public class MainActivity extends Activity {
         });
         root.addView(filter, lpMatchWrap(0, 0, 0, 12));
         scroll.addView(root);
-        setContentView(scroll);
+        shell.addView(left, new LinearLayout.LayoutParams(Ui.dp(this, 210), ViewGroup.LayoutParams.MATCH_PARENT));
+        shell.addView(scroll, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
+        setContentView(shell);
         Ui.animateIn(root);
         return root;
+    }
+
+    private LinearLayout settingsRail() {
+        LinearLayout rail = new LinearLayout(this);
+        rail.setOrientation(LinearLayout.VERTICAL);
+        rail.setPadding(Ui.dp(this, 12), Ui.dp(this, 18), Ui.dp(this, 8), Ui.dp(this, 18));
+        rail.setBackgroundColor(Ui.dark(this) ? Color.rgb(18, 21, 24) : Color.rgb(232, 237, 241));
+        rail.addView(Ui.text(this, "GFlow", 22, true));
+        addRailButton(rail, "Климат", this::showClimateMenu);
+        addRailButton(rail, "Автомобиль", this::showVehicleMenu);
+        addRailButton(rail, "ADAS", this::showAdasMenu);
+        addRailButton(rail, "HUD", this::showHudMenu);
+        addRailButton(rail, "Автоматизация", this::showAutomation);
+        addRailButton(rail, "Профили", this::showUserProfiles);
+        addRailButton(rail, "DVR", () -> startActivity(new Intent(this, DvrActivity.class)));
+        addRailButton(rail, "Погода", this::showWeb);
+        addRailButton(rail, "Настройки", this::showSettings);
+        return rail;
+    }
+
+    private void addRailButton(LinearLayout rail, String label, Runnable action) {
+        Button b = Ui.button(this, label);
+        b.setGravity(Gravity.CENTER_VERTICAL | Gravity.START);
+        b.setOnClickListener(v -> transition(action));
+        rail.addView(b, lpMatchWrap(0, 4, 0, 4));
     }
 
     private void filterCommandViews(View view, String query) {
