@@ -23,6 +23,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class VoiceActivity extends Activity {
+    private static final String APP_SETTINGS = "app_settings";
+    private static final String KEY_EXPERIMENTAL_FEATURES = "experimental_features";
     private static final String PREF_LOG = "voice_log";
     private static final int LOG_LIMIT = 16;
 
@@ -196,7 +198,9 @@ public class VoiceActivity extends Activity {
 
         LinearLayout commandList = new LinearLayout(this);
         commandList.setOrientation(LinearLayout.VERTICAL);
-        commandList.addView(Ui.muted(this, "Поддержка: климат on/off, A/C, A/C max, температура, обдув, рециркуляция, вентилятор, окна, двери, замки, child lock, люк, шторка, багажник, 360, DVR, дворники, омыватель, свет, подогрев руля, сиденья, вентиляция сидений, HUD, Eco/Comfort/Dynamic/Snow/Offroad."));
+        commandList.addView(Ui.muted(this, experimentalFeaturesEnabled()
+                ? "Поддержка: климат on/off, A/C, A/C max, температура, обдув, рециркуляция, вентилятор, окна, двери, замки, child lock, люк, шторка, багажник, 360, DVR, дворники, омыватель, свет, подогрев руля, сиденья, вентиляция сидений, HUD, базовые и experimental drive modes, custom propulsion/suspension/steering/climate."
+                : "Поддержка: климат on/off, A/C, A/C max, температура, обдув, рециркуляция, вентилятор, окна, двери, замки, child lock, люк, шторка, багажник, 360, DVR, дворники, омыватель, свет, подогрев руля, сиденья, вентиляция сидений, HUD, Eco/Comfort/Dynamic/Snow/Offroad."));
         panel.addView(commandList, lpMatchWrap(0, 14, 0, 0));
         return panel;
     }
@@ -713,6 +717,8 @@ public class VoiceActivity extends Activity {
         if (has(cmd, "hud") || has(cmd, "проектор")) {
             return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HUD_ACTIVE, off(cmd) ? EcarxVehicleAdapter.COMMON_OFF : EcarxVehicleAdapter.COMMON_ON);
         }
+        EcarxVehicleAdapter.Result advancedDrive = parseAdvancedDriveCommand(cmd);
+        if (advancedDrive != null) return advancedDrive;
         if (has(cmd, "eco") || has(cmd, "эко")) {
             return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_ECO);
         }
@@ -728,6 +734,71 @@ public class VoiceActivity extends Activity {
         if (has(cmd, "offroad") || has(cmd, "оффро") || has(cmd, "бездорож")) {
             return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_OFFROAD);
         }
+        return null;
+    }
+
+    private EcarxVehicleAdapter.Result parseAdvancedDriveCommand(String cmd) {
+        if (!experimentalFeaturesEnabled()) return null;
+        if (has(cmd, "pure") || has(cmd, "пьюр")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_PURE);
+        if (has(cmd, "hybrid") || has(cmd, "гибрид")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_HYBRID);
+        if (has(cmd, "power") || has(cmd, "пауэр")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_POWER);
+        if (has(cmd, "mud") || has(cmd, "гряз")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_MUD);
+        if (has(cmd, "rock") || has(cmd, "камн")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_ROCK);
+        if (has(cmd, "sand") || has(cmd, "пес")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_SAND);
+        if (has(cmd, "save") || has(cmd, "battery save") || has(cmd, "сейв")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_SAVE);
+        if (has(cmd, "adaptive") || has(cmd, "адаптив")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_ADAPTIVE);
+        if (has(cmd, "custom mode") || has(cmd, "drive custom") || has(cmd, "кастом режим")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_CUSTOM);
+        if (has(cmd, "awd") || has(cmd, "полный привод")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_AWD);
+        if (has(cmd, "eawd")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_EAWD);
+        if (has(cmd, "hdc")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_HDC);
+        if (has(cmd, "phev")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_PHEV);
+        if (has(cmd, "eco plus")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_ECO_PLUS);
+        if (has(cmd, "sport plus")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_SPORT_PLUS);
+        if (has(cmd, "custom propulsion") || has(cmd, "propulsion")) return parseCustomPropulsion(cmd);
+        if (has(cmd, "custom suspension") || has(cmd, "suspension")) return parseCustomSuspension(cmd);
+        if (has(cmd, "steering feel")) return parseCustomSteering(cmd);
+        if (has(cmd, "drive climate")) return parseCustomClimate(cmd);
+        return null;
+    }
+
+    private EcarxVehicleAdapter.Result parseCustomPropulsion(String cmd) {
+        if (has(cmd, "off")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_CUSTOM_PROPULSION, EcarxVehicleAdapter.COMMON_OFF);
+        if (has(cmd, "eco")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_CUSTOM_PROPULSION, EcarxVehicleAdapter.CUSTOM_PROPULSION_ECO);
+        if (has(cmd, "comfort") || has(cmd, "комфорт")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_CUSTOM_PROPULSION, EcarxVehicleAdapter.CUSTOM_PROPULSION_COMFORT);
+        if (has(cmd, "sport") || has(cmd, "dynamic") || has(cmd, "спорт")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_CUSTOM_PROPULSION, EcarxVehicleAdapter.CUSTOM_PROPULSION_SPORT);
+        if (has(cmd, "offroad") || has(cmd, "бездорож")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_CUSTOM_PROPULSION, EcarxVehicleAdapter.CUSTOM_PROPULSION_OFFROAD);
+        if (has(cmd, "snow") || has(cmd, "снег")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_CUSTOM_PROPULSION, EcarxVehicleAdapter.CUSTOM_PROPULSION_SNOW);
+        if (has(cmd, "sand") || has(cmd, "пес")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_CUSTOM_PROPULSION, EcarxVehicleAdapter.CUSTOM_PROPULSION_SAND);
+        if (has(cmd, "hybrid") || has(cmd, "гибрид")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_CUSTOM_PROPULSION, EcarxVehicleAdapter.CUSTOM_PROPULSION_HYBRID);
+        if (has(cmd, "pure") || has(cmd, "пьюр")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_CUSTOM_PROPULSION, EcarxVehicleAdapter.CUSTOM_PROPULSION_PURE);
+        if (has(cmd, "power") || has(cmd, "пауэр")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_CUSTOM_PROPULSION, EcarxVehicleAdapter.CUSTOM_PROPULSION_POWER);
+        if (has(cmd, "awd")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_CUSTOM_PROPULSION, EcarxVehicleAdapter.CUSTOM_PROPULSION_AWD);
+        return null;
+    }
+
+    private EcarxVehicleAdapter.Result parseCustomSuspension(String cmd) {
+        if (has(cmd, "off")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_CUSTOM_SUSPENSION, EcarxVehicleAdapter.COMMON_OFF);
+        if (has(cmd, "standard") || has(cmd, "normal") || has(cmd, "стандарт")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_CUSTOM_SUSPENSION, EcarxVehicleAdapter.CUSTOM_SUSPENSION_STANDARD);
+        if (has(cmd, "comfort") || has(cmd, "комфорт")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_CUSTOM_SUSPENSION, EcarxVehicleAdapter.CUSTOM_SUSPENSION_COMFORT);
+        if (has(cmd, "sport") || has(cmd, "спорт")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_CUSTOM_SUSPENSION, EcarxVehicleAdapter.CUSTOM_SUSPENSION_SPORT);
+        if (has(cmd, "offroad") || has(cmd, "бездорож")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_CUSTOM_SUSPENSION, EcarxVehicleAdapter.CUSTOM_SUSPENSION_OFFROAD);
+        if (has(cmd, "snow") || has(cmd, "снег")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_CUSTOM_SUSPENSION, EcarxVehicleAdapter.CUSTOM_SUSPENSION_SNOW);
+        if (has(cmd, "auto") || has(cmd, "авто")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_CUSTOM_SUSPENSION, EcarxVehicleAdapter.CUSTOM_SUSPENSION_AUTOMATIC);
+        return null;
+    }
+
+    private EcarxVehicleAdapter.Result parseCustomSteering(String cmd) {
+        if (has(cmd, "off")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_CUSTOM_STEERING_FEEL, EcarxVehicleAdapter.COMMON_OFF);
+        if (has(cmd, "light") || has(cmd, "легк")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_CUSTOM_STEERING_FEEL, EcarxVehicleAdapter.CUSTOM_STEERING_LIGHT);
+        if (has(cmd, "balanced") || has(cmd, "normal") || has(cmd, "сбаланс")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_CUSTOM_STEERING_FEEL, EcarxVehicleAdapter.CUSTOM_STEERING_BALANCED);
+        if (has(cmd, "heavy") || has(cmd, "тяж")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_CUSTOM_STEERING_FEEL, EcarxVehicleAdapter.CUSTOM_STEERING_HEAVY);
+        return null;
+    }
+
+    private EcarxVehicleAdapter.Result parseCustomClimate(String cmd) {
+        if (has(cmd, "off")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_CUSTOM_CLIMATE, EcarxVehicleAdapter.COMMON_OFF);
+        if (has(cmd, "eco") || has(cmd, "эко")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_CUSTOM_CLIMATE, EcarxVehicleAdapter.CUSTOM_CLIMATE_ECO);
+        if (has(cmd, "normal") || has(cmd, "standard") || has(cmd, "обыч")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.DRIVE_CUSTOM_CLIMATE, EcarxVehicleAdapter.CUSTOM_CLIMATE_NORMAL);
         return null;
     }
 
@@ -808,5 +879,9 @@ public class VoiceActivity extends Activity {
 
     private boolean has(String cmd, String value) {
         return cmd.contains(value);
+    }
+
+    private boolean experimentalFeaturesEnabled() {
+        return getSharedPreferences(APP_SETTINGS, MODE_PRIVATE).getBoolean(KEY_EXPERIMENTAL_FEATURES, false);
     }
 }

@@ -114,6 +114,9 @@
 - Лишний legacy-router `showCar()` удален из `MainActivity`.
 - Пользовательский экран `Автомобиль / Кузов` полностью живет в `VehicleActivity`; `MainActivity` больше не содержит отдельного vehicle-screen/fallback для этого раздела.
 - Raw vehicle-команды и диагностические блоки, которые еще остаются в `MainActivity`, относятся только к experimental/system-сценариям и не являются старым экраном `Автомобиль`.
+- В `VehicleActivity` добавлен gated `Experimental Drive` flow: PURE/HYBRID/POWER, HDC/MUD/ROCK/SAND, AWD/eAWD/SAVE, ADAPTIVE/CUSTOM, propulsion/suspension/steering/climate, DIM/energy и risky drive toggles теперь доступны в новом UI при включенном `Experimental features`.
+- В `VoiceActivity` добавлен parser для расширенных drive mode и custom-profile команд с тем же experimental gate.
+- В `UserProfileEngine` расширен профильный `drive` parser и добавлены новые profile-команды `drivePropulsion`, `driveSuspension`, `driveSteeringFeel`, `driveClimate`, `driveEnergy`, `driveDimTheme`.
 
 Осталось по `Design.txt`:
 - Экран `DVR / Камеры`.

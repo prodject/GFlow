@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -32,6 +33,8 @@ public class VehicleActivity extends Activity {
     static final String MODE_MIRRORS = "mirrors";
     static final String MODE_LIGHTS = "lights";
     static final String MODE_DRIVE = "drive";
+    private static final String APP_SETTINGS = "app_settings";
+    private static final String KEY_EXPERIMENTAL_FEATURES = "experimental_features";
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private LinearLayout contentHost;
@@ -347,7 +350,9 @@ public class VehicleActivity extends Activity {
     private LinearLayout buildDrivePanel() {
         LinearLayout panel = Ui.glassCard(this);
         panel.addView(Ui.label(this, "Drive / Profiles"));
-        panel.addView(Ui.text(this, "Drive modes, steering feel, custom keys и переход в отдельные пользовательские профили.", 14, false));
+        panel.addView(Ui.text(this, experimentalFeaturesEnabled()
+                ? "Drive modes, steering feel, custom keys и расширенный experimental drive flow вынесены в новый экран."
+                : "Drive modes, steering feel, custom keys и переход в отдельные пользовательские профили.", 14, false));
 
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(2);
@@ -365,12 +370,81 @@ public class VehicleActivity extends Activity {
         });
         panel.addView(grid, lpMatchWrap(0, 12, 0, 12));
 
+        if (experimentalFeaturesEnabled()) {
+            panel.addView(buildExperimentalDrivePanel(), lpMatchWrap(0, 0, 0, 12));
+        } else {
+            panel.addView(Ui.muted(this, "Включите Experimental features в настройках, чтобы открыть PURE/HYBRID/POWER, AWD/SAVE/ADAPTIVE, custom propulsion/suspension/climate и risky drive toggles."), lpMatchWrap(0, 0, 0, 12));
+        }
+
         LinearLayout actions = Ui.row(this);
         addActionChip(actions, "Профили", () -> startActivity(new Intent(this, ProfileActivity.class)));
         addActionChip(actions, "Seats", () -> openMode(Mode.SEATS));
         addActionChip(actions, "Lights", () -> openMode(Mode.LIGHTS));
         addActionChip(actions, "Home", () -> openMode(Mode.HOME));
         panel.addView(actions, lpMatchWrap(0, 0, 0, 0));
+        return panel;
+    }
+
+    private LinearLayout buildExperimentalDrivePanel() {
+        LinearLayout panel = Ui.glassCard(this);
+        panel.addView(Ui.label(this, "Experimental Drive"));
+        panel.addView(Ui.muted(this, "Полный набор drive-mode и custom-profile команд перенесен из legacy-ветки и доступен только при включенном experimental gate."));
+
+        GridLayout grid = new GridLayout(this);
+        grid.setColumnCount(2);
+        addAdvancedCard(grid, "Extended Modes I", "Offroad, HDC, Mud, Rock", new QuickItem[]{
+                new QuickItem("Offroad", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_OFFROAD)),
+                new QuickItem("HDC", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_HDC)),
+                new QuickItem("Mud", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_MUD)),
+                new QuickItem("Rock", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_ROCK))
+        });
+        addAdvancedCard(grid, "Extended Modes II", "Sand, AWD, eAWD, Save", new QuickItem[]{
+                new QuickItem("Sand", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_SAND)),
+                new QuickItem("AWD", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_AWD)),
+                new QuickItem("eAWD", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_EAWD)),
+                new QuickItem("Save", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_SAVE))
+        });
+        addAdvancedCard(grid, "Hybrid Modes", "Pure, Hybrid, PHEV, Power", new QuickItem[]{
+                new QuickItem("Pure", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_PURE)),
+                new QuickItem("Hybrid", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_HYBRID)),
+                new QuickItem("PHEV", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_PHEV)),
+                new QuickItem("Power", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_POWER))
+        });
+        addAdvancedCard(grid, "Adaptive / Custom", "Adaptive, custom, eco+, sport+", new QuickItem[]{
+                new QuickItem("Adaptive", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_ADAPTIVE)),
+                new QuickItem("Custom", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_CUSTOM)),
+                new QuickItem("Eco Plus", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_ECO_PLUS)),
+                new QuickItem("Sport Plus", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_SPORT_PLUS))
+        });
+        panel.addView(grid, lpMatchWrap(0, 12, 0, 12));
+
+        LinearLayout profileRows = new LinearLayout(this);
+        profileRows.setOrientation(LinearLayout.VERTICAL);
+        profileRows.addView(buildDriveActionRow(new QuickItem[]{
+                new QuickItem("Prop Eco", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_CUSTOM_PROPULSION, EcarxVehicleAdapter.CUSTOM_PROPULSION_ECO)),
+                new QuickItem("Prop Hybrid", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_CUSTOM_PROPULSION, EcarxVehicleAdapter.CUSTOM_PROPULSION_HYBRID)),
+                new QuickItem("Prop Pure", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_CUSTOM_PROPULSION, EcarxVehicleAdapter.CUSTOM_PROPULSION_PURE)),
+                new QuickItem("Prop AWD", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_CUSTOM_PROPULSION, EcarxVehicleAdapter.CUSTOM_PROPULSION_AWD))
+        }), lpMatchWrap(0, 0, 0, 10));
+        profileRows.addView(buildDriveActionRow(new QuickItem[]{
+                new QuickItem("Susp Comfort", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_CUSTOM_SUSPENSION, EcarxVehicleAdapter.CUSTOM_SUSPENSION_COMFORT)),
+                new QuickItem("Susp Sport", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_CUSTOM_SUSPENSION, EcarxVehicleAdapter.CUSTOM_SUSPENSION_SPORT)),
+                new QuickItem("Steer Light", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_CUSTOM_STEERING_FEEL, EcarxVehicleAdapter.CUSTOM_STEERING_LIGHT)),
+                new QuickItem("Steer Heavy", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_CUSTOM_STEERING_FEEL, EcarxVehicleAdapter.CUSTOM_STEERING_HEAVY))
+        }), lpMatchWrap(0, 0, 0, 10));
+        profileRows.addView(buildDriveActionRow(new QuickItem[]{
+                new QuickItem("Climate Normal", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_CUSTOM_CLIMATE, EcarxVehicleAdapter.CUSTOM_CLIMATE_NORMAL)),
+                new QuickItem("Climate Eco", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_CUSTOM_CLIMATE, EcarxVehicleAdapter.CUSTOM_CLIMATE_ECO)),
+                new QuickItem("Theme Blue", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_DIM_THEME_SET, EcarxVehicleAdapter.DIM_THEME_BLUE)),
+                new QuickItem("Energy Sport", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_ENERGY_MODE, EcarxVehicleAdapter.ENERGY_MODE_SPORT))
+        }), lpMatchWrap(0, 0, 0, 10));
+        profileRows.addView(buildDriveActionRow(new QuickItem[]{
+                new QuickItem("Launch", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_LAUNCH_CONTROL, EcarxVehicleAdapter.COMMON_ON)),
+                new QuickItem("Creep Off", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_CREEP_SET, EcarxVehicleAdapter.COMMON_OFF)),
+                new QuickItem("Perf Save", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_PERFORMANCE_SAVING, EcarxVehicleAdapter.COMMON_ON)),
+                new QuickItem("PTS Ready", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_POWER_TRAIN_STOP, EcarxVehicleAdapter.POWER_TRAIN_STOP_NOT_BLOCKED))
+        }), lpMatchWrap(0, 0, 0, 0));
+        panel.addView(profileRows);
         return panel;
     }
 
@@ -487,6 +561,12 @@ public class VehicleActivity extends Activity {
         lp.leftMargin = Ui.dp(this, 6);
         lp.rightMargin = Ui.dp(this, 6);
         row.addView(b, lp);
+    }
+
+    private LinearLayout buildDriveActionRow(QuickItem[] items) {
+        LinearLayout row = Ui.row(this);
+        for (QuickItem item : items) addActionChip(row, item.label, item.action);
+        return row;
     }
 
     private void addDockButton(LinearLayout dock, String label, Runnable action, boolean active, QuickItem[] items) {
@@ -606,6 +686,11 @@ public class VehicleActivity extends Activity {
 
     private GradientDrawable dashboardBg() {
         return Ui.dashboardBg(this);
+    }
+
+    private boolean experimentalFeaturesEnabled() {
+        SharedPreferences prefs = getSharedPreferences(APP_SETTINGS, MODE_PRIVATE);
+        return prefs.getBoolean(KEY_EXPERIMENTAL_FEATURES, false);
     }
 
     private enum Mode {
