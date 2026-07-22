@@ -171,7 +171,7 @@ public class AdasActivity extends Activity {
 
     private LinearLayout buildSafetyControls() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Safety Systems"));
+        panel.addView(Ui.label(this, "Системы безопасности"));
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(3);
         addTile(grid, "AEB", Color.rgb(113, 91, 177), () -> sendVehicle("AEB включить", EcarxVehicleAdapter.ADAS_AEB, EcarxVehicleAdapter.COMMON_ON));
@@ -184,8 +184,8 @@ public class AdasActivity extends Activity {
         addTile(grid, "ALCA", Color.rgb(118, 142, 255), () -> sendVehicle("Auto lane change assist", EcarxVehicleAdapter.ADAS_AUTO_LANE_CHANGE_ASSIST, EcarxVehicleAdapter.COMMON_ON));
         addTile(grid, "BSD", Color.rgb(95, 195, 156), () -> sendVehicle("Blind spot detection", EcarxVehicleAdapter.ADAS_BLIND_SPOT_DETECTION, EcarxVehicleAdapter.COMMON_ON));
         addTile(grid, "TSR", Color.rgb(255, 171, 78), () -> sendVehicle("Traffic sign recognition", EcarxVehicleAdapter.ADAS_TRAFFIC_SIGN_RECOGNITION, EcarxVehicleAdapter.COMMON_ON));
-        addTile(grid, "Alert", Color.rgb(255, 128, 112), () -> sendVehicle("Traffic sign alert", EcarxVehicleAdapter.ADAS_TRAFFIC_SIGN_ALERT, EcarxVehicleAdapter.COMMON_ON));
-        addTile(grid, "Limit", Color.rgb(177, 118, 255), () -> sendVehicle("Speed limit warning", EcarxVehicleAdapter.ADAS_SPEED_LIMIT_WARN, EcarxVehicleAdapter.COMMON_ON));
+        addTile(grid, "Оповещение", Color.rgb(255, 128, 112), () -> sendVehicle("Traffic sign alert", EcarxVehicleAdapter.ADAS_TRAFFIC_SIGN_ALERT, EcarxVehicleAdapter.COMMON_ON));
+        addTile(grid, "Лимит", Color.rgb(177, 118, 255), () -> sendVehicle("Speed limit warning", EcarxVehicleAdapter.ADAS_SPEED_LIMIT_WARN, EcarxVehicleAdapter.COMMON_ON));
         panel.addView(grid, lpMatchWrap(0, 12, 0, 0));
         return panel;
     }
@@ -198,7 +198,7 @@ public class AdasActivity extends Activity {
         addActionChip(switches, "ACC", () -> sendVehicle("ACC режим", EcarxVehicleAdapter.ADAS_ACC_ICC_SWITCH, EcarxVehicleAdapter.ACC_ICC_ACC));
         addActionChip(switches, "ICC", () -> sendVehicle("ICC режим", EcarxVehicleAdapter.ADAS_ACC_ICC_SWITCH, EcarxVehicleAdapter.ACC_ICC_ICC));
         addActionChip(switches, "TSR", () -> sendVehicle("ACC with TSR", EcarxVehicleAdapter.ADAS_ACC_WITH_TSR, EcarxVehicleAdapter.COMMON_ON));
-        addActionChip(switches, "Limit", () -> sendVehicle("Speed limitation mode", EcarxVehicleAdapter.ADAS_SPEED_LIMITATION_MODE, EcarxVehicleAdapter.COMMON_ON));
+        addActionChip(switches, "Лимит", () -> sendVehicle("Speed limitation mode", EcarxVehicleAdapter.ADAS_SPEED_LIMITATION_MODE, EcarxVehicleAdapter.COMMON_ON));
         panel.addView(switches, lpMatchWrap(0, 12, 0, 0));
 
         TextView gapLabel = Ui.text(this, "Дистанция ACC: " + currentAccGap, 18, true);
@@ -238,21 +238,21 @@ public class AdasActivity extends Activity {
 
     private LinearLayout buildPdcPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "PDC / Parking Assist"));
+        panel.addView(Ui.label(this, "PDC / Парковка"));
         panel.addView(Ui.muted(this, "PDC остается частью ADAS, а полный сценарий 360 / APA открыт как отдельный экран парковки."));
 
         LinearLayout controls = Ui.row(this);
-        addActionChip(controls, "PDC On", () -> sendVehicle("PDC включить", EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.COMMON_ON));
-        addActionChip(controls, "PDC Off", () -> sendVehicle("PDC выключить", EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.COMMON_OFF));
-        addActionChip(controls, "Vol Mid", () -> sendVehicle("PDC volume mid", EcarxVehicleAdapter.ADAS_PDC_WARNING_VOLUME, EcarxVehicleAdapter.PDC_VOLUME_MID));
-        addActionChip(controls, "Parking", this::openParkingActivity);
+        addActionChip(controls, "PDC вкл", () -> sendVehicle("PDC включить", EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.COMMON_ON));
+        addActionChip(controls, "PDC выкл", () -> sendVehicle("PDC выключить", EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.COMMON_OFF));
+        addActionChip(controls, "Громкость сред.", () -> sendVehicle("PDC volume mid", EcarxVehicleAdapter.ADAS_PDC_WARNING_VOLUME, EcarxVehicleAdapter.PDC_VOLUME_MID));
+        addActionChip(controls, "Парковка", this::openParkingActivity);
         panel.addView(controls, lpMatchWrap(0, 12, 0, 0));
 
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(3);
-        addTile(grid, "Vol Low", Ui.SUCCESS, () -> sendVehicle("PDC volume low", EcarxVehicleAdapter.ADAS_PDC_WARNING_VOLUME, EcarxVehicleAdapter.PDC_VOLUME_LOW));
-        addTile(grid, "Vol Mid", Ui.WARNING, () -> sendVehicle("PDC volume mid", EcarxVehicleAdapter.ADAS_PDC_WARNING_VOLUME, EcarxVehicleAdapter.PDC_VOLUME_MID));
-        addTile(grid, "Vol High", Ui.ERROR, () -> sendVehicle("PDC volume high", EcarxVehicleAdapter.ADAS_PDC_WARNING_VOLUME, EcarxVehicleAdapter.PDC_VOLUME_HIGH));
+        addTile(grid, "Низкая", Ui.SUCCESS, () -> sendVehicle("PDC volume low", EcarxVehicleAdapter.ADAS_PDC_WARNING_VOLUME, EcarxVehicleAdapter.PDC_VOLUME_LOW));
+        addTile(grid, "Средняя", Ui.WARNING, () -> sendVehicle("PDC volume mid", EcarxVehicleAdapter.ADAS_PDC_WARNING_VOLUME, EcarxVehicleAdapter.PDC_VOLUME_MID));
+        addTile(grid, "Высокая", Ui.ERROR, () -> sendVehicle("PDC volume high", EcarxVehicleAdapter.ADAS_PDC_WARNING_VOLUME, EcarxVehicleAdapter.PDC_VOLUME_HIGH));
         panel.addView(grid, lpMatchWrap(0, 12, 0, 0));
         panel.addView(new PdcVisualView(this), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 120)));
         return panel;
@@ -260,11 +260,11 @@ public class AdasActivity extends Activity {
 
     private LinearLayout buildModeSwitcher() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Section Modes"));
+        panel.addView(Ui.label(this, "Режимы раздела"));
         LinearLayout row = Ui.row(this);
         addModeChip(row, "Обзор", MODE_OVERVIEW);
-        if (experimentalFeaturesEnabled()) addModeChip(row, "Experimental", MODE_EXPERIMENTAL);
-        if (developerModeEnabled()) addModeChip(row, "Diagnostics", MODE_DIAGNOSTICS);
+        if (experimentalFeaturesEnabled()) addModeChip(row, "Эксперимент", MODE_EXPERIMENTAL);
+        if (developerModeEnabled()) addModeChip(row, "Диагностика", MODE_DIAGNOSTICS);
         panel.addView(row, lpMatchWrap(0, 10, 0, 0));
         return panel;
     }
@@ -272,7 +272,7 @@ public class AdasActivity extends Activity {
     private LinearLayout buildExperimentalPanel() {
         LinearLayout panel = Ui.glassCard(this);
         panel.setVisibility(MODE_EXPERIMENTAL.equals(currentMode) ? View.VISIBLE : View.GONE);
-        panel.addView(Ui.label(this, "Experimental ADAS"));
+        panel.addView(Ui.label(this, "Экспериментальный ADAS"));
         panel.addView(Ui.muted(this, "Панель доступна только при включенном experimental gate. Команды отправляются через новый UI, без возврата в legacy ADAS."));
 
         GridLayout grid = new GridLayout(this);
@@ -289,14 +289,14 @@ public class AdasActivity extends Activity {
         addActionChip(strategy, "LCA Gentle", () -> sendVehicle("AI lane strategy gentle", EcarxVehicleAdapter.ADAS_AI_LANE_CHANGE_STRATEGY, EcarxVehicleAdapter.AI_LANE_CHANGE_STRATEGY_GENTLE));
         addActionChip(strategy, "Standard", () -> sendVehicle("AI lane strategy standard", EcarxVehicleAdapter.ADAS_AI_LANE_CHANGE_STRATEGY, EcarxVehicleAdapter.AI_LANE_CHANGE_STRATEGY_STANDARD));
         addActionChip(strategy, "Radical", () -> sendVehicle("AI lane strategy radical", EcarxVehicleAdapter.ADAS_AI_LANE_CHANGE_STRATEGY, EcarxVehicleAdapter.AI_LANE_CHANGE_STRATEGY_RADICAL));
-        addActionChip(strategy, "Confirm", () -> sendVehicle("Lane-change confirm", EcarxVehicleAdapter.ADAS_AI_LANE_CHANGE_CONFIRM, EcarxVehicleAdapter.COMMON_ON));
+        addActionChip(strategy, "Подтверждение", () -> sendVehicle("Lane-change confirm", EcarxVehicleAdapter.ADAS_AI_LANE_CHANGE_CONFIRM, EcarxVehicleAdapter.COMMON_ON));
         panel.addView(strategy, lpMatchWrap(0, 12, 0, 0));
 
         LinearLayout warning = Ui.row(this);
-        addActionChip(warning, "Voice", () -> sendVehicle("AI lane warning voice", EcarxVehicleAdapter.ADAS_AI_LANE_CHANGE_WARNING, EcarxVehicleAdapter.AI_LANE_CHANGE_WARNING_VOICE));
-        addActionChip(warning, "Vibrate", () -> sendVehicle("AI lane warning vibrate", EcarxVehicleAdapter.ADAS_AI_LANE_CHANGE_WARNING, EcarxVehicleAdapter.AI_LANE_CHANGE_WARNING_VIBRATE));
-        addActionChip(warning, "Both", () -> sendVehicle("AI lane warning both", EcarxVehicleAdapter.ADAS_AI_LANE_CHANGE_WARNING, EcarxVehicleAdapter.AI_LANE_CHANGE_WARNING_BOTH));
-        addActionChip(warning, "Preset", this::installHighwayAssistPreset);
+        addActionChip(warning, "Голос", () -> sendVehicle("AI lane warning voice", EcarxVehicleAdapter.ADAS_AI_LANE_CHANGE_WARNING, EcarxVehicleAdapter.AI_LANE_CHANGE_WARNING_VOICE));
+        addActionChip(warning, "Вибрация", () -> sendVehicle("AI lane warning vibrate", EcarxVehicleAdapter.ADAS_AI_LANE_CHANGE_WARNING, EcarxVehicleAdapter.AI_LANE_CHANGE_WARNING_VIBRATE));
+        addActionChip(warning, "Оба", () -> sendVehicle("AI lane warning both", EcarxVehicleAdapter.ADAS_AI_LANE_CHANGE_WARNING, EcarxVehicleAdapter.AI_LANE_CHANGE_WARNING_BOTH));
+        addActionChip(warning, "Пресет", this::installHighwayAssistPreset);
         panel.addView(warning, lpMatchWrap(0, 12, 0, 0));
 
         panel.addView(buildReadableExperimentalAssistPanel(), lpMatchWrap(0, 16, 0, 0));
@@ -311,18 +311,18 @@ public class AdasActivity extends Activity {
         GridLayout toggles = new GridLayout(this);
         toggles.setColumnCount(2);
         addTile(toggles, "AI Assist Default", Color.rgb(93, 156, 255), () -> sendVehicle("AI Assist default on", EcarxVehicleAdapter.ADAS_AI_ASSIST_DEFAULT_ON, EcarxVehicleAdapter.COMMON_ON));
-        addTile(toggles, "Overtake Lane Exit", Color.rgb(108, 194, 255), () -> sendVehicle("Overtaking lane exit assist", EcarxVehicleAdapter.ADAS_AI_ASSIST_OUT_OVERTAKING_LANE, EcarxVehicleAdapter.COMMON_ON));
-        addTile(toggles, "Traffic Light Assist", Color.rgb(255, 179, 64), () -> sendVehicle("Traffic light attention", EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION, EcarxVehicleAdapter.COMMON_ON));
-        addTile(toggles, "Traffic Light Sound", Color.rgb(255, 142, 98), () -> sendVehicle("Traffic light attention sound", EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION_SOUND, EcarxVehicleAdapter.COMMON_ON));
-        addTile(toggles, "Paddle Lane Assist", Color.rgb(156, 128, 255), () -> sendVehicle("Paddle lane change assist", EcarxVehicleAdapter.ADAS_PADDLE_LANE_CHANGE_ASSIST, EcarxVehicleAdapter.COMMON_ON));
-        addTile(toggles, "Speed Warning", Color.rgb(103, 198, 157), () -> sendVehicle("Speed limit warning", EcarxVehicleAdapter.ADAS_SPEED_LIMIT_WARN, EcarxVehicleAdapter.COMMON_ON));
+        addTile(toggles, "Выход из обгона", Color.rgb(108, 194, 255), () -> sendVehicle("Overtaking lane exit assist", EcarxVehicleAdapter.ADAS_AI_ASSIST_OUT_OVERTAKING_LANE, EcarxVehicleAdapter.COMMON_ON));
+        addTile(toggles, "Светофор", Color.rgb(255, 179, 64), () -> sendVehicle("Traffic light attention", EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION, EcarxVehicleAdapter.COMMON_ON));
+        addTile(toggles, "Звук светофора", Color.rgb(255, 142, 98), () -> sendVehicle("Traffic light attention sound", EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION_SOUND, EcarxVehicleAdapter.COMMON_ON));
+        addTile(toggles, "Paddle assist", Color.rgb(156, 128, 255), () -> sendVehicle("Paddle lane change assist", EcarxVehicleAdapter.ADAS_PADDLE_LANE_CHANGE_ASSIST, EcarxVehicleAdapter.COMMON_ON));
+        addTile(toggles, "Предупр. скорости", Color.rgb(103, 198, 157), () -> sendVehicle("Speed limit warning", EcarxVehicleAdapter.ADAS_SPEED_LIMIT_WARN, EcarxVehicleAdapter.COMMON_ON));
         panel.addView(toggles, lpMatchWrap(0, 12, 0, 0));
 
         LinearLayout togglesOff = Ui.row(this);
         addActionChip(togglesOff, "AI Default Off", () -> sendVehicle("AI Assist default off", EcarxVehicleAdapter.ADAS_AI_ASSIST_DEFAULT_ON, EcarxVehicleAdapter.COMMON_OFF));
-        addActionChip(togglesOff, "Lane Exit Off", () -> sendVehicle("Overtaking lane exit off", EcarxVehicleAdapter.ADAS_AI_ASSIST_OUT_OVERTAKING_LANE, EcarxVehicleAdapter.COMMON_OFF));
-        addActionChip(togglesOff, "Light Sound Off", () -> sendVehicle("Traffic light sound off", EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION_SOUND, EcarxVehicleAdapter.COMMON_OFF));
-        addActionChip(togglesOff, "Paddle Off", () -> sendVehicle("Paddle lane assist off", EcarxVehicleAdapter.ADAS_PADDLE_LANE_CHANGE_ASSIST, EcarxVehicleAdapter.COMMON_OFF));
+        addActionChip(togglesOff, "Выход выкл", () -> sendVehicle("Overtaking lane exit off", EcarxVehicleAdapter.ADAS_AI_ASSIST_OUT_OVERTAKING_LANE, EcarxVehicleAdapter.COMMON_OFF));
+        addActionChip(togglesOff, "Звук выкл", () -> sendVehicle("Traffic light sound off", EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION_SOUND, EcarxVehicleAdapter.COMMON_OFF));
+        addActionChip(togglesOff, "Paddle выкл", () -> sendVehicle("Paddle lane assist off", EcarxVehicleAdapter.ADAS_PADDLE_LANE_CHANGE_ASSIST, EcarxVehicleAdapter.COMMON_OFF));
         panel.addView(togglesOff, lpMatchWrap(0, 12, 0, 0));
 
         LinearLayout tlbModes = Ui.row(this);
@@ -335,7 +335,7 @@ public class AdasActivity extends Activity {
         LinearLayout summary = new LinearLayout(this);
         summary.setOrientation(LinearLayout.VERTICAL);
         summary.addView(Ui.muted(this, "APB mode и speed warning mode оставлены как readback/raw controls: в текущем коде есть ID, но нет подтвержденных enum-значений, поэтому пользовательский selector для них пока не выдумывается."), lpMatchWrap(0, 0, 0, 8));
-        summary.addView(diagnosticCard("Pilot mode readback",
+        summary.addView(diagnosticCard("Чтение режимов Pilot",
                 EcarxVehicleAdapter.ADAS_APB_MODE,
                 EcarxVehicleAdapter.ADAS_SPEED_LIMIT_WARNING_MODE,
                 EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION,
@@ -348,7 +348,7 @@ public class AdasActivity extends Activity {
     private LinearLayout buildDiagnosticsPanel() {
         LinearLayout panel = Ui.glassCard(this);
         panel.setVisibility(MODE_DIAGNOSTICS.equals(currentMode) ? View.VISIBLE : View.GONE);
-        panel.addView(Ui.label(this, "Developer Diagnostics"));
+        panel.addView(Ui.label(this, "Диагностика разработчика"));
         panel.addView(Ui.muted(this, "Support/readback, последние команды и сырой набор ID вынесены в новый экран ADAS вместо legacy ветки."));
 
         panel.addView(diagnosticCard("ADAS support/readback",
@@ -388,8 +388,8 @@ public class AdasActivity extends Activity {
         panel.addView(raw);
 
         LinearLayout actions = Ui.row(this);
-        addActionChip(actions, "Export", () -> exportDiagnostics(last.getText() + "\n" + raw.getText()));
-        addActionChip(actions, "Parking", this::openParkingActivity);
+        addActionChip(actions, "Экспорт", () -> exportDiagnostics(last.getText() + "\n" + raw.getText()));
+        addActionChip(actions, "Парковка", this::openParkingActivity);
         panel.addView(actions, lpMatchWrap(0, 12, 0, 0));
         return panel;
     }
@@ -399,7 +399,7 @@ public class AdasActivity extends Activity {
         grid.setColumnCount(2);
         addStatusCard(grid, "Ассистенты", experimentalFeaturesEnabled() ? "AEB · FCW · LKA · AI" : "AEB · FCW · LKA · LDW", Ui.SUCCESS);
         addStatusCard(grid, "Круиз", "ACC / ICC / TSR", Ui.CYAN);
-        addStatusCard(grid, "Парковка", "PDC тут · AVM и APA в Parking", Ui.WARNING);
+        addStatusCard(grid, "Парковка", "PDC здесь · AVM и APA в Parking", Ui.WARNING);
         addStatusCard(grid, "Полоса", developerModeEnabled() ? "Lane keep · readback · diagnostics" : "Lane keep / lane warning", Color.rgb(129, 149, 255));
         return grid;
     }

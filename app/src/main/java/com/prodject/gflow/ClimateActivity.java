@@ -165,7 +165,7 @@ public class ClimateActivity extends Activity {
 
     private LinearLayout buildClimateHero() {
         LinearLayout hero = Ui.glassCard(this);
-        hero.addView(Ui.label(this, "Climate Overview"));
+        hero.addView(Ui.label(this, "Обзор климата"));
 
         LinearLayout row = Ui.row(this);
         LinearLayout left = new LinearLayout(this);
@@ -188,17 +188,17 @@ public class ClimateActivity extends Activity {
         hero.addView(row);
 
         LinearLayout actions = Ui.row(this);
-        addClimateActionChip(actions, "Comfort", () -> openMode(Mode.HOME));
-        addClimateActionChip(actions, "Advanced", () -> openMode(Mode.ADVANCED));
+        addClimateActionChip(actions, "Комфорт", () -> openMode(Mode.HOME));
+        addClimateActionChip(actions, "Расширенно", () -> openMode(Mode.ADVANCED));
         addClimateActionChip(actions, "Presets", () -> openMode(Mode.PRESETS));
-        addClimateActionChip(actions, "Smart", () -> openMode(Mode.SMART));
+        addClimateActionChip(actions, "Умный", () -> openMode(Mode.SMART));
         hero.addView(actions, lpMatchWrap(0, 14, 0, 0));
         return hero;
     }
 
     private LinearLayout buildClimateComfortPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Comfort Panel"));
+        panel.addView(Ui.label(this, "Панель комфорта"));
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(4);
         addClimateToggle(grid, "HVAC", Ui.CYAN, () -> command(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_ON));
@@ -215,14 +215,14 @@ public class ClimateActivity extends Activity {
 
     private LinearLayout buildClimateMainPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Driver / Passenger"));
+        panel.addView(Ui.label(this, "Водитель / Пассажир"));
 
         LinearLayout tempRow = Ui.row(this);
         tempRow.setGravity(Gravity.CENTER_VERTICAL);
         tempRow.addView(buildTempCard("Водитель", EcarxVehicleAdapter.ZONE_DRIVER_LEFT), new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 0.9f));
 
         LinearLayout center = Ui.glassCard(this);
-        center.addView(Ui.label(this, "Airflow Visual"));
+        center.addView(Ui.label(this, "Потоки воздуха"));
         View flow = new AirFlowView(this);
         center.addView(flow, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 220)));
         TextView fanLabel = Ui.text(this, "Вентилятор: 3", 18, true);
@@ -257,10 +257,10 @@ public class ClimateActivity extends Activity {
 
         LinearLayout seats = Ui.row(this);
         seats.setWeightSum(4f);
-        addClimateActionChip(seats, "Seat Heat", () -> command(EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_LEVEL_2));
-        addClimateActionChip(seats, "Seat Vent", () -> command(EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_LEVEL_2));
-        addClimateActionChip(seats, "Wheel Heat", () -> command(EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT, EcarxVehicleAdapter.WHEEL_HEAT_MID));
-        addClimateActionChip(seats, "Defrost", this::showDefrostSheet);
+        addClimateActionChip(seats, "Подогрев сид.", () -> command(EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_LEVEL_2));
+        addClimateActionChip(seats, "Вентиляция", () -> command(EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_LEVEL_2));
+        addClimateActionChip(seats, "Руль", () -> command(EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT, EcarxVehicleAdapter.WHEEL_HEAT_MID));
+        addClimateActionChip(seats, "Обдув стекла", this::showDefrostSheet);
         panel.addView(seats, lpMatchWrap(0, 16, 0, 0));
 
         LinearLayout presets = Ui.row(this);
@@ -283,7 +283,7 @@ public class ClimateActivity extends Activity {
 
     private LinearLayout buildPresetsPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Climate Presets"));
+        panel.addView(Ui.label(this, "Пресеты климата"));
         panel.addView(Ui.text(this, "Сохраненные пользовательские HVAC-пресеты и быстрые сценарии теперь живут внутри нового климатического экрана.", 14, false));
         Button add = Ui.button(this, "Создать пресет");
         add.setTextColor(Ui.primaryText(this));
@@ -304,7 +304,7 @@ public class ClimateActivity extends Activity {
 
     private LinearLayout buildSavedPresetCard(String label, EcarxVehicleAdapter.Command[] commands) {
         LinearLayout card = Ui.glassCard(this);
-        card.addView(Ui.label(this, "Saved Preset"));
+        card.addView(Ui.label(this, "Сохраненный пресет"));
         card.addView(Ui.text(this, label, 20, true));
         TextView body = Ui.text(this, compact(encodeCommands(commands).replace('\n', ' ')), 13, false);
         body.setTextColor(Ui.secondaryText(this));
@@ -331,7 +331,7 @@ public class ClimateActivity extends Activity {
 
     private LinearLayout buildPresetEditorPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Preset Editor"));
+        panel.addView(Ui.label(this, "Редактор пресета"));
         panel.addView(Ui.text(this, editingPresetName.isEmpty() ? "Новый пресет" : editingPresetName, 20, true));
         EditText name = new EditText(this);
         name.setHint("Название");
@@ -377,7 +377,7 @@ public class ClimateActivity extends Activity {
 
     private LinearLayout buildSmartClimatePanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Smart Climate"));
+        panel.addView(Ui.label(this, "Умный климат"));
         SharedPreferences prefs = SmartClimateController.prefs(this);
         CheckBox enabled = new CheckBox(this);
         enabled.setText("Контроллер включен");
@@ -454,7 +454,7 @@ public class ClimateActivity extends Activity {
 
     private LinearLayout buildAdvancedPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Advanced HVAC"));
+        panel.addView(Ui.label(this, "Расширенный HVAC"));
         panel.addView(Ui.text(this, "Полный расширенный flow теперь живет здесь: воздух, очистка, зоны, hardkeys, pre/post climate и быстрые HVAC-макросы.", 14, false));
 
         GridLayout grid = new GridLayout(this);
@@ -497,28 +497,28 @@ public class ClimateActivity extends Activity {
     private View buildClimateReadbackGrid() {
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(2);
-        addReadbackCard(grid, "HVAC Core", readbackByIds(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.HVAC_AUTO, EcarxVehicleAdapter.HVAC_AC, EcarxVehicleAdapter.HVAC_FAN_SPEED));
-        addReadbackCard(grid, "Temperature", readback(
+        addReadbackCard(grid, "Основа HVAC", readbackByIds(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.HVAC_AUTO, EcarxVehicleAdapter.HVAC_AC, EcarxVehicleAdapter.HVAC_FAN_SPEED));
+        addReadbackCard(grid, "Температура", readback(
                 floatReadback(EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_DRIVER_LEFT),
                 floatReadback(EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT),
                 singleReadback(EcarxVehicleAdapter.HVAC_TEMP_UNIT),
                 singleReadback(EcarxVehicleAdapter.HVAC_CLIMATE_ZONE)));
-        addReadbackCard(grid, "Seats / Wheel", readback(
+        addReadbackCard(grid, "Сиденья / Руль", readback(
                 zonedReadback(EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.ZONE_DRIVER_LEFT),
                 zonedReadback(EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, EcarxVehicleAdapter.ZONE_DRIVER_LEFT),
                 zonedReadback(EcarxVehicleAdapter.HVAC_SEAT_MASSAGE, EcarxVehicleAdapter.ZONE_DRIVER_LEFT),
                 singleReadback(EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT)));
-        addReadbackCard(grid, "Air Quality", readback(
+        addReadbackCard(grid, "Качество воздуха", readback(
                 singleReadback(EcarxVehicleAdapter.HVAC_AQS_SWITCH),
                 singleReadback(EcarxVehicleAdapter.HVAC_CO2_SWITCH),
                 singleReadback(EcarxVehicleAdapter.HVAC_IONS_SWITCH),
                 singleReadback(EcarxVehicleAdapter.HVAC_AIR_FRAGRANCE)));
-        addReadbackCard(grid, "Defrost / Dry", readback(
+        addReadbackCard(grid, "Обдув / Осушение", readback(
                 singleReadback(EcarxVehicleAdapter.HVAC_DEFROST_FRONT),
                 singleReadback(EcarxVehicleAdapter.HVAC_DEFROST_REAR),
                 singleReadback(EcarxVehicleAdapter.HVAC_DEFROST_FRONT_MAX),
                 singleReadback(EcarxVehicleAdapter.HVAC_AUTOMATIC_VENTILATION_DRY)));
-        addReadbackCard(grid, "Advanced Modes", readback(
+        addReadbackCard(grid, "Расширенные режимы", readback(
                 singleReadback(EcarxVehicleAdapter.HVAC_RAPID_COOLING),
                 singleReadback(EcarxVehicleAdapter.HVAC_RAPID_WARMING),
                 singleReadback(EcarxVehicleAdapter.HVAC_PRE_CLIMATISATION),
@@ -639,25 +639,25 @@ public class ClimateActivity extends Activity {
                 new QuickItem("A/C Max", () -> command(EcarxVehicleAdapter.HVAC_AC_MAX, EcarxVehicleAdapter.COMMON_ON)),
                 new QuickItem("Off", () -> command(EcarxVehicleAdapter.HVAC_AC, EcarxVehicleAdapter.COMMON_OFF))
         });
-        addDockButton(dock, "Defrost", this::showDefrostSheet, false, new QuickItem[]{
-                new QuickItem("Front", () -> command(EcarxVehicleAdapter.HVAC_DEFROST_FRONT, EcarxVehicleAdapter.COMMON_ON)),
-                new QuickItem("Rear", () -> command(EcarxVehicleAdapter.HVAC_DEFROST_REAR, EcarxVehicleAdapter.COMMON_ON)),
-                new QuickItem("Front Max", () -> command(EcarxVehicleAdapter.HVAC_DEFROST_FRONT_MAX, EcarxVehicleAdapter.COMMON_ON))
+        addDockButton(dock, "Обдув", this::showDefrostSheet, false, new QuickItem[]{
+                new QuickItem("Перед", () -> command(EcarxVehicleAdapter.HVAC_DEFROST_FRONT, EcarxVehicleAdapter.COMMON_ON)),
+                new QuickItem("Зад", () -> command(EcarxVehicleAdapter.HVAC_DEFROST_REAR, EcarxVehicleAdapter.COMMON_ON)),
+                new QuickItem("Перед макс", () -> command(EcarxVehicleAdapter.HVAC_DEFROST_FRONT_MAX, EcarxVehicleAdapter.COMMON_ON))
         });
-        addDockButton(dock, "Smart", () -> command(EcarxVehicleAdapter.HVAC_AI_POWER, EcarxVehicleAdapter.COMMON_ON), false, new QuickItem[]{
-                new QuickItem("Smart climate", () -> openMode(Mode.SMART)),
+        addDockButton(dock, "Умный", () -> command(EcarxVehicleAdapter.HVAC_AI_POWER, EcarxVehicleAdapter.COMMON_ON), false, new QuickItem[]{
+                new QuickItem("Умный климат", () -> openMode(Mode.SMART)),
                 new QuickItem("Rapid Cool", () -> command(EcarxVehicleAdapter.HVAC_RAPID_COOLING, EcarxVehicleAdapter.COMMON_ON)),
                 new QuickItem("Rapid Warm", () -> command(EcarxVehicleAdapter.HVAC_RAPID_WARMING, EcarxVehicleAdapter.COMMON_ON))
         });
         addDockButton(dock, "Пресеты", () -> openMode(Mode.PRESETS), mode == Mode.PRESETS || mode == Mode.PRESET_EDITOR, new QuickItem[]{
-                new QuickItem("Presets", () -> openMode(Mode.PRESETS)),
+                new QuickItem("Пресеты", () -> openMode(Mode.PRESETS)),
                 new QuickItem("Создать", () -> openPresetEditor("", defaultPresetText())),
-                new QuickItem("Comfort", () -> openMode(Mode.HOME))
+                new QuickItem("Комфорт", () -> openMode(Mode.HOME))
         });
         addDockButton(dock, "Расширенно", () -> openMode(Mode.ADVANCED), mode == Mode.ADVANCED, new QuickItem[]{
-                new QuickItem("Advanced", () -> openMode(Mode.ADVANCED)),
+                new QuickItem("Расширенно", () -> openMode(Mode.ADVANCED)),
                 new QuickItem("Readback", this::showReadbackSheet),
-                new QuickItem("Comfort", () -> openMode(Mode.HOME))
+                new QuickItem("Комфорт", () -> openMode(Mode.HOME))
         });
         return dock;
     }
@@ -694,19 +694,19 @@ public class ClimateActivity extends Activity {
     }
 
     private void showQuickHvacSheet() {
-        showActionSheet("Quick HVAC", new QuickItem[]{
-                new QuickItem("HVAC On", () -> command(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_ON)),
+        showActionSheet("Быстрый HVAC", new QuickItem[]{
+                new QuickItem("HVAC вкл", () -> command(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_ON)),
                 new QuickItem("Auto", () -> command(EcarxVehicleAdapter.HVAC_AUTO, EcarxVehicleAdapter.COMMON_ON)),
-                new QuickItem("Recirculation Auto", () -> command(EcarxVehicleAdapter.HVAC_CIRCULATION, EcarxVehicleAdapter.CIRCULATION_AUTO)),
-                new QuickItem("All vents", () -> command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_ALL))
+                new QuickItem("Рециркуляция Auto", () -> command(EcarxVehicleAdapter.HVAC_CIRCULATION, EcarxVehicleAdapter.CIRCULATION_AUTO)),
+                new QuickItem("Все зоны", () -> command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_ALL))
         });
     }
 
     private void showDefrostSheet() {
-        showActionSheet("Defrost", new QuickItem[]{
-                new QuickItem("Front", () -> command(EcarxVehicleAdapter.HVAC_DEFROST_FRONT, EcarxVehicleAdapter.COMMON_ON)),
-                new QuickItem("Rear", () -> command(EcarxVehicleAdapter.HVAC_DEFROST_REAR, EcarxVehicleAdapter.COMMON_ON)),
-                new QuickItem("Front Max", () -> command(EcarxVehicleAdapter.HVAC_DEFROST_FRONT_MAX, EcarxVehicleAdapter.COMMON_ON)),
+        showActionSheet("Обдув стекла", new QuickItem[]{
+                new QuickItem("Перед", () -> command(EcarxVehicleAdapter.HVAC_DEFROST_FRONT, EcarxVehicleAdapter.COMMON_ON)),
+                new QuickItem("Зад", () -> command(EcarxVehicleAdapter.HVAC_DEFROST_REAR, EcarxVehicleAdapter.COMMON_ON)),
+                new QuickItem("Перед макс", () -> command(EcarxVehicleAdapter.HVAC_DEFROST_FRONT_MAX, EcarxVehicleAdapter.COMMON_ON)),
                 new QuickItem("Auto Defrost", () -> command(EcarxVehicleAdapter.HVAC_AUTO_DEFROST_FRONT, EcarxVehicleAdapter.COMMON_ON))
         });
     }
@@ -721,7 +721,7 @@ public class ClimateActivity extends Activity {
     }
 
     private void showReadbackSheet() {
-        showActionSheet("HVAC Readback", new QuickItem[]{
+        showActionSheet("Чтение HVAC", new QuickItem[]{
                 new QuickItem(singleReadback(EcarxVehicleAdapter.HVAC_POWER), this::refreshState),
                 new QuickItem(singleReadback(EcarxVehicleAdapter.HVAC_AUTO), this::refreshState),
                 new QuickItem(singleReadback(EcarxVehicleAdapter.HVAC_AC), this::refreshState),
@@ -736,7 +736,7 @@ public class ClimateActivity extends Activity {
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         LinearLayout sheet = Ui.glassCard(this);
         sheet.setPadding(Ui.dp(this, 20), Ui.dp(this, 20), Ui.dp(this, 20), Ui.dp(this, 20));
-        sheet.addView(Ui.label(this, "Climate Actions"));
+        sheet.addView(Ui.label(this, "Действия климата"));
         sheet.addView(Ui.text(this, title, 24, true));
         for (QuickItem item : items) {
             Button button = Ui.button(this, item.label);
@@ -850,11 +850,11 @@ public class ClimateActivity extends Activity {
     }
 
     private String modeLabel() {
-        if (mode == Mode.ADVANCED) return "HVAC / Advanced";
-        if (mode == Mode.PRESETS) return "HVAC / Presets";
-        if (mode == Mode.PRESET_EDITOR) return "HVAC / Preset Editor";
-        if (mode == Mode.SMART) return "HVAC / Smart";
-        return "HVAC / Comfort";
+        if (mode == Mode.ADVANCED) return "HVAC / Расширенно";
+        if (mode == Mode.PRESETS) return "HVAC / Пресеты";
+        if (mode == Mode.PRESET_EDITOR) return "HVAC / Редактор";
+        if (mode == Mode.SMART) return "HVAC / Умный";
+        return "HVAC / Комфорт";
     }
 
     private String defaultPresetText() {

@@ -76,13 +76,13 @@ public class CameraActivity extends Activity {
         LinearLayout titleBlock = new LinearLayout(this);
         titleBlock.setOrientation(LinearLayout.VERTICAL);
         titleBlock.setPadding(Ui.dp(this, 16), 0, 0, 0);
-        titleBlock.addView(Ui.label(this, "DVR / Camera Hub"));
+        titleBlock.addView(Ui.label(this, "DVR / Центр камер"));
         TextView title = Ui.text(this, "DVR / Камеры", 28, true);
         title.setPadding(0, 0, 0, 0);
         titleBlock.addView(title);
         bar.addView(titleBlock, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
-        bar.addView(buildTopStat("Запись", "Standby"));
+        bar.addView(buildTopStat("Запись", "Ожидание"));
         bar.addView(buildTopStat("Источник", "Camera2 / EVS"));
         bar.addView(buildTopStat("Архив", "GFlowDvr"));
         return bar;
@@ -105,7 +105,7 @@ public class CameraActivity extends Activity {
 
     private LinearLayout buildHeroPanel() {
         LinearLayout hero = Ui.glassCard(this);
-        hero.addView(Ui.label(this, "Camera Visual"));
+        hero.addView(Ui.label(this, "Схема камер"));
 
         LinearLayout row = Ui.row(this);
         LinearLayout left = new LinearLayout(this);
@@ -140,14 +140,14 @@ public class CameraActivity extends Activity {
 
     private LinearLayout buildControlPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Recording Controls"));
+        panel.addView(Ui.label(this, "Управление записью"));
 
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(3);
         addTile(grid, "Старт записи", Ui.SUCCESS, this::startRecording);
         addTile(grid, "Стоп записи", Ui.ERROR, this::stopRecording);
         addTile(grid, "Обновить", Ui.CYAN, this::refreshStatus);
-        addTile(grid, "EVS Rear", Color.rgb(255, 179, 64), () -> runEvs(EcarxDvrAdapter.EVS_CAMERA_REAR, true));
+        addTile(grid, "EVS Зад", Color.rgb(255, 179, 64), () -> runEvs(EcarxDvrAdapter.EVS_CAMERA_REAR, true));
         addTile(grid, "EVS 360", Color.rgb(129, 149, 255), () -> runEvs(EcarxDvrAdapter.EVS_CAMERA_AVM, true));
         addTile(grid, "EVS DVR", Color.rgb(95, 133, 255), () -> runEvs(EcarxDvrAdapter.EVS_CAMERA_DVR, true));
         addTile(grid, "Закрыть Rear", Color.rgb(120, 136, 156), () -> runEvs(EcarxDvrAdapter.EVS_CAMERA_REAR, false));
@@ -160,7 +160,7 @@ public class CameraActivity extends Activity {
     private LinearLayout buildArchiveSettingsPanel() {
         SharedPreferences prefs = getSharedPreferences(DvrArchive.PREFS, MODE_PRIVATE);
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Archive Settings"));
+        panel.addView(Ui.label(this, "Настройки архива"));
         panel.addView(Ui.muted(this, "Camera2 источники, сегменты, лимит архива, storage и EVS/DVR diagnostics теперь живут в новом экране."));
 
         camerasInput = new EditText(this);
@@ -205,8 +205,8 @@ public class CameraActivity extends Activity {
 
         LinearLayout actions = Ui.row(this);
         addActionChip(actions, "Сохранить", this::saveArchiveSettings);
-        addActionChip(actions, "Prune", this::pruneArchive);
-        addActionChip(actions, "DVR Mode", () -> runDvrCall("DVR mode", EcarxDvrAdapter::dvrCurrentMode));
+        addActionChip(actions, "Очистка", this::pruneArchive);
+        addActionChip(actions, "Режим DVR", () -> runDvrCall("DVR mode", EcarxDvrAdapter::dvrCurrentMode));
         addActionChip(actions, "SD", () -> runDvrCall("DVR SD", EcarxDvrAdapter::dvrSdcardStatus));
         panel.addView(actions);
         return panel;
@@ -231,7 +231,7 @@ public class CameraActivity extends Activity {
         addCard(grid, cameras);
 
         LinearLayout diag = Ui.glassCard(this);
-        diag.addView(Ui.label(this, "EVS / DVR Diagnostics"));
+        diag.addView(Ui.label(this, "Диагностика EVS / DVR"));
         diagSummary = Ui.text(this, "", 15, false);
         diagSummary.setPadding(0, Ui.dp(this, 8), 0, 0);
         diag.addView(diagSummary);
@@ -253,11 +253,11 @@ public class CameraActivity extends Activity {
         dock.setOrientation(LinearLayout.HORIZONTAL);
         dock.setGravity(Gravity.CENTER_VERTICAL);
         dock.setPadding(Ui.dp(this, 18), Ui.dp(this, 14), Ui.dp(this, 18), Ui.dp(this, 14));
-        addDockButton(dock, "Rec", this::startRecording, true);
-        addDockButton(dock, "Stop", this::stopRecording, false);
+        addDockButton(dock, "Запись", this::startRecording, true);
+        addDockButton(dock, "Стоп", this::stopRecording, false);
         addDockButton(dock, "360", () -> runEvs(EcarxDvrAdapter.EVS_CAMERA_AVM, true), false);
-        addDockButton(dock, "Rear", () -> runEvs(EcarxDvrAdapter.EVS_CAMERA_REAR, true), false);
-        addDockButton(dock, "Save", this::saveArchiveSettings, false);
+        addDockButton(dock, "Задняя", () -> runEvs(EcarxDvrAdapter.EVS_CAMERA_REAR, true), false);
+        addDockButton(dock, "Сохранить", this::saveArchiveSettings, false);
         return dock;
     }
 

@@ -94,13 +94,13 @@ public class FileManagerActivity extends Activity {
         LinearLayout titleBlock = new LinearLayout(this);
         titleBlock.setOrientation(LinearLayout.VERTICAL);
         titleBlock.setPadding(Ui.dp(this, 16), 0, 0, 0);
-        titleBlock.addView(Ui.label(this, "Storage / USB / Files"));
+        titleBlock.addView(Ui.label(this, "Хранилище / USB / Файлы"));
         titleBlock.addView(Ui.text(this, "Файловый менеджер", 28, true));
         bar.addView(titleBlock, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
-        bar.addView(buildTopStat("Items", String.valueOf(visibleFiles().size())));
+        bar.addView(buildTopStat("Элементы", String.valueOf(visibleFiles().size())));
         bar.addView(buildTopStat("USB", String.valueOf(usbRoots().size())));
-        bar.addView(buildTopStat("Move", moveCandidate == null ? "idle" : moveCandidate.getName()));
+        bar.addView(buildTopStat("Перенос", moveCandidate == null ? "ожидание" : moveCandidate.getName()));
         return bar;
     }
 
@@ -119,21 +119,21 @@ public class FileManagerActivity extends Activity {
 
     private LinearLayout buildHeroPanel() {
         LinearLayout hero = Ui.glassCard(this);
-        hero.addView(Ui.label(this, "Path / Storage Status / Move Queue"));
+        hero.addView(Ui.label(this, "Путь / Статус / Очередь переноса"));
 
         LinearLayout row = Ui.row(this);
         LinearLayout left = new LinearLayout(this);
         left.setOrientation(LinearLayout.VERTICAL);
         left.addView(metricLine("Путь", current.getAbsolutePath()));
-        left.addView(metricLine("Storage", storageInfo(current)));
-        left.addView(metricLine("USB lookup", usbRoots().isEmpty() ? "не найдено" : usbRoots().get(0).getAbsolutePath()));
-        left.addView(metricLine("Move candidate", moveCandidate == null ? "не выбран" : moveCandidate.getAbsolutePath()));
+        left.addView(metricLine("Хранилище", storageInfo(current)));
+        left.addView(metricLine("USB", usbRoots().isEmpty() ? "не найдено" : usbRoots().get(0).getAbsolutePath()));
+        left.addView(metricLine("Кандидат", moveCandidate == null ? "не выбран" : moveCandidate.getAbsolutePath()));
         row.addView(left, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
         LinearLayout stateCard = Ui.glassCard(this);
         stateCard.setGravity(Gravity.CENTER);
         stateCard.setPadding(Ui.dp(this, 18), Ui.dp(this, 18), Ui.dp(this, 18), Ui.dp(this, 18));
-        TextView label = Ui.text(this, moveCandidate == null ? "FILES" : "MOVE", 30, true);
+        TextView label = Ui.text(this, moveCandidate == null ? "ФАЙЛЫ" : "ПЕРЕНОС", 30, true);
         label.setGravity(Gravity.CENTER);
         stateCard.addView(label);
         LinearLayout.LayoutParams stateLp = new LinearLayout.LayoutParams(Ui.dp(this, 180), Ui.dp(this, 180));
@@ -157,16 +157,16 @@ public class FileManagerActivity extends Activity {
     private GridLayout buildOverviewGrid() {
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(2);
-        addStatusCard(grid, "Current", shortPath(current), Ui.CYAN);
-        addStatusCard(grid, "Storage", shortStorageInfo(current), Ui.SUCCESS);
-        addStatusCard(grid, "USB candidates", usbPreview(), Ui.WARNING);
-        addStatusCard(grid, "Move queue", moveCandidate == null ? "empty" : moveCandidate.getName(), Color.rgb(129, 149, 255));
+        addStatusCard(grid, "Текущая", shortPath(current), Ui.CYAN);
+        addStatusCard(grid, "Хранилище", shortStorageInfo(current), Ui.SUCCESS);
+        addStatusCard(grid, "USB-кандидаты", usbPreview(), Ui.WARNING);
+        addStatusCard(grid, "Очередь", moveCandidate == null ? "пусто" : moveCandidate.getName(), Color.rgb(129, 149, 255));
         return grid;
     }
 
     private LinearLayout buildStoragePanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Storage Card"));
+        panel.addView(Ui.label(this, "Карта хранилища"));
         panel.addView(Ui.text(this, "Показывает путь, storage status и доступные USB candidates.", 14, false));
         panel.addView(Ui.muted(this, "Текущий путь: " + current.getAbsolutePath()), lpMatchWrap(0, 10, 0, 0));
         panel.addView(Ui.muted(this, storageInfo(current)), lpMatchWrap(0, 4, 0, 0));
@@ -177,7 +177,7 @@ public class FileManagerActivity extends Activity {
 
     private LinearLayout buildActionPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Actions"));
+        panel.addView(Ui.label(this, "Действия"));
         panel.addView(Ui.text(this, "Создание папки, переход вверх, USB lookup и move fallback с progress/log.", 14, false));
 
         LinearLayout row = Ui.row(this);
@@ -191,7 +191,7 @@ public class FileManagerActivity extends Activity {
 
     private LinearLayout buildFileListPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Files"));
+        panel.addView(Ui.label(this, "Файлы"));
         panel.addView(Ui.text(this, "Открыть, поделиться, удалить, выбрать для перемещения, открыть как media/text.", 14, false));
 
         List<File> files = visibleFiles();
@@ -209,19 +209,19 @@ public class FileManagerActivity extends Activity {
         card.addView(Ui.muted(this, fileMeta(file)));
 
         LinearLayout row = Ui.row(this);
-        addMiniAction(row, "Open", () -> open(file));
-        addMiniAction(row, "Share", () -> share(file));
-        addMiniAction(row, "Move", () -> {
+        addMiniAction(row, "Откр.", () -> open(file));
+        addMiniAction(row, "Подел.", () -> share(file));
+        addMiniAction(row, "Перен.", () -> {
             moveCandidate = file;
             lastMoveSummary = "Выбран для перемещения: " + file.getAbsolutePath();
             renderContent();
         });
-        addMiniAction(row, "Delete", () -> confirmDelete(file));
+        addMiniAction(row, "Удал.", () -> confirmDelete(file));
         card.addView(row, lpMatchWrap(0, 12, 0, 0));
 
         LinearLayout row2 = Ui.row(this);
-        addMiniAction(row2, "Text", () -> openAsText(file));
-        addMiniAction(row2, "Media", () -> openAsMedia(file));
+        addMiniAction(row2, "Текст", () -> openAsText(file));
+        addMiniAction(row2, "Медиа", () -> openAsMedia(file));
         card.addView(row2, lpMatchWrap(0, 8, 0, 0));
         return card;
     }
@@ -231,11 +231,11 @@ public class FileManagerActivity extends Activity {
         dock.setOrientation(LinearLayout.HORIZONTAL);
         dock.setGravity(Gravity.CENTER_VERTICAL);
         dock.setPadding(Ui.dp(this, 18), Ui.dp(this, 14), Ui.dp(this, 18), Ui.dp(this, 14));
-        addDockButton(dock, "Up", this::goUp, false);
+        addDockButton(dock, "Вверх", this::goUp, false);
         addDockButton(dock, "USB", this::openUsb, false);
-        addDockButton(dock, "Move", this::pasteMove, moveCandidate != null);
-        addDockButton(dock, "Folder", this::createFolder, false);
-        addDockButton(dock, "Back", this::finish, false);
+        addDockButton(dock, "Перенос", this::pasteMove, moveCandidate != null);
+        addDockButton(dock, "Папка", this::createFolder, false);
+        addDockButton(dock, "Назад", this::finish, false);
         return dock;
     }
 

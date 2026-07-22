@@ -105,13 +105,13 @@ public class VoiceActivity extends Activity {
         LinearLayout titleBlock = new LinearLayout(this);
         titleBlock.setOrientation(LinearLayout.VERTICAL);
         titleBlock.setPadding(Ui.dp(this, 16), 0, 0, 0);
-        titleBlock.addView(Ui.label(this, "Voice Assistant"));
+        titleBlock.addView(Ui.label(this, "Голосовой ассистент"));
         titleBlock.addView(Ui.text(this, "Голосовой ассистент", 28, true));
         bar.addView(titleBlock, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
-        bar.addView(buildTopStat("Service", serviceStatus()));
+        bar.addView(buildTopStat("Сервис", serviceStatus()));
         bar.addView(buildTopStat("Vosk", voskStatus()));
-        bar.addView(buildTopStat("Alias", String.valueOf(aliases().size())));
+        bar.addView(buildTopStat("Алиасы", String.valueOf(aliases().size())));
         return bar;
     }
 
@@ -130,7 +130,7 @@ public class VoiceActivity extends Activity {
 
     private LinearLayout buildHeroPanel() {
         LinearLayout hero = Ui.glassCard(this);
-        hero.addView(Ui.label(this, "Foreground Voice / Recognition"));
+        hero.addView(Ui.label(this, "Foreground Voice / Распознавание"));
 
         LinearLayout row = Ui.row(this);
         LinearLayout left = new LinearLayout(this);
@@ -170,16 +170,16 @@ public class VoiceActivity extends Activity {
     private GridLayout buildOverviewGrid() {
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(2);
-        addStatusCard(grid, "Service", serviceStatus(), Ui.CYAN);
+        addStatusCard(grid, "Сервис", serviceStatus(), Ui.CYAN);
         addStatusCard(grid, "Vosk", voskStatus(), Ui.SUCCESS);
-        addStatusCard(grid, "Commands", "climate · body · HUD · drive · DVR", Ui.WARNING);
-        addStatusCard(grid, "Alias / Log", aliases().size() + " alias · " + logCount() + " log", Color.rgb(129, 149, 255));
+        addStatusCard(grid, "Команды", "climate · body · HUD · drive · DVR", Ui.WARNING);
+        addStatusCard(grid, "Алиасы / Лог", aliases().size() + " alias · " + logCount() + " log", Color.rgb(129, 149, 255));
         return grid;
     }
 
     private LinearLayout buildCommandPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Commands"));
+        panel.addView(Ui.label(this, "Команды"));
         panel.addView(Ui.text(this, "Локальный Vosk, ручной ввод команд и выполнение встроенного parser flow.", 14, false));
 
         commandInput = edit("Введите или продиктуйте команду", latestRecognition);
@@ -207,7 +207,7 @@ public class VoiceActivity extends Activity {
 
     private LinearLayout buildAliasPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Alias Commands"));
+        panel.addView(Ui.label(this, "Команды алиасов"));
         panel.addView(Ui.text(this, "Alias может запускать preset, scenario, action или broadcast command. Долгое нажатие — редактирование.", 14, false));
 
         LinearLayout row = Ui.row(this);
@@ -232,20 +232,20 @@ public class VoiceActivity extends Activity {
         card.addView(Ui.muted(this, "→ " + action));
 
         LinearLayout row = Ui.row(this);
-        addMiniAction(row, "Use", () -> {
+        addMiniAction(row, "Исп.", () -> {
             latestRecognition = phrase;
             if (commandInput != null) commandInput.setText(phrase);
             if (recognitionView != null) recognitionView.setText(recognitionSummary());
         });
-        addMiniAction(row, "Test", () -> showResultSheet("Alias test", runVoiceCommand(phrase.toLowerCase(Locale.ROOT))));
-        addMiniAction(row, "Edit", () -> editAlias(phrase, action));
+        addMiniAction(row, "Тест", () -> showResultSheet("Alias test", runVoiceCommand(phrase.toLowerCase(Locale.ROOT))));
+        addMiniAction(row, "Изм.", () -> editAlias(phrase, action));
         card.addView(row, lpMatchWrap(0, 12, 0, 0));
         return card;
     }
 
     private LinearLayout buildLogPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Log"));
+        panel.addView(Ui.label(this, "Лог"));
         panel.addView(Ui.text(this, "Неизвестные команды идут в broadcast fallback, логируются и могут быть сохранены как alias.", 14, false));
 
         LinearLayout row = Ui.row(this);
@@ -272,11 +272,11 @@ public class VoiceActivity extends Activity {
         dock.setOrientation(LinearLayout.HORIZONTAL);
         dock.setGravity(Gravity.CENTER_VERTICAL);
         dock.setPadding(Ui.dp(this, 18), Ui.dp(this, 14), Ui.dp(this, 18), Ui.dp(this, 14));
-        addDockButton(dock, "Listen", this::startListening, listening);
-        addDockButton(dock, "Run", this::runInputCommand, false);
+        addDockButton(dock, "Слушать", this::startListening, listening);
+        addDockButton(dock, "Выполнить", this::runInputCommand, false);
         addDockButton(dock, "Alias", () -> editAlias("", ""), false);
         addDockButton(dock, "Log", this::showLogSheet, false);
-        addDockButton(dock, "Home", this::finish, false);
+        addDockButton(dock, "Назад", this::finish, false);
         return dock;
     }
 
