@@ -359,6 +359,7 @@ public class MainActivity extends Activity {
         private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final Path path = new Path();
         private final boolean ambienceMode;
+        private final Bitmap home;
         private final Bitmap model;
         private final Bitmap underlay;
         private final Bitmap lightScene;
@@ -368,6 +369,7 @@ public class MainActivity extends Activity {
         VehicleVisualView(Context context, boolean ambienceMode) {
             super(context);
             this.ambienceMode = ambienceMode;
+            home = BitmapFactory.decodeResource(getResources(), R.drawable.vehicle_home);
             model = BitmapFactory.decodeResource(getResources(), R.drawable.vehicle_settings_model);
             underlay = BitmapFactory.decodeResource(getResources(), R.drawable.vehicle_settings_underlay);
             lightScene = BitmapFactory.decodeResource(getResources(), R.drawable.vehicle_light_mode_fx11);
@@ -427,9 +429,9 @@ public class MainActivity extends Activity {
                 return;
             }
 
-            if (!ambienceMode && (model != null || underlay != null)) {
+            if (!ambienceMode && (home != null || model != null)) {
                 RectF bounds = new RectF(w * 0.04f, h * 0.02f, w * 0.96f, h * 0.98f);
-                if (model != null) drawBitmapFit(canvas, model, bounds, 255);
+                drawBitmapFit(canvas, home != null ? home : model, bounds, 255);
                 return;
             }
 
