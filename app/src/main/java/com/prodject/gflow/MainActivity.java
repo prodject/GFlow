@@ -158,7 +158,7 @@ public class MainActivity extends Activity {
         addDashboardMenuButton(rail, "HM", true, this::showDashboard);
         addDashboardMenuButton(rail, "CL", false, this::showClimateMenu);
         addDashboardMenuButton(rail, "CAR", false, this::showVehicleMenu);
-        addDashboardMenuButton(rail, "CAM", false, () -> startActivity(new Intent(this, DvrActivity.class)));
+        addDashboardMenuButton(rail, "CAM", false, () -> startActivity(new Intent(this, CameraActivity.class)));
         addDashboardMenuButton(rail, "ADAS", false, this::showAdasMenu);
         addDashboardMenuButton(rail, "P", false, this::showParkingApa);
         addDashboardMenuButton(rail, "SET", false, this::showSettings);
@@ -262,7 +262,7 @@ public class MainActivity extends Activity {
         grid.setColumnCount(2);
         addDashboardWidget(grid, "Климат", "Водитель 22°C · Пассажир 22°C\nAuto · A/C · Сиденья готовы", Ui.CYAN, this::showComfortClimate);
         addDashboardWidget(grid, "Готовность авто", adaptStatus() + "\nДвери закрыты · Комфорт", Ui.SUCCESS, this::showVehicleMenu);
-        addDashboardWidget(grid, "DVR", "Запись выкл · USB свободно\nИсточник: Camera2 / EVS", Ui.WARNING, () -> startActivity(new Intent(this, DvrActivity.class)));
+        addDashboardWidget(grid, "DVR", "Запись выкл · USB свободно\nИсточник: Camera2 / EVS", Ui.WARNING, () -> startActivity(new Intent(this, CameraActivity.class)));
         addDashboardWidget(grid, "ADAS", "AEB · FCW · LKA · ACC\nPDC готов", Color.rgb(123, 104, 238), this::showAdasMenu);
         addDashboardWidget(grid, "360 / Parking", "AVM standby · Rear ready\nRCTA доступно", Color.rgb(72, 153, 255), this::showParkingApa);
         addDashboardWidget(grid, "Профиль", activeProfileName() + "\nБыстрый доступ к сиденью и настройкам", Color.rgb(101, 208, 168), this::showUserProfiles);
@@ -298,7 +298,7 @@ public class MainActivity extends Activity {
         dock.setPadding(Ui.dp(this, 18), Ui.dp(this, 14), Ui.dp(this, 18), Ui.dp(this, 14));
         addDockButton(dock, "Климат", this::showClimateMenu, true);
         addDockButton(dock, "360", this::showParkingApa, false);
-        addDockButton(dock, "DVR Rec", () -> startActivity(new Intent(this, DvrActivity.class)), false);
+        addDockButton(dock, "DVR Rec", () -> startActivity(new Intent(this, CameraActivity.class)), false);
         addDockButton(dock, "Drive Mode", this::showVehicleMenu, false);
         addDockButton(dock, "Голос", () -> startActivity(new Intent(this, VoiceActivity.class)), false);
         addDockButton(dock, "Профиль", this::showUserProfiles, false);
@@ -954,7 +954,7 @@ public class MainActivity extends Activity {
         addRailButton(rail, "HUD", this::showHudMenu);
         addRailButton(rail, "Автоматизация", this::showAutomation);
         addRailButton(rail, "Профили", this::showUserProfiles);
-        addRailButton(rail, "DVR", () -> startActivity(new Intent(this, DvrActivity.class)));
+        addRailButton(rail, "DVR", () -> startActivity(new Intent(this, CameraActivity.class)));
         addRailButton(rail, "Погода", this::showWeb);
         addRailButton(rail, "Настройки", this::showSettings);
         return rail;
