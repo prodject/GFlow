@@ -2347,6 +2347,16 @@ public class MainActivity extends Activity {
                 EcarxVehicleAdapter.ADAS_TLB_MODE,
                 EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION,
                 EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION_SOUND);
+        addDiagnostic(root, "ACC/ICC activation status and voice prompts",
+                EcarxVehicleAdapter.ADAS_TTS_ACC_ACTIVATE,
+                EcarxVehicleAdapter.ADAS_TTS_ACC_ACTIVATE_SOUND,
+                EcarxVehicleAdapter.ADAS_TTS_ACC_EXIT,
+                EcarxVehicleAdapter.ADAS_TTS_ICC_ACTIVATE,
+                EcarxVehicleAdapter.ADAS_TTS_ICC_ACTIVATE_REMINDER,
+                EcarxVehicleAdapter.ADAS_TTS_ICC_ACTIVATE_SOUND,
+                EcarxVehicleAdapter.ADAS_TTS_ICC_DRIVING_STATUS,
+                EcarxVehicleAdapter.ADAS_TTS_ICC_EXIT,
+                EcarxVehicleAdapter.ADAS_TTS_ICC_NOA_DRIVING_STATUS);
         addDiagnostic(root, "Experimental ADAS fault/readback",
                 EcarxVehicleAdapter.ADAS_TRAFFIC_SIGN_INFORMATION_FAILURE,
                 EcarxVehicleAdapter.ADAS_LANE_KEEPING_ASSISTANCE_FAILURE,
@@ -2392,8 +2402,9 @@ public class MainActivity extends Activity {
         addCommand(root, "APB mode выкл", EcarxVehicleAdapter.ADAS_APB_MODE, EcarxVehicleAdapter.COMMON_OFF);
         addCommand(root, "TLB switch вкл", EcarxVehicleAdapter.ADAS_TLB_SWITCH, EcarxVehicleAdapter.COMMON_ON);
         addCommand(root, "TLB switch выкл", EcarxVehicleAdapter.ADAS_TLB_SWITCH, EcarxVehicleAdapter.COMMON_OFF);
-        addCommand(root, "TLB mode вкл", EcarxVehicleAdapter.ADAS_TLB_MODE, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(root, "TLB mode выкл", EcarxVehicleAdapter.ADAS_TLB_MODE, EcarxVehicleAdapter.COMMON_OFF);
+        addCommandGroup(root, "TLB mode", EcarxVehicleAdapter.ADAS_TLB_MODE,
+                new String[]{"TLB mode low", "TLB mode middle", "TLB mode high"},
+                new int[]{EcarxVehicleAdapter.TLB_MODE_LOW, EcarxVehicleAdapter.TLB_MODE_MIDDLE, EcarxVehicleAdapter.TLB_MODE_HIGH});
         addCommand(root, "Traffic light attention вкл", EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION, EcarxVehicleAdapter.COMMON_ON);
         addCommand(root, "Traffic light attention выкл", EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION, EcarxVehicleAdapter.COMMON_OFF);
         addCommand(root, "Traffic light sound вкл", EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION_SOUND, EcarxVehicleAdapter.COMMON_ON);

@@ -307,6 +307,15 @@ final class EcarxVehicleAdapter {
     static final int ADAS_DRIVE_PILOT_ALARM_INFO_CANCEL = 0x28071a00;
     static final int ADAS_TRAFFIC_LIGHT_ATTENTION = 0x20070d00;
     static final int ADAS_TRAFFIC_LIGHT_ATTENTION_SOUND = 0x28010100;
+    static final int ADAS_TTS_ACC_ACTIVATE = 0x280a0b00;
+    static final int ADAS_TTS_ACC_ACTIVATE_SOUND = 0x280a0f00;
+    static final int ADAS_TTS_ACC_EXIT = 0x280a0c00;
+    static final int ADAS_TTS_ICC_ACTIVATE = 0x280a0300;
+    static final int ADAS_TTS_ICC_ACTIVATE_REMINDER = 0x280a0700;
+    static final int ADAS_TTS_ICC_ACTIVATE_SOUND = 0x280a0e00;
+    static final int ADAS_TTS_ICC_DRIVING_STATUS = 0x280a0a00;
+    static final int ADAS_TTS_ICC_EXIT = 0x280a0600;
+    static final int ADAS_TTS_ICC_NOA_DRIVING_STATUS = 0x280a1000;
     static final int ADAS_ADAPTIVE_CRUISE_FAILURE = 0x28081700;
     static final int ADAS_DRIVER_FATIGUE_FAILURE = 0x28081900;
     static final int ADAS_EMERGENCY_LANE_OCCUPANCY_FAILURE = 0x28081300;
@@ -329,6 +338,9 @@ final class EcarxVehicleAdapter {
     static final int ACC_TIME_GAP_1 = 0x280a0d02;
     static final int ACC_TIME_GAP_2 = 0x280a0d03;
     static final int ACC_TIME_GAP_3 = 0x280a0d04;
+    static final int TLB_MODE_LOW = 0x28080c01;
+    static final int TLB_MODE_MIDDLE = 0x28080c02;
+    static final int TLB_MODE_HIGH = 0x28080c03;
     static final int AI_LANE_CHANGE_STRATEGY_OFF = 0x0;
     static final int AI_LANE_CHANGE_STRATEGY_GENTLE = 0x28080501;
     static final int AI_LANE_CHANGE_STRATEGY_STANDARD = 0x28080502;
