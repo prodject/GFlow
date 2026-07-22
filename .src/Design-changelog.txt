@@ -212,6 +212,8 @@
 - Добавлен новый parking shell в стиле `Design.txt`: top bar, hero-panel, parking controls, status cards, bottom dock.
 - Внутри нового экрана добавлены быстрые действия для Auto Park, 360, PDC, RCTA и выбора parking mode.
 - Добавлен отдельный визуальный parking-блок.
+- В основной экран вынесены отдельные блоки `Radar / Visual Assist` и `APA Control`: radar mode, guide overlays, visual assist toggles, APA status и выбор parking scenario теперь доступны без захода в raw diagnostics.
+- Кнопки `confirm / cancel / self-search` для APA/RPA сохранены в `Experimental`, если включен соответствующий режим.
 - В `ParkingActivity` добавлен новый advanced parking flow для `APA / RPA`: raw park modes, button actions, remote parking и HAL diagnostics.
 - В `ParkingActivity` добавлен новый advanced parking flow для `PAS / AVM`: PAC/AVM camera state, radar work modes, overlays, SAP и RCTA.
 - Legacy `showParkingApa()` и `showPasAvm()` удалены из `MainActivity`; parking experimental/raw сценарии больше не живут в старом экране.
