@@ -40,6 +40,8 @@ public class ParkingActivity extends Activity {
         root.addView(buildTopBar(), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 72)));
         root.addView(buildHeroPanel(), lpMatchWrap(0, 16, 0, 16));
         root.addView(buildParkingModes(), lpMatchWrap(0, 0, 0, 16));
+        root.addView(buildRadarAndVisualPanel(), lpMatchWrap(0, 0, 0, 16));
+        root.addView(buildApaControlPanel(), lpMatchWrap(0, 0, 0, 16));
         root.addView(buildAdvancedParkingPanel(), lpMatchWrap(0, 0, 0, 16));
         root.addView(buildStatusGrid(), lpMatchWrap(0, 0, 0, 16));
         root.addView(buildBottomDock(), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 112)));
@@ -65,9 +67,9 @@ public class ParkingActivity extends Activity {
         titleBlock.addView(title);
         bar.addView(titleBlock, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
-        bar.addView(buildTopStat("AVM", "Standby"));
-        bar.addView(buildTopStat("PDC", "Active"));
-        bar.addView(buildTopStat("RCTA", "Ready"));
+        bar.addView(buildTopStat("AVM", "Ожидание"));
+        bar.addView(buildTopStat("PDC", "Активно"));
+        bar.addView(buildTopStat("RCTA", "Готово"));
         return bar;
     }
 
@@ -94,8 +96,8 @@ public class ParkingActivity extends Activity {
         LinearLayout left = new LinearLayout(this);
         left.setOrientation(LinearLayout.VERTICAL);
         left.addView(metricLine("Auto Park", "Готов к запуску"));
-        left.addView(metricLine("360 Camera", "Rear + Top"));
-        left.addView(metricLine("PDC", "Front / Rear"));
+        left.addView(metricLine("360 Camera", "Сзади + сверху"));
+        left.addView(metricLine("PDC", "Перед / зад"));
         left.addView(metricLine("RCTA", "Мониторинг сзади"));
         row.addView(left, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
@@ -123,30 +125,94 @@ public class ParkingActivity extends Activity {
 
     private LinearLayout buildParkingModes() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Parking Controls"));
+        panel.addView(Ui.label(this, "Управление парковкой"));
 
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(3);
-        addTile(grid, "Open Auto Park", Ui.CYAN, () -> sendVehicle(EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_AUTO_PARK));
-        addTile(grid, "Open 360", Color.rgb(72, 153, 255), () -> sendVehicle(EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_360));
-        addTile(grid, "PDC On", Ui.SUCCESS, () -> sendVehicle(EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.COMMON_ON));
-        addTile(grid, "PDC Off", Ui.ERROR, () -> sendVehicle(EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.COMMON_OFF));
-        addTile(grid, "RCTA On", Ui.WARNING, () -> sendVehicle(EcarxVehicleAdapter.PAS_RCTA_ACTIVATION, EcarxVehicleAdapter.COMMON_ON));
-        addTile(grid, "RCTA Off", Color.rgb(128, 140, 156), () -> sendVehicle(EcarxVehicleAdapter.PAS_RCTA_ACTIVATION, EcarxVehicleAdapter.COMMON_OFF));
+        addTile(grid, "Открыть Auto Park", Ui.CYAN, () -> sendVehicle(EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_AUTO_PARK));
+        addTile(grid, "Открыть 360", Color.rgb(72, 153, 255), () -> sendVehicle(EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_360));
+        addTile(grid, "PDC Вкл", Ui.SUCCESS, () -> sendVehicle(EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.COMMON_ON));
+        addTile(grid, "PDC Выкл", Ui.ERROR, () -> sendVehicle(EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.COMMON_OFF));
+        addTile(grid, "RCTA Вкл", Ui.WARNING, () -> sendVehicle(EcarxVehicleAdapter.PAS_RCTA_ACTIVATION, EcarxVehicleAdapter.COMMON_ON));
+        addTile(grid, "RCTA Выкл", Color.rgb(128, 140, 156), () -> sendVehicle(EcarxVehicleAdapter.PAS_RCTA_ACTIVATION, EcarxVehicleAdapter.COMMON_OFF));
         panel.addView(grid, lpMatchWrap(0, 12, 0, 0));
 
         LinearLayout modes = Ui.row(this);
-        addActionChip(modes, "Parallel", () -> sendSignalParkMode(CarSignalManagerAdapter.PARK_MODE_HORIZONTAL_IN));
-        addActionChip(modes, "Perp", () -> sendSignalParkMode(CarSignalManagerAdapter.PARK_MODE_PERPENDICULAR_IN));
-        addActionChip(modes, "Out", () -> sendSignalParkMode(CarSignalManagerAdapter.PARK_MODE_HORIZONTAL_LEFT_OUT));
-        addActionChip(modes, "Cancel", () -> sendSignalParkMode(CarSignalManagerAdapter.PARK_MODE_CANCEL));
+        addActionChip(modes, "Параллельная", () -> sendSignalParkMode(CarSignalManagerAdapter.PARK_MODE_HORIZONTAL_IN));
+        addActionChip(modes, "Перпендикулярная", () -> sendSignalParkMode(CarSignalManagerAdapter.PARK_MODE_PERPENDICULAR_IN));
+        addActionChip(modes, "Выезд", () -> sendSignalParkMode(CarSignalManagerAdapter.PARK_MODE_HORIZONTAL_LEFT_OUT));
+        addActionChip(modes, "Отмена", () -> sendSignalParkMode(CarSignalManagerAdapter.PARK_MODE_CANCEL));
         panel.addView(modes, lpMatchWrap(0, 14, 0, 0));
+        return panel;
+    }
+
+    private LinearLayout buildRadarAndVisualPanel() {
+        LinearLayout panel = Ui.glassCard(this);
+        panel.addView(Ui.label(this, "Радары / Визуальная помощь"));
+        panel.addView(Ui.muted(this, "Радарный режим, парковочные направляющие и визуальные оверлеи вынесены в основной экран парковки."));
+
+        addCommandGroup(panel, "Режим радаров", EcarxVehicleAdapter.PAS_RADAR_WORK_MODE,
+                new String[]{"Выкл", "Ожидание", "Перед + зад", "Только перед", "Только зад"},
+                new int[]{EcarxVehicleAdapter.PAS_RADAR_WORK_MODE_OFF, EcarxVehicleAdapter.PAS_RADAR_WORK_MODE_STANDBY, EcarxVehicleAdapter.PAS_RADAR_WORK_MODE_FRONT_REAR_ACTIVE, EcarxVehicleAdapter.PAS_RADAR_WORK_MODE_FRONT_ACTIVE, EcarxVehicleAdapter.PAS_RADAR_WORK_MODE_REAR_ACTIVE});
+        addCommand(panel, "Направляющие траектории Вкл", EcarxVehicleAdapter.PAS_PAC_OVERLAY_STEERPATH, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(panel, "Направляющие траектории Выкл", EcarxVehicleAdapter.PAS_PAC_OVERLAY_STEERPATH, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(panel, "Оверлей дистанции Вкл", EcarxVehicleAdapter.PAS_PAC_OVERLAY_DSTINFO, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(panel, "Оверлей дистанции Выкл", EcarxVehicleAdapter.PAS_PAC_OVERLAY_DSTINFO, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(panel, "Оверлей фаркопа Вкл", EcarxVehicleAdapter.PAS_PAC_OVERLAY_TOWBAR, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(panel, "Оверлей фаркопа Выкл", EcarxVehicleAdapter.PAS_PAC_OVERLAY_TOWBAR, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(panel, "PAS-графика Вкл", EcarxVehicleAdapter.PAS_SHOW_GRAPHICS, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(panel, "PAS-графика Выкл", EcarxVehicleAdapter.PAS_SHOW_GRAPHICS, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(panel, "Прозрачная модель Вкл", EcarxVehicleAdapter.PAS_PAC_CAR_MODE_TRANSPARENT, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(panel, "Прозрачная модель Выкл", EcarxVehicleAdapter.PAS_PAC_CAR_MODE_TRANSPARENT, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(panel, "Вид сверху Вкл", EcarxVehicleAdapter.PAS_PAC_TOP_VIEW_ZOOM_IN, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(panel, "Вид сверху Выкл", EcarxVehicleAdapter.PAS_PAC_TOP_VIEW_ZOOM_IN, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(panel, "Круговой обзор Вкл", EcarxVehicleAdapter.PAS_PAC_TOURING_VIEW, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(panel, "Круговой обзор Выкл", EcarxVehicleAdapter.PAS_PAC_TOURING_VIEW, EcarxVehicleAdapter.COMMON_OFF);
+        addDiagnostic(panel, "Статус радаров и оверлеев",
+                EcarxVehicleAdapter.PAS_STATUS,
+                EcarxVehicleAdapter.PAS_RADAR_WORK_MODE,
+                EcarxVehicleAdapter.PAS_RADAR_WORK_STATUS,
+                EcarxVehicleAdapter.PAS_PAC_OVERLAY_STEERPATH,
+                EcarxVehicleAdapter.PAS_PAC_OVERLAY_DSTINFO,
+                EcarxVehicleAdapter.PAS_PAC_OVERLAY_TOWBAR,
+                EcarxVehicleAdapter.PAS_SHOW_GRAPHICS,
+                EcarxVehicleAdapter.PAS_PAC_CAR_MODE_TRANSPARENT,
+                EcarxVehicleAdapter.PAS_PAC_TOP_VIEW_ZOOM_IN,
+                EcarxVehicleAdapter.PAS_PAC_TOURING_VIEW);
+        return panel;
+    }
+
+    private LinearLayout buildApaControlPanel() {
+        LinearLayout panel = Ui.glassCard(this);
+        panel.addView(Ui.label(this, "Управление APA"));
+        panel.addView(Ui.muted(this, experimentalFeaturesEnabled()
+                ? "Штатный вход в Auto Park, выбор сценария парковки, подтверждение, отмена и self-search доступны прямо в основном экране."
+                : "Штатный запуск Auto Park и выбор сценария доступны сразу. Дополнительные кнопки подтверждения, отмены и self-search открываются в Experimental."));
+
+        addCommand(panel, "Открыть штатный Auto Park", EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_AUTO_PARK);
+        addSignalDiagnostic(panel, "Статус APA",
+                "getDrvrAsscSysDisp", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_DISP,
+                "getDrvrAsscSysSts", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_STS,
+                "getRemPrkgEnaSts", CarSignalManagerAdapter.SIG_REM_PRKG_ENA_STS,
+                "getICCVehSts", CarSignalManagerAdapter.SIG_ICC_VEH_STS);
+        addSignalCommand(panel, "APA: Параллельная парковка", "setDrvrAsscSysParkMod", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_PARK_MOD, CarSignalManagerAdapter.PARK_MODE_HORIZONTAL_IN);
+        addSignalCommand(panel, "APA: Перпендикулярная парковка", "setDrvrAsscSysParkMod", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_PARK_MOD, CarSignalManagerAdapter.PARK_MODE_PERPENDICULAR_IN);
+        addSignalCommand(panel, "APA: Выезд влево", "setDrvrAsscSysParkMod", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_PARK_MOD, CarSignalManagerAdapter.PARK_MODE_HORIZONTAL_LEFT_OUT);
+        addSignalCommand(panel, "APA: Выезд вправо", "setDrvrAsscSysParkMod", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_PARK_MOD, CarSignalManagerAdapter.PARK_MODE_HORIZONTAL_RIGHT_OUT);
+        addSignalCommand(panel, "APA: Отмена сценария", "setDrvrAsscSysParkMod", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_PARK_MOD, CarSignalManagerAdapter.PARK_MODE_CANCEL);
+        if (experimentalFeaturesEnabled()) {
+            addSignalCommand(panel, "APA: Включить", "setDrvrAsscSysBtnPush", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_BTN_PUSH, CarSignalManagerAdapter.APA_BUTTON_ON);
+            addSignalCommand(panel, "APA: Подтвердить / Enter", "setDrvrAsscSysBtnPush", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_BTN_PUSH, CarSignalManagerAdapter.APA_CONFIRM_ENTER);
+            addSignalCommand(panel, "APA: Отмена", "setDrvrAsscSysBtnPush", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_BTN_PUSH, CarSignalManagerAdapter.APA_CANCEL);
+            addSignalCommand(panel, "APA: Ручной режим", "setDrvrAsscSysBtnPush", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_BTN_PUSH, CarSignalManagerAdapter.APA_MANUAL);
+            addSignalCommand(panel, "RPA: Self-search", "setRemPrkgSelfSearchReq", CarSignalManagerAdapter.SIG_REM_PRKG_SELF_SEARCH_REQ, CarSignalManagerAdapter.APA_BUTTON_ON);
+        }
         return panel;
     }
 
     private LinearLayout buildAdvancedParkingPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Advanced Parking"));
+        panel.addView(Ui.label(this, "Расширенная парковка"));
         panel.addView(Ui.muted(this, experimentalFeaturesEnabled()
                 ? "Полный перенос experimental parking: APA/RPA, PAS/AVM, SAP/RCTA и remote parking теперь доступны в новом экране."
                 : "Включите Experimental features в настройках, чтобы открыть raw APA/RPA, PAS/AVM и remote parking diagnostics."));
@@ -164,33 +230,33 @@ public class ParkingActivity extends Activity {
 
         LinearLayout apa = Ui.glassCard(this);
         apa.addView(Ui.text(this, "APA / RPA", 18, true));
-        apa.addView(Ui.muted(this, "Штатный вход в автопарковку, raw park modes, remote parking и HAL readback."));
+        apa.addView(Ui.muted(this, "Raw parking controls, remote parking и HAL readback. Основные APA-сценарии вынесены выше в отдельный блок."));
         addCommand(apa, "Открыть штатный Auto Park UI", EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_AUTO_PARK);
-        addCommand(apa, "Открыть 360 panorama", EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_360);
-        addDiagnostic(apa, "BCM parking entry", EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.ADAS_PDC_WARNING_VOLUME);
+        addCommand(apa, "Открыть 360-панораму", EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_360);
+        addDiagnostic(apa, "Вход в parking через BCM", EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.ADAS_PDC_WARNING_VOLUME);
         if (experimentalFeaturesEnabled()) {
-            addSignalDiagnostic(apa, "APA/RPA status",
+            addSignalDiagnostic(apa, "Статус APA/RPA",
                     "getDrvrAsscSysDisp", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_DISP,
                     "getDrvrAsscSysSts", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_STS,
                     "getRemPrkgEnaSts", CarSignalManagerAdapter.SIG_REM_PRKG_ENA_STS,
                     "getICCVehSts", CarSignalManagerAdapter.SIG_ICC_VEH_STS);
-            addSignalCommand(apa, "APA on button", "setDrvrAsscSysBtnPush", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_BTN_PUSH, CarSignalManagerAdapter.APA_BUTTON_ON);
-            addSignalCommand(apa, "APA undo", "setDrvrAsscSysBtnPush", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_BTN_PUSH, CarSignalManagerAdapter.APA_UNDO);
-            addSignalCommand(apa, "APA cancel", "setDrvrAsscSysBtnPush", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_BTN_PUSH, CarSignalManagerAdapter.APA_CANCEL);
-            addSignalCommand(apa, "APA manual", "setDrvrAsscSysBtnPush", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_BTN_PUSH, CarSignalManagerAdapter.APA_MANUAL);
-            addSignalCommand(apa, "APA confirm enter", "setDrvrAsscSysBtnPush", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_BTN_PUSH, CarSignalManagerAdapter.APA_CONFIRM_ENTER);
-            addSignalCommand(apa, "PAS button", "setDrvrAsscSysBtnPush", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_BTN_PUSH, CarSignalManagerAdapter.APA_PAS);
-            addSignalCommand(apa, "RPA button", "setDrvrAsscSysBtnPush", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_BTN_PUSH, CarSignalManagerAdapter.APA_RPA);
-            addSignalCommand(apa, "RPA button alt", "setDrvrAsscSysBtnPush", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_BTN_PUSH, CarSignalManagerAdapter.APA_RPA_ALT);
-            addSignalCommand(apa, "Parking mode horizontal in", "setDrvrAsscSysParkMod", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_PARK_MOD, CarSignalManagerAdapter.PARK_MODE_HORIZONTAL_IN);
-            addSignalCommand(apa, "Parking mode perpendicular in", "setDrvrAsscSysParkMod", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_PARK_MOD, CarSignalManagerAdapter.PARK_MODE_PERPENDICULAR_IN);
-            addSignalCommand(apa, "Parking mode left out", "setDrvrAsscSysParkMod", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_PARK_MOD, CarSignalManagerAdapter.PARK_MODE_HORIZONTAL_LEFT_OUT);
-            addSignalCommand(apa, "Parking mode right out", "setDrvrAsscSysParkMod", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_PARK_MOD, CarSignalManagerAdapter.PARK_MODE_HORIZONTAL_RIGHT_OUT);
-            addSignalCommand(apa, "Parking mode cancel", "setDrvrAsscSysParkMod", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_PARK_MOD, CarSignalManagerAdapter.PARK_MODE_CANCEL);
-            addSignalCommand(apa, "Remote parking enable", "setRemPrkgEnaReq", CarSignalManagerAdapter.SIG_REM_PRKG_ENA_REQ, EcarxVehicleAdapter.COMMON_ON);
-            addSignalCommand(apa, "Remote parking disable", "setRemPrkgEnaReq", CarSignalManagerAdapter.SIG_REM_PRKG_ENA_REQ, EcarxVehicleAdapter.COMMON_OFF);
+            addSignalCommand(apa, "APA: Кнопка включения", "setDrvrAsscSysBtnPush", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_BTN_PUSH, CarSignalManagerAdapter.APA_BUTTON_ON);
+            addSignalCommand(apa, "APA: Undo", "setDrvrAsscSysBtnPush", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_BTN_PUSH, CarSignalManagerAdapter.APA_UNDO);
+            addSignalCommand(apa, "APA: Отмена", "setDrvrAsscSysBtnPush", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_BTN_PUSH, CarSignalManagerAdapter.APA_CANCEL);
+            addSignalCommand(apa, "APA: Ручной режим", "setDrvrAsscSysBtnPush", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_BTN_PUSH, CarSignalManagerAdapter.APA_MANUAL);
+            addSignalCommand(apa, "APA: Подтвердить / Enter", "setDrvrAsscSysBtnPush", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_BTN_PUSH, CarSignalManagerAdapter.APA_CONFIRM_ENTER);
+            addSignalCommand(apa, "PAS: Кнопка", "setDrvrAsscSysBtnPush", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_BTN_PUSH, CarSignalManagerAdapter.APA_PAS);
+            addSignalCommand(apa, "RPA: Кнопка", "setDrvrAsscSysBtnPush", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_BTN_PUSH, CarSignalManagerAdapter.APA_RPA);
+            addSignalCommand(apa, "RPA: Альтернативная кнопка", "setDrvrAsscSysBtnPush", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_BTN_PUSH, CarSignalManagerAdapter.APA_RPA_ALT);
+            addSignalCommand(apa, "Parking mode: Параллельная", "setDrvrAsscSysParkMod", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_PARK_MOD, CarSignalManagerAdapter.PARK_MODE_HORIZONTAL_IN);
+            addSignalCommand(apa, "Parking mode: Перпендикулярная", "setDrvrAsscSysParkMod", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_PARK_MOD, CarSignalManagerAdapter.PARK_MODE_PERPENDICULAR_IN);
+            addSignalCommand(apa, "Parking mode: Выезд влево", "setDrvrAsscSysParkMod", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_PARK_MOD, CarSignalManagerAdapter.PARK_MODE_HORIZONTAL_LEFT_OUT);
+            addSignalCommand(apa, "Parking mode: Выезд вправо", "setDrvrAsscSysParkMod", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_PARK_MOD, CarSignalManagerAdapter.PARK_MODE_HORIZONTAL_RIGHT_OUT);
+            addSignalCommand(apa, "Parking mode: Отмена", "setDrvrAsscSysParkMod", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_PARK_MOD, CarSignalManagerAdapter.PARK_MODE_CANCEL);
+            addSignalCommand(apa, "Remote parking: Вкл", "setRemPrkgEnaReq", CarSignalManagerAdapter.SIG_REM_PRKG_ENA_REQ, EcarxVehicleAdapter.COMMON_ON);
+            addSignalCommand(apa, "Remote parking: Выкл", "setRemPrkgEnaReq", CarSignalManagerAdapter.SIG_REM_PRKG_ENA_REQ, EcarxVehicleAdapter.COMMON_OFF);
             addSignalCommand(apa, "Remote parking self-search", "setRemPrkgSelfSearchReq", CarSignalManagerAdapter.SIG_REM_PRKG_SELF_SEARCH_REQ, CarSignalManagerAdapter.APA_BUTTON_ON);
-            addHalPropertyDiagnostic(apa, "Mobile RPA HAL properties",
+            addHalPropertyDiagnostic(apa, "HAL-свойства mobile RPA",
                     CarSignalManagerAdapter.VEH_MOBDEV_RPA_AUTHENT_REQ1_AUTHENT_STS,
                     CarSignalManagerAdapter.VEH_MOBDEV_RPA_AUTHENT_REQ1_CHKS,
                     CarSignalManagerAdapter.VEH_MOBDEV_RPA_AUTHENT_REQ1_CNTR,
@@ -205,8 +271,8 @@ public class ParkingActivity extends Activity {
 
         LinearLayout avm = Ui.glassCard(this);
         avm.addView(Ui.text(this, "PAS / AVM", 18, true));
-        avm.addView(Ui.muted(this, "AVM/PAC camera state, radar work modes, overlays, SAP и RCTA внутри нового parking flow."));
-        addDiagnostic(avm, "PAC / AVM camera state",
+        avm.addView(Ui.muted(this, "Raw PAS / AVM diagnostics. Основные радары и visual assist overlays вынесены выше в основной UI."));
+        addDiagnostic(avm, "Состояние камер PAC / AVM",
                 EcarxVehicleAdapter.PAS_PAC_ACTIVATION,
                 EcarxVehicleAdapter.PAS_AVM_OR_APA_ACTIVATION,
                 EcarxVehicleAdapter.PAS_PAC_STATUS,
@@ -215,67 +281,67 @@ public class ParkingActivity extends Activity {
                 EcarxVehicleAdapter.PAS_PAC_CAR_MODE_TRANSPARENT,
                 EcarxVehicleAdapter.PAS_PAC_TOP_VIEW_ZOOM_IN,
                 EcarxVehicleAdapter.PAS_PAC_TOURING_VIEW);
-        addDiagnostic(avm, "PAS radar state",
+        addDiagnostic(avm, "Состояние радаров PAS",
                 EcarxVehicleAdapter.PAS_ACTIVATED,
                 EcarxVehicleAdapter.PAS_STATUS,
                 EcarxVehicleAdapter.PAS_RADAR_WORK_MODE,
                 EcarxVehicleAdapter.PAS_RADAR_WORK_STATUS,
                 EcarxVehicleAdapter.PAS_RADAR_FRONT_CENTER,
                 EcarxVehicleAdapter.PAS_RADAR_REAR_CENTER);
-        addDiagnostic(avm, "SAP / RCTA readback",
+        addDiagnostic(avm, "Чтение SAP / RCTA",
                 EcarxVehicleAdapter.PAS_SAP_ACTIVATION,
                 EcarxVehicleAdapter.PAS_SAP_PARK_TYPE,
                 EcarxVehicleAdapter.PAS_SAP_PARK_IN_TYPE,
                 EcarxVehicleAdapter.PAS_RCTA_ACTIVATION,
                 EcarxVehicleAdapter.PAS_RCTA_LEFT_WARNING,
                 EcarxVehicleAdapter.PAS_RCTA_RIGHT_WARNING);
-        addPreset(avm, "Start AVM / PAC",
+        addPreset(avm, "Запустить AVM / PAC",
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.PAS_PAC_ACTIVATION, EcarxVehicleAdapter.COMMON_ON),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.PAS_AVM_OR_APA_ACTIVATION, EcarxVehicleAdapter.COMMON_ON),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_360));
-        addPreset(avm, "Stop AVM / PAC",
+        addPreset(avm, "Остановить AVM / PAC",
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.PAS_PAC_ACTIVATION, EcarxVehicleAdapter.COMMON_OFF),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.PAS_AVM_OR_APA_ACTIVATION, EcarxVehicleAdapter.COMMON_OFF));
-        addCommandGroup(avm, "Auto reverse camera", EcarxVehicleAdapter.PAS_PAC_AUTO_REVERSE_CAMERA,
-                new String[]{"Reverse off", "Reverse rear", "Reverse top"},
+        addCommandGroup(avm, "Автокамера заднего хода", EcarxVehicleAdapter.PAS_PAC_AUTO_REVERSE_CAMERA,
+                new String[]{"Выкл", "Задняя", "Вид сверху"},
                 new int[]{EcarxVehicleAdapter.PAS_AUTO_REVERSE_CAMERA_OFF, EcarxVehicleAdapter.PAS_AUTO_REVERSE_CAMERA_REAR, EcarxVehicleAdapter.PAS_AUTO_REVERSE_CAMERA_TOP});
-        addCommandGroup(avm, "Radar work mode", EcarxVehicleAdapter.PAS_RADAR_WORK_MODE,
-                new String[]{"Radar off", "Radar standby", "Radar front+rear", "Radar front", "Radar rear"},
+        addCommandGroup(avm, "Режим радаров", EcarxVehicleAdapter.PAS_RADAR_WORK_MODE,
+                new String[]{"Выкл", "Ожидание", "Перед + зад", "Только перед", "Только зад"},
                 new int[]{EcarxVehicleAdapter.PAS_RADAR_WORK_MODE_OFF, EcarxVehicleAdapter.PAS_RADAR_WORK_MODE_STANDBY, EcarxVehicleAdapter.PAS_RADAR_WORK_MODE_FRONT_REAR_ACTIVE, EcarxVehicleAdapter.PAS_RADAR_WORK_MODE_FRONT_ACTIVE, EcarxVehicleAdapter.PAS_RADAR_WORK_MODE_REAR_ACTIVE});
-        addCommandGroup(avm, "PAC 3D view", EcarxVehicleAdapter.PAS_PAC_VIEW_SELECTION,
-                new String[]{"3D surround", "Rear left 3D", "Rear right 3D"},
+        addCommandGroup(avm, "Вид PAC 3D", EcarxVehicleAdapter.PAS_PAC_VIEW_SELECTION,
+                new String[]{"3D-обзор", "3D сзади слева", "3D сзади справа"},
                 new int[]{EcarxVehicleAdapter.PAS_PAC_VIEW_SELECTION_3D, EcarxVehicleAdapter.PAS_PAC_VIEW_REAR_LEFT_3D, EcarxVehicleAdapter.PAS_PAC_VIEW_REAR_RIGHT_3D});
-        addCommandGroup(avm, "PAC 3D position", EcarxVehicleAdapter.PAS_PAC_3DVIEW_POSITION,
-                new String[]{"3D off", "Front center", "Front left", "Front right", "Left", "Right", "Rear center", "Rear left", "Rear right"},
+        addCommandGroup(avm, "Позиция PAC 3D", EcarxVehicleAdapter.PAS_PAC_3DVIEW_POSITION,
+                new String[]{"Выкл", "Спереди центр", "Спереди слева", "Спереди справа", "Слева", "Справа", "Сзади центр", "Сзади слева", "Сзади справа"},
                 new int[]{EcarxVehicleAdapter.PAS_PAC_3D_POS_OFF, EcarxVehicleAdapter.PAS_PAC_3D_POS_FRONT_CENTER, EcarxVehicleAdapter.PAS_PAC_3D_POS_FRONT_LEFT, EcarxVehicleAdapter.PAS_PAC_3D_POS_FRONT_RIGHT, EcarxVehicleAdapter.PAS_PAC_3D_POS_LEFT, EcarxVehicleAdapter.PAS_PAC_3D_POS_RIGHT, EcarxVehicleAdapter.PAS_PAC_3D_POS_REAR_CENTER, EcarxVehicleAdapter.PAS_PAC_3D_POS_REAR_LEFT, EcarxVehicleAdapter.PAS_PAC_3D_POS_REAR_RIGHT});
-        addCommand(avm, "Guide path on", EcarxVehicleAdapter.PAS_PAC_OVERLAY_STEERPATH, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(avm, "Guide path off", EcarxVehicleAdapter.PAS_PAC_OVERLAY_STEERPATH, EcarxVehicleAdapter.COMMON_OFF);
-        addCommand(avm, "Distance overlay on", EcarxVehicleAdapter.PAS_PAC_OVERLAY_DSTINFO, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(avm, "Distance overlay off", EcarxVehicleAdapter.PAS_PAC_OVERLAY_DSTINFO, EcarxVehicleAdapter.COMMON_OFF);
-        addCommand(avm, "Towbar overlay on", EcarxVehicleAdapter.PAS_PAC_OVERLAY_TOWBAR, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(avm, "Towbar overlay off", EcarxVehicleAdapter.PAS_PAC_OVERLAY_TOWBAR, EcarxVehicleAdapter.COMMON_OFF);
-        addCommand(avm, "Transparent model on", EcarxVehicleAdapter.PAS_PAC_CAR_MODE_TRANSPARENT, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(avm, "Transparent model off", EcarxVehicleAdapter.PAS_PAC_CAR_MODE_TRANSPARENT, EcarxVehicleAdapter.COMMON_OFF);
-        addCommand(avm, "Top view on", EcarxVehicleAdapter.PAS_PAC_TOP_VIEW_ZOOM_IN, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(avm, "Top view off", EcarxVehicleAdapter.PAS_PAC_TOP_VIEW_ZOOM_IN, EcarxVehicleAdapter.COMMON_OFF);
-        addCommand(avm, "Touring view on", EcarxVehicleAdapter.PAS_PAC_TOURING_VIEW, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(avm, "Touring view off", EcarxVehicleAdapter.PAS_PAC_TOURING_VIEW, EcarxVehicleAdapter.COMMON_OFF);
-        addCommand(avm, "PAS graphics on", EcarxVehicleAdapter.PAS_SHOW_GRAPHICS, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(avm, "PAS graphics off", EcarxVehicleAdapter.PAS_SHOW_GRAPHICS, EcarxVehicleAdapter.COMMON_OFF);
-        addCommand(avm, "PAS mute on", EcarxVehicleAdapter.PAS_MUTE, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(avm, "PAS mute off", EcarxVehicleAdapter.PAS_MUTE, EcarxVehicleAdapter.COMMON_OFF);
-        addCommandGroup(avm, "SAP parking", EcarxVehicleAdapter.PAS_SAP_PARK_TYPE,
-                new String[]{"SAP park in", "SAP park out"},
+        addCommand(avm, "Направляющие траектории Вкл", EcarxVehicleAdapter.PAS_PAC_OVERLAY_STEERPATH, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(avm, "Направляющие траектории Выкл", EcarxVehicleAdapter.PAS_PAC_OVERLAY_STEERPATH, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(avm, "Оверлей дистанции Вкл", EcarxVehicleAdapter.PAS_PAC_OVERLAY_DSTINFO, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(avm, "Оверлей дистанции Выкл", EcarxVehicleAdapter.PAS_PAC_OVERLAY_DSTINFO, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(avm, "Оверлей фаркопа Вкл", EcarxVehicleAdapter.PAS_PAC_OVERLAY_TOWBAR, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(avm, "Оверлей фаркопа Выкл", EcarxVehicleAdapter.PAS_PAC_OVERLAY_TOWBAR, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(avm, "Прозрачная модель Вкл", EcarxVehicleAdapter.PAS_PAC_CAR_MODE_TRANSPARENT, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(avm, "Прозрачная модель Выкл", EcarxVehicleAdapter.PAS_PAC_CAR_MODE_TRANSPARENT, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(avm, "Вид сверху Вкл", EcarxVehicleAdapter.PAS_PAC_TOP_VIEW_ZOOM_IN, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(avm, "Вид сверху Выкл", EcarxVehicleAdapter.PAS_PAC_TOP_VIEW_ZOOM_IN, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(avm, "Круговой обзор Вкл", EcarxVehicleAdapter.PAS_PAC_TOURING_VIEW, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(avm, "Круговой обзор Выкл", EcarxVehicleAdapter.PAS_PAC_TOURING_VIEW, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(avm, "PAS-графика Вкл", EcarxVehicleAdapter.PAS_SHOW_GRAPHICS, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(avm, "PAS-графика Выкл", EcarxVehicleAdapter.PAS_SHOW_GRAPHICS, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(avm, "PAS без звука Вкл", EcarxVehicleAdapter.PAS_MUTE, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(avm, "PAS без звука Выкл", EcarxVehicleAdapter.PAS_MUTE, EcarxVehicleAdapter.COMMON_OFF);
+        addCommandGroup(avm, "Режим SAP", EcarxVehicleAdapter.PAS_SAP_PARK_TYPE,
+                new String[]{"Заезд", "Выезд"},
                 new int[]{EcarxVehicleAdapter.PAS_SAP_PARK_TYPE_IN, EcarxVehicleAdapter.PAS_SAP_PARK_TYPE_OUT});
-        addCommandGroup(avm, "SAP park-in type", EcarxVehicleAdapter.PAS_SAP_PARK_IN_TYPE,
-                new String[]{"SAP perpendicular", "SAP parallel"},
+        addCommandGroup(avm, "Тип заезда SAP", EcarxVehicleAdapter.PAS_SAP_PARK_IN_TYPE,
+                new String[]{"Перпендикулярная", "Параллельная"},
                 new int[]{EcarxVehicleAdapter.PAS_SAP_PARK_IN_TYPE_PERP, EcarxVehicleAdapter.PAS_SAP_PARK_IN_TYPE_PARA});
-        addCommand(avm, "RCTA on", EcarxVehicleAdapter.PAS_RCTA_ACTIVATION, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(avm, "RCTA off", EcarxVehicleAdapter.PAS_RCTA_ACTIVATION, EcarxVehicleAdapter.COMMON_OFF);
-        addCommand(avm, "RCTA graphics on", EcarxVehicleAdapter.PAS_RCTA_SHOW_GRAPHICS, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(avm, "RCTA graphics off", EcarxVehicleAdapter.PAS_RCTA_SHOW_GRAPHICS, EcarxVehicleAdapter.COMMON_OFF);
-        addCommandGroup(avm, "RCTA warning volume", EcarxVehicleAdapter.PAS_RCTA_WARNING_VOLUME,
-                new String[]{"RCTA off", "RCTA low", "RCTA mid", "RCTA high"},
+        addCommand(avm, "RCTA Вкл", EcarxVehicleAdapter.PAS_RCTA_ACTIVATION, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(avm, "RCTA Выкл", EcarxVehicleAdapter.PAS_RCTA_ACTIVATION, EcarxVehicleAdapter.COMMON_OFF);
+        addCommand(avm, "Графика RCTA Вкл", EcarxVehicleAdapter.PAS_RCTA_SHOW_GRAPHICS, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(avm, "Графика RCTA Выкл", EcarxVehicleAdapter.PAS_RCTA_SHOW_GRAPHICS, EcarxVehicleAdapter.COMMON_OFF);
+        addCommandGroup(avm, "Громкость предупреждения RCTA", EcarxVehicleAdapter.PAS_RCTA_WARNING_VOLUME,
+                new String[]{"Выкл", "Низкая", "Средняя", "Высокая"},
                 new int[]{EcarxVehicleAdapter.PAS_RCTA_VOLUME_OFF, EcarxVehicleAdapter.PAS_RCTA_VOLUME_LOW, EcarxVehicleAdapter.PAS_RCTA_VOLUME_MID, EcarxVehicleAdapter.PAS_RCTA_VOLUME_HIGH});
         advancedHost.addView(avm, lpMatchWrap(0, 0, 0, 0));
     }
@@ -283,10 +349,10 @@ public class ParkingActivity extends Activity {
     private GridLayout buildStatusGrid() {
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(2);
-        addStatusCard(grid, "AVM / PAC", "Top view · Rear view · 3D ready", Ui.CYAN);
-        addStatusCard(grid, "Park Modes", "Parallel / Perpendicular / Exit", Ui.SUCCESS);
-        addStatusCard(grid, "PDC / Radar", "Front/rear sensors active", Ui.WARNING);
-        addStatusCard(grid, "RCTA / SAP", "Rear cross traffic / smart assist", Color.rgb(129, 149, 255));
+        addStatusCard(grid, "AVM / PAC", "Вид сверху · задний вид · 3D готов", Ui.CYAN);
+        addStatusCard(grid, "Режимы парковки", "Параллельная / перпендикулярная / выезд", Ui.SUCCESS);
+        addStatusCard(grid, "PDC / Radar", "Передние и задние датчики активны", Ui.WARNING);
+        addStatusCard(grid, "RCTA / SAP", "Контроль сзади / smart assist", Color.rgb(129, 149, 255));
         return grid;
     }
 
@@ -377,12 +443,12 @@ public class ParkingActivity extends Activity {
     private void sendSignalParkMode(int mode) {
         CarSignalManagerAdapter.Result result = new CarSignalManagerAdapter(this)
                 .set("setDrvrAsscSysParkMod", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_PARK_MOD, mode);
-        Ui.toast(this, result.success ? "Parking mode отправлен" : "Parking mode ошибка");
+        Ui.toast(this, result.success ? "Режим парковки отправлен" : "Ошибка режима парковки");
     }
 
     private void scrollAdvancedIntoView() {
         if (advancedHost != null) advancedHost.requestFocus();
-        Ui.toast(this, experimentalFeaturesEnabled() ? "Открыт advanced parking flow" : "Для полного набора включите Experimental features");
+        Ui.toast(this, experimentalFeaturesEnabled() ? "Открыт расширенный parking-блок" : "Для полного набора включите Experimental features");
     }
 
     private void addCommand(LinearLayout root, String label, int functionId, int value) {
@@ -433,14 +499,14 @@ public class ParkingActivity extends Activity {
         Button b = Ui.button(this, label);
         b.setOnClickListener(v -> {
             CarSignalManagerAdapter.Result result = new CarSignalManagerAdapter(this).set(methodName, signalId, value);
-            Ui.toast(this, result.success ? "Signal отправлен" : "Signal ошибка");
+            Ui.toast(this, result.success ? "Сигнал отправлен" : "Ошибка сигнала");
             root.addView(Ui.text(this, result.message, 13, false), Math.min(3, root.getChildCount()));
         });
         root.addView(b, lpMatchWrap(0, 6, 0, 0));
     }
 
     private void addSignalDiagnostic(LinearLayout root, String label, Object... methodSignalPairs) {
-        Button b = Ui.button(this, "Signal diag: " + label);
+        Button b = Ui.button(this, "Диагностика сигналов: " + label);
         b.setOnClickListener(v -> {
             CarSignalManagerAdapter adapter = new CarSignalManagerAdapter(this);
             StringBuilder sb = new StringBuilder(label).append("\n");
@@ -453,7 +519,7 @@ public class ParkingActivity extends Activity {
     }
 
     private void addHalPropertyDiagnostic(LinearLayout root, String label, int... propertyIds) {
-        Button b = Ui.button(this, "HAL diag: " + label);
+        Button b = Ui.button(this, "HAL-диагностика: " + label);
         b.setOnClickListener(v -> {
             CarSignalManagerAdapter adapter = new CarSignalManagerAdapter(this);
             StringBuilder sb = new StringBuilder(label).append("\n");
