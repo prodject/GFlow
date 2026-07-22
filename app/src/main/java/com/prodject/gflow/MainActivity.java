@@ -1433,66 +1433,7 @@ public class MainActivity extends Activity {
     }
 
     private void showAutomation() {
-        LinearLayout root = commandRoot("Автоматизация");
-        SharedPreferences prefs = AutomationEngine.prefs(this);
-        addScreenMap(root, "Карта вкладки", "Smart preset - список команд AdaptAPI. Сценарии v2 добавляют триггеры, условия, задержки и действия. Верхняя панель содержит создание и готовые шаблоны.",
-                "Create", "Templates", "Presets", "Triggers");
-        Ui.section(root, "Создание", "Новые smart presets, сценарии и триггеры. Для ручного запуска используйте карточки ниже.");
-        addNavGrid(root, new NavItem[]{
-                new NavItem("Создать smart preset", "Список команд function/zone=value", "PRE", Ui.GREEN, () -> showSmartPresetEditor("", defaultSmartPresetText())),
-                new NavItem("Создать сценарий v2", "Триггеры, условия, шаги и задержки", "SCN", Ui.BLUE, () -> showScenarioEditor("", defaultScenarioText())),
-                new NavItem("Добавить триггер", "manual / boot / app для smart preset", "TRG", Ui.AMBER, () -> showTriggerEditor("", "manual", "", firstAutomationPreset())),
-                new NavItem("Журнал", "История запусков и skip/cancel причины", "LOG", Color.rgb(86, 104, 120), () -> panel("Журнал автоматизации", AutomationEngine.scenarioLog(this)))
-        });
-        Ui.section(root, "Шаблоны", "Готовые сценарии добавляются как редактируемые presets/triggers. Их можно менять после установки.");
-        addNavGrid(root, new NavItem[]{
-                new NavItem("Winter / Summer", "Зимний запуск и летнее охлаждение", "HVAC", Ui.BLUE, () -> { installClimateScenarioV2(); showAutomation(); }),
-                new NavItem("Welcome / Leave", "Профиль, климат, подсветка и закрытие авто", "WL", Ui.GREEN, () -> { installWelcomeLeaveScenarios(); showAutomation(); }),
-                new NavItem("Parking Guard", "DVR/360, закрытие окон и lock", "P", Ui.AMBER, () -> { installParkingGuardScenario(); showAutomation(); }),
-                new NavItem("Rain Scenario", "Закрыть окна/люк, wipers auto, defrost", "RAIN", Color.rgb(73, 130, 83), () -> { installRainScenario(); showAutomation(); }),
-                new NavItem("Night Mode", "HUD, DIM, brightness и ambience", "NIGHT", Color.rgb(88, 105, 130), () -> { installNightModeScenario(); showAutomation(); }),
-                new NavItem("Navigation Context", "Autozoom, HUD navigation и stock map actions", "NAV", Color.rgb(58, 106, 156), () -> { installNavigationContextScenario(); showAutomation(); })
-        });
-        Ui.section(root, "Автокамера", "Правило открытия 360/3D камер на низкой скорости.");
-        addLowSpeedCameraAutomation(root, prefs);
-        Ui.section(root, "Smart presets", "Нажмите для запуска. Долгое нажатие открывает редактор.");
-        for (String name : AutomationEngine.names(prefs, AutomationEngine.KEY_PRESET_ORDER)) {
-            Button b = Ui.button(this, "Preset: " + name);
-            b.setTag("filter:preset " + name);
-            b.setOnClickListener(v -> root.addView(Ui.text(this, AutomationEngine.runPreset(this, name), 13, false), 2));
-            b.setOnLongClickListener(v -> {
-                showSmartPresetEditor(name, prefs.getString("preset:" + name, ""));
-                return true;
-            });
-            root.addView(b);
-        }
-        Ui.section(root, "Сценарии v2", "Нажмите для ручного запуска. Долгое нажатие открывает редактор.");
-        for (String name : AutomationEngine.names(prefs, AutomationEngine.KEY_SCENARIO_ORDER)) {
-            Button b = Ui.button(this, "Scenario: " + name);
-            b.setTag("filter:scenario " + name);
-            b.setOnClickListener(v -> root.addView(Ui.text(this, AutomationEngine.runScenario(this, name, "manual", "ui"), 13, false), 2));
-            b.setOnLongClickListener(v -> {
-                showScenarioEditor(name, prefs.getString("scenario:" + name, ""));
-                return true;
-            });
-            root.addView(b);
-        }
-        Ui.section(root, "Триггеры запуска", "Долгое нажатие открывает редактор триггера.");
-        for (String name : AutomationEngine.names(prefs, AutomationEngine.KEY_TRIGGER_ORDER)) {
-            String raw = prefs.getString("trigger:" + name, "");
-            Button b = Ui.button(this, "Trigger: " + raw);
-            b.setTag("filter:trigger " + raw);
-            b.setOnLongClickListener(v -> {
-                String[] p = raw.split("\\|", -1);
-                showTriggerEditor(name, p.length > 1 ? p[1] : "manual", p.length > 2 ? p[2] : "", p.length > 3 ? p[3] : "");
-                return true;
-            });
-            root.addView(b);
-        }
-        LinearLayout ideas = Ui.card(this);
-        ideas.addView(Ui.text(this, "Идеи сценариев", 16, true));
-        ideas.addView(Ui.muted(this, automationIdeas()));
-        root.addView(ideas, lpMatchWrap(0, 8, 0, 12));
+        startActivity(new Intent(this, AutomationActivity.class));
     }
 
     private void addLowSpeedCameraAutomation(LinearLayout root, SharedPreferences prefs) {

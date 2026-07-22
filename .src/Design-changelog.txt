@@ -247,3 +247,31 @@
 - Экран `Текст`.
 - Экран `ADB / Система`.
 - Экран `Настройки`.
+
+2026-07-22
+
+Этап 8: Экран Автоматизация
+
+Сделано:
+- Создан отдельный `AutomationActivity` для экрана `Автоматизация`.
+- `showAutomation()` в `MainActivity` теперь только открывает `AutomationActivity`.
+- `AutomationActivity` подключен в `AndroidManifest.xml`.
+- Добавлен новый automation shell в стиле `Design.txt`: top bar, hero-panel, templates/actions, status cards, bottom dock.
+- Внутри нового экрана добавлены быстрые действия для preset, scenario, trigger, журнала и готовых automation-шаблонов.
+- В экран встроены summary по preset/scenario/trigger и короткий preview execution log.
+
+Сделано частично:
+- Новый экран покрывает основной пользовательский сценарий `Автоматизация`, но глубокие редакторы preset/scenario/trigger и execution flow пока оставлены как legacy fallback.
+- Низкоуровневые формы установки automation-правил и расширенный runtime-monitoring пока не вынесены в отдельные новые подэкраны.
+
+Осталось по `Design.txt`:
+- Экран `Профили`.
+- Экран `Кнопки руля`.
+- Экран `Голос`.
+- Экран `Рабочий стол`.
+- Экран `Браузер / Погода`.
+- Экран `Файлы`.
+- Экран `Медиа`.
+- Экран `Текст`.
+- Экран `ADB / Система`.
+- Экран `Настройки`.
