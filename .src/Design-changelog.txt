@@ -256,13 +256,13 @@
 - Создан отдельный `AutomationActivity` для экрана `Автоматизация`.
 - `showAutomation()` в `MainActivity` теперь только открывает `AutomationActivity`.
 - `AutomationActivity` подключен в `AndroidManifest.xml`.
-- Добавлен новый automation shell в стиле `Design.txt`: top bar, hero-panel, templates/actions, status cards, bottom dock.
-- Внутри нового экрана добавлены быстрые действия для preset, scenario, trigger, журнала и готовых automation-шаблонов.
-- В экран встроены summary по preset/scenario/trigger и короткий preview execution log.
-
-Сделано частично:
-- Новый экран покрывает основной пользовательский сценарий `Автоматизация`, но глубокие редакторы preset/scenario/trigger и execution flow пока оставлены как legacy fallback.
-- Низкоуровневые формы установки automation-правил и расширенный runtime-monitoring пока не вынесены в отдельные новые подэкраны.
+- Добавлен новый automation shell в стиле `Design.txt`: top bar, hero-panel, overview grid, templates/actions, status cards, bottom dock.
+- Внутри `AutomationActivity` реализованы полноценные новые экраны и сценарии для `preset`, `scenario`, `trigger`, `execution log` и `low-speed camera rule`.
+- Для `preset/scenario/trigger` добавлены отдельные новые list/editor flow внутри нового дизайна: создание, редактирование, запуск/проверка и удаление.
+- В экран встроены summary по preset/scenario/trigger, runtime preview и отдельный execution log с очисткой.
+- Добавлены install-flow для готовых automation-шаблонов: climate, welcome/leave, parking guard, rain, night mode, navigation.
+- Automation persistence и install-логика вынесены из `MainActivity` в отдельный `AutomationStore`.
+- Legacy automation-ветки и raw-редакторы удалены из `MainActivity`.
 
 Осталось по `Design.txt`:
 - Экран `Профили`.

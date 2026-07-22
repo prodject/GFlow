@@ -1126,8 +1126,8 @@ public class MainActivity extends Activity {
         card.addView(Ui.muted(this, "Последнее событие: " + steering.getString("last_event", "нет")));
         card.addView(Ui.muted(this, "Назначений: " + AutomationEngine.names(prefs, AutomationEngine.KEY_BUTTON_ORDER).size()));
         LinearLayout row = Ui.row(this);
-        addToggleAction(row, "Hold", () -> showSteeringButtonEditor("", "0", "hold", "", "always", "replace", "preset", firstAutomationPreset()));
-        addToggleAction(row, "Double", () -> showSteeringButtonEditor("", "0", "double", "", "always", "replace", "preset", firstAutomationPreset()));
+        addToggleAction(row, "Hold", () -> showSteeringButtonEditor("", "0", "hold", "", "always", "replace", "preset", AutomationStore.firstPreset(this)));
+        addToggleAction(row, "Double", () -> showSteeringButtonEditor("", "0", "double", "", "always", "replace", "preset", AutomationStore.firstPreset(this)));
         addToggleAction(row, "Примеры", () -> { installSteeringButtonExamples(); showSteeringButtons(); });
         card.addView(row);
         root.addView(card, lpMatchWrap(0, 0, 0, 12));
@@ -1436,118 +1436,6 @@ public class MainActivity extends Activity {
         startActivity(new Intent(this, AutomationActivity.class));
     }
 
-    private void addLowSpeedCameraAutomation(LinearLayout root, SharedPreferences prefs) {
-        root.addView(Ui.text(this, "Автокамеры 360 при низкой скорости", 16, true));
-        root.addView(Ui.text(this, "Правило открывает штатные 360/3D камеры при падении скорости ниже порога. Повторный запуск разрешается после подъема скорости выше порога + 5 км/ч.", 13, false));
-        EditText threshold = new EditText(this);
-        threshold.setHint("Порог скорости, км/ч");
-        threshold.setText(String.valueOf(prefs.getFloat(LowSpeedCameraService.KEY_THRESHOLD, 30.0f)));
-        CheckBox enabled = new CheckBox(this);
-        enabled.setText("Включать камеры при скорости ниже порога");
-        enabled.setChecked(prefs.getBoolean(LowSpeedCameraService.KEY_ENABLED, false));
-        Button save = Ui.button(this, "Сохранить правило камер");
-        save.setOnClickListener(v -> {
-            AutomationEngine.setLowSpeedCameraEnabled(this, enabled.isChecked(),
-                    AutomationEngine.parseFloat(threshold.getText().toString(), 30.0f));
-            showAutomation();
-        });
-        Button status = Ui.button(this, "Статус правила камер");
-        status.setOnClickListener(v -> root.addView(Ui.text(this,
-                prefs.getString(LowSpeedCameraService.KEY_LAST_RESULT, "Правило еще не выполнялось"), 13, false), 2));
-        root.addView(threshold);
-        root.addView(enabled);
-        root.addView(save);
-        root.addView(status);
-    }
-
-    private void showSmartPresetEditor(String oldName, String oldBody) {
-        LinearLayout root = commandRoot(oldName.isEmpty() ? "Новый smart preset" : "Preset: " + oldName);
-        EditText name = new EditText(this);
-        name.setHint("Название");
-        name.setText(oldName);
-        EditText body = new EditText(this);
-        body.setMinLines(8);
-        body.setGravity(Gravity.TOP);
-        body.setHint(defaultSmartPresetText());
-        body.setText(oldBody);
-        Button save = Ui.button(this, "Сохранить");
-        Button delete = Ui.button(this, "Удалить");
-        save.setOnClickListener(v -> {
-            saveAutomationPreset(oldName, name.getText().toString(), body.getText().toString());
-            showAutomation();
-        });
-        delete.setOnClickListener(v -> {
-            deleteAutomationItem(AutomationEngine.KEY_PRESET_ORDER, "preset:", oldName);
-            showAutomation();
-        });
-        root.addView(name);
-        root.addView(body);
-        root.addView(save);
-        if (!oldName.isEmpty()) root.addView(delete);
-    }
-
-    private void showScenarioEditor(String oldName, String oldBody) {
-        LinearLayout root = commandRoot(oldName.isEmpty() ? "Новый сценарий v2" : "Сценарий v2: " + oldName);
-        EditText name = new EditText(this);
-        name.setHint("Название");
-        name.setText(oldName);
-        EditText body = new EditText(this);
-        body.setMinLines(14);
-        body.setGravity(Gravity.TOP);
-        body.setHint(defaultScenarioText());
-        body.setText(oldBody);
-        Button save = Ui.button(this, "Сохранить сценарий");
-        save.setOnClickListener(v -> {
-            String clean = name.getText().toString().trim();
-            String text = body.getText().toString();
-            if (!text.contains("name:")) text = "name:" + clean + "\n" + text;
-            saveNamed(AutomationEngine.KEY_SCENARIO_ORDER, "scenario:", oldName, clean, text);
-            showAutomation();
-        });
-        Button run = Ui.button(this, "Запустить сейчас");
-        run.setOnClickListener(v -> root.addView(Ui.text(this, AutomationEngine.runScenario(this, name.getText().toString().trim(), "manual", "ui"), 13, false), 2));
-        Button delete = Ui.button(this, "Удалить");
-        delete.setOnClickListener(v -> {
-            deleteAutomationItem(AutomationEngine.KEY_SCENARIO_ORDER, "scenario:", oldName);
-            showAutomation();
-        });
-        root.addView(Ui.text(this, "Формат: trigger:manual=winter, trigger:app=maps, trigger:voice=зима, trigger:button=231:hold; condition:key=value; policy:startDelay=30s; policy:minInterval=30m; step:delay 5m; step:wait cabinTemp<=25 timeout=10m; step:command 0x.../zone=value; step:action smart_climate=true.", 13, false));
-        root.addView(name);
-        root.addView(body);
-        root.addView(save);
-        root.addView(run);
-        if (!oldName.isEmpty()) root.addView(delete);
-    }
-
-    private void showTriggerEditor(String oldName, String oldType, String oldMatch, String oldPreset) {
-        LinearLayout root = commandRoot(oldName.isEmpty() ? "Новый триггер" : "Триггер: " + oldName);
-        EditText name = new EditText(this);
-        name.setHint("Название");
-        name.setText(oldName);
-        EditText type = new EditText(this);
-        type.setHint("manual / boot / app");
-        type.setText(oldType);
-        EditText match = new EditText(this);
-        match.setHint("Условие: action/package substring; для boot можно пусто");
-        match.setText(oldMatch);
-        EditText preset = new EditText(this);
-        preset.setHint("Название smart preset");
-        preset.setText(oldPreset);
-        Button save = Ui.button(this, "Сохранить триггер");
-        save.setOnClickListener(v -> {
-            saveNamed(AutomationEngine.KEY_TRIGGER_ORDER, "trigger:", oldName, name.getText().toString(),
-                    name.getText().toString() + "|" + type.getText().toString().trim() + "|" + match.getText().toString().trim() + "|" + preset.getText().toString().trim());
-            showAutomation();
-        });
-        Button runManual = Ui.button(this, "Проверить как manual");
-        runManual.setOnClickListener(v -> AutomationEngine.runTrigger(this, "manual", match.getText().toString()));
-        root.addView(name);
-        root.addView(type);
-        root.addView(match);
-        root.addView(preset);
-        root.addView(save);
-        root.addView(runManual);
-    }
 
     private void showSteeringButtons() {
         LinearLayout root = commandRoot("Кнопки руля");
@@ -1555,7 +1443,7 @@ public class MainActivity extends Activity {
         SharedPreferences prefs = AutomationEngine.prefs(this);
         addSteeringOverview(root, steering, prefs);
         Button add = Ui.button(this, "Назначить кнопку");
-        add.setOnClickListener(v -> showSteeringButtonEditor("", "0", "hold", "", "always", "replace", "preset", firstAutomationPreset()));
+        add.setOnClickListener(v -> showSteeringButtonEditor("", "0", "hold", "", "always", "replace", "preset", AutomationStore.firstPreset(this)));
         root.addView(add);
         Button examples = Ui.button(this, "Добавить примеры назначений");
         examples.setOnClickListener(v -> {
@@ -1604,9 +1492,9 @@ public class MainActivity extends Activity {
         target.setText(oldTarget);
         Button save = Ui.button(this, "Сохранить назначение");
         save.setOnClickListener(v -> {
-            saveNamed(AutomationEngine.KEY_BUTTON_ORDER, "button:", oldName, name.getText().toString(),
+            AutomationStore.saveNamed(this, AutomationEngine.KEY_BUTTON_ORDER, "button:", oldName, name.getText().toString(),
                     name.getText().toString() + "|" + key.getText().toString().trim() + "|" + gesture.getText().toString().trim().toLowerCase(Locale.ROOT) + "|" + target.getText().toString().trim());
-            saveNamed(AutomationEngine.KEY_BUTTON_ORDER, "button2:", oldName, name.getText().toString(),
+            AutomationStore.saveNamed(this, AutomationEngine.KEY_BUTTON_ORDER, "button2:", oldName, name.getText().toString(),
                     name.getText().toString() + "|" + key.getText().toString().trim()
                             + "|" + gesture.getText().toString().trim().toLowerCase(Locale.ROOT)
                             + "|" + modifier.getText().toString().trim()
@@ -1628,12 +1516,12 @@ public class MainActivity extends Activity {
     }
 
     private void installSteeringButtonExamples() {
-        saveNamed(AutomationEngine.KEY_BUTTON_ORDER, "button2:", "", "M hold 360", "M hold 360|77|hold||always|replace|command|0x21110100/0=0x1");
-        saveNamed(AutomationEngine.KEY_BUTTON_ORDER, "button2:", "", "M double cooling", "M double cooling|77|double||always|replace|preset|Летнее охлаждение");
-        saveNamed(AutomationEngine.KEY_BUTTON_ORDER, "button2:", "", "Voice hold Monji", "Voice hold Monji|231|hold||always|replace|launch|com.prodject.gflow");
-        saveNamed(AutomationEngine.KEY_BUTTON_ORDER, "button2:", "", "Volume down double mute", "Volume down double mute|25|double||always|together|voice|mute media");
-        saveNamed(AutomationEngine.KEY_BUTTON_ORDER, "button2:", "", "Next hold eco comfort", "Next hold eco comfort|87|hold||always|replace|scenario|Eco Comfort toggle");
-        saveNamed(AutomationEngine.KEY_BUTTON_ORDER, "button2:", "", "M stationary trunk", "M stationary trunk|77|press||stationary|stationary-only|command|0x21110100/0=0x64");
+        AutomationStore.saveNamed(this, AutomationEngine.KEY_BUTTON_ORDER, "button2:", "", "M hold 360", "M hold 360|77|hold||always|replace|command|0x21110100/0=0x1");
+        AutomationStore.saveNamed(this, AutomationEngine.KEY_BUTTON_ORDER, "button2:", "", "M double cooling", "M double cooling|77|double||always|replace|preset|Летнее охлаждение");
+        AutomationStore.saveNamed(this, AutomationEngine.KEY_BUTTON_ORDER, "button2:", "", "Voice hold Monji", "Voice hold Monji|231|hold||always|replace|launch|com.prodject.gflow");
+        AutomationStore.saveNamed(this, AutomationEngine.KEY_BUTTON_ORDER, "button2:", "", "Volume down double mute", "Volume down double mute|25|double||always|together|voice|mute media");
+        AutomationStore.saveNamed(this, AutomationEngine.KEY_BUTTON_ORDER, "button2:", "", "Next hold eco comfort", "Next hold eco comfort|87|hold||always|replace|scenario|Eco Comfort toggle");
+        AutomationStore.saveNamed(this, AutomationEngine.KEY_BUTTON_ORDER, "button2:", "", "M stationary trunk", "M stationary trunk|77|press||stationary|stationary-only|command|0x21110100/0=0x64");
         Ui.toast(this, "Примеры кнопок руля добавлены");
     }
 
@@ -1799,180 +1687,6 @@ public class MainActivity extends Activity {
         root.addView(signals);
     }
 
-    private void saveAutomationPreset(String oldName, String newName, String body) {
-        saveNamed(AutomationEngine.KEY_PRESET_ORDER, "preset:", oldName, newName, body);
-    }
-
-    private void saveNamed(String orderKey, String prefix, String oldName, String newName, String value) {
-        String clean = newName.trim();
-        if (clean.isEmpty()) return;
-        SharedPreferences prefs = AutomationEngine.prefs(this);
-        ArrayList<String> names = new ArrayList<>(AutomationEngine.names(prefs, orderKey));
-        if (!oldName.isEmpty() && !oldName.equals(clean)) names.remove(oldName);
-        if (!names.contains(clean)) names.add(clean);
-        SharedPreferences.Editor editor = prefs.edit().putString(prefix + clean, value).putString(orderKey, AutomationEngine.join(names));
-        if (!oldName.isEmpty() && !oldName.equals(clean)) editor.remove(prefix + oldName);
-        editor.apply();
-    }
-
-    private void deleteAutomationItem(String orderKey, String prefix, String name) {
-        if (name == null || name.trim().isEmpty()) return;
-        SharedPreferences prefs = AutomationEngine.prefs(this);
-        ArrayList<String> names = new ArrayList<>(AutomationEngine.names(prefs, orderKey));
-        names.remove(name);
-        prefs.edit().remove(prefix + name).putString(orderKey, AutomationEngine.join(names)).apply();
-    }
-
-    private String firstAutomationPreset() {
-        List<String> names = AutomationEngine.names(AutomationEngine.prefs(this), AutomationEngine.KEY_PRESET_ORDER);
-        return names.isEmpty() ? "" : names.get(0);
-    }
-
-    private String defaultSmartPresetText() {
-        return "0x10010100/0=0x1\n0x10010300/0=0x1\n0x10020100/0=0x10020103\nfloat:0x10060100/1=22.0\nfloat:0x10060100/4=22.0";
-    }
-
-    private String defaultScenarioText() {
-        return "name:Morning comfort\n"
-                + "trigger:manual=morning\n"
-                + "condition:time=06:00..10:00\n"
-                + "condition:profile=Глеб\n"
-                + "policy:startDelay=10s\n"
-                + "policy:minInterval=30m\n"
-                + "policy:oncePerTrip=true\n"
-                + "policy:cancelOnConditionChange=true\n"
-                + "step:action smart_climate=true\n"
-                + "step:delay 5m\n"
-                + "step:command 0x10020100/0=0x10020102\n"
-                + "step:notify Сценарий завершен";
-    }
-
-    private void installClimateScenarioV2() {
-        saveNamed(AutomationEngine.KEY_SCENARIO_ORDER, "scenario:", "", "Зимний запуск",
-                "name:Зимний запуск\n"
-                        + "trigger:manual=winter\n"
-                        + "trigger:boot=BOOT_COMPLETED\n"
-                        + "condition:outsideTemp<5\n"
-                        + "policy:minInterval=30m\n"
-                        + "policy:oncePerTrip=true\n"
-                        + "policy:cancelOnConditionChange=true\n"
-                        + "step:notify Зимний запуск\n"
-                        + "step:action smart_climate=true\n"
-                        + "step:command 0x10010100/0=0x1\n"
-                        + "step:command float:0x10060100/1=22.0\n"
-                        + "step:command float:0x10060100/4=22.0\n"
-                        + "step:command 0x10070100/0=0x10070106\n"
-                        + "step:command 0x10040100/0=0x1\n"
-                        + "step:command 0x10090100/0=0x10090203\n"
-                        + "step:command 0x10050200/1=0x10050303\n"
-                        + "step:delay 5m\n"
-                        + "step:command 0x10020100/0=0x10020102\n"
-                        + "step:wait cabinTemp>=18 timeout=10m\n"
-                        + "step:command 0x10050200/1=0x10050301");
-        saveNamed(AutomationEngine.KEY_SCENARIO_ORDER, "scenario:", "", "Летнее охлаждение",
-                "name:Летнее охлаждение\n"
-                        + "trigger:manual=summer\n"
-                        + "condition:cabinTemp>25\n"
-                        + "policy:minInterval=30m\n"
-                        + "policy:cancelOnConditionChange=true\n"
-                        + "step:notify Летнее охлаждение\n"
-                        + "step:command 0x10010100/0=0x1\n"
-                        + "step:command 0x10010400/0=0x1\n"
-                        + "step:command float:0x10060100/1=18.0\n"
-                        + "step:command float:0x10060100/4=18.0\n"
-                        + "step:command 0x10030100/0=0x10030101\n"
-                        + "step:command 0x10020100/0=0x10020108\n"
-                        + "step:command 0x10050100/1=0x10050302\n"
-                        + "step:wait cabinTemp<=25 timeout=10m\n"
-                        + "step:command 0x10020100/0=0x10020103\n"
-                        + "step:wait cabinTemp<=22 timeout=15m\n"
-                        + "step:command 0x10010200/0=0x1");
-        Ui.toast(this, "Сценарии v2 добавлены");
-    }
-
-    private void installWelcomeLeaveScenarios() {
-        saveAutomationPreset("", "Welcome drive",
-                "action:profile=Driver\n"
-                        + "0x10010100/0=0x1\n"
-                        + "0x10010200/0=0x1\n"
-                        + "float:0x10060100/1=22.0\n"
-                        + "float:0x10060100/4=22.0\n"
-                        + "0x2a010100/0=0x1\n"
-                        + "0x2a010200/0=0x2a010206\n"
-                        + "0x2a080100/0=0x2a080103\n"
-                        + "0x22010100/0=0x22010102");
-        saveAutomationPreset("", "Leave car",
-                "0x21030100/-2147483648=0x21030102\n"
-                        + "0x21200300/0=0x1\n"
-                        + "0x21200500/0=0x1\n"
-                        + "0x10010100/0=0x0\n"
-                        + "0x2a010100/0=0x0\n"
-                        + "0x21020200/-2147483648=0x1");
-        saveNamed(AutomationEngine.KEY_TRIGGER_ORDER, "trigger:", "", "Welcome manual", "Welcome manual|manual|welcome|Welcome drive");
-        saveNamed(AutomationEngine.KEY_TRIGGER_ORDER, "trigger:", "", "Leave manual", "Leave manual|manual|leave|Leave car");
-        Ui.toast(this, "Welcome / Leave добавлены");
-    }
-
-    private void installParkingGuardScenario() {
-        saveAutomationPreset("", "Parking guard",
-                "action:start_dvr=true\n"
-                        + "0x21110100/0=0x1\n"
-                        + "0x21030100/-2147483648=0x21030102\n"
-                        + "0x21200300/0=0x1\n"
-                        + "0x21200500/0=0x1\n"
-                        + "0x21020200/-2147483648=0x1");
-        saveNamed(AutomationEngine.KEY_TRIGGER_ORDER, "trigger:", "", "Parking manual", "Parking manual|manual|parking|Parking guard");
-        Ui.toast(this, "Parking Guard добавлен");
-    }
-
-    private void installRainScenario() {
-        saveAutomationPreset("", "Rain safe",
-                "0x21030100/-2147483648=0x21030102\n"
-                        + "0x21200300/0=0x1\n"
-                        + "0x21200500/0=0x1\n"
-                        + "0x21010100/0=0x21010101\n"
-                        + "0x10040100/0=0x1");
-        saveNamed(AutomationEngine.KEY_TRIGGER_ORDER, "trigger:", "", "Rain manual", "Rain manual|manual|rain|Rain safe");
-        Ui.toast(this, "Rain Scenario добавлен");
-    }
-
-    private void installNightModeScenario() {
-        saveAutomationPreset("", "Night mode",
-                "0x20110100/0=0x1\n"
-                        + "0x27030300/0=0x1\n"
-                        + "0x20150100/0=0x20150102\n"
-                        + "0x29020100/0=0x1\n"
-                        + "0x29020500/0=0x1\n"
-                        + "0x22040200/0=0x22040203\n"
-                        + "0x2a010100/0=0x1\n"
-                        + "0x2a010200/0=0x2a010205\n"
-                        + "0x2a080100/0=0x2a080103");
-        saveNamed(AutomationEngine.KEY_TRIGGER_ORDER, "trigger:", "", "Night manual", "Night manual|manual|night|Night mode");
-        Ui.toast(this, "Night Mode добавлен");
-    }
-
-    private void installNavigationContextScenario() {
-        saveAutomationPreset("", "Navigation context",
-                "action:autozoom=maps,navi,navitel,yandex,2gis:1.18\n"
-                        + "0x20110100/0=0x1\n"
-                        + "0x27030300/0=0x1\n"
-                        + "0x21110100/0=0x2\n"
-                        + "0x21110100/0=0x3");
-        saveNamed(AutomationEngine.KEY_TRIGGER_ORDER, "trigger:", "", "Navigation app", "Navigation app|app|maps|Navigation context");
-        saveNamed(AutomationEngine.KEY_TRIGGER_ORDER, "trigger:", "", "Navigation app yandex", "Navigation app yandex|app|yandex|Navigation context");
-        saveNamed(AutomationEngine.KEY_TRIGGER_ORDER, "trigger:", "", "Navigation app 2gis", "Navigation app 2gis|app|2gis|Navigation context");
-        Ui.toast(this, "Navigation App Context добавлен");
-    }
-
-    private String automationIdeas() {
-        return "Что еще логично автоматизировать:\n"
-                + "- Welcome / уход: при открытии двери водителя включить профиль, климат, подсветку и любимый режим движения.\n"
-                + "- Parking guard: при парковке включать DVR/360 и закрывать окна/люк.\n"
-                + "- Rain scenario: по ручному триггеру или датчику дождя закрыть окна/люк и включить дворники auto.\n"
-                + "- Night mode: вечером менять яркость, HUD, тему DIM и салонную подсветку.\n"
-                + "- App context: при запуске навигации включать split, HUD navigation и автоzoom; при музыке менять DIM/media bridge.\n"
-                + "- Service mode: перед визитом в сервис отключать экспериментальные функции и возвращать стандартный профиль.";
-    }
     private void showCar() {
         LinearLayout root = commandRoot("Управление автомобилем");
         addScreenMap(root, "Карта вкладки", "Основной пользовательский поток: окна/двери/свет и быстрые кнопки. Ниже идут расширенные BCM-команды, режимы движения и сиденья; raw-диагностика видна только в Developer diagnostics.",
@@ -2880,7 +2594,7 @@ public class MainActivity extends Activity {
         addCommand(root, "ACC/LCC switch выкл", EcarxVehicleAdapter.ADAS_DRIVE_PILOT_ACC_LCC_SWITCH, EcarxVehicleAdapter.COMMON_OFF);
         Button highwayAssist = Ui.button(this, "Установить пресет Highway assist ready");
         highwayAssist.setOnClickListener(v -> {
-            saveAutomationPreset("", "Highway assist ready", highwayAssistReadyPreset());
+            AutomationStore.savePreset(this, "", "Highway assist ready", highwayAssistReadyPreset());
             root.addView(Ui.text(this, "Experimental preset installed: Highway assist ready", 13, false), 2);
         });
         root.addView(highwayAssist);
