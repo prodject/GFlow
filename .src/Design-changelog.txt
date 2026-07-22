@@ -435,3 +435,20 @@
 - Экран `Текст`.
 - Экран `ADB / Система`.
 - Экран `Настройки`.
+
+2026-07-22
+
+Этап 22: Экран Текст
+
+Сделано:
+- `TextViewerActivity` полностью переведен на новый shell в стиле `Design.txt`: top bar, hero-panel, overview grid, search panel, viewer panel и bottom dock.
+- Поддержка `.txt`, `.log`, `.json`, `.xml` и других текстовых файлов сохранена через новый viewer flow.
+- Реализованы функции `поиск по тексту`, `копировать`, `share`, `monospace mode` и `wrap lines on/off`.
+- Добавлен отдельный search flow с input, поиском первого совпадения и highlight найденного участка текста.
+- В viewer-панель добавлены переключаемые режимы `monospace/default` и `wrap on/off`, а также text-selectable rendering.
+- Вынесены file metadata: имя, путь, размер, количество строк и тип файла.
+- Legacy text-viewer shell удален; экран больше не использует старую минимальную разметку.
+
+Осталось по `Design.txt`:
+- Экран `ADB / Система`.
+- Экран `Настройки`.
