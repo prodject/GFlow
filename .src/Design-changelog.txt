@@ -116,6 +116,7 @@
 - Raw vehicle-команды и диагностические блоки, которые еще остаются в `MainActivity`, относятся только к experimental/system-сценариям и не являются старым экраном `Автомобиль`.
 - В `VehicleActivity` добавлен gated `Experimental Drive` flow: PURE/HYBRID/POWER, HDC/MUD/ROCK/SAND, AWD/eAWD/SAVE, ADAPTIVE/CUSTOM, propulsion/suspension/steering/climate, DIM/energy и risky drive toggles теперь доступны в новом UI при включенном `Experimental features`.
 - В `VehicleActivity` `Experimental Drive` дополнен отдельным readable subsection для `DIM theme` (`Red / Gold / Blue / Off`) и явных `Creep` / `Launch` controls вместо одиночных raw-кнопок.
+- В `VehicleActivity` добавлены `DIM theme sync with drive mode` (`On / Off`) и `Custom driver info` selector (`Standard / Eco / Sport / Offroad / Off`) как подтвержденные cluster-related experimental controls.
 - В `VoiceActivity` добавлен parser для расширенных drive mode и custom-profile команд с тем же experimental gate.
 - В `UserProfileEngine` расширен профильный `drive` parser и добавлены новые profile-команды `drivePropulsion`, `driveSuspension`, `driveSteeringFeel`, `driveClimate`, `driveEnergy`, `driveDimTheme`.
 
@@ -241,6 +242,7 @@
 - Внутри нового экрана добавлены быстрые действия для HUD, navigation/media/safety display, DIM night, presentation, tab switching и сервисов.
 - Добавлен отдельный визуальный projection-блок.
 - В `HudActivity` добавлен новый advanced flow для `HUD / DIM Bridge`: raw HUD commands, DIM menu, navigation modes, climate readback и media mute state.
+- В `HudActivity` `HUD / DIM Bridge` расширен до полного selector `DIM navigation display mode`: `Off / Simplify / Full / AR / 3D lane`.
 - В `HudActivity` добавлен новый advanced flow для `AudioExt / Services`: media bridge, VR, PDC volume, anti-shake, loudness, spectrum preset и service actions.
 - Legacy `showHud()` и связанные `HudDim` / `AudioExt` helper-ветки удалены из `MainActivity`.
 

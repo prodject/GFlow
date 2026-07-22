@@ -515,7 +515,10 @@ final class EcarxVehicleAdapter {
     static final int DRIVE_CUSTOM_BPF = 0x22030400;
     static final int DRIVE_CUSTOM_STEERING_FEEL = 0x22030900;
     static final int DRIVE_CUSTOM_CLIMATE = 0x22030a00;
+    static final int DRIVE_CUSTOM_INFOR_THEME = 0x22030b00;
+    static final int DRIVE_CUSTOM_DRIVER_INFO = 0x22030c00;
     static final int DRIVE_CUSTOM_INTERIOR_LIGHT = 0x22030d00;
+    static final int DRIVE_DIM_THEME_SYNC = 0x22040100;
     static final int DRIVE_DIM_THEME_SET = 0x22040200;
     static final int DRIVE_STEERING_MODE = 0x22040400;
     static final int DRIVE_ENERGY_MODE = 0x22040500;
@@ -553,6 +556,14 @@ final class EcarxVehicleAdapter {
     static final int CUSTOM_STEERING_HEAVY = 0x22030903;
     static final int CUSTOM_CLIMATE_NORMAL = 0x22030a01;
     static final int CUSTOM_CLIMATE_ECO = 0x22030a02;
+    static final int CUSTOM_INFOR_THEME_LOUDER = 0x22030b01;
+    static final int CUSTOM_INFOR_THEME_HYPER = 0x22030b02;
+    static final int CUSTOM_INFOR_THEME_INTER = 0x22030b03;
+    static final int CUSTOM_INFOR_THEME_CLEAR = 0x22030b04;
+    static final int CUSTOM_DRIVER_INFO_STANDARD = 0x22030c01;
+    static final int CUSTOM_DRIVER_INFO_ECO = 0x22030c02;
+    static final int CUSTOM_DRIVER_INFO_SPORT = 0x22030c03;
+    static final int CUSTOM_DRIVER_INFO_OFFROAD = 0x22030c04;
     static final int DIM_THEME_RED = 0x22040201;
     static final int DIM_THEME_GOLD = 0x22040202;
     static final int DIM_THEME_BLUE = 0x22040203;

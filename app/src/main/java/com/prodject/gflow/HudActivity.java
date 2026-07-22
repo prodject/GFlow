@@ -167,6 +167,7 @@ public class HudActivity extends Activity {
         LinearLayout hud = Ui.glassCard(this);
         hud.addView(Ui.text(this, "HUD / DIM Bridge", 18, true));
         hud.addView(Ui.muted(this, new EcarxHudDimAdapter(this).availability()));
+        hud.addView(Ui.muted(this, "Cluster navigation view определяет, как навигация отображается на приборке: off, simplified, full, AR или 3D lane guidance."));
         addCommand(hud, "HUD включить", EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.COMMON_ON);
         addCommand(hud, "HUD выключить", EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.COMMON_OFF);
         addCommand(hud, "HUD calibration", EcarxVehicleAdapter.HUD_CALIBRATION, EcarxVehicleAdapter.COMMON_ON);
@@ -188,8 +189,11 @@ public class HudActivity extends Activity {
         addHudDimAction(hud, "DIM Menu: вкладка навигации", a -> a.dimMenuTab(EcarxHudDimAdapter.DIM_TAB_NAVIGATION));
         addHudDimAction(hud, "DIM Menu: вкладка музыки", a -> a.dimMenuTab(EcarxHudDimAdapter.DIM_TAB_MUSIC));
         addHudDimAction(hud, "DIM Menu: control center", a -> a.dimMenuTab(EcarxHudDimAdapter.DIM_TAB_CONTROL_CENTER));
-        addHudDimAction(hud, "DIM Navi: simplify", a -> a.switchNaviMode(EcarxHudDimAdapter.NAVI_MODE_SIMPLIFY));
-        addHudDimAction(hud, "DIM Navi: AR", a -> a.switchNaviMode(EcarxHudDimAdapter.NAVI_MODE_AR));
+        addHudDimAction(hud, "Cluster Navi View: Off", a -> a.switchNaviMode(EcarxHudDimAdapter.NAVI_MODE_OFF));
+        addHudDimAction(hud, "Cluster Navi View: Simplified", a -> a.switchNaviMode(EcarxHudDimAdapter.NAVI_MODE_SIMPLIFY));
+        addHudDimAction(hud, "Cluster Navi View: Full", a -> a.switchNaviMode(EcarxHudDimAdapter.NAVI_MODE_FULL));
+        addHudDimAction(hud, "Cluster Navi View: AR", a -> a.switchNaviMode(EcarxHudDimAdapter.NAVI_MODE_AR));
+        addHudDimAction(hud, "Cluster Navi View: 3D Lane", a -> a.switchNaviMode(EcarxHudDimAdapter.NAVI_MODE_3D_LANE));
         addHudDimAction(hud, "DIM volume 10", a -> a.setDimVolume(false, 10));
         addHudDimAction(hud, "DIM climate unit Celsius", EcarxHudDimAdapter::climateCelsiusUnit);
         addHudDimAction(hud, "DIM climate temp 22.0C", a -> a.climateTemp(22.0f));

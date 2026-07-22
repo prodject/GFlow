@@ -448,15 +448,29 @@ public class VehicleActivity extends Activity {
 
     private LinearLayout buildDriveThemeAndStartPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Theme / Start Behavior"));
-        panel.addView(Ui.muted(this, "Подтвержденные experimental controls для визуальной темы кластера и стартового поведения силовой установки."));
+        panel.addView(Ui.label(this, "Cluster Theme / Start"));
+        panel.addView(Ui.muted(this, "Experimental controls для темы приборки, синхронизации с drive mode, стиля driver info и стартового поведения силовой установки."));
+
+        LinearLayout syncRow = Ui.row(this);
+        addActionChip(syncRow, "Sync Theme On", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_DIM_THEME_SYNC, EcarxVehicleAdapter.COMMON_ON));
+        addActionChip(syncRow, "Sync Theme Off", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_DIM_THEME_SYNC, EcarxVehicleAdapter.COMMON_OFF));
+        addActionChip(syncRow, "Driver Info Standard", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_CUSTOM_DRIVER_INFO, EcarxVehicleAdapter.CUSTOM_DRIVER_INFO_STANDARD));
+        addActionChip(syncRow, "Driver Info Eco", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_CUSTOM_DRIVER_INFO, EcarxVehicleAdapter.CUSTOM_DRIVER_INFO_ECO));
+        panel.addView(syncRow, lpMatchWrap(0, 12, 0, 0));
 
         LinearLayout dimThemes = Ui.row(this);
-        addActionChip(dimThemes, "DIM Red", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_DIM_THEME_SET, EcarxVehicleAdapter.DIM_THEME_RED));
-        addActionChip(dimThemes, "DIM Gold", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_DIM_THEME_SET, EcarxVehicleAdapter.DIM_THEME_GOLD));
-        addActionChip(dimThemes, "DIM Blue", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_DIM_THEME_SET, EcarxVehicleAdapter.DIM_THEME_BLUE));
-        addActionChip(dimThemes, "DIM Off", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_DIM_THEME_SET, EcarxVehicleAdapter.COMMON_OFF));
+        addActionChip(dimThemes, "Cluster Red", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_DIM_THEME_SET, EcarxVehicleAdapter.DIM_THEME_RED));
+        addActionChip(dimThemes, "Cluster Gold", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_DIM_THEME_SET, EcarxVehicleAdapter.DIM_THEME_GOLD));
+        addActionChip(dimThemes, "Cluster Blue", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_DIM_THEME_SET, EcarxVehicleAdapter.DIM_THEME_BLUE));
+        addActionChip(dimThemes, "Cluster Off", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_DIM_THEME_SET, EcarxVehicleAdapter.COMMON_OFF));
         panel.addView(dimThemes, lpMatchWrap(0, 12, 0, 0));
+
+        LinearLayout infoRow = Ui.row(this);
+        addActionChip(infoRow, "Driver Info Sport", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_CUSTOM_DRIVER_INFO, EcarxVehicleAdapter.CUSTOM_DRIVER_INFO_SPORT));
+        addActionChip(infoRow, "Driver Info Offroad", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_CUSTOM_DRIVER_INFO, EcarxVehicleAdapter.CUSTOM_DRIVER_INFO_OFFROAD));
+        addActionChip(infoRow, "Driver Info Off", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_CUSTOM_DRIVER_INFO, EcarxVehicleAdapter.COMMON_OFF));
+        addActionChip(infoRow, "Info Theme Clear", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_CUSTOM_INFOR_THEME, EcarxVehicleAdapter.CUSTOM_INFOR_THEME_CLEAR));
+        panel.addView(infoRow, lpMatchWrap(0, 12, 0, 0));
 
         LinearLayout creepRow = Ui.row(this);
         addActionChip(creepRow, "Creep On", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_CREEP_SET, EcarxVehicleAdapter.COMMON_ON));
