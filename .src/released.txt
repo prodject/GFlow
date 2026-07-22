@@ -1,4 +1,4 @@
-GControl coverage log
+GFlow coverage log
 Updated: 2026-07-21
 
 Source inventory
@@ -17,7 +17,7 @@ Key system sources found in .src/Ext
 - TCAMService_src: car vendor extension service entry points.
 
 Coverage status legend
-- implemented: functional code exists in GControl.
+- implemented: functional code exists in GFlow.
 - partial: user-facing UI exists and some system/API calls are attempted.
 - adapter: reflection-based system contract added; requires target firmware classes/permissions.
 - scaffold: entry point/service exists but real behavior is not implemented.
@@ -51,7 +51,7 @@ Functional coverage
 - Segment naming and pruning: implemented.
 - Foreground camera service: partial. It attempts selected Camera2/MediaRecorder sources, then EVS/screenrecord sources, and falls back to marker files.
 - Real video recording: partial. Camera2/MediaRecorder path records selected Camera2 ids or facing aliases when permission/device support allows.
-- Stock camera integration: partial. com.ecarx.xui.adaptapi.evs.EVS can open rear/AVM-360/DVR views, and GControl can experimentally record the displayed EVS/360 view through Android screenrecord when firmware permissions allow. Direct EVS encoder/surface capture is still pending because the decompiled IEvsCamera contract exposes preview SurfaceHolder methods but no recording surface or file writer.
+- Stock camera integration: partial. com.ecarx.xui.adaptapi.evs.EVS can open rear/AVM-360/DVR views, and GFlow can experimentally record the displayed EVS/360 view through Android screenrecord when firmware permissions allow. Direct EVS encoder/surface capture is still pending because the decompiled IEvsCamera contract exposes preview SurfaceHolder methods but no recording surface or file writer.
 - Camera selection, segment duration, quality profile, storage target, explicit USB/path target and per-camera archive: implemented. Camera2 sources support front/rear/external/camera2:<id>; EVS sources support evs:rear/evs:360/evs:dvr through the screenrecord backend.
 
 4. Voice assistant
@@ -67,7 +67,7 @@ Functional coverage
 - ADAS IDs found in IADAS.smali: AEB, FCW, LKA, LDW, RCW, speed limit warning, ELKA/emergency lane, lane change assist, blind spot detection, traffic sign recognition, PDC, AI assist lane strategy/warning.
 - HUD IDs found in IHUD.smali; first HUD controls are wired through EcarxVehicleAdapter.
 - Seat IDs found in ISeat.smali: seat position, height, backrest, cushion, headrest, massage-related controls.
-- Current GControl status: reflection adapter and UI buttons are implemented for high-confidence HVAC, BCM, ADAS, HUD, drive mode and seat int functions. HVAC coverage includes power/AC/auto/eco, full fan scale, circulation, blowing modes, defrost, climate zone, zoned seat heating/ventilation/massage, steering wheel heat and direct driver/passenger temperature writes. BCM coverage includes zoned windows, doors, locks, child lock/scene lock, sunroof/sun curtain, mirror fold/defrost, mirror adjust activation through ControlBoard-confirmed zones, display/power buttons, reading lights, wipers, washer, custom key enums, grille colors/FPL/ICC enums and the lamp set with clear ON/OFF values from IBcm.smali.
+- Current GFlow status: reflection adapter and UI buttons are implemented for high-confidence HVAC, BCM, ADAS, HUD, drive mode and seat int functions. HVAC coverage includes power/AC/auto/eco, full fan scale, circulation, blowing modes, defrost, climate zone, zoned seat heating/ventilation/massage, steering wheel heat and direct driver/passenger temperature writes. BCM coverage includes zoned windows, doors, locks, child lock/scene lock, sunroof/sun curtain, mirror fold/defrost, mirror adjust activation through ControlBoard-confirmed zones, display/power buttons, reading lights, wipers, washer, custom key enums, grille colors/FPL/ICC enums and the lamp set with clear ON/OFF values from IBcm.smali.
 - Readback/support diagnostics: implemented for selected HVAC, BCM, ADAS, HUD, drive and seat IDs through getFunctionValue/isFunctionSupported.
 - Next implementation target: firmware validation of which row-2 zones are supported on target cars, and enabling steering wheel adjust / raw cap actions only after a confirmed write value is found outside support/readback mapping.
 
@@ -121,7 +121,7 @@ Functional coverage
 - Steering wheel button mapping: partial. The receiver stores the last key event and can map keyCode + gesture (press/hold/double) to a smart preset when firmware broadcasts enough key metadata.
 - Steering wheel advanced mapping: partial. Settings -> Steering buttons supports press/double/triple/hold gestures, held-button modifiers, behavior modes (replace/together/hold-only/stationary-only), target types (preset/scenario/action/voice/launch/command) and conditions (always/app/profile/temperature plus placeholders for stationary/moving until speed/gear signals are mapped).
 - User profiles: partial. Profiles save/recall seat memory slots and optionally run a smart preset for climate/drive/light settings. Actual seat memory execution remains firmware-dependent.
-- Driver/passenger profiles: partial. Separate driver and passenger profile lists can store/apply available GControl settings: seat memory and seat axes, mirror adjust mode, climate temperature/fan, seat heat/ventilation, drive mode, steering effort, HUD, brightness, ambience color, media volume, media source marker, desktop pinned apps, steering button mappings, custom presets/scenarios and ADAS toggles. Face ID/phone/Bluetooth/digital-key identifiers are stored as matching metadata; automatic detection depends on future system events.
+- Driver/passenger profiles: partial. Separate driver and passenger profile lists can store/apply available GFlow settings: seat memory and seat axes, mirror adjust mode, climate temperature/fan, seat heat/ventilation, drive mode, steering effort, HUD, brightness, ambience color, media volume, media source marker, desktop pinned apps, steering button mappings, custom presets/scenarios and ADAS toggles. Face ID/phone/Bluetooth/digital-key identifiers are stored as matching metadata; automatic detection depends on future system events.
 - Smart climate controller: partial. SmartClimateController now runs as a mode-based controller (off, fast cooling, fast heating, stabilization, maintain temperature, HVAC drying, summer algorithm) instead of a fixed preset. It enforces a one-minute change cooldown, reads cabin/outside temperature and basic vehicle-state diagnostics through AdaptAPI ISensor when available, falls back to UI values when firmware signals are unavailable, controls driver/passenger zones separately and supports drying after trip. Call/fogging detection still needs separate phone/HVAC heuristic integration.
 - Welcome/leave scenarios: partial. Template installer creates user-editable smart presets for profile recall, climate, ambience light, drive mode, window/sunroof close and lock actions, with manual triggers until confirmed door/approach/leave signals are mapped.
 - Parking guard: partial. Template installer creates a smart preset that starts DVR, opens 360 through the custom key, closes windows/sunroof/sun curtain and locks doors. Gear/park-state trigger still needs confirmed vehicle signal mapping.
@@ -162,6 +162,7 @@ Implementation log
 - 2026-07-22: replaced the Canvas-only vehicle hero with Settings/Launcher vehicle assets and preserved touch-zone routing to Climate, Vehicle, ADAS and Parking/APA.
 - 2026-07-22: added OneOS-ControlBoard-based Ambience Light visual preview using light-mode vehicle assets, swatches and touch color changes; confirmed the APKs contain rendered/Lottie assets but no portable 3D mesh files.
 - 2026-07-22: selected the GFlow brand direction. Added the chosen blue GF road icon as the launcher artwork and a transparent GFlow wordmark for the dashboard hero.
+- 2026-07-22: renamed the Android namespace/applicationId, Java package, visible service titles and branding resources from com.prodject.gcontrol/GControl to com.prodject.gflow/GFlow.
 - 2026-07-21: created initial coverage log.
 - 2026-07-21: selected reflection-based ECarX/AdaptAPI vehicle adapter as first real integration layer to avoid compile-time dependency on system APK classes.
 - 2026-07-21: added EcarxVehicleAdapter using reflection against com.ecarx.xui.adaptapi.car.Car and ICarFunction.
@@ -206,7 +207,7 @@ Implementation log
 - 2026-07-21: wired DimInteraction getShowPresentationOption/getSupportedRankingType/requestDayNightMode/setPresentationToDimSwitch/updateAvgFuleRanking plus IDimMenuInteraction IHU-ready/theme/tab/nav/volume commands.
 - 2026-07-21: wired DIM IClimateInteraction temperature unit and float temperature writes for HVAC_FUNC_TEMP 0x10060100.
 - 2026-07-21: wired DIM IMediaInteraction updateMediaSourceTypeList/updateCurrentSourceType/updateCurrentProgress/updatePlaybackInfo/updateMediaMuteState using Android MediaSession data and dynamic IPlaybackInfo proxy.
-- 2026-07-21: expanded GControlMediaSessionListener to publish active session metadata/playback changes into the DIM media bridge.
+- 2026-07-21: expanded GFlow media session listener to publish active session metadata/playback changes into the DIM media bridge.
 - 2026-07-21: expanded HVAC constants from IHvac.smali with temp dual/unit, display left/right temp tabs, hardkey left/right temp/sync/fan, rapid cooling/warming, second-row climate, climate lock, AQS/CO2/ions, fragrance, G-Clean, dry ventilation, pre/post climatisation, direction and sweeping modes.
 - 2026-07-21: wired the expanded HVAC functions into the Climate screen and added extended HVAC diagnostics.
 - 2026-07-21: added AudioExtServiceAdapter for exported com.autolink.audioextservice.AudioExtService and AudioExtControlService binder actions without compile-time AIDL dependencies.
@@ -217,7 +218,7 @@ Implementation log
 - 2026-07-21: confirmed HVAC temperature write encoding from OneOS-Dock CarFunctionUtils/HavTempPopupWindow: setCustomizeFunctionValue(0x10060100, zone, float), left zone 1 and right zone 4.
 - 2026-07-21: added EcarxVehicleAdapter float get/set methods for getCustomizeFunctionValue/setCustomizeFunctionValue and wired driver/passenger temperature buttons plus float diagnostics into Climate screen.
 - 2026-07-21: expanded BCM coverage from IBcm.smali: added door/window extended diagnostics, window half/open-pause/close-pause, child safety scene lock, mirror defrost, power/display/display-position commands, full high-confidence ON/OFF lamp set, grille color enums, FPL follow DRL enums, ICC notification enums and additional custom key enum commands.
-- 2026-07-21: added OneOS ControlBoardManager.showMirrorDialog reflection bridge and mirror adjust activation buttons from OneOS-ControlBoard MirrorControllerImpl: BCM_FUNC_REAR_MIRROR_ADJUST (0x21060200), left area=1, right area=4, active value=1. ControlBoard's dialog tells the user to adjust direction with steering-wheel buttons, so GControl does not fabricate up/down/left/right values.
+- 2026-07-21: added OneOS ControlBoardManager.showMirrorDialog reflection bridge and mirror adjust activation buttons from OneOS-ControlBoard MirrorControllerImpl: BCM_FUNC_REAR_MIRROR_ADJUST (0x21060200), left area=1, right area=4, active value=1. ControlBoard's dialog tells the user to adjust direction with steering-wheel buttons, so GFlow does not fabricate up/down/left/right values.
 - 2026-07-21: steering wheel adjust remains support/readback-only: 0x21070100 maps to HAL SteeringWheelPosAdj in Bcm.smali, but decompiled OneOS apps only check support and no UI code writes a confirmed value. Charging/fuel cap IDs are currently diagnostic-only until their write enum is confirmed outside generic DOOR_OPEN/CLOSE reuse.
 - 2026-07-21: replaced risky zone=0 fallback for known zoned vehicle functions with GlyCarAreaId-derived zones: ZONE_ALL=0x80000000, row1 left=1, row1 right=4, row2 left=16, row2 right=64. Added zoned UI diagnostics/buttons for windows, doors, HVAC seat heat/vent/massage and seat movement, plus voice routing for left/right/passenger/rear zone phrases.
 - 2026-07-21: added voice temperature parsing for commands like "поставь 22 градуса" / "passenger temp 21.5": extracts a numeric Celsius value, selects driver/passenger/rear zone from the phrase and writes HVAC_FUNC_TEMP through setCustomizeFunctionValue float path.

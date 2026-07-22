@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace "com.prodject.gcontrol"
+    namespace "com.prodject.gflow"
     compileSdk 35
 
     defaultConfig {
-        applicationId "com.prodject.gcontrol"
+        applicationId "com.prodject.gflow"
         minSdk 30
         targetSdk 35
         versionCode (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInteger()

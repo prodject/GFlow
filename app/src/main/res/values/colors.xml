@@ -1,4 +1,4 @@
 <resources>
-    <color name="gcontrol_black">#050505</color>
-    <color name="gcontrol_white">#FFFFFF</color>
+    <color name="gflow_black">#050505</color>
+    <color name="gflow_white">#FFFFFF</color>
 </resources>
