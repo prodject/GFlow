@@ -27,6 +27,7 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import androidx.core.content.FileProvider;
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Locale;
 
@@ -86,6 +87,25 @@ public class TextViewerActivity extends Activity {
         contentHost.addView(buildSearchPanel(), lpMatchWrap(0, 0, 0, 16));
         contentHost.addView(buildViewerPanel(), lpMatchWrap(0, 0, 0, 16));
         updateStatus();
+    }
+
+    private LinearLayout buildBottomDock() {
+        LinearLayout dock = Ui.glassCard(this);
+        dock.setOrientation(LinearLayout.HORIZONTAL);
+        dock.setGravity(Gravity.CENTER_VERTICAL);
+        dock.setPadding(Ui.dp(this, 18), Ui.dp(this, 14), Ui.dp(this, 18), Ui.dp(this, 14));
+        addDockButton(dock, "Search", this::runSearch, true);
+        addDockButton(dock, "Copy", this::copyText, false);
+        addDockButton(dock, "Share", this::shareFile, false);
+        addDockButton(dock, "Wrap", () -> {
+            wrapLines = !wrapLines;
+            renderContent();
+        }, false);
+        addDockButton(dock, "Mono", () -> {
+            monospace = !monospace;
+            renderContent();
+        }, false);
+        return dock;
     }
 
     private LinearLayout buildTopBar() {
@@ -338,7 +358,7 @@ public class TextViewerActivity extends Activity {
     private String read() {
         if (currentFile == null) return "";
         try {
-            return Files.readString(currentFile.toPath());
+            return new String(Files.readAllBytes(currentFile.toPath()), StandardCharsets.UTF_8);
         } catch (Exception e) {
             return "Не удалось открыть файл: " + e.getMessage();
         }
