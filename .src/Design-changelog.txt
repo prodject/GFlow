@@ -356,6 +356,9 @@
 - Голосовой слой расширен по мотивам `.example`: добавлены отдельные `VoiceListeningActivity`, `VoiceAssistantActivity`, `VoiceAppLaunchActivity`, `ShareLocationReceiverActivity` и `VoiceTriggerReceiver`.
 - В `AndroidManifest.xml` добавлены отдельные voice entry-points для `app.monji.VOICE`, `VOICE_COMMAND`, `ASSIST` и `SEND`-share сценария.
 - В `VoiceActivity` добавлен новый блок `Voice Flow`, а parser расширен на voice-сценарии `assistant`, `navigation/route`, `app launch` и share-location routing.
+- Текстовый alias-editor заменен на structured voice command editor: теперь для своей фразы можно выбрать тип действия и цель через UI.
+- В новом editor доступны типы `Открыть приложение`, `Запустить пресет`, `Запустить сценарий`, `Сменить режим вождения`, `Открыть экран`, `Broadcast / voice command`, `Vehicle raw command`.
+- Для приложений, пресетов, сценариев, экранов и drive mode добавлены отдельные picker-списки; старые legacy alias-строки продолжают поддерживаться без миграции.
 
 Осталось по `Design.txt`:
 - Экран `Рабочий стол`.
