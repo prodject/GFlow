@@ -160,7 +160,7 @@ public class MainActivity extends Activity {
         addDashboardMenuButton(rail, "CAR", false, this::showVehicleMenu);
         addDashboardMenuButton(rail, "CAM", false, () -> startActivity(new Intent(this, CameraActivity.class)));
         addDashboardMenuButton(rail, "ADAS", false, this::showAdasMenu);
-        addDashboardMenuButton(rail, "P", false, this::showParkingApa);
+        addDashboardMenuButton(rail, "P", false, this::openParkingScreen);
         addDashboardMenuButton(rail, "SET", false, this::showSettings);
         if (experimentalFeaturesEnabled()) addDashboardMenuButton(rail, "EXP", false, this::showPasAvm);
         return rail;
@@ -253,7 +253,7 @@ public class MainActivity extends Activity {
         addHeroButton(row, "Климат", this::showClimateMenu);
         addHeroButton(row, "Кузов", this::showVehicleMenu);
         addHeroButton(row, "ADAS", this::showAdasMenu);
-        addHeroButton(row, "360 / APA", this::showParkingApa);
+        addHeroButton(row, "360 / APA", this::openParkingScreen);
         return row;
     }
 
@@ -264,7 +264,7 @@ public class MainActivity extends Activity {
         addDashboardWidget(grid, "Готовность авто", adaptStatus() + "\nДвери закрыты · Комфорт", Ui.SUCCESS, this::showVehicleMenu);
         addDashboardWidget(grid, "DVR", "Запись выкл · USB свободно\nИсточник: Camera2 / EVS", Ui.WARNING, () -> startActivity(new Intent(this, CameraActivity.class)));
         addDashboardWidget(grid, "ADAS", "AEB · FCW · LKA · ACC\nPDC готов", Color.rgb(123, 104, 238), this::showAdasMenu);
-        addDashboardWidget(grid, "360 / Parking", "AVM standby · Rear ready\nRCTA доступно", Color.rgb(72, 153, 255), this::showParkingApa);
+        addDashboardWidget(grid, "360 / Parking", "AVM standby · Rear ready\nRCTA доступно", Color.rgb(72, 153, 255), this::openParkingScreen);
         addDashboardWidget(grid, "Профиль", activeProfileName() + "\nБыстрый доступ к сиденью и настройкам", Color.rgb(101, 208, 168), this::showUserProfiles);
         return grid;
     }
@@ -297,7 +297,7 @@ public class MainActivity extends Activity {
         dock.setGravity(Gravity.CENTER_VERTICAL);
         dock.setPadding(Ui.dp(this, 18), Ui.dp(this, 14), Ui.dp(this, 18), Ui.dp(this, 14));
         addDockButton(dock, "Климат", this::showClimateMenu, true);
-        addDockButton(dock, "360", this::showParkingApa, false);
+        addDockButton(dock, "360", this::openParkingScreen, false);
         addDockButton(dock, "DVR Rec", () -> startActivity(new Intent(this, CameraActivity.class)), false);
         addDockButton(dock, "Drive Mode", this::showVehicleMenu, false);
         addDockButton(dock, "Голос", () -> startActivity(new Intent(this, VoiceActivity.class)), false);
@@ -504,7 +504,7 @@ public class MainActivity extends Activity {
             if (y < 0.40f) transition(MainActivity.this::showClimateMenu);
             else if (y < 0.68f) transition(MainActivity.this::showVehicleMenu);
             else if (x < 0.50f) transition(MainActivity.this::showAdasMenu);
-            else transition(MainActivity.this::showParkingApa);
+            else transition(MainActivity.this::openParkingScreen);
             return true;
         }
 
@@ -702,6 +702,10 @@ public class MainActivity extends Activity {
 
     private void showAdasMenu() {
         startActivity(new Intent(this, AdasActivity.class));
+    }
+
+    private void openParkingScreen() {
+        startActivity(new Intent(this, ParkingActivity.class));
     }
 
     private void showHudMenu() {
