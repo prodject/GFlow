@@ -326,12 +326,12 @@ public class MainActivity extends Activity {
     private GridLayout buildStatusGrid() {
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(2);
-        addDashboardWidget(grid, "Климат", "Водитель 22°C · Пассажир 22°C\nAuto · A/C · Сиденья готовы", Ui.CYAN, this::showComfortClimate);
-        addDashboardWidget(grid, "Готовность авто", adaptStatus() + "\nДвери закрыты · Комфорт", Ui.SUCCESS, this::showVehicleMenu);
-        addDashboardWidget(grid, "DVR", "Запись выкл · USB свободно\nИсточник: Camera2 / EVS", Ui.WARNING, () -> startActivity(new Intent(this, CameraActivity.class)));
-        addDashboardWidget(grid, "ADAS", "AEB · FCW · LKA · ACC\nPDC готов", Color.rgb(123, 104, 238), this::showAdasMenu);
-        addDashboardWidget(grid, "360 / Parking", "AVM standby · Rear ready\nRCTA доступно", Color.rgb(72, 153, 255), this::openParkingScreen);
-        addDashboardWidget(grid, "Профиль", activeProfileName() + "\nБыстрый доступ к сиденью и настройкам", Color.rgb(101, 208, 168), this::showUserProfiles);
+        addDashboardWidget(grid, "Климат", climateDashboardDetails(), Ui.CYAN, this::showComfortClimate);
+        addDashboardWidget(grid, "Готовность авто", vehicleDashboardDetails(), Ui.SUCCESS, this::showVehicleMenu);
+        addDashboardWidget(grid, "DVR", dvrDashboardDetails(), Ui.WARNING, () -> startActivity(new Intent(this, CameraActivity.class)));
+        addDashboardWidget(grid, "ADAS", adasDashboardDetails(), Color.rgb(123, 104, 238), this::showAdasMenu);
+        addDashboardWidget(grid, "360 / Parking", parkingDashboardDetails(), Color.rgb(72, 153, 255), this::openParkingScreen);
+        addDashboardWidget(grid, "Профиль", profileDashboardDetails(), Color.rgb(101, 208, 168), this::showUserProfiles);
         return grid;
     }
 
@@ -401,12 +401,12 @@ public class MainActivity extends Activity {
 
     private void addDockButton(LinearLayout dock, String label, Runnable action, boolean active, QuickAction[] sheetActions) {
         Button button = Ui.button(this, label);
-        button.setTextColor(Color.WHITE);
+        button.setTextColor(active ? Color.WHITE : Ui.primaryText(this));
         button.setTextSize(14);
         button.setBackground(Ui.cardBg(this,
-                active ? Color.argb(115, 77, 163, 255) : Color.argb(54, 255, 255, 255),
+                active ? Color.argb(115, 77, 163, 255) : (Ui.dark(this) ? Color.argb(54, 255, 255, 255) : Color.argb(206, 255, 255, 255)),
                 Ui.dp(this, 20),
-                active ? Color.argb(100, 77, 163, 255) : Color.TRANSPARENT));
+                active ? Color.argb(100, 77, 163, 255) : (Ui.dark(this) ? Color.TRANSPARENT : Color.argb(76, 185, 198, 214))));
         button.setOnClickListener(v -> transition(action));
         button.setOnLongClickListener(v -> {
             showDashboardQuickSheet(label, sheetActions);
@@ -419,7 +419,8 @@ public class MainActivity extends Activity {
     }
 
     private String activeProfileName() {
-        return AutomationEngine.prefs(this).getString(AutomationEngine.KEY_ACTIVE_PROFILE, "Водитель 1");
+        String profile = AutomationEngine.prefs(this).getString(AutomationEngine.KEY_ACTIVE_PROFILE, "");
+        return profile == null || profile.trim().isEmpty() ? "Не задан" : profile;
     }
 
     private String adaptStatus() {
@@ -451,9 +452,12 @@ public class MainActivity extends Activity {
 
     private String cabinSummary() {
         SharedPreferences prefs = SmartClimateController.prefs(this);
-        float driver = prefs.getFloat(SmartClimateController.KEY_DRIVER_TARGET, 22.0f);
-        float passenger = prefs.getFloat(SmartClimateController.KEY_PASSENGER_TARGET, 22.0f);
-        return String.format(Locale.US, "%.1f/%.1f°C", driver, passenger);
+        boolean hasDriver = prefs.contains(SmartClimateController.KEY_DRIVER_TARGET);
+        boolean hasPassenger = prefs.contains(SmartClimateController.KEY_PASSENGER_TARGET);
+        if (!hasDriver && !hasPassenger) return "Нет данных";
+        String driver = hasDriver ? String.format(Locale.US, "%.1f°C", prefs.getFloat(SmartClimateController.KEY_DRIVER_TARGET, 22.0f)) : "--";
+        String passenger = hasPassenger ? String.format(Locale.US, "%.1f°C", prefs.getFloat(SmartClimateController.KEY_PASSENGER_TARGET, 22.0f)) : "--";
+        return driver + "/" + passenger;
     }
 
     private String dashboardCarSummary() {
@@ -462,11 +466,57 @@ public class MainActivity extends Activity {
     }
 
     private String dvrSummary() {
-        return new File(getExternalFilesDir(Environment.DIRECTORY_MOVIES), "MonjiDVR").exists() ? "Архив готов" : "Ожидание";
+        return dvrArchiveExists() ? "Архив готов" : "Ожидание";
     }
 
     private String adasSummary() {
         return developerModeEnabled() ? "AEB · LKA · ACC · DEV" : "AEB · LKA · PDC";
+    }
+
+    private String climateDashboardDetails() {
+        SharedPreferences prefs = SmartClimateController.prefs(this);
+        boolean smart = prefs.getBoolean(SmartClimateController.KEY_ENABLED, false);
+        String mode = smart ? "Smart climate" : "Ручной режим";
+        boolean hasDriver = prefs.contains(SmartClimateController.KEY_DRIVER_TARGET);
+        boolean hasPassenger = prefs.contains(SmartClimateController.KEY_PASSENGER_TARGET);
+        String driver = hasDriver ? String.format(Locale.US, "%.1f°C", prefs.getFloat(SmartClimateController.KEY_DRIVER_TARGET, 22.0f)) : "не задано";
+        String passenger = hasPassenger ? String.format(Locale.US, "%.1f°C", prefs.getFloat(SmartClimateController.KEY_PASSENGER_TARGET, 22.0f)) : "не задано";
+        return "Водитель " + driver + " · Пассажир " + passenger + "\n" + mode + " · " + adaptStatus();
+    }
+
+    private String vehicleDashboardDetails() {
+        return adaptStatus() + "\nПрофиль: " + activeProfileName();
+    }
+
+    private String dvrDashboardDetails() {
+        return dvrStatusLine() + "\n" + dvrStorageLine();
+    }
+
+    private String adasDashboardDetails() {
+        return adasSummary() + "\n" + (developerModeEnabled() ? "Расширенная диагностика активна" : "Базовый набор ассистентов");
+    }
+
+    private String parkingDashboardDetails() {
+        return "Парковка и обзор\n" + adaptStatus();
+    }
+
+    private String profileDashboardDetails() {
+        return activeProfileName() + "\nБыстрый доступ к сиденью и настройкам";
+    }
+
+    private boolean dvrArchiveExists() {
+        File root = getExternalFilesDir(Environment.DIRECTORY_MOVIES);
+        return root != null && new File(root, "MonjiDVR").exists();
+    }
+
+    private String dvrStatusLine() {
+        return dvrArchiveExists() ? "Архив готов" : "Архив не создан";
+    }
+
+    private String dvrStorageLine() {
+        File[] dirs = getExternalFilesDirs(Environment.DIRECTORY_MOVIES);
+        boolean externalMounted = dirs != null && dirs.length > 1 && dirs[1] != null;
+        return externalMounted ? "Внешний носитель доступен" : "Только внутренняя память";
     }
 
     private void refreshDashboardLiveState() {
@@ -549,7 +599,10 @@ public class MainActivity extends Activity {
         LinearLayout badge = new LinearLayout(this);
         badge.setOrientation(LinearLayout.VERTICAL);
         badge.setPadding(Ui.dp(this, 12), Ui.dp(this, 8), Ui.dp(this, 12), Ui.dp(this, 8));
-        badge.setBackground(Ui.cardBg(this, Color.argb(80, 255, 255, 255), Ui.dp(this, 16), Color.TRANSPARENT));
+        badge.setBackground(Ui.cardBg(this,
+                Ui.dark(this) ? Color.argb(80, 255, 255, 255) : Color.argb(214, 255, 255, 255),
+                Ui.dp(this, 16),
+                Ui.dark(this) ? Color.TRANSPARENT : Color.argb(72, 185, 198, 214)));
         badge.addView(Ui.label(this, title));
         TextView valueView = Ui.text(this, value, 13, true);
         valueView.setPadding(0, 0, 0, 0);
@@ -564,8 +617,11 @@ public class MainActivity extends Activity {
     private void addDrawerAction(LinearLayout drawer, String label, Runnable action) {
         Button button = Ui.button(this, label);
         button.setGravity(Gravity.CENTER_VERTICAL | Gravity.START);
-        button.setTextColor(Color.WHITE);
-        button.setBackground(Ui.cardBg(this, Color.argb(56, 255, 255, 255), Ui.dp(this, 18), Color.TRANSPARENT));
+        button.setTextColor(Ui.primaryText(this));
+        button.setBackground(Ui.cardBg(this,
+                Ui.dark(this) ? Color.argb(56, 255, 255, 255) : Color.argb(214, 255, 255, 255),
+                Ui.dp(this, 18),
+                Ui.dark(this) ? Color.TRANSPARENT : Color.argb(72, 185, 198, 214)));
         button.setOnClickListener(v -> {
             setDashboardDrawerOpen(false);
             transition(action);
@@ -611,8 +667,11 @@ public class MainActivity extends Activity {
         sheet.addView(Ui.text(this, title, 24, true));
         for (QuickAction action : actions) {
             Button button = Ui.button(this, action.label);
-            button.setTextColor(Color.WHITE);
-            button.setBackground(Ui.cardBg(this, Color.argb(56, 255, 255, 255), Ui.dp(this, 18), Color.TRANSPARENT));
+            button.setTextColor(Ui.primaryText(this));
+            button.setBackground(Ui.cardBg(this,
+                    Ui.dark(this) ? Color.argb(56, 255, 255, 255) : Color.argb(214, 255, 255, 255),
+                    Ui.dp(this, 18),
+                    Ui.dark(this) ? Color.TRANSPARENT : Color.argb(72, 185, 198, 214)));
             button.setOnClickListener(v -> {
                 dialog.dismiss();
                 transition(action.action);
@@ -668,9 +727,12 @@ public class MainActivity extends Activity {
 
     private void addHeroButton(LinearLayout row, String label, Runnable action) {
         Button b = Ui.button(this, label);
-        b.setTextColor(Color.WHITE);
+        b.setTextColor(Ui.primaryText(this));
         b.setGravity(Gravity.CENTER);
-        b.setBackground(Ui.cardBg(this, Color.argb(70, 255, 255, 255), Ui.dp(this, 16), Color.argb(80, 255, 255, 255)));
+        b.setBackground(Ui.cardBg(this,
+                Ui.dark(this) ? Color.argb(70, 255, 255, 255) : Color.argb(214, 255, 255, 255),
+                Ui.dp(this, 16),
+                Ui.dark(this) ? Color.argb(80, 255, 255, 255) : Color.argb(72, 185, 198, 214)));
         b.setOnClickListener(v -> transition(action));
         b.setOnLongClickListener(v -> {
             showHeroActionSheet(label, action);
