@@ -39,7 +39,7 @@ public class MainActivity extends Activity {
     }
 
     private void showOnboarding() {
-        LinearLayout root = Ui.root(this, "GControl");
+        LinearLayout root = Ui.root(this, getString(R.string.app_name));
         root.addView(Ui.text(this, "Автомобильный центр управления для Android 11+: файлы, камеры, голос, климат, ADAS, HUD, рабочий стол, ADB и системные функции.", 16, false));
         Button start = Ui.button(this, "Принять и открыть приложение");
         Button legal = Ui.button(this, "Лицензия и юридические документы");
@@ -126,14 +126,16 @@ public class MainActivity extends Activity {
         hero.setBackground(bg);
 
         LinearLayout top = Ui.row(this);
-        TextView title = Ui.text(this, "GControl", 34, true);
-        title.setTextColor(Color.WHITE);
+        ImageView logo = new ImageView(this);
+        logo.setImageResource(R.drawable.gflow_wordmark);
+        logo.setAdjustViewBounds(true);
+        logo.setScaleType(ImageView.ScaleType.FIT_START);
         TextView badge = Ui.pill(this, developerModeEnabled() ? "DEVELOPER MODE" : (experimentalFeaturesEnabled() ? "EXPERIMENTAL ON" : "USER MODE"), developerModeEnabled() ? Ui.BLUE : (experimentalFeaturesEnabled() ? Ui.AMBER : Ui.GREEN));
-        top.addView(title, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        top.addView(logo, new LinearLayout.LayoutParams(0, Ui.dp(this, 104), 1));
         top.addView(badge);
         hero.addView(top);
 
-        TextView subtitle = Ui.text(this, "Центр управления автомобилем, мультимедиа и сценариями", 16, false);
+        TextView subtitle = Ui.text(this, "Управление автомобилем, мультимедиа и сценариями", 16, false);
         subtitle.setTextColor(Color.rgb(222, 229, 235));
         hero.addView(subtitle);
         hero.addView(new VehicleVisualView(this, false), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 190)));

@@ -161,6 +161,7 @@ Implementation log
 - 2026-07-22: added compact screen maps and grouped sections to Experimental PAS/AVM, AVAS/Digital Key, Scene Modes, Ambience Light and DayMode pages.
 - 2026-07-22: replaced the Canvas-only vehicle hero with Settings/Launcher vehicle assets and preserved touch-zone routing to Climate, Vehicle, ADAS and Parking/APA.
 - 2026-07-22: added OneOS-ControlBoard-based Ambience Light visual preview using light-mode vehicle assets, swatches and touch color changes; confirmed the APKs contain rendered/Lottie assets but no portable 3D mesh files.
+- 2026-07-22: selected the GFlow brand direction. Added the chosen blue GF road icon as the launcher artwork and a transparent GFlow wordmark for the dashboard hero.
 - 2026-07-21: created initial coverage log.
 - 2026-07-21: selected reflection-based ECarX/AdaptAPI vehicle adapter as first real integration layer to avoid compile-time dependency on system APK classes.
 - 2026-07-21: added EcarxVehicleAdapter using reflection against com.ecarx.xui.adaptapi.car.Car and ICarFunction.
