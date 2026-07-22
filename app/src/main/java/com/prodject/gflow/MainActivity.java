@@ -81,15 +81,16 @@ public class MainActivity extends Activity {
     private void showDashboard() {
         LinearLayout shell = new LinearLayout(this);
         shell.setOrientation(LinearLayout.HORIZONTAL);
-        shell.setBackgroundColor(Ui.bg(this));
-        shell.addView(dashboardMenu(), new LinearLayout.LayoutParams(Ui.dp(this, 220), ViewGroup.LayoutParams.MATCH_PARENT));
+        shell.setBackground(dashboardBg());
+        shell.setPadding(Ui.dp(this, 16), Ui.dp(this, 16), Ui.dp(this, 16), Ui.dp(this, 16));
+        shell.addView(dashboardMenu(), new LinearLayout.LayoutParams(Ui.dp(this, 235), ViewGroup.LayoutParams.MATCH_PARENT));
 
         ScrollView scroll = new ScrollView(this);
         scroll.setFillViewport(true);
         LinearLayout content = new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
-        content.setPadding(Ui.dp(this, 20), Ui.dp(this, 18), Ui.dp(this, 22), Ui.dp(this, 20));
-        content.setBackgroundColor(Ui.bg(this));
+        content.setPadding(Ui.dp(this, 20), 0, 0, 0);
+        content.setBackgroundColor(Color.TRANSPARENT);
 
         addHero(content);
 
@@ -102,8 +103,8 @@ public class MainActivity extends Activity {
     private LinearLayout dashboardMenu() {
         LinearLayout menu = new LinearLayout(this);
         menu.setOrientation(LinearLayout.VERTICAL);
-        menu.setPadding(Ui.dp(this, 14), Ui.dp(this, 18), Ui.dp(this, 10), Ui.dp(this, 18));
-        menu.setBackgroundColor(Ui.dark(this) ? Color.rgb(18, 21, 24) : Color.rgb(232, 237, 241));
+        menu.setPadding(Ui.dp(this, 16), Ui.dp(this, 18), Ui.dp(this, 16), Ui.dp(this, 18));
+        menu.setBackground(Ui.cardBg(this, Color.argb(Ui.dark(this) ? 210 : 190, 255, 255, 255), Ui.dp(this, 32), Color.argb(150, 255, 255, 255)));
         ImageView logo = new ImageView(this);
         logo.setImageResource(R.drawable.gflow_wordmark);
         logo.setAdjustViewBounds(true);
@@ -126,8 +127,8 @@ public class MainActivity extends Activity {
     private void addDashboardMenuButton(LinearLayout menu, String title, String badge, Runnable action) {
         LinearLayout item = Ui.row(this);
         item.setClickable(true);
-        item.setPadding(Ui.dp(this, 8), Ui.dp(this, 6), Ui.dp(this, 8), Ui.dp(this, 6));
-        item.setBackground(Ui.cardBg(this, Ui.panel(this), Ui.dp(this, 16), Ui.lineColor(this)));
+        item.setPadding(Ui.dp(this, 10), Ui.dp(this, 8), Ui.dp(this, 10), Ui.dp(this, 8));
+        item.setBackground(Ui.cardBg(this, Color.argb(120, 255, 255, 255), Ui.dp(this, 18), Color.TRANSPARENT));
         TextView icon = Ui.pill(this, badge, Ui.BLUE);
         TextView label = Ui.text(this, title, 15, true);
         item.addView(icon);
@@ -138,6 +139,14 @@ public class MainActivity extends Activity {
         LinearLayout.LayoutParams rowLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         rowLp.setMargins(0, Ui.dp(this, 4), 0, Ui.dp(this, 4));
         menu.addView(item, rowLp);
+    }
+
+    private GradientDrawable dashboardBg() {
+        GradientDrawable g = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+                Ui.dark(this)
+                        ? new int[]{Color.rgb(12, 15, 19), Color.rgb(20, 29, 38), Color.rgb(18, 38, 42)}
+                        : new int[]{Color.rgb(248, 251, 255), Color.rgb(224, 236, 248), Color.rgb(207, 220, 237)});
+        return g;
     }
 
     private void addDashboardWidgets(LinearLayout root) {
@@ -169,12 +178,12 @@ public class MainActivity extends Activity {
 
     private void addHero(LinearLayout root) {
         LinearLayout hero = Ui.card(this);
-        hero.setPadding(Ui.dp(this, 24), Ui.dp(this, 22), Ui.dp(this, 24), Ui.dp(this, 22));
+        hero.setPadding(Ui.dp(this, 22), Ui.dp(this, 20), Ui.dp(this, 22), Ui.dp(this, 20));
         GradientDrawable bg = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
                 Ui.dark(this)
-                        ? new int[]{Color.rgb(16, 19, 23), Color.rgb(28, 35, 40), Color.rgb(42, 48, 52)}
-                        : new int[]{Color.rgb(236, 242, 247), Color.rgb(248, 250, 252), Color.rgb(220, 229, 236)});
-        bg.setCornerRadius(Ui.dp(this, 24));
+                        ? new int[]{Color.argb(225, 22, 27, 32), Color.argb(225, 30, 39, 45)}
+                        : new int[]{Color.argb(210, 255, 255, 255), Color.argb(205, 237, 244, 252)});
+        bg.setCornerRadius(Ui.dp(this, 30));
         hero.setBackground(bg);
 
         LinearLayout top = Ui.row(this);
@@ -194,8 +203,17 @@ public class MainActivity extends Activity {
         top.addView(badge);
         hero.addView(top);
 
+        LinearLayout center = Ui.row(this);
         VehicleVisualView visual = new VehicleVisualView(this, false);
-        hero.addView(visual, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 430)));
+        center.addView(visual, new LinearLayout.LayoutParams(0, Ui.dp(this, 430), 1));
+        LinearLayout side = new LinearLayout(this);
+        side.setOrientation(LinearLayout.VERTICAL);
+        addSideChip(side, "Кузов", "закрыто", Ui.BLUE, this::showVehicleMenu);
+        addSideChip(side, "Давление", "2.4 bar", Ui.GREEN, this::showCar);
+        addSideChip(side, "DVR", "готов", Color.rgb(168, 65, 58), () -> startActivity(new Intent(this, DvrActivity.class)));
+        addSideChip(side, "Запас", "320 км", Ui.AMBER, this::showVehicleMenu);
+        center.addView(side, new LinearLayout.LayoutParams(Ui.dp(this, 170), ViewGroup.LayoutParams.WRAP_CONTENT));
+        hero.addView(center);
 
         LinearLayout meters = Ui.row(this);
         addMainMetric(meters, "Климат", "22.0 C", Ui.BLUE, this::showComfortClimate);
@@ -204,6 +222,19 @@ public class MainActivity extends Activity {
         addMainMetric(meters, "ADAS", "активно", Color.rgb(113, 91, 177), this::showAdasMenu);
         hero.addView(meters);
         root.addView(hero, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+    }
+
+    private void addSideChip(LinearLayout col, String title, String value, int color, Runnable action) {
+        LinearLayout chip = Ui.card(this);
+        chip.setClickable(true);
+        chip.setOnClickListener(v -> transition(action));
+        chip.addView(Ui.muted(this, title));
+        TextView v = Ui.text(this, value, 16, true);
+        v.setTextColor(color);
+        chip.addView(v);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.setMargins(0, Ui.dp(this, 5), 0, Ui.dp(this, 7));
+        col.addView(chip, lp);
     }
 
     private void addMainMetric(LinearLayout row, String title, String value, int color, Runnable action) {
@@ -403,8 +434,8 @@ public class MainActivity extends Activity {
                 paint.setColor(Color.argb(Ui.dark(getContext()) ? 80 : 95, 120, 135, 145));
                 canvas.drawOval(new RectF(w * 0.18f, h * 0.76f, w * 0.82f, h * 0.95f), paint);
                 RectF bounds = new RectF(w * 0.12f, h * 0.03f, w * 0.88f, h * 0.93f);
+                if (underlay != null) drawBitmapFit(canvas, underlay, bounds, 70);
                 if (model != null) drawBitmapFit(canvas, model, bounds, 255);
-                else if (underlay != null) drawBitmapFit(canvas, underlay, bounds, 220);
                 drawTouchHint(canvas, "Климат", w * 0.50f, h * 0.12f, Ui.BLUE);
                 drawTouchHint(canvas, "Кузов", w * 0.50f, h * 0.52f, Ui.GREEN);
                 drawTouchHint(canvas, "ADAS", w * 0.28f, h * 0.82f, Color.rgb(113, 91, 177));
