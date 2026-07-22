@@ -19,7 +19,7 @@ public class DvrService extends BaseForegroundService {
     private CameraDevice cameraDevice;
     private CameraCaptureSession captureSession;
     private MediaRecorder mediaRecorder;
-    private Process screenRecordProcess;
+    private java.lang.Process screenRecordProcess;
     private boolean cameraRecording;
     private boolean running;
     private String activeSource;
