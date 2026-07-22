@@ -45,6 +45,17 @@ final class Ui {
     static int lineColor(Context c) { return dark(c) ? Color.rgb(55, 61, 68) : LINE; }
     static int primaryText(Context c) { return dark(c) ? TEXT_PRIMARY_DARK : BLACK; }
     static int secondaryText(Context c) { return dark(c) ? TEXT_SECONDARY_DARK : TEXT_MUTED; }
+    static int glassSurface(Context c) { return dark(c) ? Color.argb(232, 18, 23, 34) : Color.argb(232, 255, 255, 255); }
+    static int glassLine(Context c) { return dark(c) ? GLASS_LINE : Color.argb(88, 185, 198, 214); }
+
+    static GradientDrawable dashboardBg(Context c) {
+        return new GradientDrawable(
+                GradientDrawable.Orientation.TL_BR,
+                dark(c)
+                        ? new int[]{Color.parseColor("#080A0F"), Color.parseColor("#0D1420"), Color.parseColor("#101B2A")}
+                        : new int[]{Color.parseColor("#F6F9FC"), Color.parseColor("#EAF2F8"), Color.parseColor("#DDE8F4")}
+        );
+    }
 
     static LinearLayout root(Activity a, String title) {
         LinearLayout root = new LinearLayout(a);
@@ -122,12 +133,12 @@ final class Ui {
         LinearLayout v = new LinearLayout(c);
         v.setOrientation(LinearLayout.VERTICAL);
         v.setPadding(dp(c, 20), dp(c, 18), dp(c, 20), dp(c, 18));
-        v.setBackground(cardBg(c, Color.argb(232, 18, 23, 34), dp(c, 28), GLASS_LINE));
+        v.setBackground(cardBg(c, glassSurface(c), dp(c, 28), glassLine(c)));
         return v;
     }
 
     static GradientDrawable glassBg(Context c, int color) {
-        return cardBg(c, color, dp(c, 28), GLASS_LINE);
+        return cardBg(c, color, dp(c, 28), glassLine(c));
     }
 
     static GradientDrawable glassPill(Context c, int color) {

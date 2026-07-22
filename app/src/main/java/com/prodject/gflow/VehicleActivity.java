@@ -605,8 +605,7 @@ public class VehicleActivity extends Activity {
     }
 
     private GradientDrawable dashboardBg() {
-        return new GradientDrawable(GradientDrawable.Orientation.TL_BR,
-                new int[]{Color.parseColor("#080A0F"), Color.parseColor("#0D1420"), Color.parseColor("#101B2A")});
+        return Ui.dashboardBg(this);
     }
 
     private enum Mode {

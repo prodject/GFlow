@@ -212,9 +212,7 @@ public class MainActivity extends Activity {
     }
 
     private GradientDrawable dashboardBg() {
-        GradientDrawable g = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
-                new int[]{Color.parseColor("#080A0F"), Color.parseColor("#0D1420"), Color.parseColor("#101B2A")});
-        return g;
+        return Ui.dashboardBg(this);
     }
 
     private LinearLayout buildCollapsedNavRail() {
@@ -222,14 +220,6 @@ public class MainActivity extends Activity {
         rail.setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL);
         rail.setPadding(Ui.dp(this, 12), Ui.dp(this, 14), Ui.dp(this, 12), Ui.dp(this, 14));
         addDashboardMenuButton(rail, "M", true, () -> setDashboardDrawerOpen(!dashboardDrawerOpen));
-        addDashboardMenuButton(rail, "HM", true, this::showDashboard);
-        addDashboardMenuButton(rail, "CL", false, this::showClimateMenu);
-        addDashboardMenuButton(rail, "CAR", false, this::showVehicleMenu);
-        addDashboardMenuButton(rail, "CAM", false, () -> startActivity(new Intent(this, CameraActivity.class)));
-        addDashboardMenuButton(rail, "ADAS", false, this::showAdasMenu);
-        addDashboardMenuButton(rail, "P", false, this::openParkingScreen);
-        addDashboardMenuButton(rail, "SET", false, this::showSettings);
-        if (experimentalFeaturesEnabled()) addDashboardMenuButton(rail, "EXP", false, this::showPasAvm);
         return rail;
     }
 
