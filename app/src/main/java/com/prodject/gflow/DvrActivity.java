@@ -2,8 +2,10 @@ package com.prodject.gflow;
 
 import android.app.*;
 import android.content.*;
+import android.graphics.*;
 import android.hardware.camera2.*;
 import android.os.*;
+import android.view.*;
 import android.widget.*;
 import java.io.File;
 import java.util.*;
@@ -20,13 +22,18 @@ public class DvrActivity extends Activity {
 
     @Override public void onCreate(Bundle b) {
         super.onCreate(b);
-        root = Ui.root(this, "DVR / Камеры");
+        ScrollView scroll = new ScrollView(this);
+        root = Ui.root(this, "DVR / Камеры", this::finish);
         Button start = Ui.button(this, "Старт записи");
         Button stop = Ui.button(this, "Стоп записи");
         Button save = Ui.button(this, "Сохранить настройки DVR");
         Button refresh = Ui.button(this, "Обновить камеры/архив");
         status = Ui.text(this, "", 14, false);
-        root.addView(Ui.text(this, new EcarxDvrAdapter(this).availability(), 14, false));
+        LinearLayout hero = Ui.card(this);
+        hero.addView(Ui.text(this, "Камеры и архив", 22, true));
+        hero.addView(new CameraPreviewWidget(this), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 150)));
+        hero.addView(Ui.muted(this, new EcarxDvrAdapter(this).availability()));
+        root.addView(hero, margin(0, 8, 0, 12));
         addSettingsUi();
         start.setOnClickListener(v -> {
             saveSettings();
@@ -42,10 +49,20 @@ public class DvrActivity extends Activity {
             refresh();
         });
         refresh.setOnClickListener(v -> refresh());
-        root.addView(save);
-        root.addView(start);
-        root.addView(stop);
-        root.addView(refresh);
+        LinearLayout actions = Ui.card(this);
+        actions.addView(Ui.text(this, "Запись", 18, true));
+        LinearLayout row = Ui.row(this);
+        row.addView(save, buttonLp());
+        row.addView(start, buttonLp());
+        row.addView(stop, buttonLp());
+        row.addView(refresh, buttonLp());
+        actions.addView(row);
+        root.addView(actions, margin(0, 0, 0, 12));
+        LinearLayout diag = Ui.card(this);
+        diag.addView(Ui.text(this, "Штатные камеры / EVS", 18, true));
+        root.addView(diag, margin(0, 0, 0, 12));
+        LinearLayout oldRoot = root;
+        root = diag;
         addEvs("EVS открыть rear", EcarxDvrAdapter.EVS_CAMERA_REAR, true);
         addEvs("EVS закрыть rear", EcarxDvrAdapter.EVS_CAMERA_REAR, false);
         addEvs("EVS открыть AVM/360", EcarxDvrAdapter.EVS_CAMERA_AVM, true);
@@ -55,8 +72,13 @@ public class DvrActivity extends Activity {
         addDvr("DVR capture", a -> a.dvrCapture());
         addDvr("DVR mode", a -> a.dvrCurrentMode());
         addDvr("DVR SD status", a -> a.dvrSdcardStatus());
-        root.addView(status, new LinearLayout.LayoutParams(-1, 0, 1));
-        setContentView(root);
+        root = oldRoot;
+        LinearLayout statusCard = Ui.card(this);
+        statusCard.addView(Ui.text(this, "Статус", 18, true));
+        statusCard.addView(status);
+        root.addView(statusCard);
+        scroll.addView(root);
+        setContentView(scroll);
         refresh();
     }
 
@@ -86,13 +108,22 @@ public class DvrActivity extends Activity {
         qualityInput.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, quality));
         String currentQuality = prefs.getString(DvrArchive.KEY_QUALITY, DvrArchive.QUALITY_720P);
         for (int i = 0; i < quality.length; i++) if (quality[i].equals(currentQuality)) qualityInput.setSelection(i);
-        root.addView(Ui.text(this, "Источники: front/rear/external или camera2:<id> пишутся через Camera2. evs:360/evs:rear/evs:dvr открывают штатную EVS-камеру и пробуют записать экран через screenrecord.", 14, false));
-        root.addView(camerasInput);
-        root.addView(segmentInput);
-        root.addView(limitInput);
-        root.addView(storageInput);
-        root.addView(storagePathInput);
-        root.addView(qualityInput);
+        styleInput(camerasInput);
+        styleInput(segmentInput);
+        styleInput(limitInput);
+        styleInput(storagePathInput);
+        LinearLayout card = Ui.card(this);
+        card.addView(Ui.text(this, "Настройки архива", 18, true));
+        card.addView(Ui.muted(this, "Camera2 источники пишутся напрямую. EVS открывает штатный вид и пробует screenrecord."));
+        card.addView(camerasInput, margin(0, 8, 0, 6));
+        LinearLayout nums = Ui.row(this);
+        nums.addView(segmentInput, buttonLp());
+        nums.addView(limitInput, buttonLp());
+        card.addView(nums);
+        card.addView(storageInput, margin(0, 8, 0, 6));
+        card.addView(storagePathInput, margin(0, 4, 0, 6));
+        card.addView(qualityInput, margin(0, 4, 0, 0));
+        root.addView(card, margin(0, 0, 0, 12));
     }
 
     private void saveSettings() {
@@ -174,6 +205,46 @@ public class DvrActivity extends Activity {
             return Integer.parseInt(value.trim());
         } catch (Exception e) {
             return fallback;
+        }
+    }
+
+    private void styleInput(EditText e) {
+        e.setTextColor(Ui.textColor(this));
+        e.setHintTextColor(Ui.mutedColor(this));
+        e.setSingleLine(true);
+        e.setPadding(Ui.dp(this, 14), 0, Ui.dp(this, 14), 0);
+        e.setBackground(Ui.cardBg(this, Ui.panel(this), Ui.dp(this, 14), Ui.lineColor(this)));
+    }
+
+    private LinearLayout.LayoutParams margin(int l, int t, int r, int b) {
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.setMargins(Ui.dp(this, l), Ui.dp(this, t), Ui.dp(this, r), Ui.dp(this, b));
+        return lp;
+    }
+
+    private LinearLayout.LayoutParams buttonLp() {
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 56), 1);
+        lp.setMargins(Ui.dp(this, 5), Ui.dp(this, 5), Ui.dp(this, 5), Ui.dp(this, 5));
+        return lp;
+    }
+
+    private static final class CameraPreviewWidget extends View {
+        private final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
+        CameraPreviewWidget(Context c) { super(c); }
+        @Override protected void onDraw(Canvas canvas) {
+            float w = getWidth(), h = getHeight();
+            p.setStyle(Paint.Style.FILL);
+            p.setColor(Ui.dark(getContext()) ? Color.rgb(24, 29, 34) : Color.rgb(222, 230, 236));
+            canvas.drawRoundRect(new RectF(w * .03f, h * .08f, w * .97f, h * .92f), Ui.dp(getContext(), 24), Ui.dp(getContext(), 24), p);
+            int[] colors = {Color.rgb(54, 132, 210), Color.rgb(45, 150, 118), Color.rgb(190, 92, 75)};
+            for (int i = 0; i < 3; i++) {
+                float left = w * (.08f + i * .29f);
+                RectF r = new RectF(left, h * .22f, left + w * .24f, h * .78f);
+                p.setColor(colors[i]);
+                canvas.drawRoundRect(r, Ui.dp(getContext(), 16), Ui.dp(getContext(), 16), p);
+                p.setColor(Color.argb(110, 255, 255, 255));
+                canvas.drawCircle(r.centerX(), r.centerY(), Ui.dp(getContext(), 22), p);
+            }
         }
     }
 }
