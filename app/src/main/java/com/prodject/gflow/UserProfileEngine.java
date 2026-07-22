@@ -209,6 +209,12 @@ final class UserProfileEngine {
             if ("seatVent".equals(p[0])) return adapter.set(EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, zone(p.length > 1 ? p[1] : "driver"), seatLevel(p.length > 2 ? p[2] : "0")).message;
             if ("drive".equals(p[0])) return adapter.set(EcarxVehicleAdapter.DRIVE_MODE_SELECT, driveValue(p.length > 1 ? p[1] : "comfort")).message;
             if ("steering".equals(p[0])) return adapter.set(EcarxVehicleAdapter.DRIVE_STEERING_MODE, "dynamic".equals(value(p, 1)) ? EcarxVehicleAdapter.STEERING_MODE_DYNAMIC : EcarxVehicleAdapter.STEERING_MODE_SOFT).message;
+            if ("drivePropulsion".equals(p[0])) return adapter.set(EcarxVehicleAdapter.DRIVE_CUSTOM_PROPULSION, propulsionValue(value(p, 1))).message;
+            if ("driveSuspension".equals(p[0])) return adapter.set(EcarxVehicleAdapter.DRIVE_CUSTOM_SUSPENSION, suspensionValue(value(p, 1))).message;
+            if ("driveSteeringFeel".equals(p[0])) return adapter.set(EcarxVehicleAdapter.DRIVE_CUSTOM_STEERING_FEEL, steeringFeelValue(value(p, 1))).message;
+            if ("driveClimate".equals(p[0])) return adapter.set(EcarxVehicleAdapter.DRIVE_CUSTOM_CLIMATE, climateValue(value(p, 1))).message;
+            if ("driveEnergy".equals(p[0])) return adapter.set(EcarxVehicleAdapter.DRIVE_ENERGY_MODE, energyValue(value(p, 1))).message;
+            if ("driveDimTheme".equals(p[0])) return adapter.set(EcarxVehicleAdapter.DRIVE_DIM_THEME_SET, dimThemeValue(value(p, 1))).message;
             if ("hud".equals(p[0])) return adapter.set(EcarxVehicleAdapter.HUD_ACTIVE, "off".equals(value(p, 1)) ? EcarxVehicleAdapter.COMMON_OFF : EcarxVehicleAdapter.COMMON_ON).message;
             if ("brightness".equals(p[0])) return adapter.set(EcarxVehicleAdapter.DAYMODE_SETTING, "day".equals(value(p, 1)) ? EcarxVehicleAdapter.DAYMODE_VALUE_DAY : EcarxVehicleAdapter.DAYMODE_VALUE_NIGHT).message;
             if ("ambience".equals(p[0])) return adapter.set(EcarxVehicleAdapter.AMBIENCE_LIGHT_THEME_COLOR, ambienceValue(value(p, 1))).message;
@@ -261,10 +267,79 @@ final class UserProfileEngine {
     private static int driveValue(String value) {
         String v = value.toLowerCase(Locale.ROOT);
         if (v.contains("eco")) return EcarxVehicleAdapter.DRIVE_MODE_ECO;
+        if (v.contains("pure")) return EcarxVehicleAdapter.DRIVE_MODE_PURE;
+        if (v.contains("hybrid")) return EcarxVehicleAdapter.DRIVE_MODE_HYBRID;
+        if (v.contains("power")) return EcarxVehicleAdapter.DRIVE_MODE_POWER;
         if (v.contains("dynamic") || v.contains("sport")) return EcarxVehicleAdapter.DRIVE_MODE_DYNAMIC;
         if (v.contains("snow")) return EcarxVehicleAdapter.DRIVE_MODE_SNOW;
+        if (v.contains("mud")) return EcarxVehicleAdapter.DRIVE_MODE_MUD;
+        if (v.contains("rock")) return EcarxVehicleAdapter.DRIVE_MODE_ROCK;
+        if (v.contains("sand")) return EcarxVehicleAdapter.DRIVE_MODE_SAND;
+        if (v.contains("awd")) return EcarxVehicleAdapter.DRIVE_MODE_AWD;
+        if (v.contains("save")) return EcarxVehicleAdapter.DRIVE_MODE_SAVE;
+        if (v.contains("adaptive")) return EcarxVehicleAdapter.DRIVE_MODE_ADAPTIVE;
+        if (v.contains("custom")) return EcarxVehicleAdapter.DRIVE_MODE_CUSTOM;
+        if (v.contains("hdc")) return EcarxVehicleAdapter.DRIVE_MODE_HDC;
         if (v.contains("offroad")) return EcarxVehicleAdapter.DRIVE_MODE_OFFROAD;
         return EcarxVehicleAdapter.DRIVE_MODE_COMFORT;
+    }
+
+    private static int propulsionValue(String value) {
+        String v = value.toLowerCase(Locale.ROOT);
+        if (v.contains("off")) return EcarxVehicleAdapter.COMMON_OFF;
+        if (v.contains("eco")) return EcarxVehicleAdapter.CUSTOM_PROPULSION_ECO;
+        if (v.contains("comfort")) return EcarxVehicleAdapter.CUSTOM_PROPULSION_COMFORT;
+        if (v.contains("sport") || v.contains("dynamic")) return EcarxVehicleAdapter.CUSTOM_PROPULSION_SPORT;
+        if (v.contains("offroad")) return EcarxVehicleAdapter.CUSTOM_PROPULSION_OFFROAD;
+        if (v.contains("snow")) return EcarxVehicleAdapter.CUSTOM_PROPULSION_SNOW;
+        if (v.contains("sand")) return EcarxVehicleAdapter.CUSTOM_PROPULSION_SAND;
+        if (v.contains("hybrid")) return EcarxVehicleAdapter.CUSTOM_PROPULSION_HYBRID;
+        if (v.contains("pure")) return EcarxVehicleAdapter.CUSTOM_PROPULSION_PURE;
+        if (v.contains("power")) return EcarxVehicleAdapter.CUSTOM_PROPULSION_POWER;
+        if (v.contains("awd")) return EcarxVehicleAdapter.CUSTOM_PROPULSION_AWD;
+        return EcarxVehicleAdapter.CUSTOM_PROPULSION_COMFORT;
+    }
+
+    private static int suspensionValue(String value) {
+        String v = value.toLowerCase(Locale.ROOT);
+        if (v.contains("off")) return EcarxVehicleAdapter.COMMON_OFF;
+        if (v.contains("comfort")) return EcarxVehicleAdapter.CUSTOM_SUSPENSION_COMFORT;
+        if (v.contains("sport")) return EcarxVehicleAdapter.CUSTOM_SUSPENSION_SPORT;
+        if (v.contains("offroad")) return EcarxVehicleAdapter.CUSTOM_SUSPENSION_OFFROAD;
+        if (v.contains("snow")) return EcarxVehicleAdapter.CUSTOM_SUSPENSION_SNOW;
+        if (v.contains("auto")) return EcarxVehicleAdapter.CUSTOM_SUSPENSION_AUTOMATIC;
+        return EcarxVehicleAdapter.CUSTOM_SUSPENSION_STANDARD;
+    }
+
+    private static int steeringFeelValue(String value) {
+        String v = value.toLowerCase(Locale.ROOT);
+        if (v.contains("off")) return EcarxVehicleAdapter.COMMON_OFF;
+        if (v.contains("light")) return EcarxVehicleAdapter.CUSTOM_STEERING_LIGHT;
+        if (v.contains("heavy")) return EcarxVehicleAdapter.CUSTOM_STEERING_HEAVY;
+        return EcarxVehicleAdapter.CUSTOM_STEERING_BALANCED;
+    }
+
+    private static int climateValue(String value) {
+        String v = value.toLowerCase(Locale.ROOT);
+        if (v.contains("off")) return EcarxVehicleAdapter.COMMON_OFF;
+        if (v.contains("eco")) return EcarxVehicleAdapter.CUSTOM_CLIMATE_ECO;
+        return EcarxVehicleAdapter.CUSTOM_CLIMATE_NORMAL;
+    }
+
+    private static int energyValue(String value) {
+        String v = value.toLowerCase(Locale.ROOT);
+        if (v.contains("off")) return EcarxVehicleAdapter.COMMON_OFF;
+        if (v.contains("sport")) return EcarxVehicleAdapter.ENERGY_MODE_SPORT;
+        if (v.contains("tour")) return EcarxVehicleAdapter.ENERGY_MODE_TOUR;
+        return EcarxVehicleAdapter.ENERGY_MODE_RANGE;
+    }
+
+    private static int dimThemeValue(String value) {
+        String v = value.toLowerCase(Locale.ROOT);
+        if (v.contains("off")) return EcarxVehicleAdapter.COMMON_OFF;
+        if (v.contains("gold")) return EcarxVehicleAdapter.DIM_THEME_GOLD;
+        if (v.contains("blue")) return EcarxVehicleAdapter.DIM_THEME_BLUE;
+        return EcarxVehicleAdapter.DIM_THEME_RED;
     }
 
     private static int ambienceValue(String value) {
