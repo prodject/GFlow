@@ -901,12 +901,14 @@ public class MainActivity extends Activity {
     private Button addCommandRow(LinearLayout root, String label, String safety, String raw) {
         LinearLayout row = Ui.row(this);
         row.setTag("filter:" + label + " " + safety + " " + (raw == null ? "" : raw));
-        TextView badge = Ui.pill(this, safety, safetyColor(safety));
-        row.addView(badge);
+        if (developerModeEnabled()) {
+            TextView badge = Ui.pill(this, safety, safetyColor(safety));
+            row.addView(badge);
+        }
         Button b = Ui.button(this, commandText(label, safety, raw));
         applySafety(b, label);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 54), 1);
-        lp.setMargins(Ui.dp(this, 8), Ui.dp(this, 4), 0, Ui.dp(this, 4));
+        lp.setMargins(developerModeEnabled() ? Ui.dp(this, 8) : 0, Ui.dp(this, 4), 0, Ui.dp(this, 4));
         row.addView(b, lp);
         root.addView(row);
         return b;
