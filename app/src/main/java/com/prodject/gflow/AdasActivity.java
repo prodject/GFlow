@@ -532,9 +532,9 @@ public class AdasActivity extends Activity {
         StringBuilder raw = new StringBuilder();
         EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
         for (int functionId : functionIds) {
-            boolean supported = adapter.supports(functionId);
+            EcarxVehicleAdapter.Result result = adapter.support(functionId);
             if (support.length() > 0) support.append('\n');
-            support.append(EcarxVehicleAdapter.hex(functionId)).append(" · ").append(supported ? "support" : "unsupported");
+            support.append(result.message);
             if (raw.length() > 0) raw.append(", ");
             raw.append(EcarxVehicleAdapter.hex(functionId));
         }

@@ -521,7 +521,7 @@ public class VoiceActivity extends Activity {
     }
 
     private EcarxVehicleAdapter.Result simpleResult(String message) {
-        return new EcarxVehicleAdapter.Result(true, message);
+        return EcarxVehicleAdapter.Result.status(0, 0, message);
     }
 
     private String stripCommandPrefix(String cmd, String... prefixes) {
