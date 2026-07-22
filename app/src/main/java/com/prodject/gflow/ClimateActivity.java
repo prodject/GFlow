@@ -1,7 +1,9 @@
 package com.prodject.gflow;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.SharedPreferences;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -21,16 +23,23 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.EditText;
 import android.widget.GridLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import java.util.ArrayList;
 import java.util.Locale;
 
 public class ClimateActivity extends Activity {
+    private static final String CLIMATE_PRESETS = "climate_presets";
+    private static final String CLIMATE_PRESET_ORDER = "order";
     static final String EXTRA_MODE = "climate_mode";
     static final String MODE_ADVANCED = "advanced";
+    static final String MODE_PRESETS = "presets";
+    static final String MODE_SMART = "smart";
     private final Handler handler = new Handler(Looper.getMainLooper());
     private LinearLayout contentHost;
     private TextView topModeValue;
@@ -40,6 +49,7 @@ public class ClimateActivity extends Activity {
     private TextView passengerTempValue;
     private TextView fanValue;
     private TextView summaryValue;
+    private String editingPresetName = "";
     private Mode mode = Mode.HOME;
     private final Runnable stateTicker = new Runnable() {
         @Override public void run() {
@@ -50,7 +60,10 @@ public class ClimateActivity extends Activity {
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (MODE_ADVANCED.equals(getIntent().getStringExtra(EXTRA_MODE))) mode = Mode.ADVANCED;
+        String requestedMode = getIntent().getStringExtra(EXTRA_MODE);
+        if (MODE_ADVANCED.equals(requestedMode)) mode = Mode.ADVANCED;
+        else if (MODE_PRESETS.equals(requestedMode)) mode = Mode.PRESETS;
+        else if (MODE_SMART.equals(requestedMode)) mode = Mode.SMART;
         setContentView(buildClimateShell());
         renderContent();
         refreshState();
@@ -95,9 +108,15 @@ public class ClimateActivity extends Activity {
             contentHost.addView(buildClimateComfortPanel(), lpMatchWrap(0, 0, 0, 16));
             contentHost.addView(buildClimateMainPanel(), lpMatchWrap(0, 0, 0, 16));
             contentHost.addView(buildClimateReadbackGrid(), lpMatchWrap(0, 0, 0, 0));
-        } else {
+        } else if (mode == Mode.ADVANCED) {
             contentHost.addView(buildAdvancedPanel(), lpMatchWrap(0, 0, 0, 16));
             contentHost.addView(buildClimateReadbackGrid(), lpMatchWrap(0, 0, 0, 0));
+        } else if (mode == Mode.PRESETS) {
+            contentHost.addView(buildPresetsPanel(), lpMatchWrap(0, 0, 0, 16));
+        } else if (mode == Mode.PRESET_EDITOR) {
+            contentHost.addView(buildPresetEditorPanel(), lpMatchWrap(0, 0, 0, 16));
+        } else if (mode == Mode.SMART) {
+            contentHost.addView(buildSmartClimatePanel(), lpMatchWrap(0, 0, 0, 16));
         }
     }
 
@@ -117,7 +136,7 @@ public class ClimateActivity extends Activity {
         LinearLayout titleBlock = new LinearLayout(this);
         titleBlock.setOrientation(LinearLayout.VERTICAL);
         titleBlock.setPadding(Ui.dp(this, 16), 0, 0, 0);
-        titleBlock.addView(Ui.label(this, mode == Mode.HOME ? "HVAC / Comfort" : "HVAC / Advanced"));
+        titleBlock.addView(Ui.label(this, modeLabel()));
         TextView title = Ui.text(this, "Климат", 28, true);
         title.setPadding(0, 0, 0, 0);
         titleBlock.addView(title);
@@ -171,8 +190,8 @@ public class ClimateActivity extends Activity {
         LinearLayout actions = Ui.row(this);
         addClimateActionChip(actions, "Comfort", () -> openMode(Mode.HOME));
         addClimateActionChip(actions, "Advanced", () -> openMode(Mode.ADVANCED));
-        addClimateActionChip(actions, "Readback", this::showReadbackSheet);
-        addClimateActionChip(actions, "Quick HVAC", this::showQuickHvacSheet);
+        addClimateActionChip(actions, "Presets", () -> openMode(Mode.PRESETS));
+        addClimateActionChip(actions, "Smart", () -> openMode(Mode.SMART));
         hero.addView(actions, lpMatchWrap(0, 14, 0, 0));
         return hero;
     }
@@ -259,6 +278,177 @@ public class ClimateActivity extends Activity {
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_5),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_LEG_AND_FRONT_WINDOW)));
         panel.addView(presets, lpMatchWrap(0, 12, 0, 0));
+        return panel;
+    }
+
+    private LinearLayout buildPresetsPanel() {
+        LinearLayout panel = Ui.glassCard(this);
+        panel.addView(Ui.label(this, "Climate Presets"));
+        panel.addView(Ui.text(this, "Сохраненные пользовательские HVAC-пресеты и быстрые сценарии теперь живут внутри нового климатического экрана.", 14, false));
+        Button add = Ui.button(this, "Создать пресет");
+        add.setTextColor(Ui.primaryText(this));
+        add.setOnClickListener(v -> openPresetEditor("", defaultPresetText()));
+        panel.addView(add, lpMatchWrap(0, 12, 0, 8));
+        for (String name : climatePresetNames()) {
+            EcarxVehicleAdapter.Command[] commands = decodeCommands(getSharedPreferences(CLIMATE_PRESETS, MODE_PRIVATE).getString(name, ""));
+            if (commands.length == 0) continue;
+            panel.addView(buildSavedPresetCard(name, commands), lpMatchWrap(0, 8, 0, 0));
+        }
+        if (climatePresetNames().isEmpty()) {
+            TextView empty = Ui.text(this, "Пока нет сохраненных пресетов", 15, false);
+            empty.setTextColor(Ui.secondaryText(this));
+            panel.addView(empty, lpMatchWrap(0, 8, 0, 0));
+        }
+        return panel;
+    }
+
+    private LinearLayout buildSavedPresetCard(String label, EcarxVehicleAdapter.Command[] commands) {
+        LinearLayout card = Ui.glassCard(this);
+        card.addView(Ui.label(this, "Saved Preset"));
+        card.addView(Ui.text(this, label, 20, true));
+        TextView body = Ui.text(this, compact(encodeCommands(commands).replace('\n', ' ')), 13, false);
+        body.setTextColor(Ui.secondaryText(this));
+        card.addView(body);
+        LinearLayout row = Ui.row(this);
+        Button apply = Ui.button(this, "Применить");
+        apply.setTextColor(Ui.primaryText(this));
+        apply.setOnClickListener(v -> applyClimatePreset(commands));
+        Button edit = Ui.button(this, "Редактировать");
+        edit.setTextColor(Ui.primaryText(this));
+        edit.setOnClickListener(v -> openPresetEditor(label, encodeCommands(commands)));
+        Button delete = Ui.button(this, "Удалить");
+        delete.setTextColor(Ui.primaryText(this));
+        delete.setOnClickListener(v -> {
+            deleteClimatePreset(label);
+            renderContent();
+        });
+        row.addView(apply, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        row.addView(edit, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        row.addView(delete, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        card.addView(row, lpMatchWrap(0, 10, 0, 0));
+        return card;
+    }
+
+    private LinearLayout buildPresetEditorPanel() {
+        LinearLayout panel = Ui.glassCard(this);
+        panel.addView(Ui.label(this, "Preset Editor"));
+        panel.addView(Ui.text(this, editingPresetName.isEmpty() ? "Новый пресет" : editingPresetName, 20, true));
+        EditText name = new EditText(this);
+        name.setHint("Название");
+        name.setText(editingPresetName);
+        EditText commands = new EditText(this);
+        commands.setHint("functionId,zone,value по одной команде на строку");
+        commands.setMinLines(10);
+        commands.setText(getSharedPreferences(CLIMATE_PRESETS, MODE_PRIVATE).getString("__draft__", defaultPresetText()));
+        Button save = Ui.button(this, "Сохранить пресет");
+        save.setTextColor(Ui.primaryText(this));
+        save.setOnClickListener(v -> {
+            String presetName = name.getText().toString().trim();
+            EcarxVehicleAdapter.Command[] parsed = decodeCommands(commands.getText().toString());
+            if (presetName.isEmpty() || parsed.length == 0) {
+                Ui.toast(this, "Нужно имя и хотя бы одна команда");
+                return;
+            }
+            if (!editingPresetName.isEmpty() && !editingPresetName.equals(presetName)) deleteClimatePreset(editingPresetName);
+            saveClimatePreset(presetName, encodeCommands(parsed));
+            editingPresetName = "";
+            getSharedPreferences(CLIMATE_PRESETS, MODE_PRIVATE).edit().remove("__draft__").apply();
+            openMode(Mode.PRESETS);
+        });
+        Button cancel = Ui.button(this, "Назад к пресетам");
+        cancel.setTextColor(Ui.primaryText(this));
+        cancel.setOnClickListener(v -> {
+            editingPresetName = "";
+            getSharedPreferences(CLIMATE_PRESETS, MODE_PRIVATE).edit().remove("__draft__").apply();
+            openMode(Mode.PRESETS);
+        });
+        panel.addView(Ui.text(this, "Формат: functionId,zone,value. Можно использовать decimal или 0xHEX.", 14, false), lpMatchWrap(0, 8, 0, 8));
+        panel.addView(name);
+        panel.addView(commands, lpMatchWrap(0, 8, 0, 8));
+        panel.addView(save);
+        panel.addView(cancel, lpMatchWrap(0, 8, 0, 0));
+        commands.setOnFocusChangeListener((v, hasFocus) -> {
+            if (!hasFocus) {
+                getSharedPreferences(CLIMATE_PRESETS, MODE_PRIVATE).edit().putString("__draft__", commands.getText().toString()).apply();
+            }
+        });
+        return panel;
+    }
+
+    private LinearLayout buildSmartClimatePanel() {
+        LinearLayout panel = Ui.glassCard(this);
+        panel.addView(Ui.label(this, "Smart Climate"));
+        SharedPreferences prefs = SmartClimateController.prefs(this);
+        CheckBox enabled = new CheckBox(this);
+        enabled.setText("Контроллер включен");
+        enabled.setChecked(prefs.getBoolean(SmartClimateController.KEY_ENABLED, false));
+        EditText modeField = new EditText(this);
+        modeField.setHint("off / fast_cool / fast_heat / stabilize / maintain / dry / summer");
+        modeField.setText(prefs.getString(SmartClimateController.KEY_MODE, SmartClimateController.MODE_OFF));
+        EditText cabin = new EditText(this);
+        cabin.setHint("Fallback: температура салона");
+        cabin.setText(String.valueOf(prefs.getFloat(SmartClimateController.KEY_CABIN_TEMP, 26.0f)));
+        EditText outside = new EditText(this);
+        outside.setHint("Fallback: внешняя температура");
+        outside.setText(String.valueOf(prefs.getFloat(SmartClimateController.KEY_OUTSIDE_TEMP, 26.0f)));
+        EditText driverTarget = new EditText(this);
+        driverTarget.setHint("Цель водительской зоны");
+        driverTarget.setText(String.valueOf(prefs.getFloat(SmartClimateController.KEY_DRIVER_TARGET, 22.0f)));
+        EditText passengerTarget = new EditText(this);
+        passengerTarget.setHint("Цель пассажирской зоны");
+        passengerTarget.setText(String.valueOf(prefs.getFloat(SmartClimateController.KEY_PASSENGER_TARGET, 22.0f)));
+        EditText engineMinutes = new EditText(this);
+        engineMinutes.setHint("Минуты работы двигателя");
+        engineMinutes.setText(String.valueOf(prefs.getInt(SmartClimateController.KEY_ENGINE_MINUTES, 0)));
+        CheckBox fogging = new CheckBox(this);
+        fogging.setText("Запотевание стекол");
+        fogging.setChecked(prefs.getBoolean(SmartClimateController.KEY_FOGGING, false));
+        CheckBox call = new CheckBox(this);
+        call.setText("Активный звонок");
+        call.setChecked(prefs.getBoolean(SmartClimateController.KEY_CALL_ACTIVE, false));
+        CheckBox dryAfterTrip = new CheckBox(this);
+        dryAfterTrip.setText("Просушка после поездки");
+        dryAfterTrip.setChecked(prefs.getBoolean(SmartClimateController.KEY_DRY_AFTER_TRIP, true));
+        panel.addView(enabled);
+        panel.addView(modeField, lpMatchWrap(0, 8, 0, 0));
+        panel.addView(cabin, lpMatchWrap(0, 8, 0, 0));
+        panel.addView(outside, lpMatchWrap(0, 8, 0, 0));
+        panel.addView(driverTarget, lpMatchWrap(0, 8, 0, 0));
+        panel.addView(passengerTarget, lpMatchWrap(0, 8, 0, 0));
+        panel.addView(engineMinutes, lpMatchWrap(0, 8, 0, 0));
+        panel.addView(fogging);
+        panel.addView(call);
+        panel.addView(dryAfterTrip);
+        Button save = Ui.button(this, "Сохранить Smart climate");
+        save.setTextColor(Ui.primaryText(this));
+        save.setOnClickListener(v -> {
+            prefs.edit()
+                    .putBoolean(SmartClimateController.KEY_ENABLED, enabled.isChecked())
+                    .putString(SmartClimateController.KEY_MODE, modeField.getText().toString().trim())
+                    .putFloat(SmartClimateController.KEY_CABIN_TEMP, AutomationEngine.parseFloat(cabin.getText().toString(), 26.0f))
+                    .putFloat(SmartClimateController.KEY_OUTSIDE_TEMP, AutomationEngine.parseFloat(outside.getText().toString(), 26.0f))
+                    .putFloat(SmartClimateController.KEY_DRIVER_TARGET, AutomationEngine.parseFloat(driverTarget.getText().toString(), 22.0f))
+                    .putFloat(SmartClimateController.KEY_PASSENGER_TARGET, AutomationEngine.parseFloat(passengerTarget.getText().toString(), 22.0f))
+                    .putInt(SmartClimateController.KEY_ENGINE_MINUTES, AutomationEngine.parseInt(engineMinutes.getText().toString(), 0))
+                    .putBoolean(SmartClimateController.KEY_FOGGING, fogging.isChecked())
+                    .putBoolean(SmartClimateController.KEY_CALL_ACTIVE, call.isChecked())
+                    .putBoolean(SmartClimateController.KEY_DRY_AFTER_TRIP, dryAfterTrip.isChecked())
+                    .apply();
+            Ui.toast(this, "Smart climate сохранен");
+            refreshState();
+        });
+        Button run = Ui.button(this, "Контроллер: шаг сейчас");
+        run.setTextColor(Ui.primaryText(this));
+        run.setOnClickListener(v -> {
+            save.performClick();
+            new AlertDialog.Builder(this)
+                    .setTitle("Smart climate")
+                    .setMessage(AutomationEngine.runSmartClimate(this))
+                    .setPositiveButton("OK", null)
+                    .show();
+        });
+        panel.addView(save, lpMatchWrap(0, 8, 0, 0));
+        panel.addView(run, lpMatchWrap(0, 8, 0, 0));
         return panel;
     }
 
@@ -455,9 +645,14 @@ public class ClimateActivity extends Activity {
                 new QuickItem("Front Max", () -> command(EcarxVehicleAdapter.HVAC_DEFROST_FRONT_MAX, EcarxVehicleAdapter.COMMON_ON))
         });
         addDockButton(dock, "Smart", () -> command(EcarxVehicleAdapter.HVAC_AI_POWER, EcarxVehicleAdapter.COMMON_ON), false, new QuickItem[]{
-                new QuickItem("Smart climate", () -> command(EcarxVehicleAdapter.HVAC_AI_POWER, EcarxVehicleAdapter.COMMON_ON)),
+                new QuickItem("Smart climate", () -> openMode(Mode.SMART)),
                 new QuickItem("Rapid Cool", () -> command(EcarxVehicleAdapter.HVAC_RAPID_COOLING, EcarxVehicleAdapter.COMMON_ON)),
                 new QuickItem("Rapid Warm", () -> command(EcarxVehicleAdapter.HVAC_RAPID_WARMING, EcarxVehicleAdapter.COMMON_ON))
+        });
+        addDockButton(dock, "Пресеты", () -> openMode(Mode.PRESETS), mode == Mode.PRESETS || mode == Mode.PRESET_EDITOR, new QuickItem[]{
+                new QuickItem("Presets", () -> openMode(Mode.PRESETS)),
+                new QuickItem("Создать", () -> openPresetEditor("", defaultPresetText())),
+                new QuickItem("Comfort", () -> openMode(Mode.HOME))
         });
         addDockButton(dock, "Расширенно", () -> openMode(Mode.ADVANCED), mode == Mode.ADVANCED, new QuickItem[]{
                 new QuickItem("Advanced", () -> openMode(Mode.ADVANCED)),
@@ -490,6 +685,12 @@ public class ClimateActivity extends Activity {
         mode = next;
         renderContent();
         refreshState();
+    }
+
+    private void openPresetEditor(String name, String commandsText) {
+        editingPresetName = name;
+        getSharedPreferences(CLIMATE_PRESETS, MODE_PRIVATE).edit().putString("__draft__", commandsText).apply();
+        openMode(Mode.PRESET_EDITOR);
     }
 
     private void showQuickHvacSheet() {
@@ -648,6 +849,86 @@ public class ClimateActivity extends Activity {
         return line.length() > 72 ? line.substring(0, 72) : line;
     }
 
+    private String modeLabel() {
+        if (mode == Mode.ADVANCED) return "HVAC / Advanced";
+        if (mode == Mode.PRESETS) return "HVAC / Presets";
+        if (mode == Mode.PRESET_EDITOR) return "HVAC / Preset Editor";
+        if (mode == Mode.SMART) return "HVAC / Smart";
+        return "HVAC / Comfort";
+    }
+
+    private String defaultPresetText() {
+        return EcarxVehicleAdapter.hex(EcarxVehicleAdapter.HVAC_POWER) + ",0," + EcarxVehicleAdapter.hex(EcarxVehicleAdapter.COMMON_ON) + "\n"
+                + EcarxVehicleAdapter.hex(EcarxVehicleAdapter.HVAC_AUTO) + ",0," + EcarxVehicleAdapter.hex(EcarxVehicleAdapter.COMMON_ON) + "\n"
+                + EcarxVehicleAdapter.hex(EcarxVehicleAdapter.HVAC_FAN_SPEED) + ",0," + EcarxVehicleAdapter.hex(EcarxVehicleAdapter.FAN_SPEED_3);
+    }
+
+    private void saveClimatePreset(String name, String encoded) {
+        SharedPreferences prefs = getSharedPreferences(CLIMATE_PRESETS, MODE_PRIVATE);
+        ArrayList<String> names = climatePresetNames();
+        if (!names.contains(name)) names.add(name);
+        prefs.edit().putString(name, encoded).putString(CLIMATE_PRESET_ORDER, join(names)).apply();
+    }
+
+    private void deleteClimatePreset(String name) {
+        ArrayList<String> names = climatePresetNames();
+        names.remove(name);
+        getSharedPreferences(CLIMATE_PRESETS, MODE_PRIVATE).edit().remove(name).putString(CLIMATE_PRESET_ORDER, join(names)).apply();
+    }
+
+    private ArrayList<String> climatePresetNames() {
+        String order = getSharedPreferences(CLIMATE_PRESETS, MODE_PRIVATE).getString(CLIMATE_PRESET_ORDER, "");
+        ArrayList<String> names = new ArrayList<>();
+        for (String item : order.split("\n")) {
+            String name = item.trim();
+            if (!name.isEmpty()) names.add(name);
+        }
+        return names;
+    }
+
+    private String encodeCommands(EcarxVehicleAdapter.Command[] commands) {
+        StringBuilder sb = new StringBuilder();
+        for (EcarxVehicleAdapter.Command command : commands) {
+            sb.append(EcarxVehicleAdapter.hex(command.functionId))
+                    .append(",")
+                    .append(command.zone)
+                    .append(",")
+                    .append(EcarxVehicleAdapter.hex(command.value))
+                    .append("\n");
+        }
+        return sb.toString();
+    }
+
+    private EcarxVehicleAdapter.Command[] decodeCommands(String raw) {
+        ArrayList<EcarxVehicleAdapter.Command> commands = new ArrayList<>();
+        for (String line : raw.split("\n")) {
+            String clean = line.trim();
+            if (clean.isEmpty() || clean.startsWith("#")) continue;
+            String[] parts = clean.split(",");
+            if (parts.length < 2) continue;
+            try {
+                int functionId = parseNumber(parts[0]);
+                int zone = parts.length > 2 ? parseNumber(parts[1]) : 0;
+                int value = parseNumber(parts.length > 2 ? parts[2] : parts[1]);
+                commands.add(new EcarxVehicleAdapter.Command(functionId, zone, value));
+            } catch (Exception ignored) {
+            }
+        }
+        return commands.toArray(new EcarxVehicleAdapter.Command[0]);
+    }
+
+    private int parseNumber(String raw) {
+        String value = raw.trim().toLowerCase(Locale.ROOT);
+        if (value.startsWith("0x")) return (int) Long.parseLong(value.substring(2), 16);
+        return Integer.parseInt(value);
+    }
+
+    private String join(ArrayList<String> names) {
+        StringBuilder sb = new StringBuilder();
+        for (String name : names) sb.append(name).append("\n");
+        return sb.toString();
+    }
+
     private void animatePulse(View view) {
         view.animate().scaleX(1.04f).scaleY(1.04f).setDuration(110).setInterpolator(new DecelerateInterpolator()).withEndAction(
                 () -> view.animate().scaleX(1f).scaleY(1f).setDuration(180).setInterpolator(new DecelerateInterpolator()).start()
@@ -666,7 +947,10 @@ public class ClimateActivity extends Activity {
 
     private enum Mode {
         HOME,
-        ADVANCED
+        ADVANCED,
+        PRESETS,
+        PRESET_EDITOR,
+        SMART
     }
 
     private static final class QuickItem {

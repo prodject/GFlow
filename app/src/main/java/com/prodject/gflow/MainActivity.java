@@ -38,8 +38,6 @@ public class MainActivity extends Activity {
     private static final String KEY_HOME_WEATHER_DESC = "home_weather_desc";
     private static final String KEY_HOME_WEATHER_WIND = "home_weather_wind";
     private static final String KEY_HOME_WEATHER_AT = "home_weather_at";
-    private static final String CLIMATE_PRESETS = "climate_presets";
-    private static final String CLIMATE_PRESET_ORDER = "order";
     private static final String[] RUNTIME_PERMS = {
             Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO
     };
@@ -368,8 +366,8 @@ public class MainActivity extends Activity {
         dock.setPadding(Ui.dp(this, 18), Ui.dp(this, 14), Ui.dp(this, 18), Ui.dp(this, 14));
         addDockButton(dock, "Климат", this::showClimateMenu, true, new QuickAction[]{
                 new QuickAction("Открыть климат", this::showClimateMenu),
-                new QuickAction("Умный климат", this::showSmartClimate),
-                new QuickAction("Пресеты климата", this::showClimate)
+                new QuickAction("Умный климат", this::showClimateSmart),
+                new QuickAction("Пресеты климата", this::showClimatePresets)
         });
         addDockButton(dock, "360", this::openParkingScreen, false, new QuickAction[]{
                 new QuickAction("Парковка", this::openParkingScreen),
@@ -1064,13 +1062,7 @@ public class MainActivity extends Activity {
     }
 
     private void showClimateMenu() {
-        LinearLayout root = menuRoot("Климат", "Основной путь - новый `ClimateActivity`: comfort, advanced HVAC, readback, sheets и детальный control flow без legacy fallback.");
-        addNavGrid(root, new NavItem[]{
-                new NavItem("Комфортная панель", "Температура, сиденья, руль и быстрые HVAC-пресеты", "AUTO", Ui.BLUE, this::showComfortClimate),
-                new NavItem("Умный климат", "Автоматические алгоритмы охлаждения, нагрева и просушки", "AI", Color.rgb(41, 136, 150), this::showSmartClimate),
-                new NavItem("Пресеты климата", "Comfort flow и готовые HVAC-сценарии в новом экране", "PRE", Ui.GREEN, this::showComfortClimate),
-                new NavItem("Все HVAC-команды", "Advanced HVAC и readback теперь открываются внутри нового climate-экрана", "DEV", Color.rgb(86, 104, 120), this::showClimateAdvanced)
-        });
+        startActivity(new Intent(this, ClimateActivity.class));
     }
 
     private void showVehicleMenu() {
@@ -1760,23 +1752,6 @@ public class MainActivity extends Activity {
         root.addView(b);
     }
 
-    private void addSavedClimatePreset(LinearLayout root, String label, EcarxVehicleAdapter.Command[] commands) {
-        Button b = Ui.button(this, "Сохраненный: " + label);
-        b.setOnClickListener(v -> runPreset(root, label, commands));
-        b.setOnLongClickListener(v -> {
-            String[] actions = {"Редактировать", "Удалить"};
-            new AlertDialog.Builder(this).setTitle(label).setItems(actions, (d, which) -> {
-                if (which == 0) showClimatePresetEditor(label, encodeCommands(commands));
-                else {
-                    deleteClimatePreset(label);
-                    showClimate();
-                }
-            }).show();
-            return true;
-        });
-        root.addView(b);
-    }
-
     private void runPreset(LinearLayout root, String label, EcarxVehicleAdapter.Command... commands) {
         EcarxVehicleAdapter.Result[] results = new EcarxVehicleAdapter(this).setAll(commands);
         StringBuilder sb = new StringBuilder(label).append("\n");
@@ -1978,336 +1953,30 @@ public class MainActivity extends Activity {
         if (!oldName.isEmpty()) root.addView(delete);
     }
 
-    private void showSmartClimate() {
-        LinearLayout root = commandRoot("Умный кондиционер");
-        SharedPreferences prefs = SmartClimateController.prefs(this);
-        addSmartClimatePanel(root, prefs);
-        CheckBox enabled = new CheckBox(this);
-        enabled.setText("Контроллер включен");
-        enabled.setTextSize(16);
-        enabled.setChecked(prefs.getBoolean(SmartClimateController.KEY_ENABLED, false));
-        EditText mode = new EditText(this);
-        mode.setHint("off / fast_cool / fast_heat / stabilize / maintain / dry / summer");
-        mode.setText(prefs.getString(SmartClimateController.KEY_MODE, SmartClimateController.MODE_OFF));
-        EditText cabin = new EditText(this);
-        cabin.setHint("Fallback: температура салона");
-        cabin.setText(String.valueOf(prefs.getFloat(SmartClimateController.KEY_CABIN_TEMP, 26.0f)));
-        EditText outside = new EditText(this);
-        outside.setHint("Fallback: внешняя температура");
-        outside.setText(String.valueOf(prefs.getFloat(SmartClimateController.KEY_OUTSIDE_TEMP, 26.0f)));
-        EditText driverTarget = new EditText(this);
-        driverTarget.setHint("Цель водительской зоны");
-        driverTarget.setText(String.valueOf(prefs.getFloat(SmartClimateController.KEY_DRIVER_TARGET, 22.0f)));
-        EditText passengerTarget = new EditText(this);
-        passengerTarget.setHint("Цель пассажирской зоны");
-        passengerTarget.setText(String.valueOf(prefs.getFloat(SmartClimateController.KEY_PASSENGER_TARGET, 22.0f)));
-        EditText engineMinutes = new EditText(this);
-        engineMinutes.setHint("Минуты работы двигателя");
-        engineMinutes.setText(String.valueOf(prefs.getInt(SmartClimateController.KEY_ENGINE_MINUTES, 0)));
-        CheckBox fogging = new CheckBox(this);
-        fogging.setText("Запотевание стекол");
-        fogging.setChecked(prefs.getBoolean(SmartClimateController.KEY_FOGGING, false));
-        CheckBox call = new CheckBox(this);
-        call.setText("Активный звонок");
-        call.setChecked(prefs.getBoolean(SmartClimateController.KEY_CALL_ACTIVE, false));
-        CheckBox dryAfterTrip = new CheckBox(this);
-        dryAfterTrip.setText("Просушка после поездки");
-        dryAfterTrip.setChecked(prefs.getBoolean(SmartClimateController.KEY_DRY_AFTER_TRIP, true));
-        Button save = Ui.button(this, "Сохранить настройки");
-        save.setOnClickListener(v -> {
-            prefs.edit()
-                    .putBoolean(SmartClimateController.KEY_ENABLED, enabled.isChecked())
-                    .putString(SmartClimateController.KEY_MODE, mode.getText().toString().trim())
-                    .putFloat(SmartClimateController.KEY_CABIN_TEMP, AutomationEngine.parseFloat(cabin.getText().toString(), 26.0f))
-                    .putFloat(SmartClimateController.KEY_OUTSIDE_TEMP, AutomationEngine.parseFloat(outside.getText().toString(), 26.0f))
-                    .putFloat(SmartClimateController.KEY_DRIVER_TARGET, AutomationEngine.parseFloat(driverTarget.getText().toString(), 22.0f))
-                    .putFloat(SmartClimateController.KEY_PASSENGER_TARGET, AutomationEngine.parseFloat(passengerTarget.getText().toString(), 22.0f))
-                    .putInt(SmartClimateController.KEY_ENGINE_MINUTES, AutomationEngine.parseInt(engineMinutes.getText().toString(), 0))
-                    .putBoolean(SmartClimateController.KEY_FOGGING, fogging.isChecked())
-                    .putBoolean(SmartClimateController.KEY_CALL_ACTIVE, call.isChecked())
-                    .putBoolean(SmartClimateController.KEY_DRY_AFTER_TRIP, dryAfterTrip.isChecked())
-                    .apply();
-            Ui.toast(this, "Smart climate сохранен");
-        });
-        Button run = Ui.button(this, "Контроллер: шаг сейчас");
-        run.setOnClickListener(v -> {
-            save.performClick();
-            root.addView(Ui.text(this, AutomationEngine.runSmartClimate(this), 13, false), 2);
-        });
-        Button resetCooldown = Ui.button(this, "Сбросить минутный cooldown");
-        resetCooldown.setOnClickListener(v -> {
-            prefs.edit().putLong(SmartClimateController.KEY_LAST_APPLY_AT, 0L).apply();
-            Ui.toast(this, "Cooldown сброшен");
-        });
-        Button dry = Ui.button(this, "Просушка сейчас");
-        dry.setOnClickListener(v -> root.addView(Ui.text(this, SmartClimateController.dryAfterTrip(this), 13, false), 2));
-        Button log = Ui.button(this, "Журнал климата");
-        log.setOnClickListener(v -> panel("Журнал умного климата", SmartClimateController.log(this)));
-        Button signals = Ui.button(this, "Статус сигналов авто");
-        signals.setOnClickListener(v -> panel("Сигналы авто", VehicleSignalStateAdapter.lastStatus(this)));
-        root.addView(Ui.text(this, "Режимы: off, fast_cool, fast_heat, stabilize, maintain, dry, summer. Контроллер читает реальные sensor-сигналы через AdaptAPI, а поля салон/улица используются как fallback.", 14, false));
-        root.addView(enabled);
-        root.addView(mode);
-        root.addView(cabin);
-        root.addView(outside);
-        root.addView(driverTarget);
-        root.addView(passengerTarget);
-        root.addView(engineMinutes);
-        root.addView(fogging);
-        root.addView(call);
-        root.addView(dryAfterTrip);
-        root.addView(save);
-        root.addView(run);
-        root.addView(resetCooldown);
-        root.addView(dry);
-        root.addView(log);
-        root.addView(signals);
-    }
-
     private void showCar() {
         startActivity(new Intent(this, VehicleActivity.class));
-    }
-
-    private void showClimate() {
-        LinearLayout root = commandRoot("Климат");
-        addClimateControlPanel(root);
-        addScreenMap(root, "Карта вкладки", "Верхняя часть - комфортный климат и пресеты. Далее идут базовое включение, температура, вентилятор, рециркуляция, обдув и дополнительные HVAC-функции.",
-                "Пресеты", "Температура", "Обдув", "Сиденья");
-        root.addView(Ui.text(this, "HVAC-функции из IHvac.smali и OneOS-Dock: обычные int-команды плюс float-температура driver zone=1 / passenger zone=4.", 14, false));
-        addDiagnostic(root, "HVAC", EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.HVAC_AC, EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.HVAC_CIRCULATION, EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.HVAC_TEMP_MIN, EcarxVehicleAdapter.HVAC_TEMP_MAX, EcarxVehicleAdapter.HVAC_TEMP_STEP);
-        addDiagnostic(root, "HVAC расширенный", EcarxVehicleAdapter.HVAC_TEMP_DUAL, EcarxVehicleAdapter.HVAC_TEMP_UNIT, EcarxVehicleAdapter.HVAC_DISPLAY_WINDOW_TAB, EcarxVehicleAdapter.HVAC_AQS_SWITCH, EcarxVehicleAdapter.HVAC_CO2_SWITCH, EcarxVehicleAdapter.HVAC_IONS_SWITCH, EcarxVehicleAdapter.HVAC_AIR_FRAGRANCE, EcarxVehicleAdapter.HVAC_FILTER_ELEMENT_LIFE, EcarxVehicleAdapter.HVAC_MODULE_CONNECT_STATUS);
-        addFloatDiagnostic(root, "Температура driver/passenger", EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT);
-        addZoneDiagnostic(root, "Подогрев сидений", EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.ZONE_ROW_2_LEFT, EcarxVehicleAdapter.ZONE_ROW_2_RIGHT);
-        addZoneDiagnostic(root, "Вентиляция сидений", EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT);
-        Ui.section(root, "Быстрый комфорт", "Комфортная панель и редактор пресетов. Это основной пользовательский путь для климата.");
-        Button comfortPanel = Ui.button(this, "Комфортный климат");
-        comfortPanel.setOnClickListener(v -> showComfortClimate());
-        root.addView(comfortPanel);
-        Button editor = Ui.button(this, "Создать / редактировать пресет");
-        editor.setOnClickListener(v -> showClimatePresetEditor("", defaultPresetText()));
-        root.addView(editor);
-        for (String name : climatePresetNames()) {
-            EcarxVehicleAdapter.Command[] commands = decodeCommands(getSharedPreferences(CLIMATE_PRESETS, MODE_PRIVATE).getString(name, ""));
-            if (commands.length > 0) addSavedClimatePreset(root, name, commands);
-        }
-        Ui.section(root, "Готовые пресеты", "Комфорт, охлаждение и зима отправляют несколько HVAC-команд подряд.");
-        addPreset(root, "Пресет Комфорт",
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_ON),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_AUTO, EcarxVehicleAdapter.COMMON_ON),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_AC, EcarxVehicleAdapter.COMMON_ON),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_3),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_CIRCULATION, EcarxVehicleAdapter.CIRCULATION_OUTSIDE));
-        addPreset(root, "Пресет Охлаждение",
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_ON),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_AC, EcarxVehicleAdapter.COMMON_ON),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_AC_MAX, EcarxVehicleAdapter.COMMON_ON),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_5),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_LEVEL_2));
-        addPreset(root, "Пресет Зима",
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_ON),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_DEFROST_FRONT, EcarxVehicleAdapter.COMMON_ON),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_DEFROST_REAR, EcarxVehicleAdapter.COMMON_ON),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_LEVEL_2),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT, EcarxVehicleAdapter.WHEEL_HEAT_MID));
-        Ui.section(root, "Основной климат", "Питание HVAC, A/C, Auto, Eco, вентилятор, рециркуляция и направление обдува.");
-        addCommand(root, "Климат включить", EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(root, "Климат выключить", EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_OFF);
-        addCommand(root, "A/C включить", EcarxVehicleAdapter.HVAC_AC, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(root, "A/C выключить", EcarxVehicleAdapter.HVAC_AC, EcarxVehicleAdapter.COMMON_OFF);
-        addCommand(root, "A/C Max", EcarxVehicleAdapter.HVAC_AC_MAX, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(root, "Auto climate", EcarxVehicleAdapter.HVAC_AUTO, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(root, "Eco climate", EcarxVehicleAdapter.HVAC_ECO, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(root, "Вентилятор 1", EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_1);
-        addCommand(root, "Вентилятор 2", EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_2);
-        addCommand(root, "Вентилятор 3", EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_3);
-        addCommand(root, "Вентилятор 4", EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_4);
-        addCommand(root, "Вентилятор 5", EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_5);
-        addCommand(root, "Вентилятор 6", EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_6);
-        addCommand(root, "Вентилятор 7", EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_7);
-        addCommand(root, "Вентилятор 8", EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_8);
-        addCommand(root, "Вентилятор 9", EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_9);
-        addCommand(root, "Вентилятор auto", EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_AUTO);
-        addCommand(root, "Рециркуляция внутренняя", EcarxVehicleAdapter.HVAC_CIRCULATION, EcarxVehicleAdapter.CIRCULATION_INNER);
-        addCommand(root, "Рециркуляция внешняя", EcarxVehicleAdapter.HVAC_CIRCULATION, EcarxVehicleAdapter.CIRCULATION_OUTSIDE);
-        addCommand(root, "Рециркуляция auto", EcarxVehicleAdapter.HVAC_CIRCULATION, EcarxVehicleAdapter.CIRCULATION_AUTO);
-        addCommand(root, "Обдув лицо", EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_FACE);
-        addCommand(root, "Обдув ноги", EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_LEG);
-        addCommand(root, "Обдув лицо+ноги", EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_FACE_AND_LEG);
-        addCommand(root, "Обдув стекло", EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_FRONT_WINDOW);
-        addCommand(root, "Обдув лицо+стекло", EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_FACE_AND_FRONT_WINDOW);
-        addCommand(root, "Обдув ноги+стекло", EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_LEG_AND_FRONT_WINDOW);
-        addCommand(root, "Обдув все", EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_ALL);
-        addCommand(root, "Обдув auto", EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_AUTO);
-        addCommand(root, "Обдув лобового", EcarxVehicleAdapter.HVAC_DEFROST_FRONT, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(root, "Max обдув лобового", EcarxVehicleAdapter.HVAC_DEFROST_FRONT_MAX, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(root, "Обогрев заднего стекла", EcarxVehicleAdapter.HVAC_DEFROST_REAR, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(root, "Климат зона single", EcarxVehicleAdapter.HVAC_CLIMATE_ZONE, EcarxVehicleAdapter.CLIMATE_ZONE_SINGLE);
-        addCommand(root, "Климат зона dual", EcarxVehicleAdapter.HVAC_CLIMATE_ZONE, EcarxVehicleAdapter.CLIMATE_ZONE_DUAL);
-        addCommand(root, "Климат зона triple", EcarxVehicleAdapter.HVAC_CLIMATE_ZONE, EcarxVehicleAdapter.CLIMATE_ZONE_TRIPLE);
-        addCommand(root, "Климат зона four", EcarxVehicleAdapter.HVAC_CLIMATE_ZONE, EcarxVehicleAdapter.CLIMATE_ZONE_FOUR);
-        addCommand(root, "Температура dual sync", EcarxVehicleAdapter.HVAC_TEMP_DUAL, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(root, "Температура dual split", EcarxVehicleAdapter.HVAC_TEMP_DUAL, EcarxVehicleAdapter.COMMON_OFF);
-        addCommand(root, "Температура Celsius", EcarxVehicleAdapter.HVAC_TEMP_UNIT, EcarxVehicleAdapter.TEMP_UNIT_C);
-        addCommand(root, "Температура Fahrenheit", EcarxVehicleAdapter.HVAC_TEMP_UNIT, EcarxVehicleAdapter.TEMP_UNIT_F);
-        addFloatCommand(root, "Driver temp 18.0C", EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, 18.0f);
-        addFloatCommand(root, "Driver temp 20.0C", EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, 20.0f);
-        addFloatCommand(root, "Driver temp 22.0C", EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, 22.0f);
-        addFloatCommand(root, "Driver temp 24.0C", EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, 24.0f);
-        addFloatCommand(root, "Passenger temp 18.0C", EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, 18.0f);
-        addFloatCommand(root, "Passenger temp 20.0C", EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, 20.0f);
-        addFloatCommand(root, "Passenger temp 22.0C", EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, 22.0f);
-        addFloatCommand(root, "Passenger temp 24.0C", EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, 24.0f);
-        addCommand(root, "Открыть левую температуру", EcarxVehicleAdapter.HVAC_DISPLAY_WINDOW_TAB, EcarxVehicleAdapter.DISPLAY_WINDOW_TAB_LEFT_TEMP);
-        addCommand(root, "Открыть правую температуру", EcarxVehicleAdapter.HVAC_DISPLAY_WINDOW_TAB, EcarxVehicleAdapter.DISPLAY_WINDOW_TAB_RIGHT_TEMP);
-        addCommand(root, "Открыть вкладку сидений", EcarxVehicleAdapter.HVAC_DISPLAY_WINDOW_TAB, EcarxVehicleAdapter.DISPLAY_WINDOW_TAB_SEAT);
-        addCommand(root, "Hardkey левая температура", EcarxVehicleAdapter.HVAC_HARDKEY, EcarxVehicleAdapter.HVAC_HARDKEY_LEFT_TEMP);
-        addCommand(root, "Hardkey правая температура", EcarxVehicleAdapter.HVAC_HARDKEY, EcarxVehicleAdapter.HVAC_HARDKEY_RIGHT_TEMP);
-        addCommand(root, "Hardkey temp sync", EcarxVehicleAdapter.HVAC_HARDKEY, EcarxVehicleAdapter.HVAC_HARDKEY_TEMP_SYNC);
-        addCommand(root, "Hardkey fan up", EcarxVehicleAdapter.HVAC_HARDKEY, EcarxVehicleAdapter.HVAC_HARDKEY_FAN_UP);
-        addCommand(root, "Hardkey fan down", EcarxVehicleAdapter.HVAC_HARDKEY, EcarxVehicleAdapter.HVAC_HARDKEY_FAN_DOWN);
-        addCommand(root, "Быстрое охлаждение", EcarxVehicleAdapter.HVAC_RAPID_COOLING, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(root, "Быстрый прогрев", EcarxVehicleAdapter.HVAC_RAPID_WARMING, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(root, "Климат second row auto", EcarxVehicleAdapter.HVAC_AUTO_SECOND_ROW_CLIMATE, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(root, "Климат lock on", EcarxVehicleAdapter.HVAC_CLIMATE_LOCK, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(root, "Климат lock off", EcarxVehicleAdapter.HVAC_CLIMATE_LOCK, EcarxVehicleAdapter.COMMON_OFF);
-        addCommand(root, "AQS on", EcarxVehicleAdapter.HVAC_AQS_SWITCH, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(root, "CO2 control on", EcarxVehicleAdapter.HVAC_CO2_SWITCH, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(root, "Ionizer on", EcarxVehicleAdapter.HVAC_IONS_SWITCH, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(root, "Auto dehumidification on", EcarxVehicleAdapter.HVAC_AUTO_DEHUMIDIFICATION, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(root, "Overheat protection on", EcarxVehicleAdapter.HVAC_OVERHEAT_PROTECTION, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(root, "Air fragrance on", EcarxVehicleAdapter.HVAC_AIR_FRAGRANCE, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(root, "G-Clean on", EcarxVehicleAdapter.HVAC_G_CLEAN, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(root, "Auto ventilation dry", EcarxVehicleAdapter.HVAC_AUTOMATIC_VENTILATION_DRY, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(root, "Pre-climatisation on", EcarxVehicleAdapter.HVAC_PRE_CLIMATISATION, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(root, "Post-climatisation on", EcarxVehicleAdapter.HVAC_POST_CLIMATISATION, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(root, "Direction focus", EcarxVehicleAdapter.HVAC_DIRECTION_MODE, EcarxVehicleAdapter.DIRECTION_MODE_FOCUS);
-        addCommand(root, "Direction avoid", EcarxVehicleAdapter.HVAC_DIRECTION_MODE, EcarxVehicleAdapter.DIRECTION_MODE_AVOID);
-        addCommand(root, "Sweeping all", EcarxVehicleAdapter.HVAC_SWEEPING_MODE, EcarxVehicleAdapter.SWEEPING_MODE_ALL);
-        addCommand(root, "Sweeping custom", EcarxVehicleAdapter.HVAC_SWEEPING_MODE, EcarxVehicleAdapter.SWEEPING_MODE_CUSTOM);
-        addCommand(root, "Подогрев сиденья ур.1", EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.SEAT_LEVEL_1);
-        addZoneCommands(root, "Подогрев сиденья ур.1", EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.SEAT_LEVEL_1, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.ZONE_ROW_2_LEFT, EcarxVehicleAdapter.ZONE_ROW_2_RIGHT);
-        addZoneCommands(root, "Подогрев сиденья off", EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.COMMON_OFF, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.ZONE_ROW_2_LEFT, EcarxVehicleAdapter.ZONE_ROW_2_RIGHT);
-        addCommand(root, "Вентиляция сиденья ур.1", EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, EcarxVehicleAdapter.SEAT_LEVEL_1);
-        addZoneCommands(root, "Вентиляция сиденья ур.1", EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, EcarxVehicleAdapter.SEAT_LEVEL_1, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT);
-        addZoneCommands(root, "Вентиляция сиденья off", EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, EcarxVehicleAdapter.COMMON_OFF, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT);
-        addCommand(root, "Массаж сиденья ур.1", EcarxVehicleAdapter.HVAC_SEAT_MASSAGE, EcarxVehicleAdapter.SEAT_LEVEL_1);
-        addZoneCommands(root, "Массаж сиденья ур.1", EcarxVehicleAdapter.HVAC_SEAT_MASSAGE, EcarxVehicleAdapter.SEAT_LEVEL_1, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT);
-        addZoneCommands(root, "Массаж сиденья off", EcarxVehicleAdapter.HVAC_SEAT_MASSAGE, EcarxVehicleAdapter.COMMON_OFF, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT);
-        addCommand(root, "Подогрев руля low", EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT, EcarxVehicleAdapter.WHEEL_HEAT_LOW);
-        addCommand(root, "Подогрев руля off", EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT, EcarxVehicleAdapter.COMMON_OFF);
     }
 
     private void showComfortClimate() {
         startActivity(new Intent(this, ClimateActivity.class));
     }
 
+    private void showClimatePresets() {
+        Intent intent = new Intent(this, ClimateActivity.class);
+        intent.putExtra(ClimateActivity.EXTRA_MODE, ClimateActivity.MODE_PRESETS);
+        startActivity(intent);
+    }
+
+    private void showClimateSmart() {
+        Intent intent = new Intent(this, ClimateActivity.class);
+        intent.putExtra(ClimateActivity.EXTRA_MODE, ClimateActivity.MODE_SMART);
+        startActivity(intent);
+    }
+
     private void showClimateAdvanced() {
         Intent intent = new Intent(this, ClimateActivity.class);
         intent.putExtra(ClimateActivity.EXTRA_MODE, ClimateActivity.MODE_ADVANCED);
         startActivity(intent);
-    }
-
-    private void showClimatePresetEditor(String oldName, String commandsText) {
-        LinearLayout form = Ui.root(this, "Пресет климата");
-        EditText name = new EditText(this);
-        name.setHint("Название");
-        name.setText(oldName);
-        EditText commands = new EditText(this);
-        commands.setHint("functionId,zone,value по одной команде на строку");
-        commands.setMinLines(8);
-        commands.setText(commandsText);
-        Button save = Ui.button(this, "Сохранить");
-        Button cancel = Ui.button(this, "Назад");
-        save.setOnClickListener(v -> {
-            String presetName = name.getText().toString().trim();
-            EcarxVehicleAdapter.Command[] parsed = decodeCommands(commands.getText().toString());
-            if (presetName.isEmpty() || parsed.length == 0) {
-                Ui.toast(this, "Нужно имя и хотя бы одна команда");
-                return;
-            }
-            if (!oldName.isEmpty() && !oldName.equals(presetName)) deleteClimatePreset(oldName);
-            saveClimatePreset(presetName, encodeCommands(parsed));
-            showClimate();
-        });
-        cancel.setOnClickListener(v -> showClimate());
-        form.addView(Ui.text(this, "Формат: functionId,zone,value. Можно писать decimal или 0xHEX.", 14, false));
-        form.addView(name);
-        form.addView(commands);
-        form.addView(save);
-        form.addView(cancel);
-        setContentView(form);
-    }
-
-    private String defaultPresetText() {
-        return EcarxVehicleAdapter.hex(EcarxVehicleAdapter.HVAC_POWER) + ",0," + EcarxVehicleAdapter.hex(EcarxVehicleAdapter.COMMON_ON) + "\n"
-                + EcarxVehicleAdapter.hex(EcarxVehicleAdapter.HVAC_AUTO) + ",0," + EcarxVehicleAdapter.hex(EcarxVehicleAdapter.COMMON_ON) + "\n"
-                + EcarxVehicleAdapter.hex(EcarxVehicleAdapter.HVAC_FAN_SPEED) + ",0," + EcarxVehicleAdapter.hex(EcarxVehicleAdapter.FAN_SPEED_3);
-    }
-
-    private void saveClimatePreset(String name, String encoded) {
-        SharedPreferences prefs = getSharedPreferences(CLIMATE_PRESETS, MODE_PRIVATE);
-        ArrayList<String> names = climatePresetNames();
-        if (!names.contains(name)) names.add(name);
-        prefs.edit().putString(name, encoded).putString(CLIMATE_PRESET_ORDER, join(names)).apply();
-    }
-
-    private void deleteClimatePreset(String name) {
-        ArrayList<String> names = climatePresetNames();
-        names.remove(name);
-        getSharedPreferences(CLIMATE_PRESETS, MODE_PRIVATE).edit().remove(name).putString(CLIMATE_PRESET_ORDER, join(names)).apply();
-    }
-
-    private ArrayList<String> climatePresetNames() {
-        String order = getSharedPreferences(CLIMATE_PRESETS, MODE_PRIVATE).getString(CLIMATE_PRESET_ORDER, "");
-        ArrayList<String> names = new ArrayList<>();
-        for (String item : order.split("\n")) {
-            String name = item.trim();
-            if (!name.isEmpty()) names.add(name);
-        }
-        return names;
-    }
-
-    private String encodeCommands(EcarxVehicleAdapter.Command[] commands) {
-        StringBuilder sb = new StringBuilder();
-        for (EcarxVehicleAdapter.Command command : commands) {
-            sb.append(EcarxVehicleAdapter.hex(command.functionId))
-                    .append(",")
-                    .append(command.zone)
-                    .append(",")
-                    .append(EcarxVehicleAdapter.hex(command.value))
-                    .append("\n");
-        }
-        return sb.toString();
-    }
-
-    private EcarxVehicleAdapter.Command[] decodeCommands(String raw) {
-        ArrayList<EcarxVehicleAdapter.Command> commands = new ArrayList<>();
-        for (String line : raw.split("\n")) {
-            String clean = line.trim();
-            if (clean.isEmpty() || clean.startsWith("#")) continue;
-            String[] parts = clean.split(",");
-            if (parts.length < 2) continue;
-            try {
-                int functionId = parseNumber(parts[0]);
-                int zone = parts.length > 2 ? parseNumber(parts[1]) : 0;
-                int value = parseNumber(parts.length > 2 ? parts[2] : parts[1]);
-                commands.add(new EcarxVehicleAdapter.Command(functionId, zone, value));
-            } catch (Exception ignored) {
-            }
-        }
-        return commands.toArray(new EcarxVehicleAdapter.Command[0]);
-    }
-
-    private int parseNumber(String raw) {
-        String value = raw.trim().toLowerCase(Locale.ROOT);
-        if (value.startsWith("0x")) return (int) Long.parseLong(value.substring(2), 16);
-        return Integer.parseInt(value);
-    }
-
-    private String join(ArrayList<String> names) {
-        StringBuilder sb = new StringBuilder();
-        for (String name : names) sb.append(name).append("\n");
-        return sb.toString();
     }
 
     private void showParkingApa() {
