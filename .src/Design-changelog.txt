@@ -102,10 +102,11 @@
 - Добавлен новый vehicle shell в стиле `Design.txt`: top bar, hero-panel, body controls, status cards, bottom dock.
 - Внутри нового экрана добавлены быстрые действия для замков, окон, люка, шторки, зеркал, света и drive mode.
 - Добавлен собственный визуальный блок автомобиля для body/access сценариев.
-
-Сделано частично:
-- Экран покрывает основной сценарий `Автомобиль / Кузов`, но пока не разбит глубже на отдельные вложенные подэкраны сидений, зеркал, освещения и профилей.
-- Legacy `showCar()` в `MainActivity` пока остаётся как расширенный/raw fallback для старых команд и диагностики.
+- `VehicleActivity` расширен до полноценного многоэкранного раздела: `Body`, `Seats`, `Mirrors`, `Lights`, `Drive`.
+- Внутри нового экрана добавлены вложенные flow для сидений и memory, зеркал и roof, света и внешних сигналов, drive modes / steering / custom keys.
+- Добавлены `bottom sheets` и context actions для body/seat/mirror/light/drive сценариев.
+- Добавлен live readback по кузову, свету, drive/seats и roof/mirror прямо в новом экране.
+- Legacy `showCar()` в `MainActivity` больше не используется как пользовательский raw fallback и теперь только перенаправляет в новый `VehicleActivity`.
 
 Осталось по `Design.txt`:
 - Экран `DVR / Камеры`.
