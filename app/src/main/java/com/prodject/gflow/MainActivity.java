@@ -322,9 +322,19 @@ public class MainActivity extends Activity {
 
             if (ambienceMode && lightScene != null) {
                 drawBitmapFit(canvas, lightScene, new RectF(w * 0.02f, h * 0.04f, w * 0.98f, h * 0.88f), 255);
-                paint.setStyle(Paint.Style.FILL);
-                paint.setColor(Color.argb(96, Color.red(accent), Color.green(accent), Color.blue(accent)));
-                canvas.drawRoundRect(new RectF(w * 0.14f, h * 0.30f, w * 0.86f, h * 0.66f), dp(42), dp(42), paint);
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setStrokeCap(Paint.Cap.ROUND);
+                paint.setColor(Color.argb(190, Color.red(accent), Color.green(accent), Color.blue(accent)));
+                paint.setStrokeWidth(dp(5));
+                Path glow = new Path();
+                glow.moveTo(w * 0.24f, h * 0.54f);
+                glow.cubicTo(w * 0.36f, h * 0.43f, w * 0.64f, h * 0.43f, w * 0.76f, h * 0.54f);
+                canvas.drawPath(glow, paint);
+                paint.setStrokeWidth(dp(7));
+                canvas.drawLine(w * 0.30f, h * 0.64f, w * 0.70f, h * 0.64f, paint);
+                paint.setColor(Color.argb(70, Color.red(accent), Color.green(accent), Color.blue(accent)));
+                paint.setStrokeWidth(dp(18));
+                canvas.drawLine(w * 0.32f, h * 0.66f, w * 0.68f, h * 0.66f, paint);
                 if (lightup != null) drawBitmapFit(canvas, lightup, new RectF(w * 0.03f, h * 0.02f, w * 0.97f, h * 0.88f), 218);
                 drawTouchHint(canvas, "Цвет подсветки", w * 0.50f, h * 0.92f, accent);
                 return;
