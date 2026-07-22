@@ -1953,10 +1953,6 @@ public class MainActivity extends Activity {
         if (!oldName.isEmpty()) root.addView(delete);
     }
 
-    private void showCar() {
-        startActivity(new Intent(this, VehicleActivity.class));
-    }
-
     private void showComfortClimate() {
         startActivity(new Intent(this, ClimateActivity.class));
     }
