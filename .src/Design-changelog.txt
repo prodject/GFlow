@@ -150,6 +150,7 @@
 - Парковочные ассистенты больше не считаются хвостом legacy ADAS: переход в parking-сценарии идет в отдельный `ParkingActivity`.
 - Experimental ADAS-команды, preset `Highway assist ready`, support/readback-карточки и export diagnostics перенесены в новый UI `AdasActivity`.
 - Legacy `showAdas()` и связанные raw/helper-ветки удалены из `MainActivity`.
+- В `AdasActivity` расширен `Experimental ADAS` блок: добавлены читаемые pilot/traffic controls для `AI Assist Default`, `Overtake Lane Exit`, `Traffic Light Assist`, `Traffic Light Sound`, `Paddle Lane Assist` и `TLB mode`, а `APB mode` и `Speed Warning mode` вынесены в readback/raw subsection без выдуманного selector.
 
 Осталось по `Design.txt`:
 - Экран `DVR / Камеры`.

@@ -298,6 +298,50 @@ public class AdasActivity extends Activity {
         addActionChip(warning, "Both", () -> sendVehicle("AI lane warning both", EcarxVehicleAdapter.ADAS_AI_LANE_CHANGE_WARNING, EcarxVehicleAdapter.AI_LANE_CHANGE_WARNING_BOTH));
         addActionChip(warning, "Preset", this::installHighwayAssistPreset);
         panel.addView(warning, lpMatchWrap(0, 12, 0, 0));
+
+        panel.addView(buildReadableExperimentalAssistPanel(), lpMatchWrap(0, 16, 0, 0));
+        return panel;
+    }
+
+    private LinearLayout buildReadableExperimentalAssistPanel() {
+        LinearLayout panel = Ui.glassCard(this);
+        panel.addView(Ui.label(this, "Pilot / Traffic Assist"));
+        panel.addView(Ui.muted(this, "Здесь вынесены только те функции, для которых понятен сценарий взаимодействия: toggle, понятный selector или явный readback-only режим."));
+
+        GridLayout toggles = new GridLayout(this);
+        toggles.setColumnCount(2);
+        addTile(toggles, "AI Assist Default", Color.rgb(93, 156, 255), () -> sendVehicle("AI Assist default on", EcarxVehicleAdapter.ADAS_AI_ASSIST_DEFAULT_ON, EcarxVehicleAdapter.COMMON_ON));
+        addTile(toggles, "Overtake Lane Exit", Color.rgb(108, 194, 255), () -> sendVehicle("Overtaking lane exit assist", EcarxVehicleAdapter.ADAS_AI_ASSIST_OUT_OVERTAKING_LANE, EcarxVehicleAdapter.COMMON_ON));
+        addTile(toggles, "Traffic Light Assist", Color.rgb(255, 179, 64), () -> sendVehicle("Traffic light attention", EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION, EcarxVehicleAdapter.COMMON_ON));
+        addTile(toggles, "Traffic Light Sound", Color.rgb(255, 142, 98), () -> sendVehicle("Traffic light attention sound", EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION_SOUND, EcarxVehicleAdapter.COMMON_ON));
+        addTile(toggles, "Paddle Lane Assist", Color.rgb(156, 128, 255), () -> sendVehicle("Paddle lane change assist", EcarxVehicleAdapter.ADAS_PADDLE_LANE_CHANGE_ASSIST, EcarxVehicleAdapter.COMMON_ON));
+        addTile(toggles, "Speed Warning", Color.rgb(103, 198, 157), () -> sendVehicle("Speed limit warning", EcarxVehicleAdapter.ADAS_SPEED_LIMIT_WARN, EcarxVehicleAdapter.COMMON_ON));
+        panel.addView(toggles, lpMatchWrap(0, 12, 0, 0));
+
+        LinearLayout togglesOff = Ui.row(this);
+        addActionChip(togglesOff, "AI Default Off", () -> sendVehicle("AI Assist default off", EcarxVehicleAdapter.ADAS_AI_ASSIST_DEFAULT_ON, EcarxVehicleAdapter.COMMON_OFF));
+        addActionChip(togglesOff, "Lane Exit Off", () -> sendVehicle("Overtaking lane exit off", EcarxVehicleAdapter.ADAS_AI_ASSIST_OUT_OVERTAKING_LANE, EcarxVehicleAdapter.COMMON_OFF));
+        addActionChip(togglesOff, "Light Sound Off", () -> sendVehicle("Traffic light sound off", EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION_SOUND, EcarxVehicleAdapter.COMMON_OFF));
+        addActionChip(togglesOff, "Paddle Off", () -> sendVehicle("Paddle lane assist off", EcarxVehicleAdapter.ADAS_PADDLE_LANE_CHANGE_ASSIST, EcarxVehicleAdapter.COMMON_OFF));
+        panel.addView(togglesOff, lpMatchWrap(0, 12, 0, 0));
+
+        LinearLayout tlbModes = Ui.row(this);
+        addActionChip(tlbModes, "TLB Low", () -> sendVehicle("Traffic light brake mode low", EcarxVehicleAdapter.ADAS_TLB_MODE, EcarxVehicleAdapter.TLB_MODE_LOW));
+        addActionChip(tlbModes, "TLB Mid", () -> sendVehicle("Traffic light brake mode middle", EcarxVehicleAdapter.ADAS_TLB_MODE, EcarxVehicleAdapter.TLB_MODE_MIDDLE));
+        addActionChip(tlbModes, "TLB High", () -> sendVehicle("Traffic light brake mode high", EcarxVehicleAdapter.ADAS_TLB_MODE, EcarxVehicleAdapter.TLB_MODE_HIGH));
+        addActionChip(tlbModes, "TLB Off", () -> sendVehicle("Traffic light brake mode off", EcarxVehicleAdapter.ADAS_TLB_MODE, EcarxVehicleAdapter.COMMON_OFF));
+        panel.addView(tlbModes, lpMatchWrap(0, 12, 0, 0));
+
+        LinearLayout summary = new LinearLayout(this);
+        summary.setOrientation(LinearLayout.VERTICAL);
+        summary.addView(Ui.muted(this, "APB mode и speed warning mode оставлены как readback/raw controls: в текущем коде есть ID, но нет подтвержденных enum-значений, поэтому пользовательский selector для них пока не выдумывается."), lpMatchWrap(0, 0, 0, 8));
+        summary.addView(diagnosticCard("Pilot mode readback",
+                EcarxVehicleAdapter.ADAS_APB_MODE,
+                EcarxVehicleAdapter.ADAS_SPEED_LIMIT_WARNING_MODE,
+                EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION,
+                EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION_SOUND,
+                EcarxVehicleAdapter.ADAS_PADDLE_LANE_CHANGE_ASSIST));
+        panel.addView(summary);
         return panel;
     }
 
