@@ -468,3 +468,20 @@
 
 Осталось по `Design.txt`:
 - Экран `Настройки`.
+
+2026-07-22
+
+Этап 24: Экран Настройки
+
+Сделано:
+- Создан отдельный `SettingsActivity` для экрана `Настройки`.
+- `SettingsActivity` полностью переведен на новый shell в стиле `Design.txt`: top bar, hero-panel, overview grid, general settings panel, updates panel, diagnostics panel и bottom dock.
+- В general settings вынесены `Experimental features toggle`, `Developer diagnostics toggle`, `Theme`, `Accent color` и `Start screen`.
+- В updates flow перенесены `проверить GitHub releases`, поиск APK asset, `скачать APK` и `установить скачанный APK`.
+- В diagnostics flow перенесены `автодиагностика`, генерация `gflow-diagnostics.txt` и отправка лога.
+- Все основные входы из `MainActivity` на `Настройки` переведены на новый `SettingsActivity`.
+- Legacy встроенный settings/update/diagnostics shell удален из `MainActivity`.
+- `SettingsActivity` подключен в `AndroidManifest.xml`.
+
+Осталось по `Design.txt`:
+- Основные экраны по `Design.txt` закрыты полностью.

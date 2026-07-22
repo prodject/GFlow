@@ -57,6 +57,7 @@
         <activity android:name=".DesktopActivity" android:exported="false" />
         <activity android:name=".WeatherActivity" android:exported="false" />
         <activity android:name=".AdbShellActivity" android:exported="false" />
+        <activity android:name=".SettingsActivity" android:exported="false" />
         <activity android:name=".DvrActivity" android:exported="false" />
         <activity android:name=".TextViewerActivity" android:exported="false" />
         <activity android:name=".MediaViewerActivity" android:exported="false" />
