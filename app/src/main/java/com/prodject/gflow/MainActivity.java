@@ -709,13 +709,7 @@ public class MainActivity extends Activity {
     }
 
     private void showHudMenu() {
-        LinearLayout root = menuRoot("HUD / OneOS", "HUD, DIM и media bridge разделены по назначению. Service-мосты оставлены для проверки интеграции.");
-        addNavGrid(root, new NavItem[]{
-                new NavItem("HUD display", "Проектор, calibration и отображаемые блоки", "HUD", Color.rgb(58, 106, 156), this::showHud),
-                new NavItem("DIM bridge", "Day/night, presentation, tabs, navigation и volume", "DIM", Ui.BLUE, this::showHud),
-                new NavItem("Media bridge", "MediaSession и AudioExt publishing", "MED", Color.rgb(119, 83, 132), this::showHud),
-                new NavItem("Services", "HUD service, observer и Cluster bridge", "SVC", Color.rgb(86, 104, 120), this::showHud)
-        });
+        startActivity(new Intent(this, HudActivity.class));
     }
 
     private void showSettings() {

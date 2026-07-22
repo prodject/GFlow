@@ -218,3 +218,32 @@
 - Экран `Текст`.
 - Экран `ADB / Система`.
 - Экран `Настройки`.
+
+2026-07-22
+
+Этап 7: Экран HUD / Cluster / OneOS
+
+Сделано:
+- Создан отдельный `HudActivity` для экрана `HUD / Cluster / OneOS`.
+- `showHudMenu()` в `MainActivity` теперь только открывает `HudActivity`.
+- `HudActivity` подключен в `AndroidManifest.xml`.
+- Добавлен новый HUD shell в стиле `Design.txt`: top bar, hero-panel, projection controls, status cards, bottom dock.
+- Внутри нового экрана добавлены быстрые действия для HUD, navigation/media/safety display, DIM night, presentation, tab switching и сервисов.
+- Добавлен отдельный визуальный projection-блок.
+
+Сделано частично:
+- Новый экран покрывает основной пользовательский сценарий HUD / DIM / Cluster, но raw-команды OneOS, AudioExt и полная диагностика пока оставлены в legacy fallback внутри `MainActivity`.
+- Media bridge и service-monitoring пока не вынесены в отдельные вложенные экраны.
+
+Осталось по `Design.txt`:
+- Экран `Автоматизация`.
+- Экран `Профили`.
+- Экран `Кнопки руля`.
+- Экран `Голос`.
+- Экран `Рабочий стол`.
+- Экран `Браузер / Погода`.
+- Экран `Файлы`.
+- Экран `Медиа`.
+- Экран `Текст`.
+- Экран `ADB / Система`.
+- Экран `Настройки`.
