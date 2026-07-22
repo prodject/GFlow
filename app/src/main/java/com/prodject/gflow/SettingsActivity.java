@@ -26,6 +26,8 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Date;
+import java.util.Map;
+import java.util.Set;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -36,11 +38,15 @@ public class SettingsActivity extends Activity {
     private static final String KEY_ACCENT = "accent_color";
     private static final String KEY_THEME_MODE = "theme_mode";
     private static final String KEY_START_SCREEN = "start_screen";
+    private static final int REQ_CREATE_BACKUP = 4101;
+    private static final int REQ_RESTORE_BACKUP = 4102;
 
     private LinearLayout contentHost;
     private String releaseState = "Источник: github.com/prodject/GFlow/releases";
     private String diagnosticsState = "Проверяет AdaptAPI availability, support/readback по HVAC/BCM/ADAS/HUD/seat и формирует лог.";
+    private String systemState = "Backup / restore / reset приложения.";
     private final String[] latestApkUrl = {""};
+    private byte[] pendingBackupBytes;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -54,6 +60,14 @@ public class SettingsActivity extends Activity {
         super.onResume();
         latestApkUrl[0] = prefs().getString("latest_apk_url", "");
         renderContent();
+    }
+
+    @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode != RESULT_OK || data == null || data.getData() == null) return;
+        Uri uri = data.getData();
+        if (requestCode == REQ_CREATE_BACKUP) writeBackupToUri(uri);
+        else if (requestCode == REQ_RESTORE_BACKUP) restoreBackupFromUri(uri);
     }
 
     private View buildShell() {
@@ -81,6 +95,7 @@ public class SettingsActivity extends Activity {
         contentHost.removeAllViews();
         contentHost.addView(buildOverviewGrid(), lpMatchWrap(0, 0, 0, 16));
         contentHost.addView(buildGeneralPanel(), lpMatchWrap(0, 0, 0, 16));
+        contentHost.addView(buildSystemPanel(), lpMatchWrap(0, 0, 0, 16));
         contentHost.addView(buildUpdatesPanel(), lpMatchWrap(0, 0, 0, 16));
         contentHost.addView(buildDiagnosticsPanel(), lpMatchWrap(0, 0, 0, 16));
     }
@@ -144,15 +159,15 @@ public class SettingsActivity extends Activity {
         row.addView(badge, badgeLp);
         hero.addView(row);
 
-        TextView state = Ui.text(this, releaseState + "\n" + diagnosticsState, 15, true);
+        TextView state = Ui.text(this, systemState + "\n" + releaseState + "\n" + diagnosticsState, 15, true);
         state.setPadding(0, Ui.dp(this, 12), 0, Ui.dp(this, 4));
         hero.addView(state);
 
         LinearLayout quick = Ui.row(this);
         addActionChip(quick, "Experimental", () -> toggleBoolean(KEY_EXPERIMENTAL_FEATURES));
         addActionChip(quick, "Developer", () -> toggleBoolean(KEY_DEVELOPER_MODE));
-        addActionChip(quick, "Check release", this::checkRelease);
-        addActionChip(quick, "Diagnostics", this::runAutoDiagnostics);
+        addActionChip(quick, "Backup", this::startBackupFlow);
+        addActionChip(quick, "Restore", this::startRestoreFlow);
         hero.addView(quick, lpMatchWrap(0, 14, 0, 0));
         return hero;
     }
@@ -187,6 +202,20 @@ public class SettingsActivity extends Activity {
         panel.addView(buildChoiceRow("Theme", KEY_THEME_MODE, new String[]{"dark", "light", "auto"}), lpMatchWrap(0, 12, 0, 0));
         panel.addView(buildChoiceRow("Accent", KEY_ACCENT, new String[]{"blue", "amber", "green"}), lpMatchWrap(0, 12, 0, 0));
         panel.addView(buildChoiceRow("Start screen", KEY_START_SCREEN, new String[]{"Главная", "Климат", "Автомобиль", "Рабочий стол"}), lpMatchWrap(0, 12, 0, 0));
+        return panel;
+    }
+
+    private LinearLayout buildSystemPanel() {
+        LinearLayout panel = Ui.glassCard(this);
+        panel.addView(Ui.label(this, "Система"));
+        panel.addView(Ui.text(this, "Резервная копия всех настроек/профилей/сценариев в JSON, восстановление из файла и полная очистка приложения с последующим uninstall-flow.", 14, false));
+        panel.addView(Ui.muted(this, systemState), lpMatchWrap(0, 8, 0, 0));
+
+        LinearLayout row = Ui.row(this);
+        addActionChip(row, "Сделать backup", this::startBackupFlow);
+        addActionChip(row, "Восстановить", this::startRestoreFlow);
+        addActionChip(row, "Полная очистка", this::confirmFullReset);
+        panel.addView(row, lpMatchWrap(0, 12, 0, 0));
         return panel;
     }
 
@@ -243,6 +272,7 @@ public class SettingsActivity extends Activity {
         dock.setGravity(Gravity.CENTER_VERTICAL);
         dock.setPadding(Ui.dp(this, 18), Ui.dp(this, 14), Ui.dp(this, 18), Ui.dp(this, 14));
         addDockButton(dock, "General", () -> renderContent(), false);
+        addDockButton(dock, "System", this::startBackupFlow, false);
         addDockButton(dock, "Updates", this::checkRelease, false);
         addDockButton(dock, "Diagnostics", this::runAutoDiagnostics, false);
         addDockButton(dock, "Back", this::finish, false);
@@ -406,6 +436,206 @@ public class SettingsActivity extends Activity {
         } finally {
             connection.disconnect();
         }
+    }
+
+    private void startBackupFlow() {
+        try {
+            pendingBackupBytes = buildBackupJson().toString(2).getBytes("UTF-8");
+            Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            intent.setType("application/json");
+            intent.putExtra(Intent.EXTRA_TITLE, "gflow-backup-" + System.currentTimeMillis() + ".json");
+            startActivityForResult(intent, REQ_CREATE_BACKUP);
+        } catch (Exception e) {
+            systemState = "Ошибка backup: " + e.getMessage();
+            renderContent();
+        }
+    }
+
+    private void startRestoreFlow() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("application/json");
+        startActivityForResult(intent, REQ_RESTORE_BACKUP);
+    }
+
+    private void writeBackupToUri(Uri uri) {
+        if (pendingBackupBytes == null || uri == null) return;
+        try (OutputStream out = getContentResolver().openOutputStream(uri, "w")) {
+            if (out == null) throw new IOException("Не удалось открыть файл");
+            out.write(pendingBackupBytes);
+            out.flush();
+            systemState = "Backup сохранен: " + uri;
+            pendingBackupBytes = null;
+            renderContent();
+        } catch (Exception e) {
+            systemState = "Ошибка записи backup: " + e.getMessage();
+            renderContent();
+        }
+    }
+
+    private void restoreBackupFromUri(Uri uri) {
+        new Thread(() -> {
+            try (InputStream in = getContentResolver().openInputStream(uri); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+                if (in == null) throw new IOException("Не удалось открыть backup");
+                byte[] buf = new byte[8192];
+                for (int n; (n = in.read(buf)) > 0; ) out.write(buf, 0, n);
+                JSONObject root = new JSONObject(out.toString("UTF-8"));
+                applyBackupJson(root);
+                runOnUiThread(() -> {
+                    systemState = "Backup восстановлен: " + uri;
+                    renderContent();
+                });
+            } catch (Exception e) {
+                runOnUiThread(() -> {
+                    systemState = "Ошибка восстановления: " + e.getMessage();
+                    renderContent();
+                });
+            }
+        }).start();
+    }
+
+    private JSONObject buildBackupJson() throws Exception {
+        JSONObject root = new JSONObject();
+        root.put("format", "gflow-backup");
+        root.put("version", 1);
+        root.put("package", getPackageName());
+        root.put("createdAt", System.currentTimeMillis());
+        JSONObject prefsRoot = new JSONObject();
+        File dir = new File(getApplicationInfo().dataDir, "shared_prefs");
+        File[] files = dir.listFiles((d, name) -> name.endsWith(".xml"));
+        if (files != null) {
+            for (File file : files) {
+                String name = file.getName().substring(0, file.getName().length() - 4);
+                SharedPreferences sp = getSharedPreferences(name, MODE_PRIVATE);
+                JSONObject prefsJson = new JSONObject();
+                for (Map.Entry<String, ?> entry : sp.getAll().entrySet()) {
+                    prefsJson.put(entry.getKey(), encodeValue(entry.getValue()));
+                }
+                prefsRoot.put(name, prefsJson);
+            }
+        }
+        root.put("sharedPrefs", prefsRoot);
+        return root;
+    }
+
+    private JSONObject encodeValue(Object value) throws Exception {
+        JSONObject obj = new JSONObject();
+        if (value instanceof Boolean) {
+            obj.put("type", "boolean");
+            obj.put("value", value);
+        } else if (value instanceof Integer) {
+            obj.put("type", "int");
+            obj.put("value", value);
+        } else if (value instanceof Long) {
+            obj.put("type", "long");
+            obj.put("value", value);
+        } else if (value instanceof Float) {
+            obj.put("type", "float");
+            obj.put("value", value);
+        } else if (value instanceof Set) {
+            obj.put("type", "string_set");
+            JSONArray arr = new JSONArray();
+            for (Object item : (Set<?>) value) arr.put(String.valueOf(item));
+            obj.put("value", arr);
+        } else {
+            obj.put("type", "string");
+            obj.put("value", value == null ? "" : String.valueOf(value));
+        }
+        return obj;
+    }
+
+    private void applyBackupJson(JSONObject root) throws Exception {
+        JSONObject prefsRoot = root.getJSONObject("sharedPrefs");
+        clearAllSharedPrefs();
+        JSONArray names = prefsRoot.names();
+        if (names == null) return;
+        for (int i = 0; i < names.length(); i++) {
+            String prefsName = names.getString(i);
+            JSONObject prefsJson = prefsRoot.getJSONObject(prefsName);
+            SharedPreferences.Editor editor = getSharedPreferences(prefsName, MODE_PRIVATE).edit().clear();
+            JSONArray keys = prefsJson.names();
+            if (keys != null) {
+                for (int j = 0; j < keys.length(); j++) {
+                    String key = keys.getString(j);
+                    JSONObject value = prefsJson.getJSONObject(key);
+                    applyValue(editor, key, value);
+                }
+            }
+            editor.apply();
+        }
+    }
+
+    private void applyValue(SharedPreferences.Editor editor, String key, JSONObject value) throws Exception {
+        String type = value.optString("type", "string");
+        if ("boolean".equals(type)) editor.putBoolean(key, value.getBoolean("value"));
+        else if ("int".equals(type)) editor.putInt(key, value.getInt("value"));
+        else if ("long".equals(type)) editor.putLong(key, value.getLong("value"));
+        else if ("float".equals(type)) editor.putFloat(key, (float) value.getDouble("value"));
+        else if ("string_set".equals(type)) {
+            JSONArray arr = value.getJSONArray("value");
+            java.util.LinkedHashSet<String> set = new java.util.LinkedHashSet<>();
+            for (int i = 0; i < arr.length(); i++) set.add(arr.getString(i));
+            editor.putStringSet(key, set);
+        } else editor.putString(key, value.optString("value", ""));
+    }
+
+    private void clearAllSharedPrefs() {
+        File dir = new File(getApplicationInfo().dataDir, "shared_prefs");
+        File[] files = dir.listFiles((d, name) -> name.endsWith(".xml"));
+        if (files == null) return;
+        for (File file : files) {
+            String name = file.getName().substring(0, file.getName().length() - 4);
+            getSharedPreferences(name, MODE_PRIVATE).edit().clear().apply();
+        }
+    }
+
+    private void confirmFullReset() {
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("Полная очистка приложения")
+                .setMessage("Будут удалены все настройки, профили, сценарии, логи, кэш и внутренние файлы. После этого откроется uninstall-flow приложения.")
+                .setPositiveButton("Очистить", (d, w) -> performFullReset())
+                .setNegativeButton("Отмена", null)
+                .show();
+    }
+
+    private void performFullReset() {
+        new Thread(() -> {
+            try {
+                clearAllSharedPrefs();
+                deleteRecursive(getFilesDir());
+                deleteRecursive(getCacheDir());
+                deleteRecursive(getExternalFilesDir(null));
+                deleteRecursive(getExternalCacheDir());
+                File diagnostics = new File(getCacheDir(), "gflow-diagnostics.txt");
+                if (diagnostics.exists()) diagnostics.delete();
+                runOnUiThread(() -> {
+                    systemState = "Очистка завершена, запускаю uninstall...";
+                    renderContent();
+                    launchUninstallFlow();
+                });
+            } catch (Exception e) {
+                runOnUiThread(() -> {
+                    systemState = "Ошибка полной очистки: " + e.getMessage();
+                    renderContent();
+                });
+            }
+        }).start();
+    }
+
+    private void launchUninstallFlow() {
+        Intent uninstall = new Intent(Intent.ACTION_DELETE, Uri.parse("package:" + getPackageName()));
+        uninstall.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(uninstall);
+    }
+
+    private void deleteRecursive(File file) {
+        if (file == null || !file.exists()) return;
+        if (file.isDirectory()) {
+            File[] children = file.listFiles();
+            if (children != null) for (File child : children) deleteRecursive(child);
+        }
+        file.delete();
     }
 
     private void addActionChip(LinearLayout row, String label, Runnable action) {
