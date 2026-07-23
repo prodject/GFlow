@@ -15,6 +15,8 @@ import android.widget.*;
 import java.util.*;
 
 final class Ui {
+    private static final String APP_SETTINGS = "app_settings";
+    private static final String KEY_THEME_MODE = "theme_mode";
     static final int BLACK = Color.rgb(18, 20, 22);
     static final int TEXT_MUTED = Color.rgb(96, 103, 110);
     static final int LINE = Color.rgb(220, 225, 229);
@@ -35,6 +37,10 @@ final class Ui {
     static final int ERROR = Color.parseColor("#FF4D4D");
 
     static boolean dark(Context c) {
+        SharedPreferences prefs = c.getSharedPreferences(APP_SETTINGS, Context.MODE_PRIVATE);
+        String mode = prefs.getString(KEY_THEME_MODE, "auto");
+        if ("dark".equals(mode)) return true;
+        if ("light".equals(mode)) return false;
         return (c.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
     }
 

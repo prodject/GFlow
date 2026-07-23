@@ -28,6 +28,10 @@ public class DvrActivity extends Activity {
         Button stop = Ui.button(this, "Стоп записи");
         Button save = Ui.button(this, "Сохранить настройки DVR");
         Button refresh = Ui.button(this, "Обновить камеры/архив");
+        styleActionButton(start);
+        styleActionButton(stop);
+        styleActionButton(save);
+        styleActionButton(refresh);
         status = Ui.text(this, "", 14, false);
         LinearLayout hero = Ui.card(this);
         hero.addView(Ui.text(this, "Камеры и архив", 22, true));
@@ -139,6 +143,7 @@ public class DvrActivity extends Activity {
 
     private void addEvs(String label, int cameraId, boolean open) {
         Button b = Ui.button(this, label);
+        styleActionButton(b);
         b.setOnClickListener(v -> {
             EcarxDvrAdapter adapter = new EcarxDvrAdapter(this);
             EcarxDvrAdapter.Result result = open ? adapter.openEvs(cameraId) : adapter.closeEvs(cameraId);
@@ -152,6 +157,7 @@ public class DvrActivity extends Activity {
 
     private void addDvr(String label, DvrCall call) {
         Button b = Ui.button(this, label);
+        styleActionButton(b);
         b.setOnClickListener(v -> {
             EcarxDvrAdapter.Result result = call.run(new EcarxDvrAdapter(this));
             Ui.toast(this, result.success ? "DVR команда выполнена" : "DVR ошибка");
@@ -214,6 +220,14 @@ public class DvrActivity extends Activity {
         e.setSingleLine(true);
         e.setPadding(Ui.dp(this, 14), 0, Ui.dp(this, 14), 0);
         e.setBackground(Ui.cardBg(this, Ui.panel(this), Ui.dp(this, 14), Ui.lineColor(this)));
+    }
+
+    private void styleActionButton(Button button) {
+        button.setTextColor(Ui.dark(this) ? Color.WHITE : Ui.primaryText(this));
+        button.setBackground(Ui.cardBg(this,
+                Ui.dark(this) ? Color.rgb(39, 45, 51) : Color.argb(246, 248, 251, 255),
+                Ui.dp(this, 16),
+                Ui.dark(this) ? Color.rgb(62, 70, 78) : Color.argb(120, 185, 198, 214)));
     }
 
     private LinearLayout.LayoutParams margin(int l, int t, int r, int b) {
