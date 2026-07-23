@@ -109,7 +109,7 @@ public class AutomationActivity extends Activity {
         bar.setPadding(Ui.dp(this, 20), Ui.dp(this, 10), Ui.dp(this, 20), Ui.dp(this, 10));
 
         Button back = Ui.button(this, "Назад");
-        Ui.press(back, () -> {
+        Ui.bindPress(back, () -> {
             if (mode == Mode.HOME) finish();
             else openMode(Mode.HOME);
         });
@@ -589,7 +589,7 @@ public class AutomationActivity extends Activity {
         LinearLayout card = Ui.glassCard(this);
         card.addView(Ui.label(this, title));
         card.addView(Ui.text(this, value, 15, false));
-        Ui.press(card, action);
+        Ui.bindPress(card, action);
         View accent = new View(this);
         accent.setBackground(Ui.glassPill(this, color));
         LinearLayout.LayoutParams accentLp = new LinearLayout.LayoutParams(Ui.dp(this, 72), Ui.dp(this, 6));
@@ -623,7 +623,7 @@ public class AutomationActivity extends Activity {
         tile.setGravity(Gravity.CENTER);
         tile.setPadding(Ui.dp(this, 12), Ui.dp(this, 16), Ui.dp(this, 12), Ui.dp(this, 16));
         tile.setBackground(Ui.cardBg(this, Color.argb(88, Color.red(color), Color.green(color), Color.blue(color)), Ui.dp(this, 22), Color.argb(80, 255, 255, 255)));
-        Ui.press(tile, action);
+        Ui.bindPress(tile, action);
         GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
         lp.width = 0;
         lp.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
@@ -635,7 +635,7 @@ public class AutomationActivity extends Activity {
         Button b = Ui.button(this, label);
         b.setTextColor(Color.WHITE);
         b.setBackground(Ui.cardBg(this, Color.argb(70, 255, 255, 255), Ui.dp(this, 18), Color.TRANSPARENT));
-        Ui.press(b, action);
+        Ui.bindPress(b, action);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 58), 1f);
         lp.leftMargin = Ui.dp(this, 6);
         lp.rightMargin = Ui.dp(this, 6);
@@ -650,7 +650,7 @@ public class AutomationActivity extends Activity {
                 active ? Color.argb(115, 77, 163, 255) : Color.argb(54, 255, 255, 255),
                 Ui.dp(this, 20),
                 active ? Color.argb(100, 77, 163, 255) : Color.TRANSPARENT));
-        Ui.press(button, action);
+        Ui.bindPress(button, action);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f);
         lp.leftMargin = Ui.dp(this, 6);
         lp.rightMargin = Ui.dp(this, 6);

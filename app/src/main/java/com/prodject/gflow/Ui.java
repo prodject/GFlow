@@ -265,6 +265,10 @@ final class Ui {
         if (action != null) action.run();
     }
 
+    static void bindPress(View v, Runnable action) {
+        v.setOnClickListener(x -> press(x, action));
+    }
+
     static void staggerIn(View[] views, long startDelayMs, long stepDelayMs) {
         for (int i = 0; i < views.length; i++) {
             View view = views[i];

@@ -2,9 +2,11 @@ package com.prodject.gflow;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.LinearGradient;
@@ -42,6 +44,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class WeatherActivity extends Activity {
+    private static final int REQ_LOCATION = 1201;
     private static final String KEY_BOOKMARKS = "bookmarks";
     private static final String KEY_LAT = "lat";
     private static final String KEY_LON = "lon";
@@ -393,6 +396,17 @@ public class WeatherActivity extends Activity {
     }
 
     private void useCurrentCoordinates() {
+        if (!hasLocationPermission()) {
+            if (android.os.Build.VERSION.SDK_INT >= 23) {
+                requestPermissions(new String[]{
+                        Manifest.permission.ACCESS_COARSE_LOCATION,
+                        Manifest.permission.ACCESS_FINE_LOCATION
+                }, REQ_LOCATION);
+            } else {
+                Ui.toast(this, "Нет разрешения location");
+            }
+            return;
+        }
         try {
             LocationManager manager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
             Location location = null;
@@ -413,8 +427,23 @@ public class WeatherActivity extends Activity {
             refreshWeather();
         } catch (SecurityException e) {
             Ui.toast(this, "Нет разрешения location");
-            startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
         }
+    }
+
+    @Override public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode != REQ_LOCATION) return;
+        if (hasLocationPermission()) {
+            useCurrentCoordinates();
+        } else {
+            Ui.toast(this, "Location permission не выдан");
+        }
+    }
+
+    private boolean hasLocationPermission() {
+        if (android.os.Build.VERSION.SDK_INT < 23) return true;
+        return checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                || checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
     }
 
     private void openForecast() {
@@ -537,7 +566,7 @@ public class WeatherActivity extends Activity {
         Button b = Ui.button(this, label);
         b.setTextColor(Color.WHITE);
         b.setBackground(Ui.cardBg(this, Color.argb(70, 255, 255, 255), Ui.dp(this, 18), Color.TRANSPARENT));
-        Ui.press(b, action);
+        Ui.bindPress(b, action);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 58), 1f);
         lp.leftMargin = Ui.dp(this, 6);
         lp.rightMargin = Ui.dp(this, 6);
@@ -552,7 +581,7 @@ public class WeatherActivity extends Activity {
                 active ? Color.argb(115, 77, 163, 255) : Color.argb(54, 255, 255, 255),
                 Ui.dp(this, 20),
                 active ? Color.argb(100, 77, 163, 255) : Color.TRANSPARENT));
-        Ui.press(button, action);
+        Ui.bindPress(button, action);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f);
         lp.leftMargin = Ui.dp(this, 6);
         lp.rightMargin = Ui.dp(this, 6);
@@ -584,7 +613,7 @@ public class WeatherActivity extends Activity {
         card.addView(Ui.text(this, title, 18, true));
         card.addView(Ui.muted(this, body));
         Button open = Ui.button(this, "Открыть");
-        Ui.press(open, action);
+        Ui.bindPress(open, action);
         card.addView(open, lpMatchWrap(0, 12, 0, 0));
         View accent = new View(this);
         accent.setBackground(Ui.glassPill(this, color));

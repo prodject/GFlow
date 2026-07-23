@@ -471,7 +471,7 @@ public class DesktopActivity extends Activity {
         Button b = Ui.button(this, label);
         b.setTextColor(Color.WHITE);
         b.setBackground(Ui.cardBg(this, Color.argb(70, 255, 255, 255), Ui.dp(this, 18), Color.TRANSPARENT));
-        Ui.press(b, action);
+        Ui.bindPress(b, action);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 58), 1f);
         lp.leftMargin = Ui.dp(this, 6);
         lp.rightMargin = Ui.dp(this, 6);
@@ -481,7 +481,7 @@ public class DesktopActivity extends Activity {
     private void addMiniAction(LinearLayout row, String label, Runnable action) {
         Button b = Ui.button(this, label);
         b.setTextSize(13);
-        Ui.press(b, action);
+        Ui.bindPress(b, action);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 48), 1f);
         lp.leftMargin = Ui.dp(this, 6);
         lp.rightMargin = Ui.dp(this, 6);
@@ -496,7 +496,7 @@ public class DesktopActivity extends Activity {
                 active ? Color.argb(115, 77, 163, 255) : Color.argb(54, 255, 255, 255),
                 Ui.dp(this, 20),
                 active ? Color.argb(100, 77, 163, 255) : Color.TRANSPARENT));
-        Ui.press(button, action);
+        Ui.bindPress(button, action);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f);
         lp.leftMargin = Ui.dp(this, 6);
         lp.rightMargin = Ui.dp(this, 6);
@@ -528,7 +528,7 @@ public class DesktopActivity extends Activity {
         card.addView(Ui.text(this, title, 18, true));
         card.addView(Ui.muted(this, body));
         Button open = Ui.button(this, "Открыть");
-        Ui.press(open, action);
+        Ui.bindPress(open, action);
         card.addView(open, lpMatchWrap(0, 12, 0, 0));
         View accent = new View(this);
         accent.setBackground(Ui.glassPill(this, color));

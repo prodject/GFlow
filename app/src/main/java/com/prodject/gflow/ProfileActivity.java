@@ -83,7 +83,7 @@ public class ProfileActivity extends Activity {
         bar.setPadding(Ui.dp(this, 20), Ui.dp(this, 10), Ui.dp(this, 20), Ui.dp(this, 10));
 
         Button back = Ui.button(this, "Назад");
-        Ui.press(back, () -> {
+        Ui.bindPress(back, () -> {
             if (mode == Mode.HOME) finish();
             else openMode(Mode.HOME, selectedName);
         });
@@ -291,7 +291,7 @@ public class ProfileActivity extends Activity {
 
         if (editing) {
             Button delete = Ui.button(this, "Удалить профиль");
-            Ui.press(delete, () -> {
+            Ui.bindPress(delete, () -> {
                 UserProfileEngine.delete(this, profile.name, profile.type);
                 if (profile.name.equals(selectedName)) selectedName = prefs.getString(UserProfileEngine.KEY_LAST_USED, "");
                 openMode(Mode.HOME, selectedName);
@@ -332,7 +332,7 @@ public class ProfileActivity extends Activity {
         card.addView(grid, lpMatchWrap(0, 12, 0, 0));
 
         Button refresh = Ui.button(this, "Собрать текущее состояние");
-        Ui.press(refresh, () -> body.setText(UserProfileEngine.captureBody(this, type.getText().toString().trim(), collectSettings(
+        Ui.bindPress(refresh, () -> body.setText(UserProfileEngine.captureBody(this, type.getText().toString().trim(), collectSettings(
                 seat, climate, comfort, drive, hud, cabin, media, desktop, automation, adas))));
         card.addView(refresh, lpMatchWrap(0, 12, 0, 0));
         return card;
@@ -461,7 +461,7 @@ public class ProfileActivity extends Activity {
         Button b = Ui.button(this, label);
         b.setTextColor(Color.WHITE);
         b.setBackground(Ui.cardBg(this, Color.argb(70, 255, 255, 255), Ui.dp(this, 18), Color.TRANSPARENT));
-        Ui.press(b, () -> {
+        Ui.bindPress(b, () -> {
             action.run();
             Ui.toast(this, label);
         });
@@ -473,7 +473,7 @@ public class ProfileActivity extends Activity {
 
     private void addMiniAction(LinearLayout row, String label, Runnable action) {
         Button b = Ui.button(this, label);
-        Ui.press(b, action);
+        Ui.bindPress(b, action);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 48), 1f);
         lp.leftMargin = Ui.dp(this, 6);
         lp.rightMargin = Ui.dp(this, 6);
@@ -488,7 +488,7 @@ public class ProfileActivity extends Activity {
                 active ? Color.argb(115, 77, 163, 255) : Color.argb(54, 255, 255, 255),
                 Ui.dp(this, 20),
                 active ? Color.argb(100, 77, 163, 255) : Color.TRANSPARENT));
-        Ui.press(button, action);
+        Ui.bindPress(button, action);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f);
         lp.leftMargin = Ui.dp(this, 6);
         lp.rightMargin = Ui.dp(this, 6);
