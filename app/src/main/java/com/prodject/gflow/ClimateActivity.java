@@ -49,8 +49,11 @@ public class ClimateActivity extends Activity {
     private TextView passengerTempValue;
     private TextView fanValue;
     private TextView summaryValue;
+    private SeekBar heroTempSeekBar;
+    private CheckBox heroSyncToggle;
     private String editingPresetName = "";
     private Mode mode = Mode.HOME;
+    private boolean updatingHeroControls;
     private final Runnable stateTicker = new Runnable() {
         @Override public void run() {
             refreshState();
@@ -167,32 +170,92 @@ public class ClimateActivity extends Activity {
         LinearLayout hero = Ui.glassCard(this);
         hero.addView(Ui.label(this, "Обзор климата"));
 
-        LinearLayout row = Ui.row(this);
-        LinearLayout left = new LinearLayout(this);
-        left.setOrientation(LinearLayout.VERTICAL);
-        driverTempValue = Ui.text(this, "Водитель: --", 18, true);
-        passengerTempValue = Ui.text(this, "Пассажир: --", 18, true);
-        fanValue = Ui.text(this, "Вентилятор: --", 18, true);
+        LinearLayout tempRow = Ui.row(this);
+        tempRow.setGravity(Gravity.CENTER_VERTICAL);
+
+        LinearLayout driverCard = Ui.glassCard(this);
+        driverCard.setPadding(Ui.dp(this, 18), Ui.dp(this, 16), Ui.dp(this, 18), Ui.dp(this, 16));
+        driverCard.addView(Ui.label(this, "Водитель"));
+        driverTempValue = Ui.text(this, "--", 38, true);
+        driverTempValue.setPadding(0, Ui.dp(this, 4), 0, 0);
+        driverCard.addView(driverTempValue);
+        tempRow.addView(driverCard, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.15f));
+
+        LinearLayout passengerCard = Ui.glassCard(this);
+        passengerCard.setPadding(Ui.dp(this, 16), Ui.dp(this, 16), Ui.dp(this, 16), Ui.dp(this, 16));
+        passengerCard.addView(Ui.label(this, "Пассажир"));
+        passengerTempValue = Ui.text(this, "--", 24, true);
+        passengerTempValue.setPadding(0, Ui.dp(this, 8), 0, 0);
+        passengerCard.addView(passengerTempValue);
+        LinearLayout.LayoutParams passengerLp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 0.85f);
+        passengerLp.leftMargin = Ui.dp(this, 12);
+        tempRow.addView(passengerCard, passengerLp);
+
+        hero.addView(tempRow, lpMatchWrap(0, 8, 0, 0));
+
+        LinearLayout adjustRow = Ui.row(this);
+        adjustRow.setGravity(Gravity.CENTER_VERTICAL);
+        LinearLayout sliderCard = Ui.glassCard(this);
+        sliderCard.setPadding(Ui.dp(this, 18), Ui.dp(this, 12), Ui.dp(this, 18), Ui.dp(this, 12));
+        sliderCard.setBackground(Ui.cardBg(this,
+                Ui.dark(this) ? Color.argb(104, 24, 32, 46) : Color.argb(236, 244, 249, 255),
+                Ui.dp(this, 22),
+                Ui.dark(this) ? Color.argb(116, 77, 163, 255) : Color.argb(92, 77, 163, 255)));
+        sliderCard.addView(Ui.label(this, "Температура водителя"));
+        heroTempSeekBar = new SeekBar(this);
+        heroTempSeekBar.setMax(32);
+        heroTempSeekBar.setProgress(12);
+        heroTempSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (!fromUser || updatingHeroControls) return;
+                float target = heroTempValueFromProgress(progress);
+                EcarxVehicleAdapter.Result result = new EcarxVehicleAdapter(ClimateActivity.this)
+                        .setFloat(EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, target);
+                Ui.toast(ClimateActivity.this, result.success ? "Температура обновлена" : "Температура не обновлена");
+                refreshState();
+            }
+            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+        sliderCard.addView(heroTempSeekBar, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        adjustRow.addView(sliderCard, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+
+        heroSyncToggle = new CheckBox(this);
+        heroSyncToggle.setText("Sync");
+        heroSyncToggle.setChecked(false);
+        heroSyncToggle.setTextColor(Color.rgb(72, 181, 165));
+        heroSyncToggle.setButtonDrawable(null);
+        heroSyncToggle.setGravity(Gravity.CENTER);
+        heroSyncToggle.setPadding(Ui.dp(this, 20), 0, Ui.dp(this, 20), 0);
+        styleHeroSyncToggle(false);
+        heroSyncToggle.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (updatingHeroControls) return;
+            styleHeroSyncToggle(isChecked);
+            command(EcarxVehicleAdapter.HVAC_CLIMATE_ZONE,
+                    isChecked ? EcarxVehicleAdapter.CLIMATE_ZONE_DUAL : EcarxVehicleAdapter.CLIMATE_ZONE_SINGLE);
+        });
+        LinearLayout.LayoutParams syncLp = new LinearLayout.LayoutParams(Ui.dp(this, 110), Ui.dp(this, 56));
+        syncLp.leftMargin = Ui.dp(this, 12);
+        adjustRow.addView(heroSyncToggle, syncLp);
+        hero.addView(adjustRow, lpMatchWrap(0, 12, 0, 0));
+
+        LinearLayout quick = Ui.row(this);
+        quick.setWeightSum(4f);
+        addClimateActionChip(quick, "Auto", () -> command(EcarxVehicleAdapter.HVAC_AUTO, EcarxVehicleAdapter.COMMON_ON));
+        addClimateActionChip(quick, "A/C", () -> command(EcarxVehicleAdapter.HVAC_AC, EcarxVehicleAdapter.COMMON_ON));
+        addClimateActionChip(quick, "Обдув", this::showBlowingSheet);
+        addClimateActionChip(quick, "Defrost", this::showDefrostSheet);
+        hero.addView(quick, lpMatchWrap(0, 14, 0, 0));
+
+        LinearLayout status = new LinearLayout(this);
+        status.setOrientation(LinearLayout.VERTICAL);
+        fanValue = Ui.text(this, "Вентилятор: --", 16, true);
+        fanValue.setPadding(0, Ui.dp(this, 6), 0, 0);
         summaryValue = Ui.text(this, "Состояние HVAC: ожидание readback", 14, false);
         summaryValue.setTextColor(Ui.secondaryText(this));
-        left.addView(driverTempValue);
-        left.addView(passengerTempValue);
-        left.addView(fanValue);
-        left.addView(summaryValue);
-        row.addView(left, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
-
-        AirFlowView flow = new AirFlowView(this);
-        LinearLayout.LayoutParams flowLp = new LinearLayout.LayoutParams(Ui.dp(this, 320), Ui.dp(this, 220));
-        flowLp.leftMargin = Ui.dp(this, 12);
-        row.addView(flow, flowLp);
-        hero.addView(row);
-
-        LinearLayout actions = Ui.row(this);
-        addClimateActionChip(actions, "Комфорт", () -> openMode(Mode.HOME));
-        addClimateActionChip(actions, "Расширенно", () -> openMode(Mode.ADVANCED));
-        addClimateActionChip(actions, "Presets", () -> openMode(Mode.PRESETS));
-        addClimateActionChip(actions, "Умный", () -> openMode(Mode.SMART));
-        hero.addView(actions, lpMatchWrap(0, 14, 0, 0));
+        status.addView(fanValue);
+        status.addView(summaryValue);
+        hero.addView(status, lpMatchWrap(0, 10, 0, 0));
         return hero;
     }
 
@@ -759,6 +822,15 @@ public class ClimateActivity extends Activity {
         dialog.show();
     }
 
+    private void showBlowingSheet() {
+        showActionSheet("Обдув", new QuickItem[]{
+                new QuickItem("Лицо", () -> command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_FACE)),
+                new QuickItem("Ноги", () -> command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_LEG)),
+                new QuickItem("Лицо + ноги", () -> command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_FACE_AND_LEG)),
+                new QuickItem("Стекло", () -> command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_FRONT_WINDOW))
+        });
+    }
+
     private void command(int functionId, int value) {
         new EcarxVehicleAdapter(this).set(functionId, value);
         refreshState();
@@ -783,10 +855,11 @@ public class ClimateActivity extends Activity {
         if (topModeValue != null) topModeValue.setText(simpleState(EcarxVehicleAdapter.HVAC_AUTO, "Auto"));
         if (topZoneValue != null) topZoneValue.setText(simpleState(EcarxVehicleAdapter.HVAC_CLIMATE_ZONE, "Zone"));
         if (topCabinValue != null) topCabinValue.setText(cabinSummary());
-        if (driverTempValue != null) driverTempValue.setText("Водитель: " + floatState(EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_DRIVER_LEFT));
-        if (passengerTempValue != null) passengerTempValue.setText("Пассажир: " + floatState(EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT));
+        if (driverTempValue != null) driverTempValue.setText(formatHeroTemp(floatState(EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_DRIVER_LEFT)));
+        if (passengerTempValue != null) passengerTempValue.setText(formatHeroTemp(floatState(EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT)));
         if (fanValue != null) fanValue.setText("Вентилятор: " + simpleState(EcarxVehicleAdapter.HVAC_FAN_SPEED, "Fan"));
         if (summaryValue != null) summaryValue.setText(buildSummary());
+        updateHeroControls();
     }
 
     private String cabinSummary() {
@@ -847,6 +920,67 @@ public class ClimateActivity extends Activity {
         if (message == null) return "--";
         String line = message.replace('\n', ' ').trim();
         return line.length() > 72 ? line.substring(0, 72) : line;
+    }
+
+    private void updateHeroControls() {
+        if (heroTempSeekBar == null && heroSyncToggle == null) return;
+        updatingHeroControls = true;
+        try {
+            if (heroTempSeekBar != null) {
+                heroTempSeekBar.setProgress(heroTempProgressFromValue(parseClimateTemp(floatState(
+                        EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_DRIVER_LEFT), 22.0f)));
+            }
+            if (heroSyncToggle != null) {
+                String zone = simpleState(EcarxVehicleAdapter.HVAC_CLIMATE_ZONE, "");
+                boolean sync = zone.contains("10010502") || zone.toLowerCase(Locale.ROOT).contains("dual");
+                heroSyncToggle.setChecked(sync);
+                styleHeroSyncToggle(sync);
+            }
+        } finally {
+            updatingHeroControls = false;
+        }
+    }
+
+    private int heroTempProgressFromValue(float temp) {
+        float clamped = Math.max(16.0f, Math.min(32.0f, temp));
+        return Math.round((clamped - 16.0f) / 0.5f);
+    }
+
+    private float heroTempValueFromProgress(int progress) {
+        return 16.0f + (Math.max(0, Math.min(32, progress)) * 0.5f);
+    }
+
+    private float parseClimateTemp(String value, float fallback) {
+        if (value == null) return fallback;
+        String normalized = value.replace("°C", "").replace("°F", "").trim();
+        if ("HI".equalsIgnoreCase(normalized)) return 32.0f;
+        if ("LO".equalsIgnoreCase(normalized)) return 16.0f;
+        try {
+            return Float.parseFloat(normalized);
+        } catch (Exception ignored) {
+            return fallback;
+        }
+    }
+
+    private String formatHeroTemp(String value) {
+        String compact = compact(value);
+        if ("--".equals(compact)) return compact;
+        float parsed = parseClimateTemp(compact, Float.NaN);
+        if (!Float.isNaN(parsed)) {
+            if (parsed >= 31.5f) return "HI";
+            if (parsed <= 16.0f) return "LO";
+        }
+        return compact.endsWith("°C") || compact.endsWith("°F") || "HI".equalsIgnoreCase(compact) || "LO".equalsIgnoreCase(compact)
+                ? compact : compact + "°";
+    }
+
+    private void styleHeroSyncToggle(boolean active) {
+        if (heroSyncToggle == null) return;
+        heroSyncToggle.setTextColor(active ? Color.WHITE : Color.rgb(72, 181, 165));
+        heroSyncToggle.setBackground(Ui.cardBg(this,
+                active ? Color.argb(196, 72, 181, 165) : Color.argb(38, 72, 181, 165),
+                Ui.dp(this, 16),
+                active ? Color.argb(140, 72, 181, 165) : Color.argb(72, 72, 181, 165)));
     }
 
     private String modeLabel() {
