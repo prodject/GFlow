@@ -74,7 +74,7 @@ public class VoiceActivity extends Activity {
         root.setBackground(Ui.dashboardBg(this));
         scroll.addView(root, new ScrollView.LayoutParams(ScrollView.LayoutParams.MATCH_PARENT, ScrollView.LayoutParams.WRAP_CONTENT));
 
-        root.addView(buildTopBar(), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 72)));
+        root.addView(buildTopBar(), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
         root.addView(buildHeroPanel(), lpMatchWrap(0, 16, 0, 16));
 
         contentHost = new LinearLayout(this);

@@ -94,7 +94,7 @@ public class ClimateActivity extends Activity {
         root.setBackground(dashboardBg());
         scroll.addView(root, new ScrollView.LayoutParams(ScrollView.LayoutParams.MATCH_PARENT, ScrollView.LayoutParams.WRAP_CONTENT));
 
-        root.addView(buildClimateTopBar(), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 72)));
+        root.addView(buildClimateTopBar(), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
         root.addView(buildClimateHero(), lpMatchWrap(0, 16, 0, 16));
 
         contentHost = new LinearLayout(this);
@@ -639,8 +639,11 @@ public class ClimateActivity extends Activity {
 
     private void addClimateActionChip(LinearLayout row, String label, Runnable action) {
         Button b = Ui.button(this, label);
-        b.setTextColor(Color.WHITE);
-        b.setBackground(Ui.cardBg(this, Color.argb(70, 255, 255, 255), Ui.dp(this, 18), Color.TRANSPARENT));
+        b.setTextColor(Ui.dark(this) ? Color.WHITE : Ui.primaryText(this));
+        b.setBackground(Ui.cardBg(this,
+                Ui.dark(this) ? Color.argb(70, 255, 255, 255) : Color.argb(238, 255, 255, 255),
+                Ui.dp(this, 18),
+                Ui.dark(this) ? Color.TRANSPARENT : Color.argb(88, 185, 198, 214)));
         b.setOnClickListener(v -> action.run());
         b.setOnLongClickListener(v -> {
             showQuickHvacSheet();
@@ -660,8 +663,11 @@ public class ClimateActivity extends Activity {
         actions.setOrientation(LinearLayout.VERTICAL);
         for (QuickItem item : items) {
             Button button = Ui.button(this, item.label);
-            button.setTextColor(Color.WHITE);
-            button.setBackground(Ui.cardBg(this, Color.argb(54, 255, 255, 255), Ui.dp(this, 16), Color.TRANSPARENT));
+            button.setTextColor(Ui.dark(this) ? Color.WHITE : Ui.primaryText(this));
+            button.setBackground(Ui.cardBg(this,
+                    Ui.dark(this) ? Color.argb(54, 255, 255, 255) : Color.argb(238, 255, 255, 255),
+                    Ui.dp(this, 16),
+                    Ui.dark(this) ? Color.TRANSPARENT : Color.argb(88, 185, 198, 214)));
             button.setOnClickListener(v -> item.action.run());
             actions.addView(button, lpMatchWrap(0, 8, 0, 0));
         }
@@ -727,12 +733,12 @@ public class ClimateActivity extends Activity {
 
     private void addDockButton(LinearLayout dock, String label, Runnable action, boolean active, QuickItem[] items) {
         Button button = Ui.button(this, label);
-        button.setTextColor(Color.WHITE);
+        button.setTextColor(active || Ui.dark(this) ? Color.WHITE : Ui.primaryText(this));
         button.setTextSize(14);
         button.setBackground(Ui.cardBg(this,
-                active ? Color.argb(115, 77, 163, 255) : Color.argb(54, 255, 255, 255),
+                active ? Color.argb(115, 77, 163, 255) : (Ui.dark(this) ? Color.argb(54, 255, 255, 255) : Color.argb(238, 255, 255, 255)),
                 Ui.dp(this, 20),
-                active ? Color.argb(100, 77, 163, 255) : Color.TRANSPARENT));
+                active ? Color.argb(100, 77, 163, 255) : (Ui.dark(this) ? Color.TRANSPARENT : Color.argb(88, 185, 198, 214))));
         button.setOnClickListener(v -> action.run());
         button.setOnLongClickListener(v -> {
             showActionSheet(label, items);
@@ -803,8 +809,11 @@ public class ClimateActivity extends Activity {
         sheet.addView(Ui.text(this, title, 24, true));
         for (QuickItem item : items) {
             Button button = Ui.button(this, item.label);
-            button.setTextColor(Color.WHITE);
-            button.setBackground(Ui.cardBg(this, Color.argb(56, 255, 255, 255), Ui.dp(this, 18), Color.TRANSPARENT));
+            button.setTextColor(Ui.dark(this) ? Color.WHITE : Ui.primaryText(this));
+            button.setBackground(Ui.cardBg(this,
+                    Ui.dark(this) ? Color.argb(56, 255, 255, 255) : Color.argb(238, 255, 255, 255),
+                    Ui.dp(this, 18),
+                    Ui.dark(this) ? Color.TRANSPARENT : Color.argb(88, 185, 198, 214)));
             button.setOnClickListener(v -> {
                 dialog.dismiss();
                 item.action.run();
