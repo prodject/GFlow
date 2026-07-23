@@ -39,7 +39,10 @@ public class MainActivity extends Activity {
     private static final String KEY_HOME_WEATHER_WIND = "home_weather_wind";
     private static final String KEY_HOME_WEATHER_AT = "home_weather_at";
     private static final String[] RUNTIME_PERMS = {
-            Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO
+            Manifest.permission.CAMERA,
+            Manifest.permission.RECORD_AUDIO,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.ACCESS_FINE_LOCATION
     };
     private final Handler dashboardHandler = new Handler(Looper.getMainLooper());
     private TextView topProfileValue;
