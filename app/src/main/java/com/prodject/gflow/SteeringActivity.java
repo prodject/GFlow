@@ -210,8 +210,8 @@ public class SteeringActivity extends Activity {
             selectedName = name;
             renderContent();
         });
-        addMiniAction(row, "Test", () -> showRunResult(name, binding));
-        addMiniAction(row, "Edit", () -> openEditor(name, String.valueOf(binding.keyCode), binding.gesture, binding.modifier, binding.condition, binding.behavior, binding.targetType, binding.target));
+        addMiniAction(row, "Test", () -> showRunResult(name, AutomationEngine.ButtonBinding.parse(raw)));
+        addMiniAction(row, "Edit", () -> openEditor(name, String.valueOf(keyCode), gesture, modifier, condition, behavior, targetType, targetValue));
         card.addView(row, lpMatchWrap(0, 12, 0, 0));
         return card;
     }
