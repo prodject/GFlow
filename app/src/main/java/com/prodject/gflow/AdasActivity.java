@@ -73,7 +73,7 @@ public class AdasActivity extends Activity {
         root.setBackground(dashboardBg());
         scroll.addView(root, new ScrollView.LayoutParams(ScrollView.LayoutParams.MATCH_PARENT, ScrollView.LayoutParams.WRAP_CONTENT));
 
-        root.addView(buildTopBar(), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        root.addView(buildTopBar(), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 84)));
         root.addView(buildHeroPanel(), lpMatchWrap(0, 16, 0, 16));
         root.addView(buildSafetyControls(), lpMatchWrap(0, 0, 0, 16));
         root.addView(buildAccPanel(), lpMatchWrap(0, 0, 0, 16));
@@ -153,10 +153,7 @@ public class AdasActivity extends Activity {
         hero.addView(row);
 
         LinearLayout quick = Ui.row(this);
-        addActionChip(quick, "AEB", () -> sendVehicle("AEB включить", EcarxVehicleAdapter.ADAS_AEB, EcarxVehicleAdapter.COMMON_ON));
-        addActionChip(quick, "FCW", () -> sendVehicle("FCW включить", EcarxVehicleAdapter.ADAS_FCW, EcarxVehicleAdapter.COMMON_ON));
-        addActionChip(quick, "LKA", () -> sendVehicle("LKA включить", EcarxVehicleAdapter.ADAS_LKA, EcarxVehicleAdapter.COMMON_ON));
-        addActionChip(quick, "PDC", () -> sendVehicle("PDC включить", EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.COMMON_ON));
+        addActionChip(quick, "Парковка", this::openParkingActivity);
         hero.addView(quick, lpMatchWrap(0, 14, 0, 0));
         return hero;
     }

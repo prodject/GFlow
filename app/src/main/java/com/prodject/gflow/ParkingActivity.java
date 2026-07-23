@@ -52,7 +52,7 @@ public class ParkingActivity extends Activity {
         shell.setOrientation(LinearLayout.VERTICAL);
         root.addView(shell, lpMatchWrap(0, 0, 0, 0));
 
-        shell.addView(buildTopBar(), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        shell.addView(buildTopBar(), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 84)));
         shell.addView(buildHeroPanel(), lpMatchWrap(0, 16, 0, 16));
         shell.addView(buildParkingModes(), lpMatchWrap(0, 0, 0, 16));
         shell.addView(buildAssistShortcuts(), lpMatchWrap(0, 0, 0, 16));

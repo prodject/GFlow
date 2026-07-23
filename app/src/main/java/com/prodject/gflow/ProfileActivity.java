@@ -57,7 +57,7 @@ public class ProfileActivity extends Activity {
         root.setBackground(dashboardBg());
         scroll.addView(root, new ScrollView.LayoutParams(ScrollView.LayoutParams.MATCH_PARENT, ScrollView.LayoutParams.WRAP_CONTENT));
 
-        root.addView(buildTopBar(), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        root.addView(buildTopBar(), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 84)));
         root.addView(buildHeroPanel(), lpMatchWrap(0, 16, 0, 16));
         contentHost = new LinearLayout(this);
         contentHost.setOrientation(LinearLayout.VERTICAL);
@@ -442,8 +442,11 @@ public class ProfileActivity extends Activity {
 
     private void addActionChip(LinearLayout row, String label, Runnable action) {
         Button b = Ui.button(this, label);
-        b.setTextColor(Color.WHITE);
-        b.setBackground(Ui.cardBg(this, Color.argb(70, 255, 255, 255), Ui.dp(this, 18), Color.TRANSPARENT));
+        b.setTextColor(Ui.dark(this) ? Color.WHITE : Ui.primaryText(this));
+        b.setBackground(Ui.cardBg(this,
+                Ui.dark(this) ? Color.argb(70, 255, 255, 255) : Color.argb(238, 255, 255, 255),
+                Ui.dp(this, 18),
+                Ui.dark(this) ? Color.TRANSPARENT : Color.argb(88, 185, 198, 214)));
         b.setOnClickListener(v -> {
             action.run();
             Ui.toast(this, label);
@@ -465,12 +468,12 @@ public class ProfileActivity extends Activity {
 
     private void addDockButton(LinearLayout dock, String label, Runnable action, boolean active) {
         Button button = Ui.button(this, label);
-        button.setTextColor(Color.WHITE);
+        button.setTextColor(active || Ui.dark(this) ? Color.WHITE : Ui.primaryText(this));
         button.setTextSize(14);
         button.setBackground(Ui.cardBg(this,
-                active ? Color.argb(115, 77, 163, 255) : Color.argb(54, 255, 255, 255),
+                active ? Color.argb(115, 77, 163, 255) : (Ui.dark(this) ? Color.argb(54, 255, 255, 255) : Color.argb(238, 255, 255, 255)),
                 Ui.dp(this, 20),
-                active ? Color.argb(100, 77, 163, 255) : Color.TRANSPARENT));
+                active ? Color.argb(100, 77, 163, 255) : (Ui.dark(this) ? Color.TRANSPARENT : Color.argb(88, 185, 198, 214))));
         button.setOnClickListener(v -> action.run());
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f);
         lp.leftMargin = Ui.dp(this, 6);
