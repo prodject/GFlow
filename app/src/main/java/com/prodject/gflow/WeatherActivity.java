@@ -396,7 +396,7 @@ public class WeatherActivity extends Activity {
     }
 
     private void useCurrentCoordinates() {
-        if (!hasLocationPermission()) {
+        if (!hasAnyLocationPermission()) {
             if (android.os.Build.VERSION.SDK_INT >= 23) {
                 requestPermissions(new String[]{
                         Manifest.permission.ACCESS_COARSE_LOCATION,
@@ -411,12 +411,15 @@ public class WeatherActivity extends Activity {
             LocationManager manager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
             Location location = null;
             if (manager != null) {
-                location = manager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                if (location == null) location = manager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+                if (hasFineLocationPermission()) {
+                    location = manager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                }
+                if (location == null && hasAnyLocationPermission()) {
+                    location = manager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+                }
             }
             if (location == null) {
-                Ui.toast(this, "Нет last known location. Откройте настройки геолокации.");
-                startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+                Ui.toast(this, "Нет last known location. Дайте доступ к геопозиции и дождитесь определения координат.");
                 return;
             }
             getPreferences(0).edit()
@@ -433,17 +436,22 @@ public class WeatherActivity extends Activity {
     @Override public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode != REQ_LOCATION) return;
-        if (hasLocationPermission()) {
+        if (hasAnyLocationPermission()) {
             useCurrentCoordinates();
         } else {
             Ui.toast(this, "Location permission не выдан");
         }
     }
 
-    private boolean hasLocationPermission() {
+    private boolean hasAnyLocationPermission() {
         if (android.os.Build.VERSION.SDK_INT < 23) return true;
         return checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
                 || checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private boolean hasFineLocationPermission() {
+        if (android.os.Build.VERSION.SDK_INT < 23) return true;
+        return checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
     }
 
     private void openForecast() {

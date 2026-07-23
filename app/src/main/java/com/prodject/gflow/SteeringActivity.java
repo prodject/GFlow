@@ -182,7 +182,14 @@ public class SteeringActivity extends Activity {
 
     private LinearLayout buildBindingCard(String name) {
         String raw = automationPrefs.getString("button2:" + name, automationPrefs.getString("button:" + name, ""));
-        AutomationEngine.ButtonBinding binding = AutomationEngine.ButtonBinding.parse(raw);
+        String[] parts = raw == null ? new String[0] : raw.split("\\|", -1);
+        int keyCode = parseInt(parts.length > 1 ? parts[1] : "0", 0);
+        String gesture = parts.length > 2 ? parts[2].trim() : "press";
+        String modifier = parts.length > 3 ? parts[3].trim() : "";
+        String condition = parts.length > 4 ? parts[4].trim() : "always";
+        String behavior = parts.length > 5 ? parts[5].trim() : "replace";
+        String targetType = parts.length > 6 ? parts[6].trim() : "preset";
+        String targetValue = parts.length > 7 ? parts[7].trim() : (parts.length > 3 ? parts[3].trim() : "");
 
         LinearLayout card = Ui.glassCard(this);
         boolean selected = name.equals(selectedName);
@@ -193,10 +200,10 @@ public class SteeringActivity extends Activity {
 
         LinearLayout top = Ui.row(this);
         top.addView(Ui.text(this, name, 20, true), new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
-        top.addView(Ui.pill(this, binding.gesture, gestureColor(binding.gesture)));
+        top.addView(Ui.pill(this, gesture, gestureColor(gesture)));
         card.addView(top);
-        card.addView(Ui.muted(this, "keyCode " + binding.keyCode + " · modifier " + modifierLabel(binding.modifier) + " · behavior " + binding.behavior));
-        card.addView(Ui.muted(this, "condition " + binding.condition + " · target " + binding.targetType + "=" + binding.target));
+        card.addView(Ui.muted(this, "keyCode " + keyCode + " · modifier " + modifierLabel(modifier) + " · behavior " + behavior));
+        card.addView(Ui.muted(this, "condition " + condition + " · target " + targetType + "=" + targetValue));
 
         LinearLayout row = Ui.row(this);
         addMiniAction(row, "Select", () -> {
