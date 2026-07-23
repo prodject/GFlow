@@ -47,6 +47,9 @@ final class Ui {
     static int secondaryText(Context c) { return dark(c) ? TEXT_SECONDARY_DARK : TEXT_MUTED; }
     static int glassSurface(Context c) { return dark(c) ? Color.argb(232, 18, 23, 34) : Color.argb(232, 255, 255, 255); }
     static int glassLine(Context c) { return dark(c) ? GLASS_LINE : Color.argb(88, 185, 198, 214); }
+    static int secondarySurface(Context c) { return dark(c) ? Color.argb(118, 255, 255, 255) : Color.argb(232, 255, 255, 255); }
+    static int tertiarySurface(Context c) { return dark(c) ? Color.argb(238, 12, 18, 32) : Color.argb(244, 236, 241, 247); }
+    static int deepSurface(Context c) { return dark(c) ? Color.argb(236, 16, 24, 42) : Color.argb(246, 240, 244, 250); }
 
     static GradientDrawable dashboardBg(Context c) {
         return new GradientDrawable(
@@ -86,9 +89,9 @@ final class Ui {
         v.setText(s);
         v.setTextSize(sp);
         v.setTextColor(primaryText(c));
-        v.setPadding(0, dp(c, 6), 0, dp(c, 6));
+        v.setPadding(0, dp(c, 5), 0, dp(c, 5));
         if (bold) v.setTypeface(Typeface.DEFAULT_BOLD);
-        v.setLineSpacing(dp(c, 2), 1.0f);
+        v.setLineSpacing(dp(c, 3), 1.02f);
         return v;
     }
 
@@ -100,8 +103,8 @@ final class Ui {
         b.setTextSize(15);
         b.setGravity(Gravity.CENTER);
         b.setPadding(dp(c, 18), 0, dp(c, 18), 0);
-        b.setMinHeight(dp(c, 50));
-        b.setBackground(cardBg(c, dark(c) ? Color.rgb(39, 45, 51) : Color.argb(232, 255, 255, 255), dp(c, 12), dark(c) ? Color.rgb(62, 70, 78) : Color.rgb(222, 231, 240)));
+        b.setMinHeight(dp(c, 52));
+        b.setBackground(cardBg(c, dark(c) ? Color.rgb(39, 45, 51) : Color.argb(236, 255, 255, 255), dp(c, 16), dark(c) ? Color.rgb(62, 70, 78) : Color.rgb(222, 231, 240)));
         if (Build.VERSION.SDK_INT >= 21) b.setStateListAnimator(null);
         return b;
     }
@@ -134,6 +137,22 @@ final class Ui {
         v.setOrientation(LinearLayout.VERTICAL);
         v.setPadding(dp(c, 20), dp(c, 18), dp(c, 20), dp(c, 18));
         v.setBackground(cardBg(c, glassSurface(c), dp(c, 28), glassLine(c)));
+        return v;
+    }
+
+    static LinearLayout secondaryCard(Context c) {
+        LinearLayout v = new LinearLayout(c);
+        v.setOrientation(LinearLayout.VERTICAL);
+        v.setPadding(dp(c, 18), dp(c, 16), dp(c, 18), dp(c, 16));
+        v.setBackground(cardBg(c, secondarySurface(c), dp(c, 26), glassLine(c)));
+        return v;
+    }
+
+    static LinearLayout deepCard(Context c) {
+        LinearLayout v = new LinearLayout(c);
+        v.setOrientation(LinearLayout.VERTICAL);
+        v.setPadding(dp(c, 20), dp(c, 18), dp(c, 20), dp(c, 18));
+        v.setBackground(cardBg(c, deepSurface(c), dp(c, 28), glassLine(c)));
         return v;
     }
 
@@ -221,6 +240,36 @@ final class Ui {
         v.setAlpha(0f);
         v.setTranslationY(dp(v.getContext(), 18));
         v.animate().alpha(1f).translationY(0f).setDuration(260).setInterpolator(new DecelerateInterpolator()).start();
+    }
+
+    static void animateIn(View v, long delayMs, float translationYDp) {
+        v.setAlpha(0f);
+        v.setTranslationY(dp(v.getContext(), translationYDp));
+        v.animate().alpha(1f).translationY(0f).setStartDelay(delayMs).setDuration(280).setInterpolator(new DecelerateInterpolator()).start();
+    }
+
+    static void animateScaleIn(View v, long delayMs) {
+        v.setAlpha(0f);
+        v.setScaleX(0.97f);
+        v.setScaleY(0.97f);
+        v.animate().alpha(1f).scaleX(1f).scaleY(1f).setStartDelay(delayMs).setDuration(240).setInterpolator(new DecelerateInterpolator()).start();
+    }
+
+    static void press(View v) {
+        v.animate().scaleX(0.985f).scaleY(0.985f).setDuration(90).setInterpolator(new DecelerateInterpolator()).withEndAction(() ->
+                v.animate().scaleX(1f).scaleY(1f).setDuration(130).setInterpolator(new DecelerateInterpolator()).start()).start();
+    }
+
+    static void press(View v, Runnable action) {
+        press(v);
+        if (action != null) action.run();
+    }
+
+    static void staggerIn(View[] views, long startDelayMs, long stepDelayMs) {
+        for (int i = 0; i < views.length; i++) {
+            View view = views[i];
+            if (view != null) animateIn(view, startDelayMs + (i * stepDelayMs), 12f);
+        }
     }
 
     static GradientDrawable cardBg(Context c, int color, int radius, int stroke) {

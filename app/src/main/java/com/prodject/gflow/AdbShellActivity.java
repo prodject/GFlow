@@ -24,6 +24,8 @@ import android.widget.TextView;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 public class AdbShellActivity extends Activity {
     private EditText commandInput;
@@ -63,7 +65,9 @@ public class AdbShellActivity extends Activity {
         contentHost.setOrientation(LinearLayout.VERTICAL);
         root.addView(contentHost, lpMatchWrap(0, 0, 0, 16));
 
-        root.addView(buildBottomDock(), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 112)));
+        LinearLayout dock = buildBottomDock();
+        root.addView(dock, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 112)));
+        Ui.animateIn(dock, 220, 18f);
         return scroll;
     }
 
@@ -76,6 +80,7 @@ public class AdbShellActivity extends Activity {
         contentHost.addView(buildAdbDpiPanel(), lpMatchWrap(0, 0, 0, 16));
         contentHost.addView(buildAutozoomPanel(), lpMatchWrap(0, 0, 0, 16));
         contentHost.addView(buildOutputPanel(), lpMatchWrap(0, 0, 0, 16));
+        Ui.staggerIn(collectChildren(contentHost), 30, 55);
     }
 
     private LinearLayout buildTopBar() {
@@ -85,13 +90,13 @@ public class AdbShellActivity extends Activity {
         bar.setPadding(Ui.dp(this, 20), Ui.dp(this, 10), Ui.dp(this, 20), Ui.dp(this, 10));
 
         Button back = Ui.button(this, "Назад");
-        back.setOnClickListener(v -> finish());
+        Ui.press(back, this::finish);
         bar.addView(back, new LinearLayout.LayoutParams(Ui.dp(this, 110), LinearLayout.LayoutParams.MATCH_PARENT));
 
         LinearLayout titleBlock = new LinearLayout(this);
         titleBlock.setOrientation(LinearLayout.VERTICAL);
         titleBlock.setPadding(Ui.dp(this, 16), 0, 0, 0);
-        titleBlock.addView(Ui.label(this, "Разрешения / Shell / Autozoom"));
+        titleBlock.addView(Ui.label(this, "System Access / Shell / Autozoom"));
         titleBlock.addView(Ui.text(this, "ADB / Система", 28, true));
         bar.addView(titleBlock, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
@@ -116,7 +121,7 @@ public class AdbShellActivity extends Activity {
 
     private LinearLayout buildHeroPanel() {
         LinearLayout hero = Ui.glassCard(this);
-        hero.addView(Ui.label(this, "Разрешения / Shell / DPI / Autozoom"));
+        hero.addView(Ui.label(this, "System Controls"));
 
         LinearLayout row = Ui.row(this);
         LinearLayout left = new LinearLayout(this);
@@ -203,6 +208,10 @@ public class AdbShellActivity extends Activity {
 
     private LinearLayout buildAdbDpiPanel() {
         LinearLayout panel = Ui.glassCard(this);
+        panel.setBackground(Ui.cardBg(this,
+                Ui.dark(this) ? Color.argb(236, 16, 24, 42) : Color.argb(246, 240, 244, 250),
+                Ui.dp(this, 28),
+                Ui.glassLine(this)));
         panel.addView(Ui.label(this, "ADB / DPI"));
         panel.addView(Ui.text(this, "ADB toggle attempt, DPI shortcut и вывод результата.", 14, false));
 
@@ -216,6 +225,10 @@ public class AdbShellActivity extends Activity {
 
     private LinearLayout buildAutozoomPanel() {
         LinearLayout panel = Ui.glassCard(this);
+        panel.setBackground(Ui.cardBg(this,
+                Ui.dark(this) ? Color.argb(236, 14, 21, 38) : Color.argb(245, 238, 242, 248),
+                Ui.dp(this, 28),
+                Ui.glassLine(this)));
         panel.addView(Ui.label(this, "Autozoom"));
         panel.addView(Ui.text(this, "Packages, scale, save autozoom и autozoom on/off.", 14, false));
 
@@ -234,6 +247,10 @@ public class AdbShellActivity extends Activity {
 
     private LinearLayout buildOutputPanel() {
         LinearLayout panel = Ui.glassCard(this);
+        panel.setBackground(Ui.cardBg(this,
+                Ui.dark(this) ? Color.argb(238, 12, 18, 32) : Color.argb(244, 236, 241, 247),
+                Ui.dp(this, 28),
+                Ui.glassLine(this)));
         panel.addView(Ui.label(this, "Output"));
         TextView out = Ui.text(this, lastOutput.isEmpty() ? "Результат shell и системных действий появится здесь." : lastOutput, 14, false);
         out.setTextColor(Ui.primaryText(this));
@@ -423,7 +440,7 @@ public class AdbShellActivity extends Activity {
         Button b = Ui.button(this, label);
         b.setTextColor(Color.WHITE);
         b.setBackground(Ui.cardBg(this, Color.argb(70, 255, 255, 255), Ui.dp(this, 18), Color.TRANSPARENT));
-        b.setOnClickListener(v -> action.run());
+        Ui.press(b, action);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 58), 1f);
         lp.leftMargin = Ui.dp(this, 6);
         lp.rightMargin = Ui.dp(this, 6);
@@ -438,7 +455,7 @@ public class AdbShellActivity extends Activity {
                 active ? Color.argb(115, 77, 163, 255) : Color.argb(54, 255, 255, 255),
                 Ui.dp(this, 20),
                 active ? Color.argb(100, 77, 163, 255) : Color.TRANSPARENT));
-        button.setOnClickListener(v -> action.run());
+        Ui.press(button, action);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f);
         lp.leftMargin = Ui.dp(this, 6);
         lp.rightMargin = Ui.dp(this, 6);
@@ -447,6 +464,10 @@ public class AdbShellActivity extends Activity {
 
     private void addStatusCard(GridLayout grid, String title, String value, int color) {
         LinearLayout card = Ui.glassCard(this);
+        card.setBackground(Ui.cardBg(this,
+                Ui.dark(this) ? Color.argb(118, 255, 255, 255) : Color.argb(232, 255, 255, 255),
+                Ui.dp(this, 26),
+                Ui.glassLine(this)));
         card.addView(Ui.label(this, title));
         card.addView(Ui.text(this, value, 18, true));
         View accent = new View(this);
@@ -472,5 +493,11 @@ public class AdbShellActivity extends Activity {
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         lp.setMargins(Ui.dp(this, left), Ui.dp(this, top), Ui.dp(this, right), Ui.dp(this, bottom));
         return lp;
+    }
+
+    private View[] collectChildren(LinearLayout parent) {
+        List<View> views = new ArrayList<>();
+        for (int i = 0; i < parent.getChildCount(); i++) views.add(parent.getChildAt(i));
+        return views.toArray(new View[0]);
     }
 }

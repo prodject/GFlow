@@ -93,11 +93,12 @@ public class VoiceActivity extends Activity {
     private void renderContent() {
         if (contentHost == null) return;
         contentHost.removeAllViews();
-        contentHost.addView(buildOverviewGrid(), lpMatchWrap(0, 0, 0, 16));
         contentHost.addView(buildAssistantPanel(), lpMatchWrap(0, 0, 0, 16));
         contentHost.addView(buildCommandPanel(), lpMatchWrap(0, 0, 0, 16));
+        contentHost.addView(buildOverviewGrid(), lpMatchWrap(0, 0, 0, 16));
         contentHost.addView(buildAliasPanel(), lpMatchWrap(0, 0, 0, 16));
         contentHost.addView(buildLogPanel(), lpMatchWrap(0, 0, 0, 16));
+        Ui.staggerIn(collectChildren(contentHost), 40, 70);
     }
 
     private LinearLayout buildTopBar() {
@@ -107,14 +108,20 @@ public class VoiceActivity extends Activity {
         bar.setPadding(Ui.dp(this, 20), Ui.dp(this, 10), Ui.dp(this, 20), Ui.dp(this, 10));
 
         Button back = Ui.button(this, "Назад");
-        back.setOnClickListener(v -> finish());
+        back.setOnClickListener(v -> {
+            Ui.press(v);
+            finish();
+        });
         bar.addView(back, new LinearLayout.LayoutParams(Ui.dp(this, 110), LinearLayout.LayoutParams.MATCH_PARENT));
 
         LinearLayout titleBlock = new LinearLayout(this);
         titleBlock.setOrientation(LinearLayout.VERTICAL);
         titleBlock.setPadding(Ui.dp(this, 16), 0, 0, 0);
-        titleBlock.addView(Ui.label(this, "Голосовой ассистент"));
-        titleBlock.addView(Ui.text(this, "Голосовой ассистент", 28, true));
+        titleBlock.addView(Ui.label(this, "Voice Assistant"));
+        titleBlock.addView(Ui.text(this, "Voice Assistant", 28, true));
+        TextView subtitle = Ui.muted(this, "Listening first, command second, aliases and logs after that.");
+        subtitle.setTextSize(13);
+        titleBlock.addView(subtitle);
         bar.addView(titleBlock, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
         bar.addView(buildTopStat("Сервис", serviceStatus()));
@@ -138,23 +145,30 @@ public class VoiceActivity extends Activity {
 
     private LinearLayout buildHeroPanel() {
         LinearLayout hero = Ui.glassCard(this);
-        hero.addView(Ui.label(this, "Foreground Voice / Распознавание"));
+        hero.addView(Ui.label(this, "Voice Overview"));
 
         LinearLayout row = Ui.row(this);
         LinearLayout left = new LinearLayout(this);
         left.setOrientation(LinearLayout.VERTICAL);
-        left.addView(metricLine("Foreground voice service", serviceStatus()));
-        left.addView(metricLine("Vosk", voskStatus()));
-        left.addView(metricLine("Источник", sourceSummary()));
-        left.addView(metricLine("Fallback", "broadcast command + log + alias prompt"));
+        left.addView(buildHeroMetric("Service", serviceStatus()));
+        left.addView(buildHeroMetric("Recognizer", voskStatus()));
+        left.addView(buildHeroMetric("Source", sourceSummary()));
         row.addView(left, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
-        LinearLayout micCard = Ui.glassCard(this);
+        LinearLayout micCard = new LinearLayout(this);
+        micCard.setOrientation(LinearLayout.VERTICAL);
         micCard.setGravity(Gravity.CENTER);
         micCard.setPadding(Ui.dp(this, 20), Ui.dp(this, 20), Ui.dp(this, 20), Ui.dp(this, 20));
-        TextView mic = Ui.text(this, listening ? "MIC ON" : "MIC", 30, true);
+        micCard.setBackground(Ui.cardBg(this,
+                listening ? Color.argb(116, 72, 181, 165) : Color.argb(58, 255, 255, 255),
+                Ui.dp(this, 32),
+                listening ? Color.argb(120, 72, 181, 165) : Color.argb(34, 255, 255, 255)));
+        TextView mic = Ui.text(this, listening ? "LISTENING" : "READY", 24, true);
         mic.setGravity(Gravity.CENTER);
         micCard.addView(mic);
+        TextView micHint = Ui.muted(this, listening ? "Voice capture is active" : "Tap listen to start Vosk");
+        micHint.setGravity(Gravity.CENTER);
+        micCard.addView(micHint);
         LinearLayout.LayoutParams micLp = new LinearLayout.LayoutParams(Ui.dp(this, 180), Ui.dp(this, 180));
         micLp.leftMargin = Ui.dp(this, 12);
         row.addView(micCard, micLp);
@@ -167,34 +181,46 @@ public class VoiceActivity extends Activity {
         hero.addView(recognitionView);
 
         LinearLayout quick = Ui.row(this);
-        addActionChip(quick, "Слушать Vosk", this::startListening);
+        addActionChip(quick, "Listen", this::startListening);
         addActionChip(quick, "Стоп", this::stopListening);
-        addActionChip(quick, "Выполнить", this::runInputCommand);
-        addActionChip(quick, "Ручной ввод", this::focusInput);
+        addActionChip(quick, "Run", this::runInputCommand);
+        addActionChip(quick, "Compose", this::focusInput);
         hero.addView(quick, lpMatchWrap(0, 14, 0, 0));
         return hero;
+    }
+
+    private View buildHeroMetric(String key, String value) {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(Ui.dp(this, 16), Ui.dp(this, 14), Ui.dp(this, 16), Ui.dp(this, 14));
+        card.setBackground(Ui.cardBg(this, Color.argb(58, 255, 255, 255), Ui.dp(this, 24), Color.argb(40, 255, 255, 255)));
+        card.addView(Ui.label(this, key));
+        TextView text = Ui.text(this, value, 16, true);
+        text.setPadding(0, Ui.dp(this, 2), 0, 0);
+        card.addView(text);
+        return card;
     }
 
     private GridLayout buildOverviewGrid() {
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(2);
-        addStatusCard(grid, "Сервис", serviceStatus(), Ui.CYAN);
-        addStatusCard(grid, "Vosk", voskStatus(), Ui.SUCCESS);
-        addStatusCard(grid, "Команды", "climate · body · HUD · drive · DVR · nav · apps", Ui.WARNING);
-        addStatusCard(grid, "Алиасы / Лог", aliasEntries().size() + " alias · " + logCount() + " log", Color.rgb(129, 149, 255));
+        addStatusCard(grid, "Service", serviceStatus(), Ui.CYAN);
+        addStatusCard(grid, "Recognizer", voskStatus(), Ui.SUCCESS);
+        addStatusCard(grid, "Coverage", "climate · body · HUD · drive · DVR · nav · apps", Ui.WARNING);
+        addStatusCard(grid, "Aliases / Log", aliasEntries().size() + " alias · " + logCount() + " log", Color.rgb(129, 149, 255));
         return grid;
     }
 
     private LinearLayout buildAssistantPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Voice Flow"));
-        panel.addView(Ui.text(this, "Расширенный voice-сценарий: отдельный listening entry, assistant flow, запуск приложений и прием share-location.", 14, false));
+        panel.addView(Ui.label(this, "Assistant Flow"));
+        panel.addView(Ui.text(this, "Главные voice-сценарии собраны отдельно от технических alias и лога.", 14, false));
 
         LinearLayout row = Ui.row(this);
         addActionChip(row, "Listening", () -> showResultSheet("Listening", VoiceFlowRouter.launchVoiceUi(this, "manual", latestRecognition, "listening")));
         addActionChip(row, "Assistant", () -> showResultSheet("Assistant", VoiceFlowRouter.openAssistant(this)));
-        addActionChip(row, "Навигация", () -> showResultSheet("Навигация", VoiceFlowRouter.openNavigation(this, latestRecognition)));
-        addActionChip(row, "Запуск app", this::launchAppFromInput);
+        addActionChip(row, "Navigation", () -> showResultSheet("Navigation", VoiceFlowRouter.openNavigation(this, latestRecognition)));
+        addActionChip(row, "Launch App", this::launchAppFromInput);
         panel.addView(row, lpMatchWrap(0, 12, 0, 0));
 
         panel.addView(Ui.muted(this, "Поддерживаются фразы вроде `открой навигацию`, `маршрут до дома`, `запусти yandex`, `открой браузер`."));
@@ -203,16 +229,16 @@ public class VoiceActivity extends Activity {
 
     private LinearLayout buildCommandPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Команды"));
-        panel.addView(Ui.text(this, "Локальный Vosk, ручной ввод команд и выполнение встроенного parser flow.", 14, false));
+        panel.addView(Ui.label(this, "Command Composer"));
+        panel.addView(Ui.text(this, "Один блок для диктовки, ручного ввода и запуска встроенного parser flow.", 14, false));
 
         commandInput = edit("Введите или продиктуйте команду", latestRecognition);
         panel.addView(commandInput);
 
         LinearLayout row = Ui.row(this);
-        addActionChip(row, "Слушать", this::startListening);
+        addActionChip(row, "Listen", this::startListening);
         addActionChip(row, "Стоп", this::stopListening);
-        addActionChip(row, "Выполнить", this::runInputCommand);
+        addActionChip(row, "Run", this::runInputCommand);
         addActionChip(row, "Очистить", () -> {
             latestRecognition = "";
             if (commandInput != null) commandInput.setText("");
@@ -231,8 +257,8 @@ public class VoiceActivity extends Activity {
 
     private LinearLayout buildAliasPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Команды алиасов"));
-        panel.addView(Ui.text(this, "Alias может запускать preset, scenario, action или broadcast command. Долгое нажатие — редактирование.", 14, false));
+        panel.addView(Ui.label(this, "Aliases"));
+        panel.addView(Ui.text(this, "Alias вынесены в отдельный слой: полезно, но не должно спорить с основным assistant flow.", 14, false));
 
         LinearLayout row = Ui.row(this);
         addActionChip(row, "Добавить", () -> editAlias(null));
@@ -264,8 +290,8 @@ public class VoiceActivity extends Activity {
 
     private LinearLayout buildLogPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Лог"));
-        panel.addView(Ui.text(this, "Неизвестные команды идут в broadcast fallback, логируются и могут быть сохранены как alias.", 14, false));
+        panel.addView(Ui.label(this, "Voice Log"));
+        panel.addView(Ui.text(this, "Fallback и нераспознанные команды остаются внизу как review-layer, а не как центр интерфейса.", 14, false));
 
         LinearLayout row = Ui.row(this);
         addActionChip(row, "Очистить лог", () -> {
@@ -292,10 +318,11 @@ public class VoiceActivity extends Activity {
         dock.setGravity(Gravity.CENTER_VERTICAL);
         dock.setPadding(Ui.dp(this, 18), Ui.dp(this, 14), Ui.dp(this, 18), Ui.dp(this, 14));
         addDockButton(dock, "Слушать", this::startListening, listening);
-        addDockButton(dock, "Выполнить", this::runInputCommand, false);
+        addDockButton(dock, "Run", this::runInputCommand, false);
         addDockButton(dock, "Alias", () -> editAlias(null), false);
         addDockButton(dock, "Log", this::showLogSheet, false);
         addDockButton(dock, "Назад", this::finish, false);
+        Ui.animateIn(dock, 150, 10f);
         return dock;
     }
 
@@ -306,13 +333,16 @@ public class VoiceActivity extends Activity {
             latestRecognition = normalizeRecognition(text);
             if (recognitionView != null) recognitionView.setText(recognitionSummary());
             if (commandInput != null && latestRecognition.length() > 0) commandInput.setText(latestRecognition);
+            renderContent();
         }));
+        renderContent();
     }
 
     private void stopListening() {
         recognizer.stop();
         listening = false;
         if (recognitionView != null) recognitionView.setText(recognitionSummary());
+        renderContent();
     }
 
     private void runInputCommand() {
@@ -573,6 +603,7 @@ public class VoiceActivity extends Activity {
         b.setTextColor(Color.WHITE);
         b.setBackground(Ui.cardBg(this, Color.argb(70, 255, 255, 255), Ui.dp(this, 18), Color.TRANSPARENT));
         b.setOnClickListener(v -> {
+            Ui.press(v);
             action.run();
             Ui.toast(this, label);
         });
@@ -585,7 +616,10 @@ public class VoiceActivity extends Activity {
     private void addMiniAction(LinearLayout row, String label, Runnable action) {
         Button b = Ui.button(this, label);
         b.setTextSize(13);
-        b.setOnClickListener(v -> action.run());
+        b.setOnClickListener(v -> {
+            Ui.press(v);
+            action.run();
+        });
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 48), 1f);
         lp.leftMargin = Ui.dp(this, 6);
         lp.rightMargin = Ui.dp(this, 6);
@@ -593,13 +627,18 @@ public class VoiceActivity extends Activity {
     }
 
     private void addStatusCard(GridLayout grid, String title, String value, int color) {
-        LinearLayout card = Ui.glassCard(this);
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(Ui.dp(this, 16), Ui.dp(this, 14), Ui.dp(this, 16), Ui.dp(this, 14));
+        card.setBackground(Ui.cardBg(this, Color.argb(24, 255, 255, 255), Ui.dp(this, 24), Color.argb(20, 255, 255, 255)));
         card.addView(Ui.label(this, title));
-        card.addView(Ui.text(this, value, 18, true));
+        TextView body = Ui.text(this, value, 13, false);
+        body.setTextColor(Ui.secondaryText(this));
+        card.addView(body);
         View accent = new View(this);
         accent.setBackground(Ui.glassPill(this, color));
-        LinearLayout.LayoutParams accentLp = new LinearLayout.LayoutParams(Ui.dp(this, 56), Ui.dp(this, 6));
-        accentLp.topMargin = Ui.dp(this, 14);
+        LinearLayout.LayoutParams accentLp = new LinearLayout.LayoutParams(Ui.dp(this, 40), Ui.dp(this, 4));
+        accentLp.topMargin = Ui.dp(this, 10);
         card.addView(accent, accentLp);
         GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
         lp.width = 0;
@@ -616,7 +655,10 @@ public class VoiceActivity extends Activity {
                 active ? Color.argb(115, 77, 163, 255) : Color.argb(54, 255, 255, 255),
                 Ui.dp(this, 20),
                 active ? Color.argb(100, 77, 163, 255) : Color.TRANSPARENT));
-        button.setOnClickListener(v -> action.run());
+        button.setOnClickListener(v -> {
+            Ui.press(v);
+            action.run();
+        });
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f);
         lp.leftMargin = Ui.dp(this, 6);
         lp.rightMargin = Ui.dp(this, 6);
@@ -654,6 +696,12 @@ public class VoiceActivity extends Activity {
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         lp.setMargins(Ui.dp(this, left), Ui.dp(this, top), Ui.dp(this, right), Ui.dp(this, bottom));
         return lp;
+    }
+
+    private View[] collectChildren(LinearLayout layout) {
+        View[] views = new View[layout.getChildCount()];
+        for (int i = 0; i < layout.getChildCount(); i++) views[i] = layout.getChildAt(i);
+        return views;
     }
 
     private EcarxVehicleAdapter.Result parseVehicleCommand(String cmd) {
