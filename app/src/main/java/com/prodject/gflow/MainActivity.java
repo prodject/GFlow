@@ -131,10 +131,7 @@ public class MainActivity extends Activity {
         bodyLp.topMargin = Ui.dp(this, 16);
         shell.addView(body, bodyLp);
 
-        body.addView(buildCollapsedNavRail(), new LinearLayout.LayoutParams(Ui.dp(this, 96), ViewGroup.LayoutParams.MATCH_PARENT));
-        View spacer = new View(this);
-        body.addView(spacer, new LinearLayout.LayoutParams(Ui.dp(this, 16), ViewGroup.LayoutParams.MATCH_PARENT));
-        body.addView(buildDashboardContent(), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f));
+        body.addView(buildDashboardContent(), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
         LinearLayout.LayoutParams dockLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 120));
         dockLp.topMargin = Ui.dp(this, 16);
@@ -170,7 +167,7 @@ public class MainActivity extends Activity {
         bar.setGravity(Gravity.CENTER_VERTICAL);
         bar.setPadding(Ui.dp(this, 20), Ui.dp(this, 10), Ui.dp(this, 20), Ui.dp(this, 10));
 
-        Button menu = Ui.button(this, "Меню");
+        Button menu = Ui.button(this, "☰");
         menu.setOnClickListener(v -> setDashboardDrawerOpen(!dashboardDrawerOpen));
         bar.addView(menu, new LinearLayout.LayoutParams(Ui.dp(this, 110), ViewGroup.LayoutParams.MATCH_PARENT));
 
@@ -209,32 +206,6 @@ public class MainActivity extends Activity {
 
     private GradientDrawable dashboardBg() {
         return Ui.dashboardBg(this);
-    }
-
-    private LinearLayout buildCollapsedNavRail() {
-        LinearLayout rail = new LinearLayout(this);
-        rail.setOrientation(LinearLayout.VERTICAL);
-        rail.setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL);
-        rail.setPadding(Ui.dp(this, 10), Ui.dp(this, 14), Ui.dp(this, 10), Ui.dp(this, 14));
-        addDashboardMenuButton(rail, "☰", true, () -> setDashboardDrawerOpen(!dashboardDrawerOpen));
-        return rail;
-    }
-
-    private void addDashboardMenuButton(LinearLayout menu, String symbol, boolean active, Runnable action) {
-        TextView button = new TextView(this);
-        button.setText(symbol);
-        button.setGravity(Gravity.CENTER);
-        button.setTextSize(22);
-        button.setTextColor(Ui.primaryText(this));
-        button.setClickable(true);
-        button.setFocusable(true);
-        button.setBackground(Ui.cardBg(this,
-                Ui.dark(this) ? Color.argb(74, 255, 255, 255) : Color.argb(224, 255, 255, 255),
-                Ui.dp(this, 22),
-                Ui.dark(this) ? Color.argb(54, 255, 255, 255) : Color.argb(72, 185, 198, 214)));
-        button.setOnClickListener(v -> transition(action));
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 56));
-        menu.addView(button, lp);
     }
 
     private View buildDashboardContent() {
@@ -352,7 +323,7 @@ public class MainActivity extends Activity {
         GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
         lp.width = 0;
         lp.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
-        lp.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+        lp.height = Ui.dp(this, 196);
         lp.setMargins(0, 0, Ui.dp(this, 16), Ui.dp(this, 16));
         grid.addView(card, lp);
     }
