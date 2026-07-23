@@ -158,7 +158,8 @@ public class MainActivity extends Activity {
         dashboardHandler.removeCallbacks(dashboardTicker);
         dashboardHandler.post(dashboardTicker);
         maybeRefreshHomeWeather();
-        Ui.animateIn(shell);
+        Ui.animateScaleIn(frame, 0);
+        Ui.animateIn(shell, 0, 18f);
     }
 
     private LinearLayout buildDashboardTopBar() {
@@ -177,13 +178,21 @@ public class MainActivity extends Activity {
         TextView title = Ui.text(this, "Главная", 28, true);
         title.setPadding(0, 0, 0, 0);
         titleBlock.addView(title);
+        TextView subtitle = Ui.muted(this, "Климат · Vehicle · Parking · Voice");
+        subtitle.setPadding(0, 0, 0, 0);
+        titleBlock.addView(subtitle);
         bar.addView(titleBlock, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
         topProfileValue = buildTopStat(bar, "Профиль", activeProfileName());
         topWeatherValue = buildTopStat(bar, "Погода", weatherSummary());
-        topCabinValue = buildTopStat(bar, "Салон", cabinSummary());
         topStatusValue = buildTopStat(bar, "Статус", adaptStatus());
-        topTimeValue = buildTopStat(bar, "Время", new java.text.SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date()));
+        topCabinValue = Ui.text(this, cabinSummary(), 13, false);
+        topCabinValue.setTextColor(Ui.secondaryText(this));
+        topCabinValue.setPadding(0, 0, 0, 0);
+        titleBlock.addView(topCabinValue);
+        topTimeValue = Ui.muted(this, new java.text.SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date()));
+        topTimeValue.setPadding(0, 0, 0, 0);
+        titleBlock.addView(topTimeValue);
         return bar;
     }
 
@@ -219,7 +228,7 @@ public class MainActivity extends Activity {
         hero.setPadding(Ui.dp(this, 24), Ui.dp(this, 24), Ui.dp(this, 24), Ui.dp(this, 24));
         hero.addView(buildWeatherHeroHeader(), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         VehicleVisualView visual = new VehicleVisualView(this, false);
-        LinearLayout.LayoutParams visualLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 520));
+        LinearLayout.LayoutParams visualLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 500));
         visualLp.topMargin = Ui.dp(this, 8);
         hero.addView(visual, visualLp);
         hero.addView(buildHeroQuickZones(), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
@@ -234,7 +243,7 @@ public class MainActivity extends Activity {
         top.setGravity(Gravity.TOP);
 
         LinearLayout weather = Ui.glassCard(this);
-        weather.setOnClickListener(v -> transition(this::showWeb));
+        weather.setOnClickListener(v -> Ui.press(v, () -> transition(this::showWeb)));
         weather.addView(Ui.label(this, "Погода"));
         LinearLayout weatherRow = Ui.row(this);
         weatherRow.setGravity(Gravity.TOP);
@@ -255,15 +264,17 @@ public class MainActivity extends Activity {
         top.addView(weather, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
         LinearLayout summary = Ui.glassCard(this);
-        summary.setOnClickListener(v -> showDashboardQuickSheet("Состояние автомобиля", new QuickAction[]{
+        summary.setPadding(Ui.dp(this, 20), Ui.dp(this, 18), Ui.dp(this, 20), Ui.dp(this, 18));
+        summary.setOnClickListener(v -> Ui.press(v, () -> showDashboardQuickSheet("Состояние автомобиля", new QuickAction[]{
                 new QuickAction("Открыть климат", this::showClimateMenu),
                 new QuickAction("Открыть автомобиль", this::showVehicleMenu),
                 new QuickAction("Открыть ADAS", this::showAdasMenu),
                 new QuickAction("Открыть парковку", this::openParkingScreen)
-        }));
+        })));
         summary.addView(Ui.label(this, "Автомобиль"));
         heroCarSummary = buildMetricLine("Климат", dashboardCarSummary());
         summary.addView(heroCarSummary);
+        summary.addView(buildMetricLine("Профиль", activeProfileName()));
         summary.addView(buildMetricLine("Режим", developerModeEnabled() ? "Developer" : "Comfort"));
         summary.addView(buildMetricLine("DVR", dvrSummary()));
         summary.addView(buildMetricLine("ADAS", adasSummary()));
@@ -295,21 +306,20 @@ public class MainActivity extends Activity {
         grid.setColumnCount(2);
         addDashboardWidget(grid, "Климат", climateDashboardDetails(), Ui.CYAN, this::showComfortClimate);
         addDashboardWidget(grid, "Готовность авто", vehicleDashboardDetails(), Ui.SUCCESS, this::showVehicleMenu);
-        addDashboardWidget(grid, "DVR", dvrDashboardDetails(), Ui.WARNING, () -> startActivity(new Intent(this, CameraActivity.class)));
-        addDashboardWidget(grid, "ADAS", adasDashboardDetails(), Color.rgb(123, 104, 238), this::showAdasMenu);
         addDashboardWidget(grid, "360 / Parking", parkingDashboardDetails(), Color.rgb(72, 153, 255), this::openParkingScreen);
-        addDashboardWidget(grid, "Профиль", profileDashboardDetails(), Color.rgb(101, 208, 168), this::showProfilesMenu);
+        addDashboardWidget(grid, "Голос", "Быстрый запуск команд, навигации и сценариев", Color.rgb(101, 208, 168), () -> startActivity(new Intent(this, VoiceActivity.class)));
         return grid;
     }
 
     private void addDashboardWidget(GridLayout grid, String title, String value, int color, Runnable action) {
         LinearLayout card = Ui.glassCard(this);
         card.setClickable(true);
-        card.setOnClickListener(v -> transition(action));
+        card.setOnClickListener(v -> Ui.press(v, () -> transition(action)));
         card.setOnLongClickListener(v -> {
             showWidgetActionSheet(title, action);
             return true;
         });
+        card.setClipToPadding(false);
         card.addView(Ui.label(this, title));
         TextView v = Ui.text(this, value, 20, true);
         v.setTextColor(Ui.primaryText(this));
@@ -326,6 +336,7 @@ public class MainActivity extends Activity {
         lp.height = Ui.dp(this, 196);
         lp.setMargins(0, 0, Ui.dp(this, 16), Ui.dp(this, 16));
         grid.addView(card, lp);
+        Ui.animateIn(card, 120, 14f);
     }
 
     private LinearLayout buildDashboardDock() {
@@ -338,31 +349,27 @@ public class MainActivity extends Activity {
                 new QuickAction("Умный климат", this::showClimateSmart),
                 new QuickAction("Пресеты климата", this::showClimatePresets)
         });
-        addDockButton(dock, "360", this::openParkingScreen, false, new QuickAction[]{
+        addDockButton(dock, "Parking", this::openParkingScreen, false, new QuickAction[]{
                 new QuickAction("Парковка", this::openParkingScreen),
                 new QuickAction("Камеры", () -> startActivity(new Intent(this, CameraActivity.class))),
                 new QuickAction("ADAS", this::showAdasMenu)
         });
-        addDockButton(dock, "DVR Rec", () -> startActivity(new Intent(this, CameraActivity.class)), false, new QuickAction[]{
+        addDockButton(dock, "DVR", () -> startActivity(new Intent(this, CameraActivity.class)), false, new QuickAction[]{
                 new QuickAction("Открыть DVR", () -> startActivity(new Intent(this, CameraActivity.class))),
                 new QuickAction("Парковка", this::openParkingScreen),
                 new QuickAction("Автоматизация", this::showAutomation)
         });
-        addDockButton(dock, "Drive Mode", this::showVehicleMenu, false, new QuickAction[]{
+        addDockButton(dock, "Vehicle", this::showVehicleMenu, false, new QuickAction[]{
                 new QuickAction("Открыть кузов", this::showVehicleMenu),
                 new QuickAction("HUD", this::showHudMenu),
                 new QuickAction("Профиль", this::showProfilesMenu)
         });
-        addDockButton(dock, "Голос", () -> startActivity(new Intent(this, VoiceActivity.class)), false, new QuickAction[]{
+        addDockButton(dock, "Voice", () -> startActivity(new Intent(this, VoiceActivity.class)), false, new QuickAction[]{
                 new QuickAction("Открыть голос", () -> startActivity(new Intent(this, VoiceActivity.class))),
                 new QuickAction("Автоматизация", this::showAutomation),
                 new QuickAction("Погода", this::showWeb)
         });
-        addDockButton(dock, "Профиль", this::showProfilesMenu, false, new QuickAction[]{
-                new QuickAction("Открыть профили", this::showProfilesMenu),
-                new QuickAction("Автоматизация", this::showAutomation),
-                new QuickAction("Настройки", this::showSettings)
-        });
+        Ui.animateIn(dock, 160, 12f);
         return dock;
     }
 
@@ -374,11 +381,13 @@ public class MainActivity extends Activity {
                 active ? Color.argb(115, 77, 163, 255) : (Ui.dark(this) ? Color.argb(54, 255, 255, 255) : Color.argb(206, 255, 255, 255)),
                 Ui.dp(this, 20),
                 active ? Color.argb(100, 77, 163, 255) : (Ui.dark(this) ? Color.TRANSPARENT : Color.argb(76, 185, 198, 214))));
-        button.setOnClickListener(v -> transition(action));
+        button.setOnClickListener(v -> Ui.press(v, () -> transition(action)));
         button.setOnLongClickListener(v -> {
             showDashboardQuickSheet(label, sheetActions);
             return true;
         });
+        button.setStateListAnimator(null);
+        button.setAllCaps(false);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f);
         lp.leftMargin = Ui.dp(this, 6);
         lp.rightMargin = Ui.dp(this, 6);
@@ -559,6 +568,7 @@ public class MainActivity extends Activity {
         addDrawerAction(drawer, "Голос", () -> startActivity(new Intent(this, VoiceActivity.class)));
         addDrawerAction(drawer, "Погода / Браузер", this::showWeb);
         addDrawerAction(drawer, "Настройки", this::showSettings);
+        Ui.animateIn(drawer, 120, 10f);
         return drawer;
     }
 
@@ -570,10 +580,10 @@ public class MainActivity extends Activity {
                 Ui.dark(this) ? Color.argb(56, 255, 255, 255) : Color.argb(214, 255, 255, 255),
                 Ui.dp(this, 18),
                 Ui.dark(this) ? Color.TRANSPARENT : Color.argb(72, 185, 198, 214)));
-        button.setOnClickListener(v -> {
+        button.setOnClickListener(v -> Ui.press(v, () -> {
             setDashboardDrawerOpen(false);
             transition(action);
-        });
+        }));
         drawer.addView(button, lpMatchWrap(0, 6, 0, 6));
     }
 
@@ -611,6 +621,7 @@ public class MainActivity extends Activity {
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         LinearLayout sheet = Ui.glassCard(this);
         sheet.setPadding(Ui.dp(this, 20), Ui.dp(this, 20), Ui.dp(this, 20), Ui.dp(this, 20));
+        sheet.setClipToPadding(false);
         sheet.addView(Ui.label(this, "Quick Actions"));
         sheet.addView(Ui.text(this, title, 24, true));
         for (QuickAction action : actions) {
@@ -620,10 +631,10 @@ public class MainActivity extends Activity {
                     Ui.dark(this) ? Color.argb(56, 255, 255, 255) : Color.argb(214, 255, 255, 255),
                     Ui.dp(this, 18),
                     Ui.dark(this) ? Color.TRANSPARENT : Color.argb(72, 185, 198, 214)));
-            button.setOnClickListener(v -> {
+            button.setOnClickListener(v -> Ui.press(v, () -> {
                 dialog.dismiss();
                 transition(action.action);
-            });
+            }));
             sheet.addView(button, lpMatchWrap(0, 8, 0, 0));
         }
         dialog.setContentView(sheet);
@@ -633,6 +644,7 @@ public class MainActivity extends Activity {
             window.setGravity(Gravity.BOTTOM);
             window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         }
+        Ui.animateScaleIn(sheet, 0);
         dialog.show();
     }
 
@@ -649,7 +661,7 @@ public class MainActivity extends Activity {
     private void addSideChip(LinearLayout col, String title, String value, int color, Runnable action) {
         LinearLayout chip = Ui.card(this);
         chip.setClickable(true);
-        chip.setOnClickListener(v -> transition(action));
+        chip.setOnClickListener(v -> Ui.press(v, () -> transition(action)));
         chip.addView(Ui.muted(this, title));
         TextView v = Ui.text(this, value, 16, true);
         v.setTextColor(color);
@@ -662,7 +674,7 @@ public class MainActivity extends Activity {
     private void addMainMetric(LinearLayout row, String title, String value, int color, Runnable action) {
         LinearLayout card = Ui.card(this);
         card.setClickable(true);
-        card.setOnClickListener(v -> transition(action));
+        card.setOnClickListener(v -> Ui.press(v, () -> transition(action)));
         TextView t = Ui.muted(this, title);
         TextView v = Ui.text(this, value, 20, true);
         v.setTextColor(color);
@@ -681,11 +693,12 @@ public class MainActivity extends Activity {
                 Ui.dark(this) ? Color.argb(70, 255, 255, 255) : Color.argb(214, 255, 255, 255),
                 Ui.dp(this, 16),
                 Ui.dark(this) ? Color.argb(80, 255, 255, 255) : Color.argb(72, 185, 198, 214)));
-        b.setOnClickListener(v -> transition(action));
+        b.setOnClickListener(v -> Ui.press(v, () -> transition(action)));
         b.setOnLongClickListener(v -> {
             showHeroActionSheet(label, action);
             return true;
         });
+        b.setStateListAnimator(null);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 54), 1);
         lp.setMargins(Ui.dp(this, 4), 0, Ui.dp(this, 4), 0);
         row.addView(b, lp);
@@ -723,7 +736,7 @@ public class MainActivity extends Activity {
     private void addNavCard(GridLayout grid, NavItem item) {
         LinearLayout card = Ui.card(this);
         card.setClickable(true);
-        card.setOnClickListener(v -> transition(item.action));
+        card.setOnClickListener(v -> Ui.press(v, () -> transition(item.action)));
         card.setOnLongClickListener(v -> {
             Ui.dialog(this, item.title, item.help());
             return true;
@@ -748,6 +761,7 @@ public class MainActivity extends Activity {
         lp.height = ViewGroup.LayoutParams.WRAP_CONTENT;
         lp.setMargins(Ui.dp(this, 5), Ui.dp(this, 5), Ui.dp(this, 5), Ui.dp(this, 5));
         grid.addView(card, lp);
+        Ui.animateIn(card, 0, 14f);
     }
 
     private LinearLayout.LayoutParams lpMatchWrap(int l, int t, int r, int b) {

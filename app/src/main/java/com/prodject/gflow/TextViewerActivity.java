@@ -83,9 +83,10 @@ public class TextViewerActivity extends Activity {
     private void renderContent() {
         if (contentHost == null) return;
         contentHost.removeAllViews();
-        contentHost.addView(buildOverviewGrid(), lpMatchWrap(0, 0, 0, 16));
         contentHost.addView(buildSearchPanel(), lpMatchWrap(0, 0, 0, 16));
         contentHost.addView(buildViewerPanel(), lpMatchWrap(0, 0, 0, 16));
+        contentHost.addView(buildOverviewGrid(), lpMatchWrap(0, 0, 0, 16));
+        Ui.staggerIn(collectChildren(contentHost), 40, 70);
         updateStatus();
     }
 
@@ -105,6 +106,7 @@ public class TextViewerActivity extends Activity {
             monospace = !monospace;
             renderContent();
         }, false);
+        Ui.animateIn(dock, 150, 10f);
         return dock;
     }
 
@@ -115,14 +117,20 @@ public class TextViewerActivity extends Activity {
         bar.setPadding(Ui.dp(this, 20), Ui.dp(this, 10), Ui.dp(this, 20), Ui.dp(this, 10));
 
         Button back = Ui.button(this, "Назад");
-        back.setOnClickListener(v -> finish());
+        back.setOnClickListener(v -> {
+            Ui.press(v);
+            finish();
+        });
         bar.addView(back, new LinearLayout.LayoutParams(Ui.dp(this, 110), LinearLayout.LayoutParams.MATCH_PARENT));
 
         LinearLayout titleBlock = new LinearLayout(this);
         titleBlock.setOrientation(LinearLayout.VERTICAL);
         titleBlock.setPadding(Ui.dp(this, 16), 0, 0, 0);
         titleBlock.addView(Ui.label(this, "Text Viewer"));
-        titleBlock.addView(Ui.text(this, "Текст", 28, true));
+        titleBlock.addView(Ui.text(this, "Text Reader", 28, true));
+        TextView subtitle = Ui.muted(this, "Reading first. Search and file actions stay secondary.");
+        subtitle.setTextSize(13);
+        titleBlock.addView(subtitle);
         bar.addView(titleBlock, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
         bar.addView(buildTopStat("Type", extension()));
@@ -146,22 +154,27 @@ public class TextViewerActivity extends Activity {
 
     private LinearLayout buildHeroPanel() {
         LinearLayout hero = Ui.glassCard(this);
-        hero.addView(Ui.label(this, "Open / Search / Copy / Share"));
+        hero.addView(Ui.label(this, "Reading Overview"));
 
         LinearLayout row = Ui.row(this);
         LinearLayout left = new LinearLayout(this);
         left.setOrientation(LinearLayout.VERTICAL);
-        left.addView(metricLine("Файл", currentFile == null ? "Нет файла" : currentFile.getName()));
-        left.addView(metricLine("Путь", currentFile == null ? "n/a" : currentFile.getAbsolutePath()));
-        left.addView(metricLine("Размер", currentFile == null ? "n/a" : readableBytes(currentFile.length())));
-        left.addView(metricLine("Режим", (monospace ? "monospace" : "default") + " · " + (wrapLines ? "wrap on" : "wrap off")));
+        left.addView(buildHeroMetric("File", currentFile == null ? "No file" : currentFile.getName()));
+        left.addView(buildHeroMetric("Type", extension().toUpperCase(Locale.ROOT)));
+        left.addView(buildHeroMetric("Size", currentFile == null ? "n/a" : readableBytes(currentFile.length())));
+        left.addView(buildHeroMetric("Mode", (monospace ? "mono" : "ui") + " · " + (wrapLines ? "wrap" : "scroll")));
         row.addView(left, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
-        LinearLayout badge = Ui.glassCard(this);
+        LinearLayout badge = new LinearLayout(this);
+        badge.setOrientation(LinearLayout.VERTICAL);
         badge.setGravity(Gravity.CENTER);
+        badge.setBackground(Ui.cardBg(this, Color.argb(58, 255, 255, 255), Ui.dp(this, 32), Color.argb(34, 255, 255, 255)));
         TextView label = Ui.text(this, extension().toUpperCase(Locale.ROOT), 28, true);
         label.setGravity(Gravity.CENTER);
         badge.addView(label);
+        TextView hint = Ui.muted(this, "Readable view");
+        hint.setGravity(Gravity.CENTER);
+        badge.addView(hint);
         LinearLayout.LayoutParams badgeLp = new LinearLayout.LayoutParams(Ui.dp(this, 180), Ui.dp(this, 180));
         badgeLp.leftMargin = Ui.dp(this, 12);
         row.addView(badge, badgeLp);
@@ -172,8 +185,8 @@ public class TextViewerActivity extends Activity {
         hero.addView(statusView);
 
         LinearLayout quick = Ui.row(this);
-        addActionChip(quick, "Поиск", this::findNext);
-        addActionChip(quick, "Копировать", this::copyText);
+        addActionChip(quick, "Search", this::findNext);
+        addActionChip(quick, "Copy", this::copyText);
         addActionChip(quick, "Share", this::shareCurrent);
         addActionChip(quick, wrapLines ? "Wrap Off" : "Wrap On", () -> {
             wrapLines = !wrapLines;
@@ -181,6 +194,18 @@ public class TextViewerActivity extends Activity {
         });
         hero.addView(quick, lpMatchWrap(0, 14, 0, 0));
         return hero;
+    }
+
+    private View buildHeroMetric(String key, String value) {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(Ui.dp(this, 16), Ui.dp(this, 14), Ui.dp(this, 16), Ui.dp(this, 14));
+        card.setBackground(Ui.cardBg(this, Color.argb(58, 255, 255, 255), Ui.dp(this, 24), Color.argb(40, 255, 255, 255)));
+        card.addView(Ui.label(this, key));
+        TextView text = Ui.text(this, value, 16, true);
+        text.setPadding(0, Ui.dp(this, 2), 0, 0);
+        card.addView(text);
+        return card;
     }
 
     private GridLayout buildOverviewGrid() {
@@ -196,7 +221,7 @@ public class TextViewerActivity extends Activity {
     private LinearLayout buildSearchPanel() {
         LinearLayout panel = Ui.glassCard(this);
         panel.addView(Ui.label(this, "Search"));
-        panel.addView(Ui.text(this, "Поиск по тексту, переключение monospace и wrap lines on/off.", 14, false));
+        panel.addView(Ui.text(this, "Поиск и режим чтения вынесены отдельно, но не конкурируют с самим текстом.", 14, false));
 
         searchInput = edit("Поиск по тексту", lastQuery);
         panel.addView(searchInput);
@@ -222,8 +247,8 @@ public class TextViewerActivity extends Activity {
 
     private LinearLayout buildViewerPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Viewer"));
-        panel.addView(Ui.text(this, "Поддержка .txt, .log, .json, .xml и других текстовых файлов.", 14, false));
+        panel.addView(Ui.label(this, "Reading Surface"));
+        panel.addView(Ui.text(this, "Контент теперь доминирует над chrome. Поддерживаются .txt, .log, .json, .xml и другие текстовые файлы.", 14, false));
 
         if (!wrapLines) {
             HorizontalScrollView horizontal = new HorizontalScrollView(this);
@@ -401,7 +426,10 @@ public class TextViewerActivity extends Activity {
         Button b = Ui.button(this, label);
         b.setTextColor(Color.WHITE);
         b.setBackground(Ui.cardBg(this, Color.argb(70, 255, 255, 255), Ui.dp(this, 18), Color.TRANSPARENT));
-        b.setOnClickListener(v -> action.run());
+        b.setOnClickListener(v -> {
+            Ui.press(v);
+            action.run();
+        });
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 58), 1f);
         lp.leftMargin = Ui.dp(this, 6);
         lp.rightMargin = Ui.dp(this, 6);
@@ -416,7 +444,10 @@ public class TextViewerActivity extends Activity {
                 active ? Color.argb(115, 77, 163, 255) : Color.argb(54, 255, 255, 255),
                 Ui.dp(this, 20),
                 active ? Color.argb(100, 77, 163, 255) : Color.TRANSPARENT));
-        button.setOnClickListener(v -> action.run());
+        button.setOnClickListener(v -> {
+            Ui.press(v);
+            action.run();
+        });
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f);
         lp.leftMargin = Ui.dp(this, 6);
         lp.rightMargin = Ui.dp(this, 6);
@@ -424,13 +455,18 @@ public class TextViewerActivity extends Activity {
     }
 
     private void addStatusCard(GridLayout grid, String title, String value, int color) {
-        LinearLayout card = Ui.glassCard(this);
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(Ui.dp(this, 16), Ui.dp(this, 14), Ui.dp(this, 16), Ui.dp(this, 14));
+        card.setBackground(Ui.cardBg(this, Color.argb(24, 255, 255, 255), Ui.dp(this, 24), Color.argb(20, 255, 255, 255)));
         card.addView(Ui.label(this, title));
-        card.addView(Ui.text(this, value, 18, true));
+        TextView body = Ui.text(this, value, 13, false);
+        body.setTextColor(Ui.secondaryText(this));
+        card.addView(body);
         View accent = new View(this);
         accent.setBackground(Ui.glassPill(this, color));
-        LinearLayout.LayoutParams accentLp = new LinearLayout.LayoutParams(Ui.dp(this, 56), Ui.dp(this, 6));
-        accentLp.topMargin = Ui.dp(this, 14);
+        LinearLayout.LayoutParams accentLp = new LinearLayout.LayoutParams(Ui.dp(this, 40), Ui.dp(this, 4));
+        accentLp.topMargin = Ui.dp(this, 10);
         card.addView(accent, accentLp);
         GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
         lp.width = 0;
@@ -456,5 +492,11 @@ public class TextViewerActivity extends Activity {
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, height);
         lp.topMargin = Ui.dp(this, 12);
         return lp;
+    }
+
+    private View[] collectChildren(LinearLayout layout) {
+        View[] views = new View[layout.getChildCount()];
+        for (int i = 0; i < layout.getChildCount(); i++) views[i] = layout.getChildAt(i);
+        return views;
     }
 }

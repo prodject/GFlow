@@ -19,6 +19,8 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import java.util.ArrayList;
+import java.util.List;
 
 public class AdasActivity extends Activity {
     private static final String APP_SETTINGS = "app_settings";
@@ -86,7 +88,10 @@ public class AdasActivity extends Activity {
             root.addView(buildDiagnosticsPanel(), lpMatchWrap(0, 0, 0, 16));
         }
         root.addView(buildStatusGrid(), lpMatchWrap(0, 0, 0, 16));
-        root.addView(buildBottomDock(), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 112)));
+        LinearLayout dock = buildBottomDock();
+        root.addView(dock, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 112)));
+        Ui.staggerIn(collectChildren(root), 40, 55);
+        Ui.animateIn(dock, 220, 18f);
         return scroll;
     }
 
@@ -97,13 +102,13 @@ public class AdasActivity extends Activity {
         bar.setPadding(Ui.dp(this, 20), Ui.dp(this, 10), Ui.dp(this, 20), Ui.dp(this, 10));
 
         Button back = Ui.button(this, "Назад");
-        back.setOnClickListener(v -> finish());
+        Ui.press(back, this::finish);
         bar.addView(back, new LinearLayout.LayoutParams(Ui.dp(this, 110), LinearLayout.LayoutParams.MATCH_PARENT));
 
         LinearLayout titleBlock = new LinearLayout(this);
         titleBlock.setOrientation(LinearLayout.VERTICAL);
         titleBlock.setPadding(Ui.dp(this, 16), 0, 0, 0);
-        titleBlock.addView(Ui.label(this, "Driver Assistance"));
+        titleBlock.addView(Ui.label(this, "Confidence / Cruise / Lane"));
         TextView title = Ui.text(this, "ADAS / Вождение", 28, true);
         title.setPadding(0, 0, 0, 0);
         titleBlock.addView(title);
@@ -134,16 +139,16 @@ public class AdasActivity extends Activity {
 
     private LinearLayout buildHeroPanel() {
         LinearLayout hero = Ui.glassCard(this);
-        hero.addView(Ui.label(this, "Drive Visual"));
+        hero.addView(Ui.label(this, "Drive Confidence"));
 
         LinearLayout row = Ui.row(this);
         LinearLayout left = new LinearLayout(this);
         left.setOrientation(LinearLayout.VERTICAL);
-        heroAebValue = metricLine(left, "AEB", "active");
-        heroFcwValue = metricLine(left, "FCW", "active");
-        heroLkaValue = metricLine(left, "LKA", "active");
-        heroPdcValue = metricLine(left, "PDC", "ready");
-        heroAccValue = metricLine(left, "ACC", "gap " + currentAccGap);
+        heroAebValue = metricLine(left, "Safety stack", "AEB · FCW · RCW");
+        heroFcwValue = metricLine(left, "Lane stack", "LKA · LDW · ELKA");
+        heroLkaValue = metricLine(left, "Cruise stack", "ACC gap " + currentAccGap);
+        heroPdcValue = metricLine(left, "Parking bridge", "PDC ready");
+        heroAccValue = metricLine(left, "Mode", MODE_OVERVIEW.equals(currentMode) ? "Everyday assist" : currentMode);
         row.addView(left, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
         AdasVisualView visual = new AdasVisualView(this);
@@ -171,7 +176,8 @@ public class AdasActivity extends Activity {
 
     private LinearLayout buildSafetyControls() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Системы безопасности"));
+        panel.addView(Ui.label(this, "Safety Stack"));
+        panel.addView(Ui.muted(this, "Основной слой помощи водителю: collision, lane and blind-spot controls без developer noise."));
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(3);
         addTile(grid, "AEB", Color.rgb(113, 91, 177), () -> sendVehicle("AEB включить", EcarxVehicleAdapter.ADAS_AEB, EcarxVehicleAdapter.COMMON_ON));
@@ -192,7 +198,7 @@ public class AdasActivity extends Activity {
 
     private LinearLayout buildAccPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "ACC / ICC"));
+        panel.addView(Ui.label(this, "Cruise Control"));
 
         LinearLayout switches = Ui.row(this);
         addActionChip(switches, "ACC", () -> sendVehicle("ACC режим", EcarxVehicleAdapter.ADAS_ACC_ICC_SWITCH, EcarxVehicleAdapter.ACC_ICC_ACC));
@@ -238,8 +244,12 @@ public class AdasActivity extends Activity {
 
     private LinearLayout buildPdcPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "PDC / Парковка"));
-        panel.addView(Ui.muted(this, "PDC остается частью ADAS, а полный сценарий 360 / APA открыт как отдельный экран парковки."));
+        panel.setBackground(Ui.cardBg(this,
+                Ui.dark(this) ? Color.argb(232, 18, 26, 44) : Color.argb(248, 239, 244, 250),
+                Ui.dp(this, 28),
+                Ui.glassLine(this)));
+        panel.addView(Ui.label(this, "Parking Bridge"));
+        panel.addView(Ui.muted(this, "Здесь остается только быстрый PDC bridge. Полный 360 / APA сценарий живет в Parking."));
 
         LinearLayout controls = Ui.row(this);
         addActionChip(controls, "PDC вкл", () -> sendVehicle("PDC включить", EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.COMMON_ON));
@@ -260,7 +270,7 @@ public class AdasActivity extends Activity {
 
     private LinearLayout buildModeSwitcher() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Режимы раздела"));
+        panel.addView(Ui.label(this, "Drive Layers"));
         LinearLayout row = Ui.row(this);
         addModeChip(row, "Обзор", MODE_OVERVIEW);
         if (experimentalFeaturesEnabled()) addModeChip(row, "Эксперимент", MODE_EXPERIMENTAL);
@@ -271,6 +281,10 @@ public class AdasActivity extends Activity {
 
     private LinearLayout buildExperimentalPanel() {
         LinearLayout panel = Ui.glassCard(this);
+        panel.setBackground(Ui.cardBg(this,
+                Ui.dark(this) ? Color.argb(236, 14, 21, 38) : Color.argb(246, 241, 245, 252),
+                Ui.dp(this, 28),
+                Ui.glassLine(this)));
         panel.setVisibility(MODE_EXPERIMENTAL.equals(currentMode) ? View.VISIBLE : View.GONE);
         panel.addView(Ui.label(this, "Экспериментальный ADAS"));
         panel.addView(Ui.muted(this, "Панель доступна только при включенном experimental gate. Команды отправляются через новый UI, без возврата в legacy ADAS."));
@@ -347,6 +361,10 @@ public class AdasActivity extends Activity {
 
     private LinearLayout buildDiagnosticsPanel() {
         LinearLayout panel = Ui.glassCard(this);
+        panel.setBackground(Ui.cardBg(this,
+                Ui.dark(this) ? Color.argb(238, 12, 18, 32) : Color.argb(245, 238, 242, 248),
+                Ui.dp(this, 28),
+                Ui.glassLine(this)));
         panel.setVisibility(MODE_DIAGNOSTICS.equals(currentMode) ? View.VISIBLE : View.GONE);
         panel.addView(Ui.label(this, "Диагностика разработчика"));
         panel.addView(Ui.muted(this, "Support/readback, последние команды и сырой набор ID вынесены в новый экран ADAS вместо legacy ветки."));
@@ -406,8 +424,12 @@ public class AdasActivity extends Activity {
 
     private void addStatusCard(GridLayout grid, String title, String value, int color) {
         LinearLayout card = Ui.glassCard(this);
+        card.setBackground(Ui.cardBg(this,
+                Ui.dark(this) ? Color.argb(122, 255, 255, 255) : Color.argb(232, 255, 255, 255),
+                Ui.dp(this, 26),
+                Ui.glassLine(this)));
         card.addView(Ui.label(this, title));
-        TextView v = Ui.text(this, value, 18, true);
+        TextView v = Ui.text(this, value, 17, true);
         v.setPadding(0, Ui.dp(this, 8), 0, 0);
         card.addView(v);
         View accent = new View(this);
@@ -444,7 +466,7 @@ public class AdasActivity extends Activity {
         tile.setGravity(Gravity.CENTER);
         tile.setPadding(Ui.dp(this, 12), Ui.dp(this, 16), Ui.dp(this, 12), Ui.dp(this, 16));
         tile.setBackground(Ui.cardBg(this, Color.argb(88, Color.red(color), Color.green(color), Color.blue(color)), Ui.dp(this, 22), Color.argb(80, 255, 255, 255)));
-        tile.setOnClickListener(v -> {
+        Ui.press(tile, () -> {
             action.run();
             Ui.toast(this, label);
         });
@@ -459,7 +481,7 @@ public class AdasActivity extends Activity {
         Button b = Ui.button(this, label);
         b.setTextColor(Color.WHITE);
         b.setBackground(Ui.cardBg(this, Color.argb(70, 255, 255, 255), Ui.dp(this, 18), Color.TRANSPARENT));
-        b.setOnClickListener(v -> {
+        Ui.press(b, () -> {
             action.run();
             Ui.toast(this, label);
         });
@@ -477,7 +499,7 @@ public class AdasActivity extends Activity {
                 active ? Color.argb(115, 77, 163, 255) : Color.argb(54, 255, 255, 255),
                 Ui.dp(this, 20),
                 active ? Color.argb(100, 77, 163, 255) : Color.TRANSPARENT));
-        button.setOnClickListener(v -> action.run());
+        Ui.press(button, action);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f);
         lp.leftMargin = Ui.dp(this, 6);
         lp.rightMargin = Ui.dp(this, 6);
@@ -500,11 +522,11 @@ public class AdasActivity extends Activity {
         if (topSafetyValue != null) topSafetyValue.setText(experimentalFeaturesEnabled() ? "База + EXP" : "Базовый набор");
         if (topAccValue != null) topAccValue.setText("Gap " + currentAccGap);
         if (topPdcValue != null) topPdcValue.setText("PDC + Parking");
-        if (heroAebValue != null) heroAebValue.setText("AEB: active");
-        if (heroFcwValue != null) heroFcwValue.setText("FCW: active");
-        if (heroLkaValue != null) heroLkaValue.setText("LKA: active");
-        if (heroPdcValue != null) heroPdcValue.setText("PDC: ready");
-        if (heroAccValue != null) heroAccValue.setText("ACC: gap " + currentAccGap);
+        if (heroAebValue != null) heroAebValue.setText("Safety stack: AEB · FCW · RCW");
+        if (heroFcwValue != null) heroFcwValue.setText("Lane stack: LKA · LDW · ELKA");
+        if (heroLkaValue != null) heroLkaValue.setText("Cruise stack: ACC gap " + currentAccGap);
+        if (heroPdcValue != null) heroPdcValue.setText("Parking bridge: PDC ready");
+        if (heroAccValue != null) heroAccValue.setText("Mode: " + (MODE_OVERVIEW.equals(currentMode) ? "Everyday assist" : currentMode));
     }
 
     private void addModeChip(LinearLayout row, String label, String mode) {
@@ -515,7 +537,7 @@ public class AdasActivity extends Activity {
                 active ? Color.argb(115, 77, 163, 255) : (Ui.dark(this) ? Color.argb(54, 255, 255, 255) : Color.argb(214, 255, 255, 255)),
                 Ui.dp(this, 18),
                 active ? Color.argb(100, 77, 163, 255) : Color.TRANSPARENT));
-        b.setOnClickListener(v -> {
+        Ui.press(b, () -> {
             currentMode = mode;
             recreate();
         });
@@ -581,6 +603,12 @@ public class AdasActivity extends Activity {
             case 3: return EcarxVehicleAdapter.ACC_TIME_GAP_3;
             default: return EcarxVehicleAdapter.ACC_TIME_GAP_3;
         }
+    }
+
+    private View[] collectChildren(LinearLayout parent) {
+        List<View> views = new ArrayList<>();
+        for (int i = 0; i < parent.getChildCount(); i++) views.add(parent.getChildAt(i));
+        return views.toArray(new View[0]);
     }
 
     private boolean experimentalFeaturesEnabled() {

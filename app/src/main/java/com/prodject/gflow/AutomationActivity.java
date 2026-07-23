@@ -58,7 +58,9 @@ public class AutomationActivity extends Activity {
         contentHost.setOrientation(LinearLayout.VERTICAL);
         root.addView(contentHost, lpMatchWrap(0, 0, 0, 16));
 
-        root.addView(buildBottomDock(), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 112)));
+        LinearLayout dock = buildBottomDock();
+        root.addView(dock, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 112)));
+        Ui.animateIn(dock, 220, 18f);
         return scroll;
     }
 
@@ -97,6 +99,7 @@ public class AutomationActivity extends Activity {
                 contentHost.addView(buildIdeasPanel(), lpMatchWrap(0, 0, 0, 16));
                 break;
         }
+        Ui.staggerIn(collectChildren(contentHost), 40, 70);
     }
 
     private LinearLayout buildTopBar() {
@@ -106,7 +109,7 @@ public class AutomationActivity extends Activity {
         bar.setPadding(Ui.dp(this, 20), Ui.dp(this, 10), Ui.dp(this, 20), Ui.dp(this, 10));
 
         Button back = Ui.button(this, "Назад");
-        back.setOnClickListener(v -> {
+        Ui.press(back, () -> {
             if (mode == Mode.HOME) finish();
             else openMode(Mode.HOME);
         });
@@ -119,6 +122,9 @@ public class AutomationActivity extends Activity {
         TextView title = Ui.text(this, "Автоматизация", 28, true);
         title.setPadding(0, 0, 0, 0);
         titleBlock.addView(title);
+        TextView subtitle = Ui.muted(this, "Templates and libraries first. Editors and logs stay secondary.");
+        subtitle.setTextSize(13);
+        titleBlock.addView(subtitle);
         bar.addView(titleBlock, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
         bar.addView(buildTopStat("Presets", String.valueOf(AutomationEngine.names(prefs, AutomationEngine.KEY_PRESET_ORDER).size())));
@@ -209,6 +215,7 @@ public class AutomationActivity extends Activity {
     private LinearLayout buildTemplatePanel() {
         LinearLayout panel = Ui.glassCard(this);
         panel.addView(Ui.label(this, "Templates & Actions"));
+        panel.addView(Ui.text(this, "The primary layer focuses on ready-made automation building blocks.", 14, false));
 
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(3);
@@ -254,7 +261,7 @@ public class AutomationActivity extends Activity {
     }
 
     private LinearLayout buildIdeasPanel() {
-        LinearLayout panel = Ui.glassCard(this);
+        LinearLayout panel = Ui.secondaryCard(this);
         panel.addView(Ui.label(this, "Automation Notes"));
         panel.addView(Ui.text(this, automationIdeas(), 14, false));
         return panel;
@@ -560,15 +567,16 @@ public class AutomationActivity extends Activity {
     }
 
     private void addStatusCard(GridLayout grid, String title, String value, int color) {
-        LinearLayout card = Ui.glassCard(this);
+        LinearLayout card = Ui.secondaryCard(this);
         card.addView(Ui.label(this, title));
-        TextView v = Ui.text(this, value, 16, true);
+        TextView v = Ui.text(this, value, 13, false);
+        v.setTextColor(Ui.secondaryText(this));
         v.setPadding(0, Ui.dp(this, 8), 0, 0);
         card.addView(v);
         View accent = new View(this);
         accent.setBackground(Ui.glassPill(this, color));
-        LinearLayout.LayoutParams accentLp = new LinearLayout.LayoutParams(Ui.dp(this, 56), Ui.dp(this, 6));
-        accentLp.topMargin = Ui.dp(this, 14);
+        LinearLayout.LayoutParams accentLp = new LinearLayout.LayoutParams(Ui.dp(this, 40), Ui.dp(this, 4));
+        accentLp.topMargin = Ui.dp(this, 10);
         card.addView(accent, accentLp);
         GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
         lp.width = 0;
@@ -581,7 +589,7 @@ public class AutomationActivity extends Activity {
         LinearLayout card = Ui.glassCard(this);
         card.addView(Ui.label(this, title));
         card.addView(Ui.text(this, value, 15, false));
-        card.setOnClickListener(v -> action.run());
+        Ui.press(card, action);
         View accent = new View(this);
         accent.setBackground(Ui.glassPill(this, color));
         LinearLayout.LayoutParams accentLp = new LinearLayout.LayoutParams(Ui.dp(this, 72), Ui.dp(this, 6));
@@ -615,7 +623,7 @@ public class AutomationActivity extends Activity {
         tile.setGravity(Gravity.CENTER);
         tile.setPadding(Ui.dp(this, 12), Ui.dp(this, 16), Ui.dp(this, 12), Ui.dp(this, 16));
         tile.setBackground(Ui.cardBg(this, Color.argb(88, Color.red(color), Color.green(color), Color.blue(color)), Ui.dp(this, 22), Color.argb(80, 255, 255, 255)));
-        tile.setOnClickListener(v -> action.run());
+        Ui.press(tile, action);
         GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
         lp.width = 0;
         lp.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
@@ -627,7 +635,7 @@ public class AutomationActivity extends Activity {
         Button b = Ui.button(this, label);
         b.setTextColor(Color.WHITE);
         b.setBackground(Ui.cardBg(this, Color.argb(70, 255, 255, 255), Ui.dp(this, 18), Color.TRANSPARENT));
-        b.setOnClickListener(v -> action.run());
+        Ui.press(b, action);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 58), 1f);
         lp.leftMargin = Ui.dp(this, 6);
         lp.rightMargin = Ui.dp(this, 6);
@@ -642,7 +650,7 @@ public class AutomationActivity extends Activity {
                 active ? Color.argb(115, 77, 163, 255) : Color.argb(54, 255, 255, 255),
                 Ui.dp(this, 20),
                 active ? Color.argb(100, 77, 163, 255) : Color.TRANSPARENT));
-        button.setOnClickListener(v -> action.run());
+        Ui.press(button, action);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f);
         lp.leftMargin = Ui.dp(this, 6);
         lp.rightMargin = Ui.dp(this, 6);
@@ -755,6 +763,12 @@ public class AutomationActivity extends Activity {
 
     private GradientDrawable dashboardBg() {
         return Ui.dashboardBg(this);
+    }
+
+    private View[] collectChildren(LinearLayout layout) {
+        View[] views = new View[layout.getChildCount()];
+        for (int i = 0; i < layout.getChildCount(); i++) views[i] = layout.getChildAt(i);
+        return views;
     }
 
     private enum Mode {

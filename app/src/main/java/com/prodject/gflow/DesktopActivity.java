@@ -72,7 +72,9 @@ public class DesktopActivity extends Activity {
         contentHost.setOrientation(LinearLayout.VERTICAL);
         root.addView(contentHost, lpMatchWrap(0, 0, 0, 16));
 
-        root.addView(buildBottomDock(), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 112)));
+        LinearLayout dock = buildBottomDock();
+        root.addView(dock, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 112)));
+        Ui.animateIn(dock, 220, 18f);
         return scroll;
     }
 
@@ -92,6 +94,7 @@ public class DesktopActivity extends Activity {
             contentHost.addView(buildOneOsDockPanel(), lpMatchWrap(0, 0, 0, 16));
             contentHost.addView(buildAppLibraryPanel(), lpMatchWrap(0, 0, 0, 16));
         }
+        Ui.staggerIn(collectChildren(contentHost), 30, 55);
     }
 
     private LinearLayout buildTopBar() {
@@ -101,7 +104,7 @@ public class DesktopActivity extends Activity {
         bar.setPadding(Ui.dp(this, 20), Ui.dp(this, 10), Ui.dp(this, 20), Ui.dp(this, 10));
 
         Button back = Ui.button(this, "Назад");
-        back.setOnClickListener(v -> {
+        Ui.press(back, () -> {
             if (mode == Mode.HOME) finish();
             else openMode(Mode.HOME);
         });
@@ -122,10 +125,10 @@ public class DesktopActivity extends Activity {
 
     private String modeLabel() {
         switch (mode) {
-            case DOCK: return "Dock Apps";
-            case ONE_OS: return "OneOS Dock";
+            case DOCK: return "Pinned Apps / Library";
+            case ONE_OS: return "Desktop Bridge / OneOS";
             case HOME:
-            default: return "Desktop Shell";
+            default: return "Home Surface / Shortcuts";
         }
     }
 
@@ -144,7 +147,7 @@ public class DesktopActivity extends Activity {
 
     private LinearLayout buildHeroPanel() {
         LinearLayout hero = Ui.glassCard(this);
-        hero.addView(Ui.label(this, "Home Surface / Status / Shortcuts"));
+        hero.addView(Ui.label(this, "Home Surface"));
 
         LinearLayout row = Ui.row(this);
         LinearLayout left = new LinearLayout(this);
@@ -192,6 +195,10 @@ public class DesktopActivity extends Activity {
 
     private LinearLayout buildWeatherPanel() {
         LinearLayout panel = Ui.glassCard(this);
+        panel.setBackground(Ui.cardBg(this,
+                Ui.dark(this) ? Color.argb(236, 16, 24, 42) : Color.argb(246, 240, 244, 250),
+                Ui.dp(this, 28),
+                Ui.glassLine(this)));
         panel.addView(Ui.label(this, "Weather Widget"));
         panel.addView(Ui.text(this, "Короткая сводка для desktop-shell и ручное обновление кэша погоды.", 14, false));
 
@@ -255,6 +262,10 @@ public class DesktopActivity extends Activity {
 
     private LinearLayout buildAppLibraryPanel() {
         LinearLayout panel = Ui.glassCard(this);
+        panel.setBackground(Ui.cardBg(this,
+                Ui.dark(this) ? Color.argb(236, 14, 21, 38) : Color.argb(245, 238, 242, 248),
+                Ui.dp(this, 28),
+                Ui.glassLine(this)));
         panel.addView(Ui.label(this, "App Library"));
         panel.addView(Ui.text(this, "Лончер-приложения устройства: запуск, pin в dock и переход к удалению.", 14, false));
 
@@ -296,6 +307,10 @@ public class DesktopActivity extends Activity {
 
     private LinearLayout buildOneOsDockPanel() {
         LinearLayout panel = Ui.glassCard(this);
+        panel.setBackground(Ui.cardBg(this,
+                Ui.dark(this) ? Color.argb(238, 12, 18, 32) : Color.argb(244, 236, 241, 247),
+                Ui.dp(this, 28),
+                Ui.glassLine(this)));
         panel.addView(Ui.label(this, "OneOS Dock"));
         panel.addView(Ui.text(this, "Bridge для hand-over, visibility и notifyItem команд системного dock.", 14, false));
         panel.addView(Ui.muted(this, new EcarxDockAdapter(this).availability()));
@@ -456,7 +471,7 @@ public class DesktopActivity extends Activity {
         Button b = Ui.button(this, label);
         b.setTextColor(Color.WHITE);
         b.setBackground(Ui.cardBg(this, Color.argb(70, 255, 255, 255), Ui.dp(this, 18), Color.TRANSPARENT));
-        b.setOnClickListener(v -> action.run());
+        Ui.press(b, action);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 58), 1f);
         lp.leftMargin = Ui.dp(this, 6);
         lp.rightMargin = Ui.dp(this, 6);
@@ -466,7 +481,7 @@ public class DesktopActivity extends Activity {
     private void addMiniAction(LinearLayout row, String label, Runnable action) {
         Button b = Ui.button(this, label);
         b.setTextSize(13);
-        b.setOnClickListener(v -> action.run());
+        Ui.press(b, action);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 48), 1f);
         lp.leftMargin = Ui.dp(this, 6);
         lp.rightMargin = Ui.dp(this, 6);
@@ -481,7 +496,7 @@ public class DesktopActivity extends Activity {
                 active ? Color.argb(115, 77, 163, 255) : Color.argb(54, 255, 255, 255),
                 Ui.dp(this, 20),
                 active ? Color.argb(100, 77, 163, 255) : Color.TRANSPARENT));
-        button.setOnClickListener(v -> action.run());
+        Ui.press(button, action);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f);
         lp.leftMargin = Ui.dp(this, 6);
         lp.rightMargin = Ui.dp(this, 6);
@@ -490,6 +505,10 @@ public class DesktopActivity extends Activity {
 
     private void addStatusCard(GridLayout grid, String title, String value, int color) {
         LinearLayout card = Ui.glassCard(this);
+        card.setBackground(Ui.cardBg(this,
+                Ui.dark(this) ? Color.argb(118, 255, 255, 255) : Color.argb(232, 255, 255, 255),
+                Ui.dp(this, 26),
+                Ui.glassLine(this)));
         card.addView(Ui.label(this, title));
         card.addView(Ui.text(this, value, 18, true));
         View accent = new View(this);
@@ -509,7 +528,7 @@ public class DesktopActivity extends Activity {
         card.addView(Ui.text(this, title, 18, true));
         card.addView(Ui.muted(this, body));
         Button open = Ui.button(this, "Открыть");
-        open.setOnClickListener(v -> action.run());
+        Ui.press(open, action);
         card.addView(open, lpMatchWrap(0, 12, 0, 0));
         View accent = new View(this);
         accent.setBackground(Ui.glassPill(this, color));
@@ -525,7 +544,7 @@ public class DesktopActivity extends Activity {
 
     private void addDockCommand(GridLayout grid, String label, DockAction action) {
         Button button = Ui.button(this, label);
-        button.setOnClickListener(v -> {
+        Ui.press(button, () -> {
             EcarxDockAdapter.Result result;
             try {
                 result = action.run(new EcarxDockAdapter(this));
@@ -575,6 +594,12 @@ public class DesktopActivity extends Activity {
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         lp.setMargins(Ui.dp(this, left), Ui.dp(this, top), Ui.dp(this, right), Ui.dp(this, bottom));
         return lp;
+    }
+
+    private View[] collectChildren(LinearLayout parent) {
+        List<View> views = new ArrayList<>();
+        for (int i = 0; i < parent.getChildCount(); i++) views.add(parent.getChildAt(i));
+        return views.toArray(new View[0]);
     }
 
     private String read(URL url) throws IOException {

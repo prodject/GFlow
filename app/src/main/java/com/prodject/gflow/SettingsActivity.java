@@ -100,11 +100,12 @@ public class SettingsActivity extends Activity {
     private void renderContent() {
         if (contentHost == null) return;
         contentHost.removeAllViews();
-        contentHost.addView(buildOverviewGrid(), lpMatchWrap(0, 0, 0, 16));
         contentHost.addView(buildGeneralPanel(), lpMatchWrap(0, 0, 0, 16));
+        contentHost.addView(buildOverviewGrid(), lpMatchWrap(0, 0, 0, 16));
         contentHost.addView(buildSystemPanel(), lpMatchWrap(0, 0, 0, 16));
         contentHost.addView(buildUpdatesPanel(), lpMatchWrap(0, 0, 0, 16));
         contentHost.addView(buildDiagnosticsPanel(), lpMatchWrap(0, 0, 0, 16));
+        Ui.staggerIn(collectChildren(contentHost), 40, 70);
     }
 
     private LinearLayout buildTopBar() {
@@ -114,14 +115,20 @@ public class SettingsActivity extends Activity {
         bar.setPadding(Ui.dp(this, 20), Ui.dp(this, 10), Ui.dp(this, 20), Ui.dp(this, 10));
 
         Button back = Ui.button(this, "Назад");
-        back.setOnClickListener(v -> finish());
+        back.setOnClickListener(v -> {
+            Ui.press(v);
+            finish();
+        });
         bar.addView(back, new LinearLayout.LayoutParams(Ui.dp(this, 110), LinearLayout.LayoutParams.MATCH_PARENT));
 
         LinearLayout titleBlock = new LinearLayout(this);
         titleBlock.setOrientation(LinearLayout.VERTICAL);
         titleBlock.setPadding(Ui.dp(this, 16), 0, 0, 0);
         titleBlock.addView(Ui.label(this, "General / Updates / Diagnostics"));
-        titleBlock.addView(Ui.text(this, "Настройки", 28, true));
+        titleBlock.addView(Ui.text(this, "Settings", 28, true));
+        TextView subtitle = Ui.muted(this, "Daily configuration first. Risky system actions and diagnostics stay deeper.");
+        subtitle.setTextSize(13);
+        titleBlock.addView(subtitle);
         bar.addView(titleBlock, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
         bar.addView(buildTopStat("Experimental", String.valueOf(experimentalFeaturesEnabled())));
@@ -145,38 +152,54 @@ public class SettingsActivity extends Activity {
 
     private LinearLayout buildHeroPanel() {
         LinearLayout hero = Ui.glassCard(this);
-        hero.addView(Ui.label(this, "Settings / Updates / Auto Diagnostics"));
+        hero.addView(Ui.label(this, "Settings Overview"));
 
         LinearLayout row = Ui.row(this);
         LinearLayout left = new LinearLayout(this);
         left.setOrientation(LinearLayout.VERTICAL);
-        left.addView(metricLine("Experimental", String.valueOf(experimentalFeaturesEnabled())));
-        left.addView(metricLine("Developer diagnostics", String.valueOf(developerModeEnabled())));
-        left.addView(metricLine("Theme", prefs().getString(KEY_THEME_MODE, "auto")));
-        left.addView(metricLine("Start screen", prefs().getString(KEY_START_SCREEN, "Главная")));
+        left.addView(buildHeroMetric("Experimental", String.valueOf(experimentalFeaturesEnabled())));
+        left.addView(buildHeroMetric("Developer", String.valueOf(developerModeEnabled())));
+        left.addView(buildHeroMetric("Theme", prefs().getString(KEY_THEME_MODE, "auto")));
         row.addView(left, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
-        LinearLayout badge = Ui.glassCard(this);
+        LinearLayout badge = new LinearLayout(this);
+        badge.setOrientation(LinearLayout.VERTICAL);
         badge.setGravity(Gravity.CENTER);
-        TextView label = Ui.text(this, "CFG", 30, true);
+        badge.setBackground(Ui.cardBg(this, Color.argb(58, 255, 255, 255), Ui.dp(this, 32), Color.argb(34, 255, 255, 255)));
+        TextView label = Ui.text(this, "SET", 28, true);
         label.setGravity(Gravity.CENTER);
         badge.addView(label);
+        TextView badgeHint = Ui.muted(this, "Safe defaults");
+        badgeHint.setGravity(Gravity.CENTER);
+        badge.addView(badgeHint);
         LinearLayout.LayoutParams badgeLp = new LinearLayout.LayoutParams(Ui.dp(this, 180), Ui.dp(this, 180));
         badgeLp.leftMargin = Ui.dp(this, 12);
         row.addView(badge, badgeLp);
         hero.addView(row);
 
-        TextView state = Ui.text(this, systemState + "\n" + releaseState + "\n" + diagnosticsState, 15, true);
+        TextView state = Ui.text(this, "Start: " + prefs().getString(KEY_START_SCREEN, "Главная") + "\n" + systemState + "\n" + releaseState, 15, true);
         state.setPadding(0, Ui.dp(this, 12), 0, Ui.dp(this, 4));
         hero.addView(state);
 
         LinearLayout quick = Ui.row(this);
         addActionChip(quick, "Experimental", () -> toggleBoolean(KEY_EXPERIMENTAL_FEATURES));
         addActionChip(quick, "Developer", () -> toggleBoolean(KEY_DEVELOPER_MODE));
+        addActionChip(quick, "Theme", () -> cycleChoice(KEY_THEME_MODE, new String[]{"dark", "light", "auto"}));
         addActionChip(quick, "Backup", this::startBackupFlow);
-        addActionChip(quick, "Restore", this::startRestoreFlow);
         hero.addView(quick, lpMatchWrap(0, 14, 0, 0));
         return hero;
+    }
+
+    private View buildHeroMetric(String key, String value) {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(Ui.dp(this, 16), Ui.dp(this, 14), Ui.dp(this, 16), Ui.dp(this, 14));
+        card.setBackground(Ui.cardBg(this, Color.argb(58, 255, 255, 255), Ui.dp(this, 24), Color.argb(40, 255, 255, 255)));
+        card.addView(Ui.label(this, key));
+        TextView text = Ui.text(this, value, 16, true);
+        text.setPadding(0, Ui.dp(this, 2), 0, 0);
+        card.addView(text);
+        return card;
     }
 
     private GridLayout buildOverviewGrid() {
@@ -192,7 +215,7 @@ public class SettingsActivity extends Activity {
     private LinearLayout buildGeneralPanel() {
         LinearLayout panel = Ui.glassCard(this);
         panel.addView(Ui.label(this, "General Settings"));
-        panel.addView(Ui.text(this, "Experimental features, developer diagnostics, theme, accent, start screen и safe defaults.", 14, false));
+        panel.addView(Ui.text(this, "Главный everyday-layer: внешность, стартовый сценарий и feature gates без ощущения developer-console.", 14, false));
 
         CheckBox experimental = new CheckBox(this);
         experimental.setText("Experimental features");
@@ -213,8 +236,11 @@ public class SettingsActivity extends Activity {
     }
 
     private LinearLayout buildSystemPanel() {
-        LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Система"));
+        LinearLayout panel = new LinearLayout(this);
+        panel.setOrientation(LinearLayout.VERTICAL);
+        panel.setPadding(Ui.dp(this, 18), Ui.dp(this, 16), Ui.dp(this, 18), Ui.dp(this, 16));
+        panel.setBackground(Ui.cardBg(this, Color.argb(36, 10, 14, 20), Ui.dp(this, 28), Color.argb(48, 255, 179, 64)));
+        panel.addView(Ui.label(this, "System / Recovery"));
         panel.addView(Ui.text(this, "Резервная копия всех настроек/профилей/сценариев в JSON, восстановление из файла и полная очистка приложения с последующим uninstall-flow.", 14, false));
         panel.addView(Ui.muted(this, systemState), lpMatchWrap(0, 8, 0, 0));
 
@@ -227,13 +253,17 @@ public class SettingsActivity extends Activity {
     }
 
     private LinearLayout buildChoiceRow(String title, String key, String[] items) {
-        LinearLayout card = Ui.glassCard(this);
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(Ui.dp(this, 16), Ui.dp(this, 14), Ui.dp(this, 16), Ui.dp(this, 14));
+        card.setBackground(Ui.cardBg(this, Color.argb(28, 255, 255, 255), Ui.dp(this, 24), Color.argb(22, 255, 255, 255)));
         card.addView(Ui.text(this, title + ": " + prefs().getString(key, items[items.length - 1]), 16, true));
         LinearLayout row = Ui.row(this);
         for (String item : items) {
             Button button = Ui.button(this, item);
             button.setTextSize(13);
             button.setOnClickListener(v -> {
+                Ui.press(v);
                 prefs().edit().putString(key, item).apply();
                 renderContent();
             });
@@ -247,7 +277,10 @@ public class SettingsActivity extends Activity {
     }
 
     private LinearLayout buildUpdatesPanel() {
-        LinearLayout panel = Ui.glassCard(this);
+        LinearLayout panel = new LinearLayout(this);
+        panel.setOrientation(LinearLayout.VERTICAL);
+        panel.setPadding(Ui.dp(this, 16), Ui.dp(this, 14), Ui.dp(this, 16), Ui.dp(this, 14));
+        panel.setBackground(Ui.cardBg(this, Color.argb(24, 255, 255, 255), Ui.dp(this, 24), Color.argb(20, 255, 255, 255)));
         panel.addView(Ui.label(this, "Updates"));
         panel.addView(Ui.text(this, "Проверить GitHub releases, найти APK asset, скачать APK и установить скачанный APK.", 14, false));
         panel.addView(Ui.muted(this, releaseState), lpMatchWrap(0, 8, 0, 0));
@@ -261,8 +294,11 @@ public class SettingsActivity extends Activity {
     }
 
     private LinearLayout buildDiagnosticsPanel() {
-        LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Автодиагностика"));
+        LinearLayout panel = new LinearLayout(this);
+        panel.setOrientation(LinearLayout.VERTICAL);
+        panel.setPadding(Ui.dp(this, 16), Ui.dp(this, 14), Ui.dp(this, 16), Ui.dp(this, 14));
+        panel.setBackground(Ui.cardBg(this, Color.argb(24, 255, 255, 255), Ui.dp(this, 24), Color.argb(20, 255, 255, 255)));
+        panel.addView(Ui.label(this, "Auto Diagnostics"));
         panel.addView(Ui.text(this, "Проверка availability и support/readback по всем основным функциям, уже добавленным в новый UI: HVAC, кузов, drive, ADAS, parking, HUD, ambience, daymode, AVAS, digital key и seat.", 14, false));
         panel.addView(Ui.muted(this, diagnosticsState), lpMatchWrap(0, 8, 0, 0));
 
@@ -278,11 +314,12 @@ public class SettingsActivity extends Activity {
         dock.setOrientation(LinearLayout.HORIZONTAL);
         dock.setGravity(Gravity.CENTER_VERTICAL);
         dock.setPadding(Ui.dp(this, 18), Ui.dp(this, 14), Ui.dp(this, 18), Ui.dp(this, 14));
-        addDockButton(dock, "General", () -> renderContent(), false);
+        addDockButton(dock, "General", this::renderContent, true);
         addDockButton(dock, "System", this::startBackupFlow, false);
         addDockButton(dock, "Updates", this::checkRelease, false);
         addDockButton(dock, "Diagnostics", this::runAutoDiagnostics, false);
         addDockButton(dock, "Back", this::finish, false);
+        Ui.animateIn(dock, 150, 10f);
         return dock;
     }
 
@@ -301,6 +338,20 @@ public class SettingsActivity extends Activity {
     private void toggleBoolean(String key) {
         boolean next = !prefs().getBoolean(key, false);
         prefs().edit().putBoolean(key, next).apply();
+        renderContent();
+    }
+
+    private void cycleChoice(String key, String[] values) {
+        String current = prefs().getString(key, values[0]);
+        int index = 0;
+        for (int i = 0; i < values.length; i++) {
+            if (values[i].equals(current)) {
+                index = i;
+                break;
+            }
+        }
+        String next = values[(index + 1) % values.length];
+        prefs().edit().putString(key, next).apply();
         renderContent();
     }
 
@@ -880,7 +931,10 @@ public class SettingsActivity extends Activity {
         Button b = Ui.button(this, label);
         b.setTextColor(Color.WHITE);
         b.setBackground(Ui.cardBg(this, Color.argb(70, 255, 255, 255), Ui.dp(this, 18), Color.TRANSPARENT));
-        b.setOnClickListener(v -> action.run());
+        b.setOnClickListener(v -> {
+            Ui.press(v);
+            action.run();
+        });
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 58), 1f);
         lp.leftMargin = Ui.dp(this, 6);
         lp.rightMargin = Ui.dp(this, 6);
@@ -895,7 +949,10 @@ public class SettingsActivity extends Activity {
                 active ? Color.argb(115, 77, 163, 255) : Color.argb(54, 255, 255, 255),
                 Ui.dp(this, 20),
                 active ? Color.argb(100, 77, 163, 255) : Color.TRANSPARENT));
-        button.setOnClickListener(v -> action.run());
+        button.setOnClickListener(v -> {
+            Ui.press(v);
+            action.run();
+        });
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f);
         lp.leftMargin = Ui.dp(this, 6);
         lp.rightMargin = Ui.dp(this, 6);
@@ -903,13 +960,18 @@ public class SettingsActivity extends Activity {
     }
 
     private void addStatusCard(GridLayout grid, String title, String value, int color) {
-        LinearLayout card = Ui.glassCard(this);
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(Ui.dp(this, 16), Ui.dp(this, 14), Ui.dp(this, 16), Ui.dp(this, 14));
+        card.setBackground(Ui.cardBg(this, Color.argb(24, 255, 255, 255), Ui.dp(this, 24), Color.argb(20, 255, 255, 255)));
         card.addView(Ui.label(this, title));
-        card.addView(Ui.text(this, value, 18, true));
+        TextView body = Ui.text(this, value, 13, false);
+        body.setTextColor(Ui.secondaryText(this));
+        card.addView(body);
         View accent = new View(this);
         accent.setBackground(Ui.glassPill(this, color));
-        LinearLayout.LayoutParams accentLp = new LinearLayout.LayoutParams(Ui.dp(this, 56), Ui.dp(this, 6));
-        accentLp.topMargin = Ui.dp(this, 14);
+        LinearLayout.LayoutParams accentLp = new LinearLayout.LayoutParams(Ui.dp(this, 40), Ui.dp(this, 4));
+        accentLp.topMargin = Ui.dp(this, 10);
         card.addView(accent, accentLp);
         GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
         lp.width = 0;
@@ -929,5 +991,11 @@ public class SettingsActivity extends Activity {
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         lp.setMargins(Ui.dp(this, left), Ui.dp(this, top), Ui.dp(this, right), Ui.dp(this, bottom));
         return lp;
+    }
+
+    private View[] collectChildren(LinearLayout layout) {
+        View[] views = new View[layout.getChildCount()];
+        for (int i = 0; i < layout.getChildCount(); i++) views[i] = layout.getChildAt(i);
+        return views;
     }
 }

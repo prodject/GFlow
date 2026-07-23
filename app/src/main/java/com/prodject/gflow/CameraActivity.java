@@ -23,8 +23,10 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.ArrayAdapter;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Locale;
 
 public class CameraActivity extends Activity {
@@ -59,7 +61,10 @@ public class CameraActivity extends Activity {
         root.addView(buildControlPanel(), lpMatchWrap(0, 0, 0, 16));
         root.addView(buildArchiveSettingsPanel(), lpMatchWrap(0, 0, 0, 16));
         root.addView(buildStatusGrid(), lpMatchWrap(0, 0, 0, 16));
-        root.addView(buildBottomDock(), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 112)));
+        LinearLayout dock = buildBottomDock();
+        root.addView(dock, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 112)));
+        Ui.staggerIn(collectChildren(root), 40, 55);
+        Ui.animateIn(dock, 220, 18f);
         return scroll;
     }
 
@@ -70,13 +75,13 @@ public class CameraActivity extends Activity {
         bar.setPadding(Ui.dp(this, 20), Ui.dp(this, 10), Ui.dp(this, 20), Ui.dp(this, 10));
 
         Button back = Ui.button(this, "Назад");
-        back.setOnClickListener(v -> finish());
+        Ui.press(back, this::finish);
         bar.addView(back, new LinearLayout.LayoutParams(Ui.dp(this, 110), LinearLayout.LayoutParams.MATCH_PARENT));
 
         LinearLayout titleBlock = new LinearLayout(this);
         titleBlock.setOrientation(LinearLayout.VERTICAL);
         titleBlock.setPadding(Ui.dp(this, 16), 0, 0, 0);
-        titleBlock.addView(Ui.label(this, "DVR / Центр камер"));
+        titleBlock.addView(Ui.label(this, "Capture / Replay / EVS"));
         TextView title = Ui.text(this, "DVR / Камеры", 28, true);
         title.setPadding(0, 0, 0, 0);
         titleBlock.addView(title);
@@ -105,15 +110,15 @@ public class CameraActivity extends Activity {
 
     private LinearLayout buildHeroPanel() {
         LinearLayout hero = Ui.glassCard(this);
-        hero.addView(Ui.label(this, "Схема камер"));
+        hero.addView(Ui.label(this, "Capture Overview"));
 
         LinearLayout row = Ui.row(this);
         LinearLayout left = new LinearLayout(this);
         left.setOrientation(LinearLayout.VERTICAL);
-        left.addView(metricLine("Режим", "Передняя + задняя запись"));
-        left.addView(metricLine("Камеры", Arrays.toString(DvrArchive.selectedCameras(this))));
-        left.addView(metricLine("Качество", qualityLabel()));
-        left.addView(metricLine("Путь", DvrArchive.dir(this).getAbsolutePath()));
+        left.addView(metricLine("Capture mode", "Front + rear recording"));
+        left.addView(metricLine("Active sources", Arrays.toString(DvrArchive.selectedCameras(this))));
+        left.addView(metricLine("Quality", qualityLabel()));
+        left.addView(metricLine("Archive path", DvrArchive.dir(this).getAbsolutePath()));
         row.addView(left, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
         CameraVisualView visual = new CameraVisualView(this);
@@ -140,7 +145,8 @@ public class CameraActivity extends Activity {
 
     private LinearLayout buildControlPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Управление записью"));
+        panel.addView(Ui.label(this, "Capture Controls"));
+        panel.addView(Ui.muted(this, "Основные действия записи и EVS вынесены вперед. Архив и raw diagnostics ниже как secondary layer."));
 
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(3);
@@ -160,7 +166,11 @@ public class CameraActivity extends Activity {
     private LinearLayout buildArchiveSettingsPanel() {
         SharedPreferences prefs = getSharedPreferences(DvrArchive.PREFS, MODE_PRIVATE);
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Настройки архива"));
+        panel.setBackground(Ui.cardBg(this,
+                Ui.dark(this) ? Color.argb(236, 16, 24, 42) : Color.argb(246, 240, 244, 250),
+                Ui.dp(this, 28),
+                Ui.glassLine(this)));
+        panel.addView(Ui.label(this, "Archive Settings"));
         panel.addView(Ui.muted(this, "Camera2 источники, сегменты, лимит архива, storage и EVS/DVR diagnostics теперь живут в новом экране."));
 
         camerasInput = new EditText(this);
@@ -217,6 +227,10 @@ public class CameraActivity extends Activity {
         grid.setColumnCount(2);
 
         LinearLayout archive = Ui.glassCard(this);
+        archive.setBackground(Ui.cardBg(this,
+                Ui.dark(this) ? Color.argb(122, 255, 255, 255) : Color.argb(232, 255, 255, 255),
+                Ui.dp(this, 26),
+                Ui.glassLine(this)));
         archive.addView(Ui.label(this, "Архив"));
         archiveSummary = Ui.text(this, "", 15, false);
         archiveSummary.setPadding(0, Ui.dp(this, 8), 0, 0);
@@ -224,6 +238,10 @@ public class CameraActivity extends Activity {
         addCard(grid, archive);
 
         LinearLayout cameras = Ui.glassCard(this);
+        cameras.setBackground(Ui.cardBg(this,
+                Ui.dark(this) ? Color.argb(122, 255, 255, 255) : Color.argb(232, 255, 255, 255),
+                Ui.dp(this, 26),
+                Ui.glassLine(this)));
         cameras.addView(Ui.label(this, "Camera2 / EVS"));
         cameraSummary = Ui.text(this, "", 15, false);
         cameraSummary.setPadding(0, Ui.dp(this, 8), 0, 0);
@@ -231,6 +249,10 @@ public class CameraActivity extends Activity {
         addCard(grid, cameras);
 
         LinearLayout diag = Ui.glassCard(this);
+        diag.setBackground(Ui.cardBg(this,
+                Ui.dark(this) ? Color.argb(104, 255, 255, 255) : Color.argb(228, 255, 255, 255),
+                Ui.dp(this, 26),
+                Ui.glassLine(this)));
         diag.addView(Ui.label(this, "Диагностика EVS / DVR"));
         diagSummary = Ui.text(this, "", 15, false);
         diagSummary.setPadding(0, Ui.dp(this, 8), 0, 0);
@@ -269,7 +291,7 @@ public class CameraActivity extends Activity {
         tile.setGravity(Gravity.CENTER);
         tile.setPadding(Ui.dp(this, 12), Ui.dp(this, 16), Ui.dp(this, 12), Ui.dp(this, 16));
         tile.setBackground(Ui.cardBg(this, Color.argb(88, Color.red(color), Color.green(color), Color.blue(color)), Ui.dp(this, 22), Color.argb(80, 255, 255, 255)));
-        tile.setOnClickListener(v -> {
+        Ui.press(tile, () -> {
             action.run();
             Ui.toast(this, label);
         });
@@ -284,7 +306,7 @@ public class CameraActivity extends Activity {
         Button b = Ui.button(this, label);
         b.setTextColor(Color.WHITE);
         b.setBackground(Ui.cardBg(this, Color.argb(70, 255, 255, 255), Ui.dp(this, 18), Color.TRANSPARENT));
-        b.setOnClickListener(v -> {
+        Ui.press(b, () -> {
             action.run();
             Ui.toast(this, label);
         });
@@ -302,7 +324,7 @@ public class CameraActivity extends Activity {
                 active ? Color.argb(115, 77, 163, 255) : Color.argb(54, 255, 255, 255),
                 Ui.dp(this, 20),
                 active ? Color.argb(100, 77, 163, 255) : Color.TRANSPARENT));
-        button.setOnClickListener(v -> action.run());
+        Ui.press(button, action);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f);
         lp.leftMargin = Ui.dp(this, 6);
         lp.rightMargin = Ui.dp(this, 6);
@@ -444,6 +466,12 @@ public class CameraActivity extends Activity {
 
     private GradientDrawable dashboardBg() {
         return Ui.dashboardBg(this);
+    }
+
+    private View[] collectChildren(LinearLayout parent) {
+        List<View> views = new ArrayList<>();
+        for (int i = 0; i < parent.getChildCount(); i++) views.add(parent.getChildAt(i));
+        return views.toArray(new View[0]);
     }
 
     private static final class CameraVisualView extends View {
