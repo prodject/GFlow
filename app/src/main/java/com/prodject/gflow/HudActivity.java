@@ -178,7 +178,7 @@ public class HudActivity extends Activity {
 
         LinearLayout hud = Ui.glassCard(this);
         hud.addView(Ui.text(this, "HUD / DIM Bridge", 18, true));
-        hud.addView(Ui.muted(this, new EcarxHudDimAdapter(this).availability()));
+        hud.addView(Ui.muted(this, safeHudDimAvailability()));
         hud.addView(Ui.muted(this, "Вид навигации на приборке определяет, как маршрут отображается на DIM: выключено, упрощенно, полно, AR или 3D-полосы."));
         addCommand(hud, "HUD включить", EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.COMMON_ON);
         addCommand(hud, "HUD выключить", EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.COMMON_OFF);
@@ -349,6 +349,14 @@ public class HudActivity extends Activity {
     private void openAdvancedHud() {
         if (advancedHost != null) advancedHost.requestFocus();
         Ui.toast(this, "Открыт advanced HUD flow");
+    }
+
+    private String safeHudDimAvailability() {
+        try {
+            return new EcarxHudDimAdapter(this).availability();
+        } catch (Exception e) {
+            return "OneOS HUD/DIM\nНедоступно: " + e.getClass().getSimpleName() + ": " + e.getMessage();
+        }
     }
 
     private void addCommand(LinearLayout root, String label, int functionId, int value) {

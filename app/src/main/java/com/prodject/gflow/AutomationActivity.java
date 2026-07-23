@@ -730,13 +730,14 @@ public class AutomationActivity extends Activity {
     private String shortLogPreview() {
         String log = AutomationEngine.scenarioLog(this);
         if (log == null || log.trim().isEmpty()) return "Журнал пуст";
-        String[] lines = log.split("\n");
-        return lines.length == 0 ? "Журнал пуст" : lines[0];
+        int newline = log.indexOf('\n');
+        return newline < 0 ? log : log.substring(0, newline);
     }
 
     private String fullLogPreview() {
         String log = AutomationEngine.scenarioLog(this);
-        return log == null || log.trim().isEmpty() ? "Журнал пуст" : log;
+        if (log == null || log.trim().isEmpty()) return "Журнал пуст";
+        return log.length() > 4000 ? log.substring(0, 4000) + "\n…" : log;
     }
 
     private String cameraRuleSummary() {

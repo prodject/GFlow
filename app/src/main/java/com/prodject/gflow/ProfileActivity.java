@@ -200,7 +200,11 @@ public class ProfileActivity extends Activity {
     }
 
     private LinearLayout buildProfileCard(String name) {
-        UserProfileEngine.Profile profile = UserProfileEngine.Profile.parse(UserProfileEngine.raw(this, name));
+        String raw = UserProfileEngine.raw(this, name);
+        String profileType = rawField(raw, "type", "driver");
+        String profileAvatar = rawField(raw, "avatar", defaultAvatar(profileType));
+        String profileIdentity = rawField(raw, "identity", "");
+        int commandCount = profileCommandCount(raw);
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
         card.setPadding(Ui.dp(this, 18), Ui.dp(this, 16), Ui.dp(this, 18), Ui.dp(this, 16));
@@ -211,12 +215,12 @@ public class ProfileActivity extends Activity {
                 selected ? Color.argb(120, 77, 163, 255) : Ui.glassLine(this)));
 
         LinearLayout top = Ui.row(this);
-        TextView title = Ui.text(this, (profile.avatar == null || profile.avatar.trim().isEmpty() ? defaultAvatar(profile.type) : profile.avatar) + "  " + profile.name, 20, true);
+        TextView title = Ui.text(this, (profileAvatar == null || profileAvatar.trim().isEmpty() ? defaultAvatar(profileType) : profileAvatar) + "  " + name, 20, true);
         top.addView(title, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
-        top.addView(Ui.pill(this, profile.type, "driver".equals(profile.type) ? Ui.CYAN : Ui.SUCCESS));
+        top.addView(Ui.pill(this, profileType, "driver".equals(profileType) ? Ui.CYAN : Ui.SUCCESS));
         card.addView(top);
-        card.addView(Ui.muted(this, identitySummary(profile.identity)));
-        card.addView(Ui.muted(this, commandSummary(profile.commands)));
+        card.addView(Ui.muted(this, identitySummary(profileIdentity)));
+        card.addView(Ui.muted(this, commandCount <= 0 ? "Нет сохраненных настроек" : commandCount + " настроек"));
 
         LinearLayout actions = Ui.row(this);
         addMiniAction(actions, "Выбрать", () -> {
@@ -614,6 +618,28 @@ public class ProfileActivity extends Activity {
     private String commandSummary(List<String> commands) {
         if (commands == null || commands.isEmpty()) return "Нет сохраненных настроек";
         return commands.size() + " настроек · " + commands.get(0);
+    }
+
+    private String rawField(String raw, String key, String fallback) {
+        if (raw == null || raw.isEmpty()) return fallback;
+        String prefix = key + ":";
+        for (String line : raw.split("\n")) {
+            String item = line.trim();
+            if (item.startsWith(prefix)) return item.substring(prefix.length()).trim();
+        }
+        return fallback;
+    }
+
+    private int profileCommandCount(String raw) {
+        if (raw == null || raw.isEmpty()) return 0;
+        int count = 0;
+        for (String line : raw.split("\n")) {
+            String item = line.trim();
+            if (item.isEmpty()) continue;
+            if (item.startsWith("name:") || item.startsWith("type:") || item.startsWith("avatar:") || item.startsWith("identity:")) continue;
+            count++;
+        }
+        return count;
     }
 
     private String lastAppliedSummary() {

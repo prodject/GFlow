@@ -929,12 +929,12 @@ public class SettingsActivity extends Activity {
 
     private void addActionChip(LinearLayout row, String label, Runnable action) {
         Button b = Ui.button(this, label);
-        b.setTextColor(Color.WHITE);
-        b.setBackground(Ui.cardBg(this, Color.argb(70, 255, 255, 255), Ui.dp(this, 18), Color.TRANSPARENT));
-        b.setOnClickListener(v -> {
-            Ui.press(v);
-            action.run();
-        });
+        b.setTextColor(Ui.primaryText(this));
+        b.setBackground(Ui.cardBg(this,
+                Ui.dark(this) ? Color.argb(70, 255, 255, 255) : Color.argb(232, 255, 255, 255),
+                Ui.dp(this, 18),
+                Ui.dark(this) ? Color.TRANSPARENT : Color.argb(76, 185, 198, 214)));
+        Ui.bindPress(b, action);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 58), 1f);
         lp.leftMargin = Ui.dp(this, 6);
         lp.rightMargin = Ui.dp(this, 6);

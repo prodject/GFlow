@@ -246,7 +246,7 @@ public class MainActivity extends Activity {
         top.setGravity(Gravity.TOP);
 
         LinearLayout weather = Ui.glassCard(this);
-        weather.setOnClickListener(v -> Ui.press(v, () -> transition(this::showWeb)));
+        Ui.bindPress(weather, () -> transition(this::showWeb));
         weather.addView(Ui.label(this, "Погода"));
         LinearLayout weatherRow = Ui.row(this);
         weatherRow.setGravity(Gravity.TOP);
@@ -268,12 +268,12 @@ public class MainActivity extends Activity {
 
         LinearLayout summary = Ui.glassCard(this);
         summary.setPadding(Ui.dp(this, 20), Ui.dp(this, 18), Ui.dp(this, 20), Ui.dp(this, 18));
-        summary.setOnClickListener(v -> Ui.press(v, () -> showDashboardQuickSheet("Состояние автомобиля", new QuickAction[]{
+        Ui.bindPress(summary, () -> showDashboardQuickSheet("Состояние автомобиля", new QuickAction[]{
                 new QuickAction("Открыть климат", this::showClimateMenu),
                 new QuickAction("Открыть автомобиль", this::showVehicleMenu),
                 new QuickAction("Открыть ADAS", this::showAdasMenu),
                 new QuickAction("Открыть парковку", this::openParkingScreen)
-        })));
+        }));
         summary.addView(Ui.label(this, "Автомобиль"));
         heroCarSummary = buildMetricLine("Климат", dashboardCarSummary());
         summary.addView(heroCarSummary);
@@ -317,7 +317,7 @@ public class MainActivity extends Activity {
     private void addDashboardWidget(GridLayout grid, String title, String value, int color, Runnable action) {
         LinearLayout card = Ui.glassCard(this);
         card.setClickable(true);
-        card.setOnClickListener(v -> Ui.press(v, () -> transition(action)));
+        Ui.bindPress(card, () -> transition(action));
         card.setOnLongClickListener(v -> {
             showWidgetActionSheet(title, action);
             return true;
@@ -384,7 +384,7 @@ public class MainActivity extends Activity {
                 active ? Color.argb(115, 77, 163, 255) : (Ui.dark(this) ? Color.argb(54, 255, 255, 255) : Color.argb(206, 255, 255, 255)),
                 Ui.dp(this, 20),
                 active ? Color.argb(100, 77, 163, 255) : (Ui.dark(this) ? Color.TRANSPARENT : Color.argb(76, 185, 198, 214))));
-        button.setOnClickListener(v -> Ui.press(v, () -> transition(action)));
+        Ui.bindPress(button, () -> transition(action));
         button.setOnLongClickListener(v -> {
             showDashboardQuickSheet(label, sheetActions);
             return true;
@@ -583,10 +583,10 @@ public class MainActivity extends Activity {
                 Ui.dark(this) ? Color.argb(56, 255, 255, 255) : Color.argb(214, 255, 255, 255),
                 Ui.dp(this, 18),
                 Ui.dark(this) ? Color.TRANSPARENT : Color.argb(72, 185, 198, 214)));
-        button.setOnClickListener(v -> Ui.press(v, () -> {
+        Ui.bindPress(button, () -> {
             setDashboardDrawerOpen(false);
             transition(action);
-        }));
+        });
         drawer.addView(button, lpMatchWrap(0, 6, 0, 6));
     }
 
@@ -634,10 +634,10 @@ public class MainActivity extends Activity {
                     Ui.dark(this) ? Color.argb(56, 255, 255, 255) : Color.argb(214, 255, 255, 255),
                     Ui.dp(this, 18),
                     Ui.dark(this) ? Color.TRANSPARENT : Color.argb(72, 185, 198, 214)));
-            button.setOnClickListener(v -> Ui.press(v, () -> {
+            Ui.bindPress(button, () -> {
                 dialog.dismiss();
                 transition(action.action);
-            }));
+            });
             sheet.addView(button, lpMatchWrap(0, 8, 0, 0));
         }
         dialog.setContentView(sheet);
@@ -664,7 +664,7 @@ public class MainActivity extends Activity {
     private void addSideChip(LinearLayout col, String title, String value, int color, Runnable action) {
         LinearLayout chip = Ui.card(this);
         chip.setClickable(true);
-        chip.setOnClickListener(v -> Ui.press(v, () -> transition(action)));
+        Ui.bindPress(chip, () -> transition(action));
         chip.addView(Ui.muted(this, title));
         TextView v = Ui.text(this, value, 16, true);
         v.setTextColor(color);
@@ -677,7 +677,7 @@ public class MainActivity extends Activity {
     private void addMainMetric(LinearLayout row, String title, String value, int color, Runnable action) {
         LinearLayout card = Ui.card(this);
         card.setClickable(true);
-        card.setOnClickListener(v -> Ui.press(v, () -> transition(action)));
+        Ui.bindPress(card, () -> transition(action));
         TextView t = Ui.muted(this, title);
         TextView v = Ui.text(this, value, 20, true);
         v.setTextColor(color);
@@ -696,7 +696,7 @@ public class MainActivity extends Activity {
                 Ui.dark(this) ? Color.argb(70, 255, 255, 255) : Color.argb(214, 255, 255, 255),
                 Ui.dp(this, 16),
                 Ui.dark(this) ? Color.argb(80, 255, 255, 255) : Color.argb(72, 185, 198, 214)));
-        b.setOnClickListener(v -> Ui.press(v, () -> transition(action)));
+        Ui.bindPress(b, () -> transition(action));
         b.setOnLongClickListener(v -> {
             showHeroActionSheet(label, action);
             return true;
@@ -739,7 +739,7 @@ public class MainActivity extends Activity {
     private void addNavCard(GridLayout grid, NavItem item) {
         LinearLayout card = Ui.card(this);
         card.setClickable(true);
-        card.setOnClickListener(v -> Ui.press(v, () -> transition(item.action)));
+        Ui.bindPress(card, () -> transition(item.action));
         card.setOnLongClickListener(v -> {
             Ui.dialog(this, item.title, item.help());
             return true;

@@ -291,7 +291,7 @@ public class CameraActivity extends Activity {
         tile.setGravity(Gravity.CENTER);
         tile.setPadding(Ui.dp(this, 12), Ui.dp(this, 16), Ui.dp(this, 12), Ui.dp(this, 16));
         tile.setBackground(Ui.cardBg(this, Color.argb(88, Color.red(color), Color.green(color), Color.blue(color)), Ui.dp(this, 22), Color.argb(80, 255, 255, 255)));
-        Ui.press(tile, () -> {
+        Ui.bindPress(tile, () -> {
             action.run();
             Ui.toast(this, label);
         });
@@ -306,7 +306,7 @@ public class CameraActivity extends Activity {
         Button b = Ui.button(this, label);
         b.setTextColor(Color.WHITE);
         b.setBackground(Ui.cardBg(this, Color.argb(70, 255, 255, 255), Ui.dp(this, 18), Color.TRANSPARENT));
-        Ui.press(b, () -> {
+        Ui.bindPress(b, () -> {
             action.run();
             Ui.toast(this, label);
         });
