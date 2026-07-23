@@ -38,6 +38,7 @@ public class MainActivity extends Activity {
     private static final String KEY_HOME_WEATHER_DESC = "home_weather_desc";
     private static final String KEY_HOME_WEATHER_WIND = "home_weather_wind";
     private static final String KEY_HOME_WEATHER_AT = "home_weather_at";
+    private static final String KEY_THEME_MODE = "theme_mode";
     private static final String[] RUNTIME_PERMS = {
             Manifest.permission.CAMERA,
             Manifest.permission.RECORD_AUDIO,
@@ -57,6 +58,7 @@ public class MainActivity extends Activity {
     private LinearLayout dashboardDrawer;
     private View dashboardDrawerScrim;
     private boolean dashboardDrawerOpen;
+    private String appliedThemeMode = "auto";
     private final Runnable dashboardTicker = new Runnable() {
         @Override public void run() {
             refreshDashboardLiveState();
@@ -73,6 +75,13 @@ public class MainActivity extends Activity {
 
     @Override protected void onResume() {
         super.onResume();
+        String currentThemeMode = getSharedPreferences(APP_SETTINGS, MODE_PRIVATE).getString(KEY_THEME_MODE, "auto");
+        if (!Objects.equals(appliedThemeMode, currentThemeMode)) {
+            appliedThemeMode = currentThemeMode;
+            if (licenseAccepted()) showDashboard();
+            else showOnboarding();
+            return;
+        }
         dashboardHandler.removeCallbacks(dashboardTicker);
         if (topTimeValue != null || heroWeatherTemp != null) {
             refreshDashboardLiveState();
@@ -87,6 +96,7 @@ public class MainActivity extends Activity {
     }
 
     private void showOnboarding() {
+        appliedThemeMode = getSharedPreferences(APP_SETTINGS, MODE_PRIVATE).getString(KEY_THEME_MODE, "auto");
         LinearLayout root = Ui.root(this, "");
         root.setGravity(Gravity.CENTER_HORIZONTAL);
         ImageView logo = new ImageView(this);
@@ -119,6 +129,7 @@ public class MainActivity extends Activity {
     }
 
     private void showDashboard() {
+        appliedThemeMode = getSharedPreferences(APP_SETTINGS, MODE_PRIVATE).getString(KEY_THEME_MODE, "auto");
         FrameLayout frame = new FrameLayout(this);
         frame.setBackground(dashboardBg());
 
@@ -126,7 +137,7 @@ public class MainActivity extends Activity {
         shell.setOrientation(LinearLayout.VERTICAL);
         shell.setPadding(Ui.dp(this, 16), Ui.dp(this, 16), Ui.dp(this, 16), Ui.dp(this, 16));
 
-        shell.addView(buildDashboardTopBar(), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        shell.addView(buildDashboardTopBar(), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 84)));
 
         LinearLayout body = new LinearLayout(this);
         body.setOrientation(LinearLayout.HORIZONTAL);

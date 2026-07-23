@@ -3,6 +3,7 @@ package com.prodject.gflow;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
@@ -86,7 +87,7 @@ public class SettingsActivity extends Activity {
         root.setBackground(Ui.dashboardBg(this));
         scroll.addView(root, new ScrollView.LayoutParams(ScrollView.LayoutParams.MATCH_PARENT, ScrollView.LayoutParams.WRAP_CONTENT));
 
-        root.addView(buildTopBar(), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        root.addView(buildTopBar(), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 84)));
         root.addView(buildHeroPanel(), lpMatchWrap(0, 16, 0, 16));
 
         contentHost = new LinearLayout(this);
@@ -197,12 +198,14 @@ public class SettingsActivity extends Activity {
         CheckBox experimental = new CheckBox(this);
         experimental.setText("Experimental features");
         experimental.setChecked(experimentalFeaturesEnabled());
+        styleCheckBox(experimental);
         experimental.setOnCheckedChangeListener((buttonView, isChecked) -> prefs().edit().putBoolean(KEY_EXPERIMENTAL_FEATURES, isChecked).apply());
         panel.addView(experimental);
 
         CheckBox developer = new CheckBox(this);
         developer.setText("Developer diagnostics");
         developer.setChecked(developerModeEnabled());
+        styleCheckBox(developer);
         developer.setOnCheckedChangeListener((buttonView, isChecked) -> prefs().edit().putBoolean(KEY_DEVELOPER_MODE, isChecked).apply());
         panel.addView(developer);
 
@@ -904,6 +907,11 @@ public class SettingsActivity extends Activity {
         lp.leftMargin = Ui.dp(this, 6);
         lp.rightMargin = Ui.dp(this, 6);
         dock.addView(button, lp);
+    }
+
+    private void styleCheckBox(CheckBox checkBox) {
+        checkBox.setTextColor(Ui.primaryText(this));
+        checkBox.setButtonTintList(ColorStateList.valueOf(Ui.primaryText(this)));
     }
 
     private void addStatusCard(GridLayout grid, String title, String value, int color) {

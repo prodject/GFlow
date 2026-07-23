@@ -94,7 +94,7 @@ public class ClimateActivity extends Activity {
         root.setBackground(dashboardBg());
         scroll.addView(root, new ScrollView.LayoutParams(ScrollView.LayoutParams.MATCH_PARENT, ScrollView.LayoutParams.WRAP_CONTENT));
 
-        root.addView(buildClimateTopBar(), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        root.addView(buildClimateTopBar(), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 84)));
         root.addView(buildClimateHero(), lpMatchWrap(0, 16, 0, 16));
 
         contentHost = new LinearLayout(this);
