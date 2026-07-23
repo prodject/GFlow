@@ -244,7 +244,7 @@ final class Ui {
 
     static void animateIn(View v, long delayMs, float translationYDp) {
         v.setAlpha(0f);
-        v.setTranslationY(dp(v.getContext(), translationYDp));
+        v.setTranslationY(dpf(v.getContext(), translationYDp));
         v.animate().alpha(1f).translationY(0f).setStartDelay(delayMs).setDuration(280).setInterpolator(new DecelerateInterpolator()).start();
     }
 
@@ -282,6 +282,10 @@ final class Ui {
 
     static int dp(Context c, int v) {
         return (int) (v * c.getResources().getDisplayMetrics().density + 0.5f);
+    }
+
+    static float dpf(Context c, float v) {
+        return v * c.getResources().getDisplayMetrics().density;
     }
 
     static void toast(Context c, String s) {
