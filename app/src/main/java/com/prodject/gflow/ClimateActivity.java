@@ -131,7 +131,6 @@ public class ClimateActivity extends Activity {
 
         Button back = Ui.button(this, "Назад");
         back.setOnClickListener(v -> {
-            Ui.press(v);
             if (mode == Mode.HOME) finish();
             else openMode(Mode.HOME);
         });
@@ -141,12 +140,9 @@ public class ClimateActivity extends Activity {
         titleBlock.setOrientation(LinearLayout.VERTICAL);
         titleBlock.setPadding(Ui.dp(this, 16), 0, 0, 0);
         titleBlock.addView(Ui.label(this, modeLabel()));
-        TextView title = Ui.text(this, "Climate Control", 28, true);
+        TextView title = Ui.text(this, "Климат", 28, true);
         title.setPadding(0, 0, 0, 0);
         titleBlock.addView(title);
-        TextView subtitle = Ui.muted(this, "Quiet cabin first. Presets, smart climate and expert HVAC stay as secondary layers.");
-        subtitle.setTextSize(13);
-        titleBlock.addView(subtitle);
         bar.addView(titleBlock, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
         topModeValue = buildTopStat(bar, "Режим", "...");
@@ -172,18 +168,22 @@ public class ClimateActivity extends Activity {
 
     private LinearLayout buildClimateHero() {
         LinearLayout hero = Ui.glassCard(this);
-        hero.addView(Ui.label(this, "Climate Overview"));
+        hero.addView(Ui.label(this, "Обзор климата"));
 
         LinearLayout tempRow = Ui.row(this);
         tempRow.setGravity(Gravity.CENTER_VERTICAL);
 
-        LinearLayout driverCard = buildHeroZoneCard("Driver", true);
+        LinearLayout driverCard = Ui.glassCard(this);
+        driverCard.setPadding(Ui.dp(this, 18), Ui.dp(this, 16), Ui.dp(this, 18), Ui.dp(this, 16));
+        driverCard.addView(Ui.label(this, "Водитель"));
         driverTempValue = Ui.text(this, "--", 38, true);
         driverTempValue.setPadding(0, Ui.dp(this, 4), 0, 0);
         driverCard.addView(driverTempValue);
         tempRow.addView(driverCard, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.15f));
 
-        LinearLayout passengerCard = buildHeroZoneCard("Passenger", false);
+        LinearLayout passengerCard = Ui.glassCard(this);
+        passengerCard.setPadding(Ui.dp(this, 16), Ui.dp(this, 16), Ui.dp(this, 16), Ui.dp(this, 16));
+        passengerCard.addView(Ui.label(this, "Пассажир"));
         passengerTempValue = Ui.text(this, "--", 24, true);
         passengerTempValue.setPadding(0, Ui.dp(this, 8), 0, 0);
         passengerCard.addView(passengerTempValue);
@@ -201,7 +201,7 @@ public class ClimateActivity extends Activity {
                 Ui.dark(this) ? Color.argb(104, 24, 32, 46) : Color.argb(236, 244, 249, 255),
                 Ui.dp(this, 22),
                 Ui.dark(this) ? Color.argb(116, 77, 163, 255) : Color.argb(92, 77, 163, 255)));
-        sliderCard.addView(Ui.label(this, "Driver Temperature"));
+        sliderCard.addView(Ui.label(this, "Температура водителя"));
         heroTempSeekBar = new SeekBar(this);
         heroTempSeekBar.setMax(32);
         heroTempSeekBar.setProgress(12);
@@ -240,33 +240,12 @@ public class ClimateActivity extends Activity {
         hero.addView(adjustRow, lpMatchWrap(0, 12, 0, 0));
 
         LinearLayout quick = Ui.row(this);
-        quick.setWeightSum(3f);
+        quick.setWeightSum(4f);
         addClimateActionChip(quick, "Auto", () -> command(EcarxVehicleAdapter.HVAC_AUTO, EcarxVehicleAdapter.COMMON_ON));
-        addClimateActionChip(quick, "Airflow", this::showBlowingSheet);
+        addClimateActionChip(quick, "A/C", () -> command(EcarxVehicleAdapter.HVAC_AC, EcarxVehicleAdapter.COMMON_ON));
+        addClimateActionChip(quick, "Обдув", this::showBlowingSheet);
         addClimateActionChip(quick, "Defrost", this::showDefrostSheet);
         hero.addView(quick, lpMatchWrap(0, 14, 0, 0));
-
-        LinearLayout scenes = new LinearLayout(this);
-        scenes.setOrientation(LinearLayout.VERTICAL);
-        scenes.setPadding(Ui.dp(this, 18), Ui.dp(this, 16), Ui.dp(this, 18), Ui.dp(this, 16));
-        scenes.setBackground(Ui.cardBg(this, Color.argb(36, 255, 255, 255), Ui.dp(this, 26), Color.argb(28, 255, 255, 255)));
-        scenes.addView(Ui.label(this, "Quick Scenes"));
-        scenes.addView(Ui.text(this, "Готовые комфортные сценарии вместо россыпи одинаково важных переключателей.", 14, false));
-        LinearLayout sceneRow = Ui.row(this);
-        addClimateActionChip(sceneRow, "Quiet", () -> applyClimatePreset(
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_ON),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_AUTO, EcarxVehicleAdapter.COMMON_ON),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_1)));
-        addClimateActionChip(sceneRow, "Comfort", () -> applyClimatePreset(
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_ON),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_AUTO, EcarxVehicleAdapter.COMMON_ON),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_3)));
-        addClimateActionChip(sceneRow, "Warm Up", () -> applyClimatePreset(
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_ON),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_5),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_LEG_AND_FRONT_WINDOW)));
-        scenes.addView(sceneRow, lpMatchWrap(0, 12, 0, 0));
-        hero.addView(scenes, lpMatchWrap(0, 14, 0, 0));
 
         LinearLayout status = new LinearLayout(this);
         status.setOrientation(LinearLayout.VERTICAL);
@@ -280,44 +259,33 @@ public class ClimateActivity extends Activity {
         return hero;
     }
 
-    private LinearLayout buildHeroZoneCard(String label, boolean accent) {
-        LinearLayout card = Ui.glassCard(this);
-        card.setPadding(Ui.dp(this, accent ? 18 : 16), Ui.dp(this, 16), Ui.dp(this, accent ? 18 : 16), Ui.dp(this, 16));
-        card.setBackground(Ui.cardBg(this,
-                accent ? Color.argb(72, 255, 255, 255) : Color.argb(52, 255, 255, 255),
-                Ui.dp(this, 24),
-                accent ? Color.argb(74, 77, 163, 255) : Color.argb(34, 255, 255, 255)));
-        card.addView(Ui.label(this, label));
-        return card;
-    }
-
     private LinearLayout buildClimateComfortPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Comfort Layer"));
-        panel.addView(Ui.text(this, "Частые HVAC-переключатели собраны в один компактный слой без ощущения инженерного пульта.", 14, false));
+        panel.addView(Ui.label(this, "Панель комфорта"));
         GridLayout grid = new GridLayout(this);
-        grid.setColumnCount(3);
+        grid.setColumnCount(4);
         addClimateToggle(grid, "HVAC", Ui.CYAN, () -> command(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_ON));
         addClimateToggle(grid, "Auto", Ui.SUCCESS, () -> command(EcarxVehicleAdapter.HVAC_AUTO, EcarxVehicleAdapter.COMMON_ON));
         addClimateToggle(grid, "A/C", Ui.CYAN, () -> command(EcarxVehicleAdapter.HVAC_AC, EcarxVehicleAdapter.COMMON_ON));
         addClimateToggle(grid, "A/C Max", Ui.WARNING, () -> command(EcarxVehicleAdapter.HVAC_AC_MAX, EcarxVehicleAdapter.COMMON_ON));
         addClimateToggle(grid, "Eco", Color.rgb(69, 186, 134), () -> command(EcarxVehicleAdapter.HVAC_ECO, EcarxVehicleAdapter.COMMON_ON));
         addClimateToggle(grid, "Sync", Color.rgb(103, 147, 255), () -> command(EcarxVehicleAdapter.HVAC_CLIMATE_ZONE, EcarxVehicleAdapter.CLIMATE_ZONE_DUAL));
+        addClimateToggle(grid, "Split", Color.rgb(134, 103, 255), () -> command(EcarxVehicleAdapter.HVAC_CLIMATE_ZONE, EcarxVehicleAdapter.CLIMATE_ZONE_SINGLE));
+        addClimateToggle(grid, "°F", Color.rgb(255, 122, 89), () -> command(EcarxVehicleAdapter.HVAC_TEMP_UNIT, EcarxVehicleAdapter.TEMP_UNIT_F));
         panel.addView(grid, lpMatchWrap(0, 12, 0, 0));
         return panel;
     }
 
     private LinearLayout buildClimateMainPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Airflow & Comfort"));
-        panel.addView(Ui.text(this, "В центре теперь сам airflow и related comfort-actions. Температуры уже решаются в hero.", 14, false));
+        panel.addView(Ui.label(this, "Водитель / Пассажир"));
 
         LinearLayout tempRow = Ui.row(this);
         tempRow.setGravity(Gravity.CENTER_VERTICAL);
-        tempRow.addView(buildTempCard("Driver", EcarxVehicleAdapter.ZONE_DRIVER_LEFT), new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 0.8f));
+        tempRow.addView(buildTempCard("Водитель", EcarxVehicleAdapter.ZONE_DRIVER_LEFT), new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 0.9f));
 
         LinearLayout center = Ui.glassCard(this);
-        center.addView(Ui.label(this, "Airflow"));
+        center.addView(Ui.label(this, "Потоки воздуха"));
         View flow = new AirFlowView(this);
         center.addView(flow, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 220)));
         TextView fanLabel = Ui.text(this, "Вентилятор: 3", 18, true);
@@ -347,15 +315,32 @@ public class ClimateActivity extends Activity {
         centerLp.rightMargin = Ui.dp(this, 12);
         tempRow.addView(center, centerLp);
 
-        tempRow.addView(buildTempCard("Passenger", EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT), new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 0.8f));
+        tempRow.addView(buildTempCard("Пассажир", EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT), new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 0.9f));
         panel.addView(tempRow);
 
         LinearLayout seats = Ui.row(this);
-        seats.setWeightSum(3f);
-        addClimateActionChip(seats, "Seat Heat", () -> command(EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_LEVEL_2));
-        addClimateActionChip(seats, "Vent", () -> command(EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_LEVEL_2));
-        addClimateActionChip(seats, "Wheel Heat", () -> command(EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT, EcarxVehicleAdapter.WHEEL_HEAT_MID));
+        seats.setWeightSum(4f);
+        addClimateActionChip(seats, "Подогрев сид.", () -> command(EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_LEVEL_2));
+        addClimateActionChip(seats, "Вентиляция", () -> command(EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_LEVEL_2));
+        addClimateActionChip(seats, "Руль", () -> command(EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT, EcarxVehicleAdapter.WHEEL_HEAT_MID));
+        addClimateActionChip(seats, "Обдув стекла", this::showDefrostSheet);
         panel.addView(seats, lpMatchWrap(0, 16, 0, 0));
+
+        LinearLayout presets = Ui.row(this);
+        presets.setWeightSum(3f);
+        addClimateActionChip(presets, "Тихий", () -> applyClimatePreset(
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_ON),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_AUTO, EcarxVehicleAdapter.COMMON_ON),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_1)));
+        addClimateActionChip(presets, "Комфорт", () -> applyClimatePreset(
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_ON),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_AUTO, EcarxVehicleAdapter.COMMON_ON),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_3)));
+        addClimateActionChip(presets, "Прогрев", () -> applyClimatePreset(
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_ON),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_5),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_LEG_AND_FRONT_WINDOW)));
+        panel.addView(presets, lpMatchWrap(0, 12, 0, 0));
         return panel;
     }
 
@@ -531,11 +516,8 @@ public class ClimateActivity extends Activity {
     }
 
     private LinearLayout buildAdvancedPanel() {
-        LinearLayout panel = new LinearLayout(this);
-        panel.setOrientation(LinearLayout.VERTICAL);
-        panel.setPadding(Ui.dp(this, 18), Ui.dp(this, 16), Ui.dp(this, 18), Ui.dp(this, 16));
-        panel.setBackground(Ui.cardBg(this, Color.argb(36, 10, 14, 20), Ui.dp(this, 28), Color.argb(48, 72, 181, 165)));
-        panel.addView(Ui.label(this, "Advanced HVAC"));
+        LinearLayout panel = Ui.glassCard(this);
+        panel.addView(Ui.label(this, "Расширенный HVAC"));
         panel.addView(Ui.text(this, "Полный расширенный flow теперь живет здесь: воздух, очистка, зоны, hardkeys, pre/post climate и быстрые HVAC-макросы.", 14, false));
 
         GridLayout grid = new GridLayout(this);
@@ -608,10 +590,7 @@ public class ClimateActivity extends Activity {
     }
 
     private LinearLayout buildTempCard(String label, int zone) {
-        LinearLayout card = new LinearLayout(this);
-        card.setOrientation(LinearLayout.VERTICAL);
-        card.setPadding(Ui.dp(this, 16), Ui.dp(this, 14), Ui.dp(this, 16), Ui.dp(this, 14));
-        card.setBackground(Ui.cardBg(this, Color.argb(26, 255, 255, 255), Ui.dp(this, 24), Color.argb(22, 255, 255, 255)));
+        LinearLayout card = Ui.glassCard(this);
         card.addView(Ui.label(this, label));
         TextView temp = Ui.text(this, zone == EcarxVehicleAdapter.ZONE_DRIVER_LEFT ? "22.0°C" : "22.0°C", 34, true);
         card.addView(temp);
@@ -646,10 +625,7 @@ public class ClimateActivity extends Activity {
         tile.setGravity(Gravity.CENTER);
         tile.setPadding(Ui.dp(this, 12), Ui.dp(this, 14), Ui.dp(this, 12), Ui.dp(this, 14));
         tile.setBackground(Ui.cardBg(this, Color.argb(84, Color.red(color), Color.green(color), Color.blue(color)), Ui.dp(this, 20), Color.argb(90, 255, 255, 255)));
-        tile.setOnClickListener(v -> {
-            Ui.press(v);
-            action.run();
-        });
+        tile.setOnClickListener(v -> action.run());
         tile.setOnLongClickListener(v -> {
             showQuickHvacSheet();
             return true;
@@ -665,10 +641,7 @@ public class ClimateActivity extends Activity {
         Button b = Ui.button(this, label);
         b.setTextColor(Color.WHITE);
         b.setBackground(Ui.cardBg(this, Color.argb(70, 255, 255, 255), Ui.dp(this, 18), Color.TRANSPARENT));
-        b.setOnClickListener(v -> {
-            Ui.press(v);
-            action.run();
-        });
+        b.setOnClickListener(v -> action.run());
         b.setOnLongClickListener(v -> {
             showQuickHvacSheet();
             return true;
@@ -701,18 +674,12 @@ public class ClimateActivity extends Activity {
     }
 
     private void addReadbackCard(GridLayout grid, String title, String body) {
-        LinearLayout card = new LinearLayout(this);
-        card.setOrientation(LinearLayout.VERTICAL);
-        card.setPadding(Ui.dp(this, 16), Ui.dp(this, 14), Ui.dp(this, 16), Ui.dp(this, 14));
-        card.setBackground(Ui.cardBg(this, Color.argb(24, 255, 255, 255), Ui.dp(this, 24), Color.argb(20, 255, 255, 255)));
+        LinearLayout card = Ui.glassCard(this);
         card.addView(Ui.label(this, title));
         TextView value = Ui.text(this, body, 13, false);
         value.setTextColor(Ui.secondaryText(this));
         card.addView(value);
-        card.setOnClickListener(v -> {
-            Ui.press(v);
-            showReadbackSheet();
-        });
+        card.setOnClickListener(v -> showReadbackSheet());
         GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
         lp.width = 0;
         lp.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
@@ -735,32 +702,26 @@ public class ClimateActivity extends Activity {
                 new QuickItem("A/C Max", () -> command(EcarxVehicleAdapter.HVAC_AC_MAX, EcarxVehicleAdapter.COMMON_ON)),
                 new QuickItem("Off", () -> command(EcarxVehicleAdapter.HVAC_AC, EcarxVehicleAdapter.COMMON_OFF))
         });
-        addDockButton(dock, "Air", this::showBlowingSheet, false, new QuickItem[]{
-                new QuickItem("Face", () -> command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_FACE)),
-                new QuickItem("Leg", () -> command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_LEG)),
-                new QuickItem("Window", () -> command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_FRONT_WINDOW))
-        });
-        addDockButton(dock, "Defrost", this::showDefrostSheet, false, new QuickItem[]{
+        addDockButton(dock, "Обдув", this::showDefrostSheet, false, new QuickItem[]{
                 new QuickItem("Перед", () -> command(EcarxVehicleAdapter.HVAC_DEFROST_FRONT, EcarxVehicleAdapter.COMMON_ON)),
                 new QuickItem("Зад", () -> command(EcarxVehicleAdapter.HVAC_DEFROST_REAR, EcarxVehicleAdapter.COMMON_ON)),
                 new QuickItem("Перед макс", () -> command(EcarxVehicleAdapter.HVAC_DEFROST_FRONT_MAX, EcarxVehicleAdapter.COMMON_ON))
         });
-        addDockButton(dock, "Smart", () -> openMode(Mode.SMART), mode == Mode.SMART, new QuickItem[]{
+        addDockButton(dock, "Умный", () -> command(EcarxVehicleAdapter.HVAC_AI_POWER, EcarxVehicleAdapter.COMMON_ON), false, new QuickItem[]{
                 new QuickItem("Умный климат", () -> openMode(Mode.SMART)),
                 new QuickItem("Rapid Cool", () -> command(EcarxVehicleAdapter.HVAC_RAPID_COOLING, EcarxVehicleAdapter.COMMON_ON)),
                 new QuickItem("Rapid Warm", () -> command(EcarxVehicleAdapter.HVAC_RAPID_WARMING, EcarxVehicleAdapter.COMMON_ON))
         });
-        addDockButton(dock, "Presets", () -> openMode(Mode.PRESETS), mode == Mode.PRESETS || mode == Mode.PRESET_EDITOR, new QuickItem[]{
+        addDockButton(dock, "Пресеты", () -> openMode(Mode.PRESETS), mode == Mode.PRESETS || mode == Mode.PRESET_EDITOR, new QuickItem[]{
                 new QuickItem("Пресеты", () -> openMode(Mode.PRESETS)),
                 new QuickItem("Создать", () -> openPresetEditor("", defaultPresetText())),
                 new QuickItem("Комфорт", () -> openMode(Mode.HOME))
         });
-        addDockButton(dock, "Expert", () -> openMode(Mode.ADVANCED), mode == Mode.ADVANCED, new QuickItem[]{
+        addDockButton(dock, "Расширенно", () -> openMode(Mode.ADVANCED), mode == Mode.ADVANCED, new QuickItem[]{
                 new QuickItem("Расширенно", () -> openMode(Mode.ADVANCED)),
                 new QuickItem("Readback", this::showReadbackSheet),
                 new QuickItem("Комфорт", () -> openMode(Mode.HOME))
         });
-        Ui.animateIn(dock, 150, 10f);
         return dock;
     }
 
@@ -772,10 +733,7 @@ public class ClimateActivity extends Activity {
                 active ? Color.argb(115, 77, 163, 255) : Color.argb(54, 255, 255, 255),
                 Ui.dp(this, 20),
                 active ? Color.argb(100, 77, 163, 255) : Color.TRANSPARENT));
-        button.setOnClickListener(v -> {
-            Ui.press(v);
-            action.run();
-        });
+        button.setOnClickListener(v -> action.run());
         button.setOnLongClickListener(v -> {
             showActionSheet(label, items);
             return true;
@@ -790,7 +748,6 @@ public class ClimateActivity extends Activity {
         mode = next;
         renderContent();
         refreshState();
-        Ui.staggerIn(collectChildren(contentHost), 40, 70);
     }
 
     private void openPresetEditor(String name, String commandsText) {
@@ -863,7 +820,6 @@ public class ClimateActivity extends Activity {
             window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         }
         dialog.show();
-        Ui.animateScaleIn(sheet, 0);
     }
 
     private void showBlowingSheet() {
@@ -1111,12 +1067,6 @@ public class ClimateActivity extends Activity {
         view.animate().scaleX(1.04f).scaleY(1.04f).setDuration(110).setInterpolator(new DecelerateInterpolator()).withEndAction(
                 () -> view.animate().scaleX(1f).scaleY(1f).setDuration(180).setInterpolator(new DecelerateInterpolator()).start()
         ).start();
-    }
-
-    private View[] collectChildren(LinearLayout layout) {
-        View[] views = new View[layout.getChildCount()];
-        for (int i = 0; i < layout.getChildCount(); i++) views[i] = layout.getChildAt(i);
-        return views;
     }
 
     private LinearLayout.LayoutParams lpMatchWrap(int l, int t, int r, int b) {

@@ -16,8 +16,6 @@ import android.widget.GridLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
-import java.util.ArrayList;
-import java.util.List;
 
 public class HudActivity extends Activity {
     private LinearLayout advancedHost;
@@ -42,10 +40,7 @@ public class HudActivity extends Activity {
         root.addView(buildControlPanel(), lpMatchWrap(0, 0, 0, 16));
         root.addView(buildAdvancedPanel(), lpMatchWrap(0, 0, 0, 16));
         root.addView(buildStatusGrid(), lpMatchWrap(0, 0, 0, 16));
-        LinearLayout dock = buildBottomDock();
-        root.addView(dock, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 112)));
-        Ui.staggerIn(collectChildren(root), 40, 55);
-        Ui.animateIn(dock, 220, 18f);
+        root.addView(buildBottomDock(), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 112)));
         return scroll;
     }
 
@@ -56,7 +51,7 @@ public class HudActivity extends Activity {
         bar.setPadding(Ui.dp(this, 20), Ui.dp(this, 10), Ui.dp(this, 20), Ui.dp(this, 10));
 
         Button back = Ui.button(this, "Назад");
-        Ui.bindPress(back, this::finish);
+        back.setOnClickListener(v -> finish());
         bar.addView(back, new LinearLayout.LayoutParams(Ui.dp(this, 110), LinearLayout.LayoutParams.MATCH_PARENT));
 
         LinearLayout titleBlock = new LinearLayout(this);
@@ -66,9 +61,6 @@ public class HudActivity extends Activity {
         TextView title = Ui.text(this, "HUD / Cluster / OneOS", 28, true);
         title.setPadding(0, 0, 0, 0);
         titleBlock.addView(title);
-        TextView subtitle = Ui.muted(this, "Projection first. DIM, bridge and services stay secondary.");
-        subtitle.setTextSize(13);
-        titleBlock.addView(subtitle);
         bar.addView(titleBlock, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
         bar.addView(buildTopStat("HUD", "Ready"));
@@ -94,12 +86,12 @@ public class HudActivity extends Activity {
 
     private LinearLayout buildHeroPanel() {
         LinearLayout hero = Ui.glassCard(this);
-        hero.addView(Ui.label(this, "Projection Overview"));
+        hero.addView(Ui.label(this, "Проекция"));
 
         LinearLayout row = Ui.row(this);
         LinearLayout left = new LinearLayout(this);
         left.setOrientation(LinearLayout.VERTICAL);
-        left.addView(metricLine("HUD", "Navigation / media / safety"));
+        left.addView(metricLine("HUD", "Навигация / медиа / безопасность"));
         left.addView(metricLine("DIM", "Day / night / control center"));
         left.addView(metricLine("Cluster", "Bridge standby"));
         left.addView(metricLine("AudioExt", "Media / VR / PDC"));
@@ -129,8 +121,7 @@ public class HudActivity extends Activity {
 
     private LinearLayout buildControlPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Projection Controls"));
-        panel.addView(Ui.text(this, "Everyday HUD and DIM controls stay in the primary layer.", 14, false));
+        panel.addView(Ui.label(this, "Управление проекцией"));
 
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(3);
@@ -159,11 +150,8 @@ public class HudActivity extends Activity {
     }
 
     private LinearLayout buildAdvancedPanel() {
-        LinearLayout panel = new LinearLayout(this);
-        panel.setOrientation(LinearLayout.VERTICAL);
-        panel.setPadding(Ui.dp(this, 18), Ui.dp(this, 16), Ui.dp(this, 18), Ui.dp(this, 16));
-        panel.setBackground(Ui.cardBg(this, Ui.tertiarySurface(this), Ui.dp(this, 28), Color.argb(48, 255, 179, 64)));
-        panel.addView(Ui.label(this, "Advanced Projection"));
+        LinearLayout panel = Ui.glassCard(this);
+        panel.addView(Ui.label(this, "Расширенная проекция"));
         panel.addView(Ui.muted(this, "Полный набор OneOS / DIM / AudioExt / Cluster перенесен в новый HUD-экран без legacy fallback."));
         advancedHost = new LinearLayout(this);
         advancedHost.setOrientation(LinearLayout.VERTICAL);
@@ -178,7 +166,7 @@ public class HudActivity extends Activity {
 
         LinearLayout hud = Ui.glassCard(this);
         hud.addView(Ui.text(this, "HUD / DIM Bridge", 18, true));
-        hud.addView(Ui.muted(this, safeHudDimAvailability()));
+        hud.addView(Ui.muted(this, new EcarxHudDimAdapter(this).availability()));
         hud.addView(Ui.muted(this, "Вид навигации на приборке определяет, как маршрут отображается на DIM: выключено, упрощенно, полно, AR или 3D-полосы."));
         addCommand(hud, "HUD включить", EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.COMMON_ON);
         addCommand(hud, "HUD выключить", EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.COMMON_OFF);
@@ -247,16 +235,15 @@ public class HudActivity extends Activity {
     }
 
     private void addStatusCard(GridLayout grid, String title, String value, int color) {
-        LinearLayout card = Ui.secondaryCard(this);
+        LinearLayout card = Ui.glassCard(this);
         card.addView(Ui.label(this, title));
-        TextView v = Ui.text(this, value, 13, false);
-        v.setTextColor(Ui.secondaryText(this));
+        TextView v = Ui.text(this, value, 18, true);
         v.setPadding(0, Ui.dp(this, 8), 0, 0);
         card.addView(v);
         View accent = new View(this);
         accent.setBackground(Ui.glassPill(this, color));
-        LinearLayout.LayoutParams accentLp = new LinearLayout.LayoutParams(Ui.dp(this, 40), Ui.dp(this, 4));
-        accentLp.topMargin = Ui.dp(this, 10);
+        LinearLayout.LayoutParams accentLp = new LinearLayout.LayoutParams(Ui.dp(this, 56), Ui.dp(this, 6));
+        accentLp.topMargin = Ui.dp(this, 14);
         card.addView(accent, accentLp);
         GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
         lp.width = 0;
@@ -286,7 +273,7 @@ public class HudActivity extends Activity {
         tile.setGravity(Gravity.CENTER);
         tile.setPadding(Ui.dp(this, 12), Ui.dp(this, 16), Ui.dp(this, 12), Ui.dp(this, 16));
         tile.setBackground(Ui.cardBg(this, Color.argb(88, Color.red(color), Color.green(color), Color.blue(color)), Ui.dp(this, 22), Color.argb(80, 255, 255, 255)));
-        Ui.bindPress(tile, () -> {
+        tile.setOnClickListener(v -> {
             action.run();
             Ui.toast(this, label);
         });
@@ -301,7 +288,7 @@ public class HudActivity extends Activity {
         Button b = Ui.button(this, label);
         b.setTextColor(Color.WHITE);
         b.setBackground(Ui.cardBg(this, Color.argb(70, 255, 255, 255), Ui.dp(this, 18), Color.TRANSPARENT));
-        Ui.bindPress(b, () -> {
+        b.setOnClickListener(v -> {
             action.run();
             Ui.toast(this, label);
         });
@@ -319,7 +306,7 @@ public class HudActivity extends Activity {
                 active ? Color.argb(115, 77, 163, 255) : Color.argb(54, 255, 255, 255),
                 Ui.dp(this, 20),
                 active ? Color.argb(100, 77, 163, 255) : Color.TRANSPARENT));
-        Ui.bindPress(button, action);
+        button.setOnClickListener(v -> action.run());
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f);
         lp.leftMargin = Ui.dp(this, 6);
         lp.rightMargin = Ui.dp(this, 6);
@@ -351,17 +338,9 @@ public class HudActivity extends Activity {
         Ui.toast(this, "Открыт advanced HUD flow");
     }
 
-    private String safeHudDimAvailability() {
-        try {
-            return new EcarxHudDimAdapter(this).availability();
-        } catch (Exception e) {
-            return "OneOS HUD/DIM\nНедоступно: " + e.getClass().getSimpleName() + ": " + e.getMessage();
-        }
-    }
-
     private void addCommand(LinearLayout root, String label, int functionId, int value) {
         Button b = Ui.button(this, label);
-        Ui.bindPress(b, () -> {
+        b.setOnClickListener(v -> {
             EcarxVehicleAdapter.Result result = CarCommandBus.sendVehicle(this, functionId, value);
             Ui.toast(this, result.success ? "Команда отправлена" : "Команда не выполнена");
             root.addView(Ui.text(this, result.message, 13, false), Math.min(3, root.getChildCount()));
@@ -371,7 +350,7 @@ public class HudActivity extends Activity {
 
     private void addDiagnostic(LinearLayout root, String label, int... functionIds) {
         Button b = Ui.button(this, "Диагностика: " + label);
-        Ui.bindPress(b, () -> {
+        b.setOnClickListener(v -> {
             EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
             StringBuilder sb = new StringBuilder(label).append("\n");
             for (int functionId : functionIds) {
@@ -385,7 +364,7 @@ public class HudActivity extends Activity {
 
     private void addHudDimAction(LinearLayout root, String label, HudDimAction action) {
         Button b = Ui.button(this, label);
-        Ui.bindPress(b, () -> {
+        b.setOnClickListener(v -> {
             EcarxHudDimAdapter.Result result;
             try {
                 result = action.run(new EcarxHudDimAdapter(this));
@@ -404,7 +383,7 @@ public class HudActivity extends Activity {
 
     private void addAudioExtAction(LinearLayout root, String label, AudioExtAction action) {
         Button b = Ui.button(this, label);
-        Ui.bindPress(b, () -> {
+        b.setOnClickListener(v -> {
             AudioExtServiceAdapter.Result result;
             try {
                 result = action.run(new AudioExtServiceAdapter(this));
@@ -423,7 +402,7 @@ public class HudActivity extends Activity {
 
     private void addServiceAction(LinearLayout root, String label, Runnable action) {
         Button b = Ui.button(this, label);
-        Ui.bindPress(b, () -> {
+        b.setOnClickListener(v -> {
             action.run();
             Ui.toast(this, label);
         });
@@ -438,12 +417,6 @@ public class HudActivity extends Activity {
 
     private GradientDrawable dashboardBg() {
         return Ui.dashboardBg(this);
-    }
-
-    private View[] collectChildren(LinearLayout parent) {
-        List<View> views = new ArrayList<>();
-        for (int i = 0; i < parent.getChildCount(); i++) views.add(parent.getChildAt(i));
-        return views.toArray(new View[0]);
     }
 
     private static final class HudVisualView extends View {

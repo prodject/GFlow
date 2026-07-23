@@ -62,9 +62,7 @@ public class ProfileActivity extends Activity {
         contentHost = new LinearLayout(this);
         contentHost.setOrientation(LinearLayout.VERTICAL);
         root.addView(contentHost, lpMatchWrap(0, 0, 0, 16));
-        LinearLayout dock = buildBottomDock();
-        root.addView(dock, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 112)));
-        Ui.animateIn(dock, 220, 18f);
+        root.addView(buildBottomDock(), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 112)));
         return scroll;
     }
 
@@ -73,7 +71,6 @@ public class ProfileActivity extends Activity {
         contentHost.removeAllViews();
         if (mode == Mode.EDITOR) contentHost.addView(buildEditorPanel(selectedName), lpMatchWrap(0, 0, 0, 16));
         else contentHost.addView(buildHomePanel(), lpMatchWrap(0, 0, 0, 16));
-        Ui.staggerIn(collectChildren(contentHost), 40, 70);
     }
 
     private LinearLayout buildTopBar() {
@@ -83,7 +80,7 @@ public class ProfileActivity extends Activity {
         bar.setPadding(Ui.dp(this, 20), Ui.dp(this, 10), Ui.dp(this, 20), Ui.dp(this, 10));
 
         Button back = Ui.button(this, "Назад");
-        Ui.bindPress(back, () -> {
+        back.setOnClickListener(v -> {
             if (mode == Mode.HOME) finish();
             else openMode(Mode.HOME, selectedName);
         });
@@ -94,9 +91,6 @@ public class ProfileActivity extends Activity {
         titleBlock.setPadding(Ui.dp(this, 16), 0, 0, 0);
         titleBlock.addView(Ui.label(this, mode == Mode.EDITOR ? "Profile Editor" : "User Profiles"));
         titleBlock.addView(Ui.text(this, "Профили пользователей", 28, true));
-        TextView subtitle = Ui.muted(this, "People first. Active identity and profile application stay ahead of raw editing.");
-        subtitle.setTextSize(13);
-        titleBlock.addView(subtitle);
         bar.addView(titleBlock, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
         bar.addView(buildTopStat("Driver", String.valueOf(UserProfileEngine.names(this, "driver").size())));
@@ -127,17 +121,15 @@ public class ProfileActivity extends Activity {
 
         LinearLayout left = new LinearLayout(this);
         left.setOrientation(LinearLayout.VERTICAL);
-        left.addView(metricLine("Name", profile.name.isEmpty() ? "Not selected" : profile.name));
-        left.addView(metricLine("Type", profile.type));
+        left.addView(metricLine("Имя", profile.name.isEmpty() ? "Не выбран" : profile.name));
+        left.addView(metricLine("Тип", profile.type));
         left.addView(metricLine("Identity", identitySummary(profile.identity)));
-        left.addView(metricLine("Last apply", lastAppliedSummary()));
+        left.addView(metricLine("Последнее применение", lastAppliedSummary()));
         row.addView(left, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
-        LinearLayout avatarCard = new LinearLayout(this);
-        avatarCard.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout avatarCard = Ui.glassCard(this);
         avatarCard.setGravity(Gravity.CENTER);
         avatarCard.setPadding(Ui.dp(this, 28), Ui.dp(this, 28), Ui.dp(this, 28), Ui.dp(this, 28));
-        avatarCard.setBackground(Ui.cardBg(this, Ui.deepSurface(this), Ui.dp(this, 32), Ui.glassLine(this)));
         TextView avatar = Ui.text(this, profile.avatar == null || profile.avatar.trim().isEmpty() ? defaultAvatar(profile.type) : profile.avatar, 32, true);
         avatar.setGravity(Gravity.CENTER);
         avatarCard.addView(avatar);
@@ -168,8 +160,8 @@ public class ProfileActivity extends Activity {
     private GridLayout buildOverviewGrid() {
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(2);
-        addStatusCard(grid, "Active", activeProfileName(), Ui.CYAN);
-        addStatusCard(grid, "Last", prefs.getString(UserProfileEngine.KEY_LAST_USED, "нет"), Ui.SUCCESS);
+        addStatusCard(grid, "Активный", activeProfileName(), Ui.CYAN);
+        addStatusCard(grid, "Последний", prefs.getString(UserProfileEngine.KEY_LAST_USED, "нет"), Ui.SUCCESS);
         addStatusCard(grid, "Drivers", previewNames("driver"), Ui.WARNING);
         addStatusCard(grid, "Passengers", previewNames("passenger"), Color.rgb(129, 149, 255));
         return grid;
@@ -177,10 +169,6 @@ public class ProfileActivity extends Activity {
 
     private LinearLayout buildProfileSection(String title, String type) {
         LinearLayout panel = Ui.glassCard(this);
-        panel.setBackground(Ui.cardBg(this,
-                "passenger".equals(type) ? Ui.secondarySurface(this) : Ui.glassSurface(this),
-                Ui.dp(this, 28),
-                Ui.glassLine(this)));
         panel.addView(Ui.label(this, title));
         panel.addView(Ui.text(this, "Списки профилей и быстрые действия применения/редактирования.", 14, false));
 
@@ -200,14 +188,8 @@ public class ProfileActivity extends Activity {
     }
 
     private LinearLayout buildProfileCard(String name) {
-        String raw = UserProfileEngine.raw(this, name);
-        String profileType = rawField(raw, "type", "driver");
-        String profileAvatar = rawField(raw, "avatar", defaultAvatar(profileType));
-        String profileIdentity = rawField(raw, "identity", "");
-        int commandCount = profileCommandCount(raw);
-        LinearLayout card = new LinearLayout(this);
-        card.setOrientation(LinearLayout.VERTICAL);
-        card.setPadding(Ui.dp(this, 18), Ui.dp(this, 16), Ui.dp(this, 18), Ui.dp(this, 16));
+        UserProfileEngine.Profile profile = UserProfileEngine.Profile.parse(UserProfileEngine.raw(this, name));
+        LinearLayout card = Ui.glassCard(this);
         boolean selected = name.equals(selectedName);
         card.setBackground(Ui.cardBg(this,
                 selected ? Color.argb(118, 77, 163, 255) : Ui.glassSurface(this),
@@ -215,12 +197,12 @@ public class ProfileActivity extends Activity {
                 selected ? Color.argb(120, 77, 163, 255) : Ui.glassLine(this)));
 
         LinearLayout top = Ui.row(this);
-        TextView title = Ui.text(this, (profileAvatar == null || profileAvatar.trim().isEmpty() ? defaultAvatar(profileType) : profileAvatar) + "  " + name, 20, true);
+        TextView title = Ui.text(this, (profile.avatar == null || profile.avatar.trim().isEmpty() ? defaultAvatar(profile.type) : profile.avatar) + "  " + profile.name, 20, true);
         top.addView(title, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
-        top.addView(Ui.pill(this, profileType, "driver".equals(profileType) ? Ui.CYAN : Ui.SUCCESS));
+        top.addView(Ui.pill(this, profile.type, "driver".equals(profile.type) ? Ui.CYAN : Ui.SUCCESS));
         card.addView(top);
-        card.addView(Ui.muted(this, identitySummary(profileIdentity)));
-        card.addView(Ui.muted(this, commandCount <= 0 ? "Нет сохраненных настроек" : commandCount + " настроек"));
+        card.addView(Ui.muted(this, identitySummary(profile.identity)));
+        card.addView(Ui.muted(this, commandSummary(profile.commands)));
 
         LinearLayout actions = Ui.row(this);
         addMiniAction(actions, "Выбрать", () -> {
@@ -246,7 +228,6 @@ public class ProfileActivity extends Activity {
         String bodyValue = editing ? AutomationEngine.join(profile.commands) : UserProfileEngine.captureBody(this, typeValue, null);
 
         LinearLayout panel = Ui.glassCard(this);
-        panel.setBackground(Ui.cardBg(this, Ui.deepSurface(this), Ui.dp(this, 28), Ui.glassLine(this)));
         panel.addView(Ui.label(this, editing ? "Profile Editor" : "Create Profile"));
         panel.addView(Ui.text(this, editing ? "Редактирование профиля" : "Создание профиля", 22, true));
         panel.addView(Ui.muted(this, "Поля создания соответствуют `Design.txt`: имя, тип, avatar, source identity и какие настройки сохранить."));
@@ -295,7 +276,7 @@ public class ProfileActivity extends Activity {
 
         if (editing) {
             Button delete = Ui.button(this, "Удалить профиль");
-            Ui.bindPress(delete, () -> {
+            delete.setOnClickListener(v -> {
                 UserProfileEngine.delete(this, profile.name, profile.type);
                 if (profile.name.equals(selectedName)) selectedName = prefs.getString(UserProfileEngine.KEY_LAST_USED, "");
                 openMode(Mode.HOME, selectedName);
@@ -336,14 +317,14 @@ public class ProfileActivity extends Activity {
         card.addView(grid, lpMatchWrap(0, 12, 0, 0));
 
         Button refresh = Ui.button(this, "Собрать текущее состояние");
-        Ui.bindPress(refresh, () -> body.setText(UserProfileEngine.captureBody(this, type.getText().toString().trim(), collectSettings(
+        refresh.setOnClickListener(v -> body.setText(UserProfileEngine.captureBody(this, type.getText().toString().trim(), collectSettings(
                 seat, climate, comfort, drive, hud, cabin, media, desktop, automation, adas))));
         card.addView(refresh, lpMatchWrap(0, 12, 0, 0));
         return card;
     }
 
     private LinearLayout buildNotesPanel() {
-        LinearLayout panel = Ui.secondaryCard(this);
+        LinearLayout panel = Ui.glassCard(this);
         panel.addView(Ui.label(this, "Profile Notes"));
         panel.addView(Ui.text(this,
                 "Поддерживаемые строки: seatMemory, seatLength, seatHeight, seatBackrest, mirror, climateTemp, fan, seatHeat, seatVent, drive, steering, hud, brightness, ambience, volume, mediaSource, desktopPins, buttonPreset, preset, scenario, adas.",
@@ -444,15 +425,13 @@ public class ProfileActivity extends Activity {
     }
 
     private void addStatusCard(GridLayout grid, String title, String value, int color) {
-        LinearLayout card = Ui.secondaryCard(this);
+        LinearLayout card = Ui.glassCard(this);
         card.addView(Ui.label(this, title));
-        TextView body = Ui.text(this, value, 13, false);
-        body.setTextColor(Ui.secondaryText(this));
-        card.addView(body);
+        card.addView(Ui.text(this, value, 18, true));
         View accent = new View(this);
         accent.setBackground(Ui.glassPill(this, color));
-        LinearLayout.LayoutParams accentLp = new LinearLayout.LayoutParams(Ui.dp(this, 40), Ui.dp(this, 4));
-        accentLp.topMargin = Ui.dp(this, 10);
+        LinearLayout.LayoutParams accentLp = new LinearLayout.LayoutParams(Ui.dp(this, 56), Ui.dp(this, 6));
+        accentLp.topMargin = Ui.dp(this, 14);
         card.addView(accent, accentLp);
         GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
         lp.width = 0;
@@ -465,7 +444,7 @@ public class ProfileActivity extends Activity {
         Button b = Ui.button(this, label);
         b.setTextColor(Color.WHITE);
         b.setBackground(Ui.cardBg(this, Color.argb(70, 255, 255, 255), Ui.dp(this, 18), Color.TRANSPARENT));
-        Ui.bindPress(b, () -> {
+        b.setOnClickListener(v -> {
             action.run();
             Ui.toast(this, label);
         });
@@ -477,7 +456,7 @@ public class ProfileActivity extends Activity {
 
     private void addMiniAction(LinearLayout row, String label, Runnable action) {
         Button b = Ui.button(this, label);
-        Ui.bindPress(b, action);
+        b.setOnClickListener(v -> action.run());
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 48), 1f);
         lp.leftMargin = Ui.dp(this, 6);
         lp.rightMargin = Ui.dp(this, 6);
@@ -492,7 +471,7 @@ public class ProfileActivity extends Activity {
                 active ? Color.argb(115, 77, 163, 255) : Color.argb(54, 255, 255, 255),
                 Ui.dp(this, 20),
                 active ? Color.argb(100, 77, 163, 255) : Color.TRANSPARENT));
-        Ui.bindPress(button, action);
+        button.setOnClickListener(v -> action.run());
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f);
         lp.leftMargin = Ui.dp(this, 6);
         lp.rightMargin = Ui.dp(this, 6);
@@ -580,12 +559,6 @@ public class ProfileActivity extends Activity {
         return names.get(0) + " +" + (names.size() - 1);
     }
 
-    private View[] collectChildren(LinearLayout layout) {
-        View[] views = new View[layout.getChildCount()];
-        for (int i = 0; i < layout.getChildCount(); i++) views[i] = layout.getChildAt(i);
-        return views;
-    }
-
     private String activeProfileName() {
         String active = AutomationEngine.prefs(this).getString(AutomationEngine.KEY_ACTIVE_PROFILE, "");
         return active == null || active.trim().isEmpty() ? "Нет" : active;
@@ -618,28 +591,6 @@ public class ProfileActivity extends Activity {
     private String commandSummary(List<String> commands) {
         if (commands == null || commands.isEmpty()) return "Нет сохраненных настроек";
         return commands.size() + " настроек · " + commands.get(0);
-    }
-
-    private String rawField(String raw, String key, String fallback) {
-        if (raw == null || raw.isEmpty()) return fallback;
-        String prefix = key + ":";
-        for (String line : raw.split("\n")) {
-            String item = line.trim();
-            if (item.startsWith(prefix)) return item.substring(prefix.length()).trim();
-        }
-        return fallback;
-    }
-
-    private int profileCommandCount(String raw) {
-        if (raw == null || raw.isEmpty()) return 0;
-        int count = 0;
-        for (String line : raw.split("\n")) {
-            String item = line.trim();
-            if (item.isEmpty()) continue;
-            if (item.startsWith("name:") || item.startsWith("type:") || item.startsWith("avatar:") || item.startsWith("identity:")) continue;
-            count++;
-        }
-        return count;
     }
 
     private String lastAppliedSummary() {

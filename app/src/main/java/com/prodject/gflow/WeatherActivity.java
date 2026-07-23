@@ -2,11 +2,9 @@ package com.prodject.gflow;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.LinearGradient;
@@ -29,7 +27,6 @@ import android.widget.GridLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
-import java.util.ArrayList;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,14 +34,12 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class WeatherActivity extends Activity {
-    private static final int REQ_LOCATION = 1201;
     private static final String KEY_BOOKMARKS = "bookmarks";
     private static final String KEY_LAT = "lat";
     private static final String KEY_LON = "lon";
@@ -98,9 +93,7 @@ public class WeatherActivity extends Activity {
         contentHost.setOrientation(LinearLayout.VERTICAL);
         root.addView(contentHost, lpMatchWrap(0, 0, 0, 16));
 
-        LinearLayout dock = buildBottomDock();
-        root.addView(dock, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 112)));
-        Ui.animateIn(dock, 220, 18f);
+        root.addView(buildBottomDock(), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 112)));
         return scroll;
     }
 
@@ -112,7 +105,6 @@ public class WeatherActivity extends Activity {
         contentHost.addView(buildBrowserPanel(), lpMatchWrap(0, 0, 0, 16));
         if (mode == Mode.BOOKMARKS) contentHost.addView(buildBookmarksPanel(), lpMatchWrap(0, 0, 0, 16));
         else contentHost.addView(buildForecastPanel(), lpMatchWrap(0, 0, 0, 16));
-        Ui.staggerIn(collectChildren(contentHost), 30, 55);
     }
 
     private LinearLayout buildTopBar() {
@@ -122,7 +114,7 @@ public class WeatherActivity extends Activity {
         bar.setPadding(Ui.dp(this, 20), Ui.dp(this, 10), Ui.dp(this, 20), Ui.dp(this, 10));
 
         Button back = Ui.button(this, "Назад");
-        Ui.press(back, () -> {
+        back.setOnClickListener(v -> {
             if (mode == Mode.HOME) finish();
             else openMode(Mode.HOME);
         });
@@ -131,7 +123,7 @@ public class WeatherActivity extends Activity {
         LinearLayout titleBlock = new LinearLayout(this);
         titleBlock.setOrientation(LinearLayout.VERTICAL);
         titleBlock.setPadding(Ui.dp(this, 16), 0, 0, 0);
-        titleBlock.addView(Ui.label(this, mode == Mode.BOOKMARKS ? "Weather Bookmarks / Browser" : "Climate Outside / Browser"));
+        titleBlock.addView(Ui.label(this, mode == Mode.BOOKMARKS ? "Bookmarks / Browser" : "Weather / Browser"));
         titleBlock.addView(Ui.text(this, "Браузер / Погода", 28, true));
         bar.addView(titleBlock, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
@@ -156,7 +148,7 @@ public class WeatherActivity extends Activity {
 
     private LinearLayout buildHeroPanel() {
         LinearLayout hero = Ui.glassCard(this);
-        hero.addView(Ui.label(this, "Outside Conditions"));
+        hero.addView(Ui.label(this, "Open-Meteo / Browser / Search"));
 
         LinearLayout row = Ui.row(this);
         iconView = new WeatherIconView(this);
@@ -204,7 +196,7 @@ public class WeatherActivity extends Activity {
     private LinearLayout buildWeatherPanel() {
         LinearLayout panel = Ui.glassCard(this);
         panel.addView(Ui.label(this, "Weather Controls"));
-        panel.addView(Ui.text(this, "Главный слой: текущая погода, координаты и быстрое обновление через Open-Meteo.", 14, false));
+        panel.addView(Ui.text(this, "Текущая погода, координаты, ручное редактирование и обновление через Open-Meteo.", 14, false));
 
         latInput = edit("Широта", latValue(), InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL | InputType.TYPE_NUMBER_FLAG_SIGNED);
         lonInput = edit("Долгота", lonValue(), InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL | InputType.TYPE_NUMBER_FLAG_SIGNED);
@@ -222,10 +214,6 @@ public class WeatherActivity extends Activity {
 
     private LinearLayout buildBrowserPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.setBackground(Ui.cardBg(this,
-                Ui.dark(this) ? Color.argb(236, 16, 24, 42) : Color.argb(246, 240, 244, 250),
-                Ui.dp(this, 28),
-                Ui.glassLine(this)));
         panel.addView(Ui.label(this, "Browser"));
         panel.addView(Ui.text(this, "Address/search bar, открыть сайт, поиск, reload и добавление закладки.", 14, false));
 
@@ -253,10 +241,6 @@ public class WeatherActivity extends Activity {
 
     private LinearLayout buildForecastPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.setBackground(Ui.cardBg(this,
-                Ui.dark(this) ? Color.argb(236, 14, 21, 38) : Color.argb(245, 238, 242, 248),
-                Ui.dp(this, 28),
-                Ui.glassLine(this)));
         panel.addView(Ui.label(this, "Forecast"));
         panel.addView(Ui.text(this, "Краткий forecast summary и быстрый переход к расширенному прогнозу в браузере.", 14, false));
         forecastView = Ui.text(this, state.forecast, 16, true);
@@ -272,10 +256,6 @@ public class WeatherActivity extends Activity {
 
     private LinearLayout buildBookmarksPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.setBackground(Ui.cardBg(this,
-                Ui.dark(this) ? Color.argb(236, 14, 21, 38) : Color.argb(245, 238, 242, 248),
-                Ui.dp(this, 28),
-                Ui.glassLine(this)));
         panel.addView(Ui.label(this, "Bookmarks"));
         panel.addView(Ui.text(this, "Список закладок браузера. Долгое нажатие удаляет запись.", 14, false));
 
@@ -292,7 +272,7 @@ public class WeatherActivity extends Activity {
         LinearLayout card = Ui.glassCard(this);
         card.addView(Ui.text(this, url, 16, true));
         card.addView(Ui.muted(this, "Tap: open / Long press: delete"));
-        Ui.press(card, () -> {
+        card.setOnClickListener(v -> {
             if (addressInput != null) addressInput.setText(url);
             open(url);
         });
@@ -396,30 +376,16 @@ public class WeatherActivity extends Activity {
     }
 
     private void useCurrentCoordinates() {
-        if (!hasAnyLocationPermission()) {
-            if (android.os.Build.VERSION.SDK_INT >= 23) {
-                requestPermissions(new String[]{
-                        Manifest.permission.ACCESS_COARSE_LOCATION,
-                        Manifest.permission.ACCESS_FINE_LOCATION
-                }, REQ_LOCATION);
-            } else {
-                Ui.toast(this, "Нет разрешения location");
-            }
-            return;
-        }
         try {
             LocationManager manager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
             Location location = null;
             if (manager != null) {
-                if (hasFineLocationPermission()) {
-                    location = manager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                }
-                if (location == null && hasAnyLocationPermission()) {
-                    location = manager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-                }
+                location = manager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                if (location == null) location = manager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
             }
             if (location == null) {
-                Ui.toast(this, "Нет last known location. Дайте доступ к геопозиции и дождитесь определения координат.");
+                Ui.toast(this, "Нет last known location. Откройте настройки геолокации.");
+                startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
                 return;
             }
             getPreferences(0).edit()
@@ -430,28 +396,8 @@ public class WeatherActivity extends Activity {
             refreshWeather();
         } catch (SecurityException e) {
             Ui.toast(this, "Нет разрешения location");
+            startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
         }
-    }
-
-    @Override public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode != REQ_LOCATION) return;
-        if (hasAnyLocationPermission()) {
-            useCurrentCoordinates();
-        } else {
-            Ui.toast(this, "Location permission не выдан");
-        }
-    }
-
-    private boolean hasAnyLocationPermission() {
-        if (android.os.Build.VERSION.SDK_INT < 23) return true;
-        return checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-                || checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
-    }
-
-    private boolean hasFineLocationPermission() {
-        if (android.os.Build.VERSION.SDK_INT < 23) return true;
-        return checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
     }
 
     private void openForecast() {
@@ -574,7 +520,7 @@ public class WeatherActivity extends Activity {
         Button b = Ui.button(this, label);
         b.setTextColor(Color.WHITE);
         b.setBackground(Ui.cardBg(this, Color.argb(70, 255, 255, 255), Ui.dp(this, 18), Color.TRANSPARENT));
-        Ui.bindPress(b, action);
+        b.setOnClickListener(v -> action.run());
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 58), 1f);
         lp.leftMargin = Ui.dp(this, 6);
         lp.rightMargin = Ui.dp(this, 6);
@@ -589,7 +535,7 @@ public class WeatherActivity extends Activity {
                 active ? Color.argb(115, 77, 163, 255) : Color.argb(54, 255, 255, 255),
                 Ui.dp(this, 20),
                 active ? Color.argb(100, 77, 163, 255) : Color.TRANSPARENT));
-        Ui.bindPress(button, action);
+        button.setOnClickListener(v -> action.run());
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f);
         lp.leftMargin = Ui.dp(this, 6);
         lp.rightMargin = Ui.dp(this, 6);
@@ -598,10 +544,6 @@ public class WeatherActivity extends Activity {
 
     private void addStatusCard(GridLayout grid, String title, String value, int color) {
         LinearLayout card = Ui.glassCard(this);
-        card.setBackground(Ui.cardBg(this,
-                Ui.dark(this) ? Color.argb(118, 255, 255, 255) : Color.argb(232, 255, 255, 255),
-                Ui.dp(this, 26),
-                Ui.glassLine(this)));
         card.addView(Ui.label(this, title));
         card.addView(Ui.text(this, value, 18, true));
         View accent = new View(this);
@@ -621,7 +563,7 @@ public class WeatherActivity extends Activity {
         card.addView(Ui.text(this, title, 18, true));
         card.addView(Ui.muted(this, body));
         Button open = Ui.button(this, "Открыть");
-        Ui.bindPress(open, action);
+        open.setOnClickListener(v -> action.run());
         card.addView(open, lpMatchWrap(0, 12, 0, 0));
         View accent = new View(this);
         accent.setBackground(Ui.glassPill(this, color));
@@ -653,12 +595,6 @@ public class WeatherActivity extends Activity {
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         lp.setMargins(Ui.dp(this, left), Ui.dp(this, top), Ui.dp(this, right), Ui.dp(this, bottom));
         return lp;
-    }
-
-    private View[] collectChildren(LinearLayout parent) {
-        List<View> views = new ArrayList<>();
-        for (int i = 0; i < parent.getChildCount(); i++) views.add(parent.getChildAt(i));
-        return views.toArray(new View[0]);
     }
 
     private String weatherName(int code) {

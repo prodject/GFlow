@@ -95,10 +95,9 @@ public class MediaViewerActivity extends Activity {
     private void renderContent() {
         if (contentHost == null) return;
         contentHost.removeAllViews();
-        contentHost.addView(buildViewerPanel(), lpMatchWrap(0, 0, 0, 16));
         contentHost.addView(buildOverviewGrid(), lpMatchWrap(0, 0, 0, 16));
+        contentHost.addView(buildViewerPanel(), lpMatchWrap(0, 0, 0, 16));
         contentHost.addView(buildInfoPanel(), lpMatchWrap(0, 0, 0, 16));
-        Ui.staggerIn(collectChildren(contentHost), 40, 70);
         updateHeroStatus();
     }
 
@@ -109,20 +108,14 @@ public class MediaViewerActivity extends Activity {
         bar.setPadding(Ui.dp(this, 20), Ui.dp(this, 10), Ui.dp(this, 20), Ui.dp(this, 10));
 
         Button back = Ui.button(this, "Назад");
-        back.setOnClickListener(v -> {
-            Ui.press(v);
-            finish();
-        });
+        back.setOnClickListener(v -> finish());
         bar.addView(back, new LinearLayout.LayoutParams(Ui.dp(this, 110), LinearLayout.LayoutParams.MATCH_PARENT));
 
         LinearLayout titleBlock = new LinearLayout(this);
         titleBlock.setOrientation(LinearLayout.VERTICAL);
         titleBlock.setPadding(Ui.dp(this, 16), 0, 0, 0);
         titleBlock.addView(Ui.label(this, mediaTypeLabel()));
-        titleBlock.addView(Ui.text(this, "Media Viewer", 28, true));
-        TextView subtitle = Ui.muted(this, "Media first. Gallery navigation and file actions stay secondary.");
-        subtitle.setTextSize(13);
-        titleBlock.addView(subtitle);
+        titleBlock.addView(Ui.text(this, "Медиа", 28, true));
         bar.addView(titleBlock, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
         bar.addView(buildTopStat("Type", mediaType()));
@@ -146,27 +139,22 @@ public class MediaViewerActivity extends Activity {
 
     private LinearLayout buildHeroPanel() {
         LinearLayout hero = Ui.glassCard(this);
-        hero.addView(Ui.label(this, "Media Overview"));
+        hero.addView(Ui.label(this, "Fullscreen / Swipe / Share / Delete"));
 
         LinearLayout row = Ui.row(this);
         LinearLayout left = new LinearLayout(this);
         left.setOrientation(LinearLayout.VERTICAL);
-        left.addView(buildHeroMetric("File", currentFile == null ? "No file" : currentFile.getName()));
-        left.addView(buildHeroMetric("Type", mediaType()));
-        left.addView(buildHeroMetric("Gallery", galleryIndexLabel()));
-        left.addView(buildHeroMetric("Mode", fullscreen ? "fullscreen" : "panel"));
+        left.addView(metricLine("Файл", currentFile == null ? "Нет файла" : currentFile.getName()));
+        left.addView(metricLine("Тип", mediaType()));
+        left.addView(metricLine("Галерея", galleryIndexLabel()));
+        left.addView(metricLine("Папка", currentFile == null || currentFile.getParentFile() == null ? "n/a" : currentFile.getParentFile().getAbsolutePath()));
         row.addView(left, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
-        LinearLayout badge = new LinearLayout(this);
-        badge.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout badge = Ui.glassCard(this);
         badge.setGravity(Gravity.CENTER);
-        badge.setBackground(Ui.cardBg(this, Color.argb(58, 255, 255, 255), Ui.dp(this, 32), Color.argb(34, 255, 255, 255)));
         TextView mode = Ui.text(this, isImage() ? "IMG" : isVideo() ? "VID" : "MEDIA", 30, true);
         mode.setGravity(Gravity.CENTER);
         badge.addView(mode);
-        TextView hint = Ui.muted(this, isImage() ? "Swipe and zoom" : isVideo() ? "Play and browse" : "Media");
-        hint.setGravity(Gravity.CENTER);
-        badge.addView(hint);
         LinearLayout.LayoutParams badgeLp = new LinearLayout.LayoutParams(Ui.dp(this, 180), Ui.dp(this, 180));
         badgeLp.leftMargin = Ui.dp(this, 12);
         row.addView(badge, badgeLp);
@@ -185,18 +173,6 @@ public class MediaViewerActivity extends Activity {
         return hero;
     }
 
-    private View buildHeroMetric(String key, String value) {
-        LinearLayout card = new LinearLayout(this);
-        card.setOrientation(LinearLayout.VERTICAL);
-        card.setPadding(Ui.dp(this, 16), Ui.dp(this, 14), Ui.dp(this, 16), Ui.dp(this, 14));
-        card.setBackground(Ui.cardBg(this, Color.argb(58, 255, 255, 255), Ui.dp(this, 24), Color.argb(40, 255, 255, 255)));
-        card.addView(Ui.label(this, key));
-        TextView text = Ui.text(this, value, 16, true);
-        text.setPadding(0, Ui.dp(this, 2), 0, 0);
-        card.addView(text);
-        return card;
-    }
-
     private GridLayout buildOverviewGrid() {
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(2);
@@ -209,8 +185,8 @@ public class MediaViewerActivity extends Activity {
 
     private LinearLayout buildViewerPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Viewing Surface"));
-        panel.addView(Ui.text(this, "Контент доминирует над chrome: изображения для swipe/zoom, видео для direct playback.", 14, false));
+        panel.addView(Ui.label(this, "Viewer"));
+        panel.addView(Ui.text(this, "Изображения: fullscreen viewer, pinch zoom, swipe next/prev. Видео: VideoView + MediaController.", 14, false));
         if (currentFile == null || !currentFile.exists()) {
             panel.addView(emptyState("Откройте фото или видео из файлового менеджера"));
             return panel;
@@ -277,7 +253,6 @@ public class MediaViewerActivity extends Activity {
         addDockButton(dock, "Share", this::shareCurrent, false);
         addDockButton(dock, "Delete", this::deleteCurrent, false);
         addDockButton(dock, "Back", this::finish, false);
-        Ui.animateIn(dock, 150, 10f);
         return dock;
     }
 
@@ -419,10 +394,7 @@ public class MediaViewerActivity extends Activity {
         Button b = Ui.button(this, label);
         b.setTextColor(Color.WHITE);
         b.setBackground(Ui.cardBg(this, Color.argb(70, 255, 255, 255), Ui.dp(this, 18), Color.TRANSPARENT));
-        b.setOnClickListener(v -> {
-            Ui.press(v);
-            action.run();
-        });
+        b.setOnClickListener(v -> action.run());
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 58), 1f);
         lp.leftMargin = Ui.dp(this, 6);
         lp.rightMargin = Ui.dp(this, 6);
@@ -437,10 +409,7 @@ public class MediaViewerActivity extends Activity {
                 active ? Color.argb(115, 77, 163, 255) : Color.argb(54, 255, 255, 255),
                 Ui.dp(this, 20),
                 active ? Color.argb(100, 77, 163, 255) : Color.TRANSPARENT));
-        button.setOnClickListener(v -> {
-            Ui.press(v);
-            action.run();
-        });
+        button.setOnClickListener(v -> action.run());
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f);
         lp.leftMargin = Ui.dp(this, 6);
         lp.rightMargin = Ui.dp(this, 6);
@@ -448,18 +417,13 @@ public class MediaViewerActivity extends Activity {
     }
 
     private void addStatusCard(GridLayout grid, String title, String value, int color) {
-        LinearLayout card = new LinearLayout(this);
-        card.setOrientation(LinearLayout.VERTICAL);
-        card.setPadding(Ui.dp(this, 16), Ui.dp(this, 14), Ui.dp(this, 16), Ui.dp(this, 14));
-        card.setBackground(Ui.cardBg(this, Color.argb(24, 255, 255, 255), Ui.dp(this, 24), Color.argb(20, 255, 255, 255)));
+        LinearLayout card = Ui.glassCard(this);
         card.addView(Ui.label(this, title));
-        TextView body = Ui.text(this, value, 13, false);
-        body.setTextColor(Ui.secondaryText(this));
-        card.addView(body);
+        card.addView(Ui.text(this, value, 18, true));
         View accent = new View(this);
         accent.setBackground(Ui.glassPill(this, color));
-        LinearLayout.LayoutParams accentLp = new LinearLayout.LayoutParams(Ui.dp(this, 40), Ui.dp(this, 4));
-        accentLp.topMargin = Ui.dp(this, 10);
+        LinearLayout.LayoutParams accentLp = new LinearLayout.LayoutParams(Ui.dp(this, 56), Ui.dp(this, 6));
+        accentLp.topMargin = Ui.dp(this, 14);
         card.addView(accent, accentLp);
         GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
         lp.width = 0;
@@ -486,12 +450,6 @@ public class MediaViewerActivity extends Activity {
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         lp.setMargins(Ui.dp(this, left), Ui.dp(this, top), Ui.dp(this, right), Ui.dp(this, bottom));
         return lp;
-    }
-
-    private View[] collectChildren(LinearLayout layout) {
-        View[] views = new View[layout.getChildCount()];
-        for (int i = 0; i < layout.getChildCount(); i++) views[i] = layout.getChildAt(i);
-        return views;
     }
 
     private static final class ZoomImageView extends ImageView implements View.OnTouchListener {
