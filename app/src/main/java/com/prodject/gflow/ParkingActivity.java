@@ -16,11 +16,22 @@ import android.widget.GridLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ParkingActivity extends Activity {
     private static final String APP_SETTINGS = "app_settings";
     private static final String KEY_EXPERIMENTAL_FEATURES = "experimental_features";
+    private static final int PARK_MODE_PARALLEL = CarSignalManagerAdapter.PARK_MODE_HORIZONTAL_IN;
+    private static final int PARK_MODE_PERP = CarSignalManagerAdapter.PARK_MODE_PERPENDICULAR_IN;
+    private static final int PARK_MODE_EXIT_LEFT = CarSignalManagerAdapter.PARK_MODE_HORIZONTAL_LEFT_OUT;
+    private static final int PARK_MODE_CANCEL = CarSignalManagerAdapter.PARK_MODE_CANCEL;
+
     private LinearLayout advancedHost;
+    private TextView advancedToggleHint;
+    private boolean advancedVisible;
+    private int selectedParkMode = PARK_MODE_PARALLEL;
+    private final List<Button> modeButtons = new ArrayList<>();
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -37,14 +48,20 @@ public class ParkingActivity extends Activity {
         root.setBackground(dashboardBg());
         scroll.addView(root, new ScrollView.LayoutParams(ScrollView.LayoutParams.MATCH_PARENT, ScrollView.LayoutParams.WRAP_CONTENT));
 
-        root.addView(buildTopBar(), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 72)));
-        root.addView(buildHeroPanel(), lpMatchWrap(0, 16, 0, 16));
-        root.addView(buildParkingModes(), lpMatchWrap(0, 0, 0, 16));
-        root.addView(buildRadarAndVisualPanel(), lpMatchWrap(0, 0, 0, 16));
-        root.addView(buildApaControlPanel(), lpMatchWrap(0, 0, 0, 16));
-        root.addView(buildAdvancedParkingPanel(), lpMatchWrap(0, 0, 0, 16));
-        root.addView(buildStatusGrid(), lpMatchWrap(0, 0, 0, 16));
-        root.addView(buildBottomDock(), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 112)));
+        LinearLayout shell = new LinearLayout(this);
+        shell.setOrientation(LinearLayout.VERTICAL);
+        root.addView(shell, lpMatchWrap(0, 0, 0, 0));
+
+        shell.addView(buildTopBar(), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 74)));
+        shell.addView(buildHeroPanel(), lpMatchWrap(0, 16, 0, 16));
+        shell.addView(buildParkingModes(), lpMatchWrap(0, 0, 0, 16));
+        shell.addView(buildAssistShortcuts(), lpMatchWrap(0, 0, 0, 16));
+        shell.addView(buildAdvancedParkingPanel(), lpMatchWrap(0, 0, 0, 16));
+        shell.addView(buildRadarAndVisualPanel(), lpMatchWrap(0, 0, 0, 16));
+        shell.addView(buildApaControlPanel(), lpMatchWrap(0, 0, 0, 16));
+        shell.addView(buildStatusGrid(), lpMatchWrap(0, 0, 0, 16));
+        shell.addView(buildBottomDock(), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 112)));
+        Ui.animateScaleIn(shell, 0);
         return scroll;
     }
 
@@ -55,21 +72,26 @@ public class ParkingActivity extends Activity {
         bar.setPadding(Ui.dp(this, 20), Ui.dp(this, 10), Ui.dp(this, 20), Ui.dp(this, 10));
 
         Button back = Ui.button(this, "Назад");
-        back.setOnClickListener(v -> finish());
+        back.setOnClickListener(v -> {
+            Ui.press(v);
+            finish();
+        });
         bar.addView(back, new LinearLayout.LayoutParams(Ui.dp(this, 110), LinearLayout.LayoutParams.MATCH_PARENT));
 
         LinearLayout titleBlock = new LinearLayout(this);
         titleBlock.setOrientation(LinearLayout.VERTICAL);
         titleBlock.setPadding(Ui.dp(this, 16), 0, 0, 0);
         titleBlock.addView(Ui.label(this, "Parking / APA"));
-        TextView title = Ui.text(this, "Парковка / APA", 28, true);
+        TextView title = Ui.text(this, "Parking Control", 28, true);
         title.setPadding(0, 0, 0, 0);
         titleBlock.addView(title);
+        TextView subtitle = Ui.muted(this, "Быстрый запуск парковки наверху, raw PAS и APA ниже без потери функций.");
+        subtitle.setTextSize(13);
+        titleBlock.addView(subtitle);
         bar.addView(titleBlock, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
-        bar.addView(buildTopStat("AVM", "Ожидание"));
+        bar.addView(buildTopStat("AVM", "Готово"));
         bar.addView(buildTopStat("PDC", "Активно"));
-        bar.addView(buildTopStat("RCTA", "Готово"));
         return bar;
     }
 
@@ -77,7 +99,7 @@ public class ParkingActivity extends Activity {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
         card.setPadding(Ui.dp(this, 12), Ui.dp(this, 8), Ui.dp(this, 12), Ui.dp(this, 8));
-        card.setBackground(Ui.cardBg(this, Color.argb(84, 255, 255, 255), Ui.dp(this, 18), Color.TRANSPARENT));
+        card.setBackground(Ui.cardBg(this, Color.argb(78, 255, 255, 255), Ui.dp(this, 18), Color.TRANSPARENT));
         card.addView(Ui.label(this, label));
         TextView valueView = Ui.text(this, value, 14, true);
         valueView.setPadding(0, 0, 0, 0);
@@ -90,19 +112,19 @@ public class ParkingActivity extends Activity {
 
     private LinearLayout buildHeroPanel() {
         LinearLayout hero = Ui.glassCard(this);
-        hero.addView(Ui.label(this, "Parking Visual"));
+        hero.addView(Ui.label(this, "Parking Overview"));
 
         LinearLayout row = Ui.row(this);
+        row.setGravity(Gravity.CENTER_VERTICAL);
         LinearLayout left = new LinearLayout(this);
         left.setOrientation(LinearLayout.VERTICAL);
-        left.addView(metricLine("Auto Park", "Готов к запуску"));
-        left.addView(metricLine("360 Camera", "Сзади + сверху"));
-        left.addView(metricLine("PDC", "Перед / зад"));
-        left.addView(metricLine("RCTA", "Мониторинг сзади"));
-        row.addView(left, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        left.addView(buildHeroMetric("Auto Park", "Готов к поиску места"));
+        left.addView(buildHeroMetric("360 Camera", "Верхний и задний обзор"));
+        left.addView(buildHeroMetric("PDC", "Передние и задние датчики"));
+        row.addView(left, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 0.94f));
 
         ParkingVisualView visual = new ParkingVisualView(this);
-        LinearLayout.LayoutParams visualLp = new LinearLayout.LayoutParams(Ui.dp(this, 340), Ui.dp(this, 240));
+        LinearLayout.LayoutParams visualLp = new LinearLayout.LayoutParams(Ui.dp(this, 350), Ui.dp(this, 260));
         visualLp.leftMargin = Ui.dp(this, 12);
         row.addView(visual, visualLp);
         hero.addView(row);
@@ -111,21 +133,29 @@ public class ParkingActivity extends Activity {
         addActionChip(quick, "Auto Park", () -> sendVehicle(EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_AUTO_PARK));
         addActionChip(quick, "360", () -> sendVehicle(EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_360));
         addActionChip(quick, "PDC", () -> sendVehicle(EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.COMMON_ON));
-        addActionChip(quick, "APA/RPA", this::scrollAdvancedIntoView);
-        hero.addView(quick, lpMatchWrap(0, 14, 0, 0));
+        addActionChip(quick, "Advanced", this::toggleAdvancedParking);
+        hero.addView(quick, lpMatchWrap(0, 16, 0, 0));
         return hero;
     }
 
-    private TextView metricLine(String key, String value) {
-        TextView line = Ui.text(this, key + ": " + value, 14, false);
-        line.setTextColor(Ui.secondaryText(this));
-        line.setPadding(0, Ui.dp(this, 4), 0, Ui.dp(this, 4));
-        return line;
+    private View buildHeroMetric(String key, String value) {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(Ui.dp(this, 16), Ui.dp(this, 14), Ui.dp(this, 16), Ui.dp(this, 14));
+        card.setBackground(Ui.cardBg(this, Color.argb(58, 255, 255, 255), Ui.dp(this, 24), Color.argb(40, 255, 255, 255)));
+        card.addView(Ui.label(this, key));
+        TextView text = Ui.text(this, value, 17, true);
+        text.setPadding(0, Ui.dp(this, 2), 0, 0);
+        card.addView(text);
+        LinearLayout.LayoutParams lp = lpMatchWrap(0, 0, 0, 10);
+        card.setLayoutParams(lp);
+        return card;
     }
 
     private LinearLayout buildParkingModes() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Управление парковкой"));
+        panel.addView(Ui.label(this, "Primary Parking"));
+        panel.addView(Ui.muted(this, "Сверху оставлены только самые частые действия, а подробные PAS / APA блоки идут ниже."));
 
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(3);
@@ -137,12 +167,49 @@ public class ParkingActivity extends Activity {
         addTile(grid, "RCTA Выкл", Color.rgb(128, 140, 156), () -> sendVehicle(EcarxVehicleAdapter.PAS_RCTA_ACTIVATION, EcarxVehicleAdapter.COMMON_OFF));
         panel.addView(grid, lpMatchWrap(0, 12, 0, 0));
 
-        LinearLayout modes = Ui.row(this);
-        addActionChip(modes, "Параллельная", () -> sendSignalParkMode(CarSignalManagerAdapter.PARK_MODE_HORIZONTAL_IN));
-        addActionChip(modes, "Перпендикулярная", () -> sendSignalParkMode(CarSignalManagerAdapter.PARK_MODE_PERPENDICULAR_IN));
-        addActionChip(modes, "Выезд", () -> sendSignalParkMode(CarSignalManagerAdapter.PARK_MODE_HORIZONTAL_LEFT_OUT));
-        addActionChip(modes, "Отмена", () -> sendSignalParkMode(CarSignalManagerAdapter.PARK_MODE_CANCEL));
-        panel.addView(modes, lpMatchWrap(0, 14, 0, 0));
+        panel.addView(buildModeSelector(), lpMatchWrap(0, 14, 0, 0));
+        return panel;
+    }
+
+    private LinearLayout buildModeSelector() {
+        LinearLayout panel = new LinearLayout(this);
+        panel.setOrientation(LinearLayout.VERTICAL);
+        panel.setPadding(Ui.dp(this, 18), Ui.dp(this, 16), Ui.dp(this, 18), Ui.dp(this, 16));
+        panel.setBackground(Ui.cardBg(this, Color.argb(36, 255, 255, 255), Ui.dp(this, 26), Color.argb(28, 255, 255, 255)));
+        panel.addView(Ui.label(this, "Parking Mode"));
+        panel.addView(Ui.muted(this, "Визуально выделенный выбор сценария вместо четырех одинаковых action-chip."));
+
+        LinearLayout strip = Ui.row(this);
+        strip.setPadding(Ui.dp(this, 6), Ui.dp(this, 6), Ui.dp(this, 6), Ui.dp(this, 6));
+        strip.setBackground(Ui.cardBg(this, Color.argb(28, 255, 255, 255), Ui.dp(this, 24), Color.TRANSPARENT));
+        addModeButton(strip, "Параллельная", PARK_MODE_PARALLEL);
+        addModeButton(strip, "Перпен.", PARK_MODE_PERP);
+        addModeButton(strip, "Выезд", PARK_MODE_EXIT_LEFT);
+        addModeButton(strip, "Отмена", PARK_MODE_CANCEL);
+        panel.addView(strip, lpMatchWrap(0, 12, 0, 0));
+        return panel;
+    }
+
+    private LinearLayout buildAssistShortcuts() {
+        LinearLayout panel = Ui.glassCard(this);
+        panel.addView(Ui.label(this, "Assist Tools"));
+        panel.addView(Ui.muted(this, "Быстрые действия для типового сценария, а полный набор команд остается в секциях ниже."));
+
+        GridLayout grid = new GridLayout(this);
+        grid.setColumnCount(2);
+        addShortcutButton(grid, "Радары standby", () -> sendVehicle(EcarxVehicleAdapter.PAS_RADAR_WORK_MODE, EcarxVehicleAdapter.PAS_RADAR_WORK_MODE_STANDBY));
+        addShortcutButton(grid, "Направляющие", () -> sendVehicle(EcarxVehicleAdapter.PAS_PAC_OVERLAY_STEERPATH, EcarxVehicleAdapter.COMMON_ON));
+        addShortcutButton(grid, "Top View", () -> sendVehicle(EcarxVehicleAdapter.PAS_PAC_TOP_VIEW_ZOOM_IN, EcarxVehicleAdapter.COMMON_ON));
+        addShortcutButton(grid, "APA Confirm", () -> {
+            if (!experimentalFeaturesEnabled()) {
+                Ui.toast(this, "Для APA Confirm включите Experimental features");
+                return;
+            }
+            CarSignalManagerAdapter.Result result = new CarSignalManagerAdapter(this)
+                    .set("setDrvrAsscSysBtnPush", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_BTN_PUSH, CarSignalManagerAdapter.APA_CONFIRM_ENTER);
+            Ui.toast(this, result.success ? "Сигнал отправлен" : "Ошибка сигнала");
+        });
+        panel.addView(grid, lpMatchWrap(0, 12, 0, 0));
         return panel;
     }
 
@@ -212,13 +279,24 @@ public class ParkingActivity extends Activity {
 
     private LinearLayout buildAdvancedParkingPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Расширенная парковка"));
+        panel.addView(Ui.label(this, "Advanced Parking"));
         panel.addView(Ui.muted(this, experimentalFeaturesEnabled()
-                ? "Полный перенос experimental parking: APA/RPA, PAS/AVM, SAP/RCTA и remote parking теперь доступны в новом экране."
+                ? "Полный raw-набор APA/RPA, PAS/AVM и remote parking доступен ниже по кнопке."
                 : "Включите Experimental features в настройках, чтобы открыть raw APA/RPA, PAS/AVM и remote parking diagnostics."));
+
+        Button toggle = Ui.button(this, "Открыть advanced parking");
+        toggle.setOnClickListener(v -> {
+            Ui.press(v);
+            toggleAdvancedParking();
+        });
+        panel.addView(toggle, lpMatchWrap(0, 12, 0, 0));
+
+        advancedToggleHint = Ui.muted(this, "Блок свернут по умолчанию, чтобы основной сценарий парковки оставался читаемым.");
+        panel.addView(advancedToggleHint, lpMatchWrap(0, 8, 0, 0));
 
         advancedHost = new LinearLayout(this);
         advancedHost.setOrientation(LinearLayout.VERTICAL);
+        advancedHost.setVisibility(View.GONE);
         panel.addView(advancedHost, lpMatchWrap(0, 12, 0, 0));
         renderAdvancedParking();
         return panel;
@@ -411,6 +489,7 @@ public class ParkingActivity extends Activity {
         b.setTextColor(Color.WHITE);
         b.setBackground(Ui.cardBg(this, Color.argb(70, 255, 255, 255), Ui.dp(this, 18), Color.TRANSPARENT));
         b.setOnClickListener(v -> {
+            Ui.press(v);
             action.run();
             Ui.toast(this, label);
         });
@@ -418,6 +497,55 @@ public class ParkingActivity extends Activity {
         lp.leftMargin = Ui.dp(this, 6);
         lp.rightMargin = Ui.dp(this, 6);
         row.addView(b, lp);
+    }
+
+    private void addModeButton(LinearLayout row, String label, int modeValue) {
+        Button button = Ui.button(this, label);
+        modeButtons.add(button);
+        styleModeButton(button, modeValue == selectedParkMode);
+        button.setOnClickListener(v -> {
+            Ui.press(v);
+            selectedParkMode = modeValue;
+            syncModeButtons();
+            sendSignalParkMode(modeValue);
+        });
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 54), 1f);
+        lp.leftMargin = Ui.dp(this, 4);
+        lp.rightMargin = Ui.dp(this, 4);
+        row.addView(button, lp);
+    }
+
+    private void addShortcutButton(GridLayout grid, String label, Runnable action) {
+        Button button = Ui.button(this, label);
+        button.setTextColor(Color.WHITE);
+        button.setTextSize(14);
+        button.setBackground(Ui.cardBg(this, Color.argb(52, 255, 255, 255), Ui.dp(this, 18), Color.TRANSPARENT));
+        button.setOnClickListener(v -> {
+            Ui.press(v);
+            action.run();
+        });
+        GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
+        lp.width = 0;
+        lp.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
+        lp.setMargins(0, 0, Ui.dp(this, 12), Ui.dp(this, 12));
+        grid.addView(button, lp);
+    }
+
+    private void styleModeButton(Button button, boolean active) {
+        button.setTextColor(Color.WHITE);
+        button.setTextSize(14);
+        button.setBackground(Ui.cardBg(this,
+                active ? Color.argb(115, 77, 163, 255) : Color.argb(34, 255, 255, 255),
+                Ui.dp(this, 20),
+                active ? Color.argb(96, 77, 163, 255) : Color.TRANSPARENT));
+    }
+
+    private void syncModeButtons() {
+        if (modeButtons.size() < 4) return;
+        styleModeButton(modeButtons.get(0), selectedParkMode == PARK_MODE_PARALLEL);
+        styleModeButton(modeButtons.get(1), selectedParkMode == PARK_MODE_PERP);
+        styleModeButton(modeButtons.get(2), selectedParkMode == PARK_MODE_EXIT_LEFT);
+        styleModeButton(modeButtons.get(3), selectedParkMode == PARK_MODE_CANCEL);
     }
 
     private void addDockButton(LinearLayout dock, String label, Runnable action, boolean active) {
@@ -447,8 +575,31 @@ public class ParkingActivity extends Activity {
     }
 
     private void scrollAdvancedIntoView() {
+        ensureAdvancedVisible();
         if (advancedHost != null) advancedHost.requestFocus();
         Ui.toast(this, experimentalFeaturesEnabled() ? "Открыт расширенный parking-блок" : "Для полного набора включите Experimental features");
+    }
+
+    private void toggleAdvancedParking() {
+        advancedVisible = !advancedVisible;
+        updateAdvancedVisibility();
+        if (advancedVisible && advancedHost != null) advancedHost.requestFocus();
+    }
+
+    private void ensureAdvancedVisible() {
+        if (!advancedVisible) {
+            advancedVisible = true;
+            updateAdvancedVisibility();
+        }
+    }
+
+    private void updateAdvancedVisibility() {
+        if (advancedHost != null) advancedHost.setVisibility(advancedVisible ? View.VISIBLE : View.GONE);
+        if (advancedToggleHint != null) {
+            advancedToggleHint.setText(advancedVisible
+                    ? "Advanced parking развернут. Полный raw-набор ниже."
+                    : "Блок свернут по умолчанию, чтобы основной сценарий парковки оставался читаемым.");
+        }
     }
 
     private void addCommand(LinearLayout root, String label, int functionId, int value) {
