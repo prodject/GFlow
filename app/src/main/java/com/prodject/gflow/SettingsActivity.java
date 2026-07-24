@@ -3,6 +3,7 @@ package com.prodject.gflow;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.hardware.camera2.CameraCharacteristics;
@@ -384,23 +385,26 @@ public class SettingsActivity extends Activity {
         diagnosticsState = "Диагностика выполняется...";
         renderContent();
         new Thread(() -> {
-            EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
-            StringBuilder log = new StringBuilder();
-            log.append("GFlow auto diagnostics\n").append(new Date()).append("\n\n");
-            log.append(adapter.availability()).append("\n\n");
-            LinkedHashMap<String, int[]> groups = buildDiagnosticsGroups();
-            int total = 0;
-            for (Map.Entry<String, int[]> entry : groups.entrySet()) {
-                log.append("== ").append(entry.getKey()).append(" ==\n");
-                for (int id : entry.getValue()) {
-                    total++;
-                    log.append(adapter.support(id).message).append("\n");
-                    log.append(adapter.get(id).message).append("\n\n");
-                }
-            }
-            appendAdvancedDiagnostics(log);
-            final int totalCount = total;
             try {
+                EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
+                StringBuilder log = new StringBuilder();
+                log.append("GFlow auto diagnostics\n").append(new Date()).append("\n\n");
+                log.append(safeDiagnosticsBlock("AdaptAPI availability", adapter::availability)).append("\n\n");
+                LinkedHashMap<String, int[]> groups = buildDiagnosticsGroups();
+                int total = 0;
+                for (Map.Entry<String, int[]> entry : groups.entrySet()) {
+                    log.append("== ").append(entry.getKey()).append(" ==\n");
+                    for (int id : entry.getValue()) {
+                        total++;
+                        final int functionId = id;
+                        log.append(safeDiagnosticsBlock("support " + EcarxVehicleAdapter.hex(functionId),
+                                () -> adapter.support(functionId).message)).append("\n");
+                        log.append(safeDiagnosticsBlock("get " + EcarxVehicleAdapter.hex(functionId),
+                                () -> adapter.get(functionId).message)).append("\n\n");
+                    }
+                }
+                appendAdvancedDiagnostics(log);
+                final int totalCount = total;
                 File file = new File(getCacheDir(), "gflow-diagnostics.txt");
                 try (FileOutputStream out = new FileOutputStream(file)) {
                     out.write(log.toString().getBytes("UTF-8"));
@@ -408,11 +412,10 @@ public class SettingsActivity extends Activity {
                 runOnUiThread(() -> {
                     diagnosticsState = "Лог готов: " + file.getAbsolutePath() + " · " + totalCount + " function IDs";
                     renderContent();
-                    shareFile(file);
                 });
             } catch (Exception e) {
                 runOnUiThread(() -> {
-                    diagnosticsState = "Ошибка лога: " + e.getMessage();
+                    diagnosticsState = "Ошибка диагностики: " + e.getClass().getSimpleName() + ": " + e.getMessage();
                     renderContent();
                 });
             }
@@ -434,23 +437,37 @@ public class SettingsActivity extends Activity {
         intent.setType("text/plain");
         intent.putExtra(Intent.EXTRA_STREAM, uri);
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        startActivity(Intent.createChooser(intent, "Сохранить или отправить лог"));
+        Intent chooser = Intent.createChooser(intent, "Сохранить или отправить лог");
+        if (chooser.resolveActivity(getPackageManager()) == null) {
+            Ui.toast(this, "Нет приложения для отправки логов");
+            return;
+        }
+        startActivity(chooser);
     }
 
     private void appendAdvancedDiagnostics(StringBuilder log) {
-        appendSection(log, "Parking Signals", collectParkingSignalsDiagnostics());
-        appendSection(log, "Parking HAL", collectParkingHalDiagnostics());
-        appendSection(log, "HUD / DIM", collectHudDimDiagnostics());
-        appendSection(log, "AudioExt", collectAudioExtDiagnostics());
-        appendSection(log, "DVR / EVS", collectDvrDiagnostics());
-        appendSection(log, "Camera2 Inventory", collectCameraInventoryDiagnostics());
-        appendSection(log, "OneOS Dock", collectDockDiagnostics());
-        appendSection(log, "ControlBoard", collectControlBoardDiagnostics());
+        appendSection(log, "Parking Signals", safeDiagnosticsBlock("Parking Signals", this::collectParkingSignalsDiagnostics));
+        appendSection(log, "Parking HAL", safeDiagnosticsBlock("Parking HAL", this::collectParkingHalDiagnostics));
+        appendSection(log, "HUD / DIM", safeDiagnosticsBlock("HUD / DIM", this::collectHudDimDiagnostics));
+        appendSection(log, "AudioExt", safeDiagnosticsBlock("AudioExt", this::collectAudioExtDiagnostics));
+        appendSection(log, "DVR / EVS", safeDiagnosticsBlock("DVR / EVS", this::collectDvrDiagnostics));
+        appendSection(log, "Camera2 Inventory", safeDiagnosticsBlock("Camera2 Inventory", this::collectCameraInventoryDiagnostics));
+        appendSection(log, "OneOS Dock", safeDiagnosticsBlock("OneOS Dock", this::collectDockDiagnostics));
+        appendSection(log, "ControlBoard", safeDiagnosticsBlock("ControlBoard", this::collectControlBoardDiagnostics));
     }
 
     private void appendSection(StringBuilder log, String title, String body) {
         log.append("== ").append(title).append(" ==\n");
         log.append(body == null || body.trim().isEmpty() ? "No data\n\n" : body.trim() + "\n\n");
+    }
+
+    private String safeDiagnosticsBlock(String label, DiagnosticsSupplier supplier) {
+        try {
+            String value = supplier.get();
+            return value == null || value.trim().isEmpty() ? label + ": no data" : value;
+        } catch (Throwable t) {
+            return label + ": error " + t.getClass().getSimpleName() + ": " + t.getMessage();
+        }
     }
 
     private LinkedHashMap<String, int[]> buildDiagnosticsGroups() {
@@ -941,5 +958,9 @@ public class SettingsActivity extends Activity {
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         lp.setMargins(Ui.dp(this, left), Ui.dp(this, top), Ui.dp(this, right), Ui.dp(this, bottom));
         return lp;
+    }
+
+    private interface DiagnosticsSupplier {
+        String get() throws Exception;
     }
 }
