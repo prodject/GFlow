@@ -3,7 +3,6 @@ package com.prodject.gflow;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.hardware.camera2.CameraCharacteristics;
@@ -20,7 +19,6 @@ import android.widget.GridLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
-import androidx.core.content.FileProvider;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -48,6 +46,7 @@ public class SettingsActivity extends Activity {
     private static final String KEY_AUTO_UPDATE = "auto_update_enabled";
     private static final int REQ_CREATE_BACKUP = 4101;
     private static final int REQ_RESTORE_BACKUP = 4102;
+    private static final int REQ_EXPORT_DIAGNOSTICS = 4103;
 
     private LinearLayout contentHost;
     private String releaseState = "Источник: github.com/prodject/GFlow/releases";
@@ -76,6 +75,7 @@ public class SettingsActivity extends Activity {
         Uri uri = data.getData();
         if (requestCode == REQ_CREATE_BACKUP) writeBackupToUri(uri);
         else if (requestCode == REQ_RESTORE_BACKUP) restoreBackupFromUri(uri);
+        else if (requestCode == REQ_EXPORT_DIAGNOSTICS) exportDiagnosticsToUri(uri);
     }
 
     private View buildShell() {
@@ -393,21 +393,33 @@ public class SettingsActivity extends Activity {
             Ui.toast(this, "Сначала запустите автодиагностику");
             return;
         }
-        shareFile(file);
+        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("text/plain");
+        intent.putExtra(Intent.EXTRA_TITLE, "gflow-diagnostics-" + System.currentTimeMillis() + ".txt");
+        startActivityForResult(intent, REQ_EXPORT_DIAGNOSTICS);
     }
 
-    private void shareFile(File file) {
-        Uri uri = FileProvider.getUriForFile(this, getPackageName() + ".files", file);
-        Intent intent = new Intent(Intent.ACTION_SEND);
-        intent.setType("text/plain");
-        intent.putExtra(Intent.EXTRA_STREAM, uri);
-        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        Intent chooser = Intent.createChooser(intent, "Сохранить или отправить лог");
-        if (chooser.resolveActivity(getPackageManager()) == null) {
-            Ui.toast(this, "Нет приложения для отправки логов");
+    private void exportDiagnosticsToUri(Uri uri) {
+        File diagnostics = new File(getCacheDir(), "gflow-diagnostics.txt");
+        if (!diagnostics.exists()) {
+            Ui.toast(this, "Лог не найден");
             return;
         }
-        startActivity(chooser);
+        try (InputStream in = new java.io.FileInputStream(diagnostics);
+             OutputStream out = getContentResolver().openOutputStream(uri, "w")) {
+            if (out == null) throw new IOException("Не удалось открыть файл");
+            byte[] buf = new byte[8192];
+            for (int n; (n = in.read(buf)) > 0; ) out.write(buf, 0, n);
+            out.flush();
+            diagnosticsState = "Лог сохранен: " + uri;
+            renderContent();
+            Ui.toast(this, "Лог сохранен");
+        } catch (Exception e) {
+            diagnosticsState = "Ошибка экспорта: " + e.getMessage();
+            renderContent();
+            Ui.toast(this, "Не удалось сохранить лог");
+        }
     }
 
     private void appendAdvancedDiagnostics(StringBuilder log) {
