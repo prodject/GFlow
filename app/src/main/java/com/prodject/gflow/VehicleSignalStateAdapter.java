@@ -2,9 +2,9 @@ package com.prodject.gflow;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.lang.reflect.Method;
 
 final class VehicleSignalStateAdapter {
     static final int SENSOR_CAR_SPEED = 0x100100;
@@ -147,10 +147,7 @@ final class VehicleSignalStateAdapter {
 
     private Object sensor() throws Exception {
         if (sensor != null) return sensor;
-        Class<?> cls = Class.forName("com.ecarx.xui.adaptapi.car.CarImpl");
-        Object car = cls.getMethod("create", Context.class).invoke(null, context);
-        sensor = car.getClass().getMethod("getSensorManager").invoke(car);
-        if (sensor == null) throw new IllegalStateException("getSensorManager returned null");
+        sensor = CarBridge.getSensorManager(context);
         return sensor;
     }
 
