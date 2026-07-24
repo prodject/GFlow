@@ -57,7 +57,7 @@ jobs:
             echo "$RELEASE_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/gflow-release.keystore"
           fi
 
-      - name: Build APK
+      - name: Build APK and installer dex
         env:
           VERSION_NAME: ${{ steps.version.outputs.version_name }}
           VERSION_CODE: ${{ steps.version.outputs.version_code }}
@@ -65,17 +65,22 @@ jobs:
           RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
           RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
-        run: gradle assembleRelease
+        run: gradle assembleRelease buildInstallHelper
 
       - name: Rename APK
         run: cp app/build/outputs/apk/release/app-release.apk GFlow-${{ steps.version.outputs.version_name }}.apk
+
+      - name: Rename installer dex
+        run: cp build/installer-helper/gflow-installer.dex GFlow-${{ steps.version.outputs.version_name }}-installer.dex
 
       - name: Publish GitHub prerelease
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag_name }}
           name: GFlow ${{ steps.version.outputs.version_name }}
-          files: GFlow-${{ steps.version.outputs.version_name }}.apk
+          files: |
+            GFlow-${{ steps.version.outputs.version_name }}.apk
+            GFlow-${{ steps.version.outputs.version_name }}-installer.dex
           prerelease: true
           make_latest: false
           generate_release_notes: true
