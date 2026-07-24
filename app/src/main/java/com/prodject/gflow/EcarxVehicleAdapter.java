@@ -3,8 +3,11 @@ package com.prodject.gflow;
 import android.content.Context;
 import java.lang.reflect.Method;
 import java.util.Locale;
+import android.util.Log;
 
 final class EcarxVehicleAdapter {
+    private static final String TAG = "GFlowCarApi";
+    
     static final int COMMON_OFF = 0x0;
     static final int COMMON_ON = 0x1;
     static final int ZONE_ALL = 0x80000000;
@@ -693,46 +696,66 @@ final class EcarxVehicleAdapter {
         return set(functionId, defaultZone(functionId), value);
     }
 
-    Result set(int functionId, int zone, int value) {
-        try {
-            Object fn = function();
-            Method method = fn.getClass().getMethod("setFunctionValue", int.class, int.class, int.class);
-            Object ok = method.invoke(fn, functionId, zone, value);
-            return Result.ok(functionId, zone, value, Boolean.TRUE.equals(ok), "AdaptAPI setFunctionValue(function, zone, value)");
-        } catch (NoSuchMethodException e) {
-            try {
-                Object fn = function();
-                Method method = fn.getClass().getMethod("setFunctionValue", int.class, int.class);
-                Object ok = method.invoke(fn, functionId, value);
-                return Result.ok(functionId, zone, value, Boolean.TRUE.equals(ok), "AdaptAPI setFunctionValue(function, value)");
-            } catch (Exception nested) {
-                return Result.error(functionId, zone, value, nested);
-            }
-        } catch (Exception e) {
-            return Result.error(functionId, zone, value, e);
-        }
-    }
-
     Result get(int functionId) {
         return get(functionId, defaultZone(functionId));
     }
 
-    Result get(int functionId, int zone) {
+    Result support(int functionId) {
+        return support(functionId, defaultZone(functionId));
+    }
+
+    Result set(int functionId, int zone, int value) {
+
+        Log.i(TAG, "setFunctionValue id=" + hex(functionId)
+        + " value=" + hex(value)
+        + " uiZone=" + zone);
+
         try {
             Object fn = function();
-            Method method = fn.getClass().getMethod("getFunctionValue", int.class, int.class);
-            Object value = method.invoke(fn, functionId, zone);
-            return Result.value(functionId, zone, ((Number) value).intValue());
-        } catch (NoSuchMethodException e) {
-            try {
-                Object fn = function();
-                Method method = fn.getClass().getMethod("getFunctionValue", int.class);
-                Object value = method.invoke(fn, functionId);
-                return Result.value(functionId, zone, ((Number) value).intValue());
-            } catch (Exception nested) {
-                return Result.error(functionId, zone, 0, nested);
-            }
+            Method method = fn.getClass().getMethod(
+                    "setFunctionValue",
+                    int.class,
+                    int.class
+            );
+
+            Object result = method.invoke(fn, functionId, value);
+            boolean success = Boolean.TRUE.equals(result);
+
+            Log.i(TAG, "setFunctionValue result=" + result);
+            
+            return Result.ok(
+                    functionId,
+                    zone,
+                    value,
+                    success,
+                    "AdaptAPI setFunctionValue(function, value)"
+            );
         } catch (Exception e) {
+            Log.e(TAG, "setFunctionValue failed id=" + hex(functionId), e);
+            return Result.error(functionId, zone, value, e);
+        }
+        
+    }
+
+    Result get(int functionId, int zone) {
+        Log.i(TAG, "getFunctionValue id=" + hex(functionId)
+                + " uiZone=" + zone);
+
+        try {
+            Object fn = function();
+            Method method = fn.getClass().getMethod(
+                    "getFunctionValue",
+                    int.class
+            );
+
+            Object result = method.invoke(fn, functionId);
+            int value = ((Number) result).intValue();
+
+            Log.i(TAG, "getFunctionValue result=" + hex(value));
+
+            return Result.value(functionId, zone, value);
+        } catch (Exception e) {
+            Log.e(TAG, "getFunctionValue failed id=" + hex(functionId), e);
             return Result.error(functionId, zone, 0, e);
         }
     }
@@ -759,26 +782,28 @@ final class EcarxVehicleAdapter {
         }
     }
 
-    Result support(int functionId) {
-        return support(functionId, defaultZone(functionId));
-    }
-
     Result support(int functionId, int zone) {
+        Log.i(TAG, "isFunctionSupported id=" + hex(functionId)
+                + " uiZone=" + zone);
+
         try {
             Object fn = function();
-            Method method = fn.getClass().getMethod("isFunctionSupported", int.class, int.class);
-            Object status = method.invoke(fn, functionId, zone);
-            return Result.status(functionId, zone, "isFunctionSupported(function, zone) -> " + status);
-        } catch (NoSuchMethodException e) {
-            try {
-                Object fn = function();
-                Method method = fn.getClass().getMethod("isFunctionSupported", int.class);
-                Object status = method.invoke(fn, functionId);
-                return Result.status(functionId, zone, "isFunctionSupported(function) -> " + status);
-            } catch (Exception nested) {
-                return Result.error(functionId, zone, 0, nested);
-            }
+            Method method = fn.getClass().getMethod(
+                    "isFunctionSupported",
+                    int.class
+            );
+
+            Object status = method.invoke(fn, functionId);
+
+            Log.i(TAG, "isFunctionSupported result=" + status);
+
+            return Result.status(
+                    functionId,
+                    zone,
+                    "isFunctionSupported(function) -> " + status
+            );
         } catch (Exception e) {
+            Log.e(TAG, "isFunctionSupported failed id=" + hex(functionId), e);
             return Result.error(functionId, zone, 0, e);
         }
     }

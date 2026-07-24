@@ -8,3 +8,5 @@ local.properties
 .example/
 .src/
 .codex/
+log.sh
+collect-adb-log.sh
