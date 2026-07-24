@@ -808,12 +808,8 @@ final class EcarxVehicleAdapter {
 
     private Object function() throws Exception {
         if (carFunction != null) return carFunction;
-        if (car == null) {
-            Class<?> carClass = Class.forName("com.ecarx.xui.adaptapi.car.Car");
-            Method create = carClass.getMethod("create", Context.class);
-            car = create.invoke(null, context);
-            callOptional(car, "connect");
-        }
+        if (car == null) car = CarBridge.create(context);
+        callOptional(car, "connect");
         Method getter = car.getClass().getMethod("getICarFunction");
         carFunction = getter.invoke(car);
         if (carFunction == null) throw new IllegalStateException("getICarFunction returned null");
