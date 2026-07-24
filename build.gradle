@@ -1,3 +1,59 @@
 plugins {
     id "com.android.application" version "8.7.3" apply false
 }
+
+def helperSourceDir = file("installer-helper/src/main/java")
+def helperClassesDir = layout.buildDirectory.dir("installer-helper/classes")
+def helperDexDir = layout.buildDirectory.dir("installer-helper/dex")
+def helperDex = layout.buildDirectory.file("installer-helper/gflow-installer.dex")
+
+def androidSdkPath = System.getenv("ANDROID_HOME") ?: System.getenv("ANDROID_SDK_ROOT")
+if (androidSdkPath == null) {
+    def localProperties = file("local.properties")
+    if (localProperties.isFile()) {
+        def properties = new Properties()
+        localProperties.withInputStream { properties.load(it) }
+        androidSdkPath = properties.getProperty("sdk.dir")
+    }
+}
+
+tasks.register("compileInstallHelper", JavaCompile) {
+    source = fileTree(helperSourceDir) {
+        include "**/*.java"
+    }
+    destinationDirectory = helperClassesDir
+    classpath = files("${androidSdkPath}/platforms/android-35/android.jar")
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+    options.compilerArgs += ["-Xlint:deprecation"]
+}
+
+tasks.register("buildInstallHelper", Exec) {
+    dependsOn "compileInstallHelper"
+    def d8Executable = System.getProperty("os.name").toLowerCase().contains("windows")
+            ? "${androidSdkPath}/build-tools/35.0.0/d8.bat"
+            : "${androidSdkPath}/build-tools/35.0.0/d8"
+    inputs.dir(helperClassesDir)
+    outputs.file(helperDex)
+    doFirst {
+        delete(helperDexDir)
+        delete(helperDex)
+        mkdir(helperDexDir)
+        def helperClassFiles = fileTree(helperClassesDir) {
+            include "**/*.class"
+        }.files.collect { it.absolutePath }
+        commandLine([
+                d8Executable,
+                "--min-api", "30",
+                "--lib", "${androidSdkPath}/platforms/android-35/android.jar",
+                "--output", helperDexDir.get().asFile.absolutePath
+        ] + helperClassFiles)
+    }
+    doLast {
+        copy {
+            from "${helperDexDir.get().asFile.absolutePath}/classes.dex"
+            into helperDex.get().asFile.parentFile
+            rename "classes.dex", helperDex.get().asFile.name
+        }
+    }
+}
