@@ -24,12 +24,9 @@ import androidx.core.content.FileProvider;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Date;
@@ -47,6 +44,7 @@ public class SettingsActivity extends Activity {
     private static final String KEY_ACCENT = "accent_color";
     private static final String KEY_THEME_MODE = "theme_mode";
     private static final String KEY_START_SCREEN = "start_screen";
+    private static final String KEY_AUTO_UPDATE = "auto_update_enabled";
     private static final int REQ_CREATE_BACKUP = 4101;
     private static final int REQ_RESTORE_BACKUP = 4102;
 
@@ -59,7 +57,7 @@ public class SettingsActivity extends Activity {
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        latestApkUrl[0] = prefs().getString("latest_apk_url", "");
+        latestApkUrl[0] = prefs().getString(UpdateManager.PREF_LATEST_APK_URL, "");
         setContentView(buildShell());
         renderContent();
         Ui.animateIn(getWindow().getDecorView());
@@ -67,7 +65,7 @@ public class SettingsActivity extends Activity {
 
     @Override protected void onResume() {
         super.onResume();
-        latestApkUrl[0] = prefs().getString("latest_apk_url", "");
+        latestApkUrl[0] = prefs().getString(UpdateManager.PREF_LATEST_APK_URL, "");
         renderContent();
     }
 
@@ -156,6 +154,7 @@ public class SettingsActivity extends Activity {
         left.addView(metricLine("Developer diagnostics", String.valueOf(developerModeEnabled())));
         left.addView(metricLine("Theme", prefs().getString(KEY_THEME_MODE, "auto")));
         left.addView(metricLine("Start screen", prefs().getString(KEY_START_SCREEN, "Главная")));
+        left.addView(metricLine("Auto update", String.valueOf(prefs().getBoolean(KEY_AUTO_UPDATE, false))));
         row.addView(left, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
         LinearLayout badge = Ui.glassCard(this);
@@ -194,21 +193,7 @@ public class SettingsActivity extends Activity {
     private LinearLayout buildGeneralPanel() {
         LinearLayout panel = Ui.glassCard(this);
         panel.addView(Ui.label(this, "General Settings"));
-        panel.addView(Ui.text(this, "Experimental features, developer diagnostics, theme, accent, start screen и safe defaults.", 14, false));
-
-        CheckBox experimental = new CheckBox(this);
-        experimental.setText("Experimental features");
-        experimental.setChecked(experimentalFeaturesEnabled());
-        styleCheckBox(experimental);
-        experimental.setOnCheckedChangeListener((buttonView, isChecked) -> prefs().edit().putBoolean(KEY_EXPERIMENTAL_FEATURES, isChecked).apply());
-        panel.addView(experimental);
-
-        CheckBox developer = new CheckBox(this);
-        developer.setText("Developer diagnostics");
-        developer.setChecked(developerModeEnabled());
-        styleCheckBox(developer);
-        developer.setOnCheckedChangeListener((buttonView, isChecked) -> prefs().edit().putBoolean(KEY_DEVELOPER_MODE, isChecked).apply());
-        panel.addView(developer);
+        panel.addView(Ui.text(this, "Theme, accent, start screen и safe defaults. Experimental features и developer diagnostics переключаются быстрыми кнопками в верхнем блоке.", 14, false));
 
         panel.addView(buildChoiceRow("Theme", KEY_THEME_MODE, new String[]{"dark", "light", "auto"}), lpMatchWrap(0, 12, 0, 0));
         panel.addView(buildChoiceRow("Accent", KEY_ACCENT, new String[]{"blue", "amber", "green"}), lpMatchWrap(0, 12, 0, 0));
@@ -254,8 +239,17 @@ public class SettingsActivity extends Activity {
     private LinearLayout buildUpdatesPanel() {
         LinearLayout panel = Ui.glassCard(this);
         panel.addView(Ui.label(this, "Updates"));
-        panel.addView(Ui.text(this, "Проверить GitHub releases, найти APK asset, скачать APK и установить скачанный APK.", 14, false));
+        panel.addView(Ui.text(this, "Проверить GitHub releases, показать текущий релиз, скачать APK и установить скачанный APK. При включенном автообновлении проверка выполняется на каждом запуске приложения.", 14, false));
+        panel.addView(Ui.text(this, "Текущий релиз: " + UpdateManager.currentVersionLabel(this), 15, true));
+        panel.addView(Ui.muted(this, "Последний найденный релиз: " + UpdateManager.cachedReleaseLabel(this)), lpMatchWrap(0, 4, 0, 0));
         panel.addView(Ui.muted(this, releaseState), lpMatchWrap(0, 8, 0, 0));
+
+        CheckBox autoUpdate = new CheckBox(this);
+        autoUpdate.setText("Автоматическое обновление приложения");
+        autoUpdate.setChecked(prefs().getBoolean(KEY_AUTO_UPDATE, false));
+        styleCheckBox(autoUpdate);
+        autoUpdate.setOnCheckedChangeListener((buttonView, isChecked) -> prefs().edit().putBoolean(KEY_AUTO_UPDATE, isChecked).apply());
+        panel.addView(autoUpdate, lpMatchWrap(0, 10, 0, 0));
 
         LinearLayout row = Ui.row(this);
         addActionChip(row, "Проверить", this::checkRelease);
@@ -312,33 +306,18 @@ public class SettingsActivity extends Activity {
     private void checkRelease() {
         releaseState = "Проверяю releases...";
         renderContent();
-        new Thread(() -> {
-            try {
-                JSONArray arr = new JSONArray(readUrl("https://api.github.com/repos/prodject/GFlow/releases"));
-                JSONObject release = arr.getJSONObject(0);
-                String tag = release.optString("tag_name");
-                JSONArray assets = release.optJSONArray("assets");
-                String url = "";
-                if (assets != null) {
-                    for (int i = 0; i < assets.length(); i++) {
-                        JSONObject asset = assets.getJSONObject(i);
-                        if (asset.optString("name").endsWith(".apk")) url = asset.optString("browser_download_url");
-                    }
-                }
-                String finalUrl = url;
-                prefs().edit().putString("latest_apk_url", finalUrl).apply();
-                latestApkUrl[0] = finalUrl;
-                runOnUiThread(() -> {
-                    releaseState = "Последний релиз: " + tag + "\nAPK: " + (finalUrl.isEmpty() ? "не найден" : finalUrl);
-                    renderContent();
-                });
-            } catch (Exception e) {
-                runOnUiThread(() -> {
-                    releaseState = "Ошибка проверки: " + e.getMessage();
-                    renderContent();
-                });
+        UpdateManager.fetchLatestRelease(this, (info, error) -> runOnUiThread(() -> {
+            if (error != null) {
+                releaseState = "Ошибка проверки: " + error.getMessage();
+            } else {
+                latestApkUrl[0] = info.apkUrl;
+                releaseState = "Текущий релиз: " + UpdateManager.currentVersionLabel(this)
+                        + "\nПоследний релиз: " + info.tag
+                        + "\nСтатус: " + (UpdateManager.isNewerRelease(this, info.tag) ? "доступно обновление" : "актуальная версия")
+                        + "\nAPK: " + (info.apkUrl.isEmpty() ? "не найден" : info.apkUrl);
             }
-        }).start();
+            renderContent();
+        }));
     }
 
     private void downloadReleaseApk(String url) {
@@ -349,36 +328,21 @@ public class SettingsActivity extends Activity {
         }
         releaseState = "Скачиваю APK...";
         renderContent();
-        new Thread(() -> {
-            File out = new File(getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "GFlow-latest.apk");
-            try (InputStream in = new URL(url).openStream(); OutputStream file = new FileOutputStream(out)) {
-                byte[] buf = new byte[1024 * 64];
-                for (int n; (n = in.read(buf)) > 0; ) file.write(buf, 0, n);
-                runOnUiThread(() -> {
-                    releaseState = "APK загружен: " + out.getAbsolutePath();
-                    renderContent();
-                });
-            } catch (Exception e) {
-                runOnUiThread(() -> {
-                    releaseState = "Ошибка загрузки: " + e.getMessage();
-                    renderContent();
-                });
+        UpdateManager.downloadApk(this, url, (file, error) -> runOnUiThread(() -> {
+            if (error != null) {
+                releaseState = "Ошибка загрузки: " + error.getMessage();
+            } else {
+                releaseState = "APK загружен: " + file.getAbsolutePath();
             }
-        }).start();
+            renderContent();
+        }));
     }
 
     private void installDownloadedApk() {
-        File apk = new File(getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "GFlow-latest.apk");
-        if (!apk.exists()) {
-            releaseState = "APK еще не загружен.";
+        UpdateManager.installDownloadedApk(this, (started, message) -> {
+            releaseState = started ? "Установщик запущен: " + message : message;
             renderContent();
-            return;
-        }
-        Uri uri = FileProvider.getUriForFile(this, getPackageName() + ".files", apk);
-        Intent intent = new Intent(Intent.ACTION_VIEW);
-        intent.setDataAndType(uri, "application/vnd.android.package-archive");
-        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
-        startActivity(intent);
+        });
     }
 
     private void runAutoDiagnostics() {
@@ -681,20 +645,6 @@ public class SettingsActivity extends Activity {
         if (facing == CameraCharacteristics.LENS_FACING_BACK) return "rear";
         if (android.os.Build.VERSION.SDK_INT >= 23 && facing == CameraCharacteristics.LENS_FACING_EXTERNAL) return "external";
         return "other";
-    }
-
-    private String readUrl(String url) throws IOException {
-        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
-        connection.setConnectTimeout(10000);
-        connection.setReadTimeout(10000);
-        connection.setRequestProperty("Accept", "application/vnd.github+json");
-        try (InputStream in = connection.getInputStream(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            byte[] buf = new byte[8192];
-            for (int n; (n = in.read(buf)) > 0; ) out.write(buf, 0, n);
-            return out.toString("UTF-8");
-        } finally {
-            connection.disconnect();
-        }
     }
 
     private void startBackupFlow() {

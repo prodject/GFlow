@@ -58,6 +58,7 @@ public class MainActivity extends Activity {
     private LinearLayout dashboardDrawer;
     private View dashboardDrawerScrim;
     private boolean dashboardDrawerOpen;
+    private boolean autoUpdateChecked;
     private String appliedThemeMode = "auto";
     private final Runnable dashboardTicker = new Runnable() {
         @Override public void run() {
@@ -71,6 +72,7 @@ public class MainActivity extends Activity {
         if (Build.VERSION.SDK_INT >= 23) requestPermissions(RUNTIME_PERMS, 10);
         if (licenseAccepted()) showDashboard();
         else showOnboarding();
+        maybeCheckAutoUpdate();
     }
 
     @Override protected void onResume() {
@@ -88,6 +90,7 @@ public class MainActivity extends Activity {
             dashboardHandler.post(dashboardTicker);
             maybeRefreshHomeWeather();
         }
+        maybeCheckAutoUpdate();
     }
 
     @Override protected void onPause() {
@@ -120,6 +123,16 @@ public class MainActivity extends Activity {
             showDashboard();
         });
         setContentView(root);
+    }
+
+    private void maybeCheckAutoUpdate() {
+        if (autoUpdateChecked || !UpdateManager.autoUpdateEnabled(this)) return;
+        autoUpdateChecked = true;
+        UpdateManager.checkAndInstallIfNeeded(this, (started, message) -> {
+            if (!started && message != null && message.startsWith("Ошибка")) {
+                Ui.toast(this, message);
+            }
+        });
     }
 
     private void showLegal() {
