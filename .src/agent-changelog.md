@@ -325,6 +325,10 @@ Implemented in this pass:
   - `BCM_DOOR_POS` is shown through `getCustomizeFunctionValue(...)` for the confirmed rear-door area;
   - `BCM_WINDOW_POS` and `BCM_WINDOW_CURRENT_POS` are shown through float readback for front-left/front-right zones.
 - vehicle top summaries now surface live window/door position information, which makes BCM body diagnostics much closer to the actual OEM callback model.
+- trunk handling is now explicitly split into:
+  - OEM entry through `BCM_CUSTOM_KEY/CUSTOM_KEY_TRUNK` for user actions;
+  - real trunk state readback through `ISafety.SETTING_FUNC_TRUNK_STATE` and `ISafety.SETTING_FUNC_TRUNK_OPENING_PERCENTAGE`.
+- `VehicleActivity` no longer presents the trunk as if it were just another direct BCM write/read pair; it now shows real `ISafety` state/percentage diagnostics alongside the OEM launch action.
 
 Still open inside stage 2:
 
