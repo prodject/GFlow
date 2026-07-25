@@ -32,6 +32,7 @@ public class ParkingActivity extends Activity {
     private boolean advancedVisible;
     private int selectedParkMode = PARK_MODE_PARALLEL;
     private final List<Button> modeButtons = new ArrayList<>();
+    private final List<TextView> liveStatusValues = new ArrayList<>();
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -131,7 +132,7 @@ public class ParkingActivity extends Activity {
 
         LinearLayout quick = Ui.row(this);
         addActionChip(quick, "Auto Park", this::openAutoParkUi);
-        addActionChip(quick, "360", this::showAvmBackendPending);
+        addActionChip(quick, "360", this::openAvmCamera);
         addActionChip(quick, "PDC", () -> sendVehicle(EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.COMMON_ON));
         addActionChip(quick, "Advanced", this::toggleAdvancedParking);
         hero.addView(quick, lpMatchWrap(0, 16, 0, 0));
@@ -160,7 +161,7 @@ public class ParkingActivity extends Activity {
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(3);
         addTile(grid, "Открыть Auto Park", Ui.CYAN, this::openAutoParkUi);
-        addTile(grid, "Открыть 360", Color.rgb(72, 153, 255), this::showAvmBackendPending);
+        addTile(grid, "Открыть 360", Color.rgb(72, 153, 255), this::openAvmCamera);
         addTile(grid, "PDC Вкл", Ui.SUCCESS, () -> sendVehicle(EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.COMMON_ON));
         addTile(grid, "PDC Выкл", Ui.ERROR, () -> sendVehicle(EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.COMMON_OFF));
         addTile(grid, "RCTA Вкл", Ui.WARNING, () -> sendVehicle(EcarxVehicleAdapter.PAS_RCTA_ACTIVATION, EcarxVehicleAdapter.COMMON_ON));
@@ -199,7 +200,7 @@ public class ParkingActivity extends Activity {
         grid.setColumnCount(2);
         addShortcutButton(grid, "Радары standby", () -> sendVehicle(EcarxVehicleAdapter.PAS_RADAR_WORK_MODE, EcarxVehicleAdapter.PAS_RADAR_WORK_MODE_STANDBY));
         addShortcutButton(grid, "Направляющие", () -> sendVehicle(EcarxVehicleAdapter.PAS_PAC_OVERLAY_STEERPATH, EcarxVehicleAdapter.COMMON_ON));
-        addShortcutButton(grid, "Top View", () -> sendVehicle(EcarxVehicleAdapter.PAS_PAC_TOP_VIEW_ZOOM_IN, EcarxVehicleAdapter.COMMON_ON));
+        addShortcutButton(grid, "Top View", this::openAvmCamera);
         addShortcutButton(grid, "APA Confirm", () -> {
             if (!experimentalFeaturesEnabled()) {
                 Ui.toast(this, "Для APA Confirm включите Experimental features");
@@ -216,7 +217,7 @@ public class ParkingActivity extends Activity {
     private LinearLayout buildRadarAndVisualPanel() {
         LinearLayout panel = Ui.glassCard(this);
         panel.addView(Ui.label(this, "Радары / Визуальная помощь"));
-        panel.addView(Ui.muted(this, "Радарный режим, парковочные направляющие и визуальные оверлеи вынесены в основной экран парковки."));
+        panel.addView(Ui.muted(this, "Радарный режим и confirmed PAS overlays оставлены как команды. AVM-вход идет через EVS, а не через raw PAS write."));
 
         addCommandGroup(panel, "Режим радаров", EcarxVehicleAdapter.PAS_RADAR_WORK_MODE,
                 new String[]{"Выкл", "Ожидание", "Перед + зад", "Только перед", "Только зад"},
@@ -310,7 +311,7 @@ public class ParkingActivity extends Activity {
         apa.addView(Ui.text(this, "APA / RPA", 18, true));
         apa.addView(Ui.muted(this, "Raw parking controls, remote parking и HAL readback. Основные APA-сценарии вынесены выше в отдельный блок."));
         addActionButton(apa, "Открыть штатный Auto Park UI", this::openAutoParkUi);
-        addActionButton(apa, "Открыть 360-панораму", this::showAvmBackendPending);
+        addActionButton(apa, "Открыть 360-панораму", this::openAvmCamera);
         addDiagnostic(apa, "Вход в parking через BCM", EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.ADAS_PDC_WARNING_VOLUME);
         if (experimentalFeaturesEnabled()) {
             addSignalDiagnostic(apa, "Статус APA/RPA",
@@ -349,7 +350,7 @@ public class ParkingActivity extends Activity {
 
         LinearLayout avm = Ui.glassCard(this);
         avm.addView(Ui.text(this, "PAS / AVM", 18, true));
-        avm.addView(Ui.muted(this, "Raw PAS / AVM diagnostics. Основные радары и visual assist overlays вынесены выше в основной UI."));
+        avm.addView(Ui.muted(this, "Raw PAS / AVM diagnostics. OEM/EVS entry подтвержден только для открытия 360, а прямые PAS write здесь остаются support-gated и вторичными."));
         addDiagnostic(avm, "Состояние камер PAC / AVM",
                 EcarxVehicleAdapter.PAS_PAC_ACTIVATION,
                 EcarxVehicleAdapter.PAS_AVM_OR_APA_ACTIVATION,
@@ -373,12 +374,11 @@ public class ParkingActivity extends Activity {
                 EcarxVehicleAdapter.PAS_RCTA_ACTIVATION,
                 EcarxVehicleAdapter.PAS_RCTA_LEFT_WARNING,
                 EcarxVehicleAdapter.PAS_RCTA_RIGHT_WARNING);
-        addPreset(avm, "Запустить AVM / PAC",
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.PAS_PAC_ACTIVATION, EcarxVehicleAdapter.COMMON_ON),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.PAS_AVM_OR_APA_ACTIVATION, EcarxVehicleAdapter.COMMON_ON));
-        addPreset(avm, "Остановить AVM / PAC",
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.PAS_PAC_ACTIVATION, EcarxVehicleAdapter.COMMON_OFF),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.PAS_AVM_OR_APA_ACTIVATION, EcarxVehicleAdapter.COMMON_OFF));
+        addActionButton(avm, "Открыть AVM 360 через EVS", this::openAvmCamera);
+        addPreset(avm, "PAC Вкл (если backend writable)",
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.PAS_PAC_ACTIVATION, EcarxVehicleAdapter.COMMON_ON));
+        addPreset(avm, "PAC Выкл (если backend writable)",
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.PAS_PAC_ACTIVATION, EcarxVehicleAdapter.COMMON_OFF));
         addCommandGroup(avm, "Автокамера заднего хода", EcarxVehicleAdapter.PAS_PAC_AUTO_REVERSE_CAMERA,
                 new String[]{"Выкл", "Задняя", "Вид сверху"},
                 new int[]{EcarxVehicleAdapter.PAS_AUTO_REVERSE_CAMERA_OFF, EcarxVehicleAdapter.PAS_AUTO_REVERSE_CAMERA_REAR, EcarxVehicleAdapter.PAS_AUTO_REVERSE_CAMERA_TOP});
@@ -426,10 +426,11 @@ public class ParkingActivity extends Activity {
     private GridLayout buildStatusGrid() {
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(2);
-        addStatusCard(grid, "AVM / PAC", "Вид сверху · задний вид · 3D готов", Ui.CYAN);
-        addStatusCard(grid, "Режимы парковки", "Параллельная / перпендикулярная / выезд", Ui.SUCCESS);
-        addStatusCard(grid, "PDC / Radar", "Передние и задние датчики активны", Ui.WARNING);
-        addStatusCard(grid, "RCTA / SAP", "Контроль сзади / smart assist", Color.rgb(129, 149, 255));
+        liveStatusValues.clear();
+        addStatusCard(grid, "AVM / PAC", avmStatusSummary(), Ui.CYAN);
+        addStatusCard(grid, "APA / RPA", apaStatusSummary(), Ui.SUCCESS);
+        addStatusCard(grid, "PDC / Radar", pdcStatusSummary(), Ui.WARNING);
+        addStatusCard(grid, "RCTA / SAP", rctaStatusSummary(), Color.rgb(129, 149, 255));
         return grid;
     }
 
@@ -439,6 +440,7 @@ public class ParkingActivity extends Activity {
         TextView v = Ui.text(this, value, 18, true);
         v.setPadding(0, Ui.dp(this, 8), 0, 0);
         card.addView(v);
+        liveStatusValues.add(v);
         View accent = new View(this);
         accent.setBackground(Ui.glassPill(this, color));
         LinearLayout.LayoutParams accentLp = new LinearLayout.LayoutParams(Ui.dp(this, 56), Ui.dp(this, 6));
@@ -457,7 +459,7 @@ public class ParkingActivity extends Activity {
         dock.setGravity(Gravity.CENTER_VERTICAL);
         dock.setPadding(Ui.dp(this, 18), Ui.dp(this, 14), Ui.dp(this, 18), Ui.dp(this, 14));
         addDockButton(dock, "Auto Park", this::openAutoParkUi, true);
-        addDockButton(dock, "360", this::showAvmBackendPending, false);
+        addDockButton(dock, "360", this::openAvmCamera, false);
         addDockButton(dock, "PDC", () -> sendVehicle(EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.COMMON_ON), false);
         addDockButton(dock, "RCTA", () -> sendVehicle(EcarxVehicleAdapter.PAS_RCTA_ACTIVATION, EcarxVehicleAdapter.COMMON_ON), false);
         addDockButton(dock, "EXP", this::scrollAdvancedIntoView, false);
@@ -569,23 +571,28 @@ public class ParkingActivity extends Activity {
     }
 
     private void sendVehicle(int functionId, int value) {
-        EcarxVehicleAdapter.Result result = CarCommandBus.sendVehicle(this, functionId, value);
-        Ui.toast(this, result.success ? "Команда отправлена" : "Команда не выполнена");
+        EcarxVehicleAdapter.Result result = executeVehicleCommand(functionId, value);
+        Ui.toast(this, result.success ? "Команда отправлена" : result.message);
+        refreshStatusCards();
     }
 
     private void openAutoParkUi() {
         EcarxVehicleAdapter.Result result = CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_AUTO_PARK);
         Ui.toast(this, result.success ? "Команда отправлена" : "Команда не выполнена");
+        refreshStatusCards();
     }
 
-    private void showAvmBackendPending() {
-        Ui.toast(this, "360 отключен: backend входа не подтвержден");
+    private void openAvmCamera() {
+        EcarxDvrAdapter.Result result = new EcarxDvrAdapter(this).openEvs(EcarxDvrAdapter.EVS_CAMERA_AVM);
+        Ui.toast(this, result.success ? "AVM 360 открыт" : result.message);
+        refreshStatusCards();
     }
 
     private void sendSignalParkMode(int mode) {
         CarSignalManagerAdapter.Result result = new CarSignalManagerAdapter(this)
                 .set("setDrvrAsscSysParkMod", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_PARK_MOD, mode);
         Ui.toast(this, result.success ? "Режим парковки отправлен" : "Ошибка режима парковки");
+        refreshStatusCards();
     }
 
     private void scrollAdvancedIntoView() {
@@ -619,16 +626,20 @@ public class ParkingActivity extends Activity {
     private void addCommand(LinearLayout root, String label, int functionId, int value) {
         Button b = Ui.button(this, label);
         b.setOnClickListener(v -> {
-            EcarxVehicleAdapter.Result result = CarCommandBus.sendVehicle(this, functionId, value);
-            Ui.toast(this, result.success ? "Команда отправлена" : "Команда не выполнена");
+            EcarxVehicleAdapter.Result result = executeVehicleCommand(functionId, value);
+            Ui.toast(this, result.success ? "Команда отправлена" : result.message);
             root.addView(Ui.text(this, result.message, 13, false), Math.min(3, root.getChildCount()));
+            refreshStatusCards();
         });
         root.addView(b, lpMatchWrap(0, 6, 0, 0));
     }
 
     private void addActionButton(LinearLayout root, String label, Runnable action) {
         Button b = Ui.button(this, label);
-        b.setOnClickListener(v -> action.run());
+        b.setOnClickListener(v -> {
+            action.run();
+            refreshStatusCards();
+        });
         root.addView(b, lpMatchWrap(0, 6, 0, 0));
     }
 
@@ -642,12 +653,13 @@ public class ParkingActivity extends Activity {
             boolean ok = true;
             StringBuilder sb = new StringBuilder(label).append("\n");
             for (EcarxVehicleAdapter.Command command : commands) {
-                EcarxVehicleAdapter.Result result = CarCommandBus.sendVehicle(this, command.functionId, command.value);
+                EcarxVehicleAdapter.Result result = executeVehicleCommand(command.functionId, command.value);
                 ok &= result.success;
                 sb.append(result.message).append("\n");
             }
             Ui.toast(this, ok ? "Пресет отправлен" : "Пресет выполнен частично");
             root.addView(Ui.text(this, sb.toString(), 13, false), Math.min(3, root.getChildCount()));
+            refreshStatusCards();
         });
         root.addView(b, lpMatchWrap(0, 6, 0, 0));
     }
@@ -658,8 +670,7 @@ public class ParkingActivity extends Activity {
             EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
             StringBuilder sb = new StringBuilder(label).append("\n");
             for (int functionId : functionIds) {
-                sb.append(adapter.support(functionId).message).append("\n");
-                sb.append(adapter.get(functionId).message).append("\n");
+                sb.append(formatDiagnosticLine(adapter, functionId)).append("\n");
             }
             root.addView(Ui.text(this, sb.toString(), 13, false), Math.min(3, root.getChildCount()));
         });
@@ -672,6 +683,7 @@ public class ParkingActivity extends Activity {
             CarSignalManagerAdapter.Result result = new CarSignalManagerAdapter(this).set(methodName, signalId, value);
             Ui.toast(this, result.success ? "Сигнал отправлен" : "Ошибка сигнала");
             root.addView(Ui.text(this, result.message, 13, false), Math.min(3, root.getChildCount()));
+            refreshStatusCards();
         });
         root.addView(b, lpMatchWrap(0, 6, 0, 0));
     }
@@ -703,6 +715,69 @@ public class ParkingActivity extends Activity {
     private boolean experimentalFeaturesEnabled() {
         SharedPreferences prefs = getSharedPreferences(APP_SETTINGS, MODE_PRIVATE);
         return prefs.getBoolean(KEY_EXPERIMENTAL_FEATURES, false);
+    }
+
+    private EcarxVehicleAdapter.Result executeVehicleCommand(int functionId, int value) {
+        EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
+        EcarxVehicleAdapter.Result support = adapter.support(functionId);
+        if (!support.isSupported()) {
+            return EcarxVehicleAdapter.Result.external(
+                    "Функция недоступна: " + compact(support.message),
+                    false,
+                    false);
+        }
+        return CarCommandBus.sendVehicle(this, functionId, value);
+    }
+
+    private String formatDiagnosticLine(EcarxVehicleAdapter adapter, int functionId) {
+        EcarxVehicleAdapter.Result support = adapter.support(functionId);
+        EcarxVehicleAdapter.Result value = adapter.get(functionId);
+        return EcarxVehicleAdapter.hex(functionId) + " :: " + compact(support.message) + " :: " + compact(value.message);
+    }
+
+    private void refreshStatusCards() {
+        if (liveStatusValues.size() < 4) return;
+        liveStatusValues.get(0).setText(avmStatusSummary());
+        liveStatusValues.get(1).setText(apaStatusSummary());
+        liveStatusValues.get(2).setText(pdcStatusSummary());
+        liveStatusValues.get(3).setText(rctaStatusSummary());
+    }
+
+    private String avmStatusSummary() {
+        EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
+        EcarxVehicleAdapter.Result pac = adapter.get(EcarxVehicleAdapter.PAS_PAC_STATUS);
+        EcarxVehicleAdapter.Result view = adapter.get(EcarxVehicleAdapter.PAS_PAC_VIEW_SELECTION);
+        return compact(pac.message) + " · " + compact(view.message) + " · entry EVS";
+    }
+
+    private String apaStatusSummary() {
+        CarSignalManagerAdapter adapter = new CarSignalManagerAdapter(this);
+        String disp = compact(adapter.get("getDrvrAsscSysDisp", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_DISP).message);
+        String sts = compact(adapter.get("getDrvrAsscSysSts", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_STS).message);
+        return disp + " · " + sts;
+    }
+
+    private String pdcStatusSummary() {
+        EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
+        String pdc = compact(adapter.get(EcarxVehicleAdapter.ADAS_PDC).message);
+        String radar = compact(adapter.get(EcarxVehicleAdapter.PAS_RADAR_WORK_MODE).message);
+        return pdc + " · " + radar;
+    }
+
+    private String rctaStatusSummary() {
+        EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
+        String activation = compact(adapter.get(EcarxVehicleAdapter.PAS_RCTA_ACTIVATION).message);
+        String left = compact(adapter.get(EcarxVehicleAdapter.PAS_RCTA_LEFT_WARNING).message);
+        return activation + " · " + left;
+    }
+
+    private String compact(String message) {
+        if (message == null) return "";
+        return message
+                .replace("getFunctionValue ", "")
+                .replace("getCustomizeFunctionValue ", "")
+                .replace("ecarx.car.hardware.signal.", "")
+                .trim();
     }
 
     private LinearLayout.LayoutParams lpMatchWrap(int l, int t, int r, int b) {
