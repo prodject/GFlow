@@ -1068,7 +1068,7 @@ final class EcarxVehicleAdapter {
         }
 
         static Result value(int functionId, int zone, int value) {
-            return new Result(functionId, zone, value, true, value != 0xff,
+            return new Result(functionId, zone, value, true, isKnownRawStatus(functionId) || value != 0xff,
                     String.format(Locale.US, "getFunctionValue %s/%d = %s", hex(functionId), zone, hex(value)));
         }
 
@@ -1101,6 +1101,10 @@ final class EcarxVehicleAdapter {
 
         boolean isSupported() {
             return supported;
+        }
+
+        private static boolean isKnownRawStatus(int functionId) {
+            return functionId == BCM_DOOR_STATUS;
         }
     }
 
