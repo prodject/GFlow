@@ -232,7 +232,7 @@ public class VehicleActivity extends Activity {
         addTile(grid, "Люк закрыть", Color.rgb(115, 136, 165), () -> sendVehicle(EcarxVehicleAdapter.BCM_SUNROOF_CLOSE, EcarxVehicleAdapter.COMMON_ON));
         addTile(grid, "Шторка открыть", Color.rgb(255, 138, 80), () -> sendVehicle(EcarxVehicleAdapter.BCM_SUNCURT_OPEN, EcarxVehicleAdapter.COMMON_ON));
         addTile(grid, "Шторка закрыть", Color.rgb(255, 179, 64), () -> sendVehicle(EcarxVehicleAdapter.BCM_SUNCURT_CLOSE, EcarxVehicleAdapter.COMMON_ON));
-        addTile(grid, "Багажник", Color.rgb(94, 201, 196), () -> sendVehicle(EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_TRUNK));
+        addTile(grid, "Багажник", Color.rgb(94, 201, 196), this::openTrunkOemEntry);
         panel.addView(grid, lpMatchWrap(0, 12, 0, 0));
 
         LinearLayout actions = Ui.row(this);
@@ -485,6 +485,7 @@ public class VehicleActivity extends Activity {
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(2);
         addStatusCard(grid, "Кузов", bodyReadback(), Ui.SUCCESS);
+        addStatusCard(grid, "Багажник", trunkReadback(), Color.rgb(94, 201, 196));
         addStatusCard(grid, "Свет", readback(EcarxVehicleAdapter.BCM_LIGHT_DIPPED_BEAM, EcarxVehicleAdapter.BCM_LIGHT_HAZARD, EcarxVehicleAdapter.BCM_LIGHT_GRILLE), Ui.CYAN);
         addStatusCard(grid, "Drive / Сиденья", readback(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_STEERING_MODE, EcarxVehicleAdapter.SEAT_POSITION_SET), Ui.WARNING);
         addStatusCard(grid, "Люк / Зеркала", readback(EcarxVehicleAdapter.BCM_SUNROOF_OPEN, EcarxVehicleAdapter.BCM_SUNCURT_OPEN, EcarxVehicleAdapter.BCM_MIRROR_FOLD), Color.rgb(129, 149, 255));
@@ -518,7 +519,7 @@ public class VehicleActivity extends Activity {
         addDockButton(dock, "Кузов", () -> openMode(Mode.HOME), mode == Mode.HOME, new QuickItem[]{
                 new QuickItem("Замки", () -> sendVehicle(EcarxVehicleAdapter.BCM_DOOR_LOCK, EcarxVehicleAdapter.COMMON_ON)),
                 new QuickItem("Окна", () -> sendVehicle(EcarxVehicleAdapter.BCM_WINDOW, EcarxVehicleAdapter.WINDOW_OPEN)),
-                new QuickItem("Багажник", () -> sendVehicle(EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_TRUNK))
+                new QuickItem("Багажник", this::openTrunkOemEntry)
         });
         addDockButton(dock, "Сиденья", () -> openMode(Mode.SEATS), mode == Mode.SEATS, new QuickItem[]{
                 new QuickItem("Сиденье P1", () -> sendVehicle(EcarxVehicleAdapter.SEAT_POSITION_SET, EcarxVehicleAdapter.SEAT_POSITION_1)),
@@ -650,6 +651,12 @@ public class VehicleActivity extends Activity {
         Ui.toast(this, result.success ? "360 открыт через EVS" : "360 не открыт: " + result.message);
     }
 
+    private void openTrunkOemEntry() {
+        EcarxVehicleAdapter.Result result = CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_TRUNK);
+        Ui.toast(this, result.success ? "OEM вход багажника отправлен" : "OEM вход багажника не выполнен");
+        refreshState();
+    }
+
     private void setRearChildLock(int value) {
         EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
         EcarxVehicleAdapter.Result left = adapter.set(EcarxVehicleAdapter.BCM_CHILD_SAFETY_LOCK, EcarxVehicleAdapter.BCM_DOOR_ROW_2_LEFT, value);
@@ -770,9 +777,47 @@ public class VehicleActivity extends Activity {
                 + " · lock " + compact(adapter.get(EcarxVehicleAdapter.BCM_DOOR_LOCK).message);
     }
 
+    private String trunkReadback() {
+        EcarxSafetyAdapter adapter = new EcarxSafetyAdapter(this);
+        String state = compactTrunkState(adapter.get(EcarxSafetyAdapter.SETTING_FUNC_TRUNK_STATE, EcarxVehicleAdapter.BCM_DOOR_REAR).message);
+        String percentage = compact(adapter.getFloat(EcarxSafetyAdapter.SETTING_FUNC_TRUNK_OPENING_PERCENTAGE, EcarxVehicleAdapter.BCM_DOOR_REAR).message);
+        return state + " · " + percentage;
+    }
+
     private String rawStatus(EcarxVehicleAdapter.Result result) {
         if (result == null) return "--";
         return binary32(result.value);
+    }
+
+    private String compactTrunkState(String message) {
+        if (message == null || message.trim().isEmpty()) return "--";
+        int raw = parseHexValue(message);
+        switch (raw) {
+            case EcarxSafetyAdapter.TRUNK_STATE_FULL_CLOSE: return "full_close";
+            case EcarxSafetyAdapter.TRUNK_STATE_MOVE_UP: return "move_up";
+            case EcarxSafetyAdapter.TRUNK_STATE_MOVE_UP_BREAK: return "move_up_break";
+            case EcarxSafetyAdapter.TRUNK_STATE_STOP_DURING_OPEN: return "stop_open";
+            case EcarxSafetyAdapter.TRUNK_STATE_FULL_OPEN: return "full_open";
+            case EcarxSafetyAdapter.TRUNK_STATE_MOVE_DOWN: return "move_down";
+            case EcarxSafetyAdapter.TRUNK_STATE_MOVE_DOWN_BREAK: return "move_down_break";
+            case EcarxSafetyAdapter.TRUNK_STATE_STOP_DURING_CLOSE: return "stop_close";
+            case EcarxSafetyAdapter.TRUNK_STATE_HALF_CLOSE: return "half_close";
+            case EcarxSafetyAdapter.TRUNK_STATE_STOP_MIN_POSITION: return "stop_min";
+            case EcarxSafetyAdapter.TRUNK_STATE_UNKNOW: return "unknown";
+            default: return compact(message);
+        }
+    }
+
+    private int parseHexValue(String message) {
+        int marker = message.lastIndexOf("0x");
+        if (marker < 0) return Integer.MIN_VALUE;
+        int end = marker + 2;
+        while (end < message.length() && Character.digit(message.charAt(end), 16) >= 0) end++;
+        try {
+            return (int) Long.parseLong(message.substring(marker + 2, end), 16);
+        } catch (Exception ignored) {
+            return Integer.MIN_VALUE;
+        }
     }
 
     private String floatBodyReadback(int functionId, int zone) {
