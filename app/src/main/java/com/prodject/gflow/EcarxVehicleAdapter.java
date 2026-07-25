@@ -1099,6 +1099,10 @@ final class EcarxVehicleAdapter {
                     String.format(Locale.US, "Ошибка AdaptAPI %s/%d=%.1f: %s", hex(functionId), zone, value, compact(e)));
         }
 
+        static Result external(String message, boolean success, boolean supported) {
+            return new Result(0, 0, 0, success, supported, message);
+        }
+
         boolean isSupported() {
             return supported;
         }

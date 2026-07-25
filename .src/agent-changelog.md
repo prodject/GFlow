@@ -352,3 +352,26 @@ Still open inside stage 4:
 - confirm whether `Auto Park UI` through `BCM custom key 0x65` is actually effective on this firmware or should also be downgraded to diagnostics-only;
 - decide which PAS / AVM commands are truly writable and which are just state/report properties;
 - trace the real 360 / AVM entry backend before re-enabling any user-facing 360 launch button.
+
+### Stage 5 Progress: 360 / AVM Entrypoint Started
+
+360 entrypoint repair moved into:
+
+- [VoiceActivity.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/VoiceActivity.java)
+- [LowSpeedCameraService.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/LowSpeedCameraService.java)
+- [VehicleActivity.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/VehicleActivity.java)
+- [EcarxVehicleAdapter.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/EcarxVehicleAdapter.java)
+
+Implemented in this pass:
+
+- user-facing 360 launchers no longer rely on `BCM_CUSTOM_KEY_360`, because manual testing already showed that path does not open the штатный 360 UI on this firmware.
+- voice command handling for `360` / `камера` now opens AVM through `EcarxDvrAdapter.openEvs(EVS_CAMERA_AVM)`.
+- `LowSpeedCameraService` low-speed auto-open now uses the same EVS AVM backend instead of issuing the broken BCM custom key write.
+- the `Vehicle` drive/custom quick action was changed from `Custom 360` to `Open 360` and now opens AVM through EVS as well.
+- `EcarxVehicleAdapter.Result` received a small external-result factory so non-`ICarFunction` backends can still report status through existing UI/voice flows without inventing fake BCM function writes.
+
+Still open inside stage 5:
+
+- review every remaining textual or automation entrypoint that may still mention `BCM_CUSTOM_KEY_360`, especially legacy notes/examples and any background automation not yet wired through `EcarxDvrAdapter`;
+- decide whether `ParkingActivity` should re-enable a visible 360 button now that EVS is the preferred backend, or keep parking conservative until AVM lifecycle behavior is confirmed on-device;
+- verify whether EVS `openEvs(EVS_CAMERA_AVM)` should also be paired with an explicit close/lifecycle hook in some flows to avoid sticky camera sessions on this firmware.

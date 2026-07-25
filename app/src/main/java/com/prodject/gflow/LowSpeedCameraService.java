@@ -82,8 +82,7 @@ public class LowSpeedCameraService extends BaseForegroundService {
         }
         lastOpenedAt = now;
         armed = false;
-        EcarxVehicleAdapter.Result result = new EcarxVehicleAdapter(this)
-                .set(EcarxVehicleAdapter.BCM_CUSTOM_KEY, 0, EcarxVehicleAdapter.CUSTOM_KEY_360);
+        EcarxDvrAdapter.Result result = new EcarxDvrAdapter(this).openEvs(EcarxDvrAdapter.EVS_CAMERA_AVM);
         save("open 360 by speed=" + speed + " km/h -> " + result.message + "\n" + signals.status());
     }
 

@@ -365,7 +365,7 @@ public class VehicleActivity extends Activity {
         addAdvancedCard(grid, "Руль / Кастом", "Усилие и пользовательские кнопки", new QuickItem[]{
                 new QuickItem("Soft", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_STEERING_MODE, EcarxVehicleAdapter.STEERING_MODE_SOFT)),
                 new QuickItem("Dynamic", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_STEERING_MODE, EcarxVehicleAdapter.STEERING_MODE_DYNAMIC)),
-                new QuickItem("Custom 360", () -> sendVehicle(EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_360)),
+                new QuickItem("Open 360", this::openAvmCamera),
                 new QuickItem("Custom Drive", () -> sendVehicle(EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_DRIVING_MODE))
         });
         panel.addView(grid, lpMatchWrap(0, 12, 0, 12));
@@ -643,6 +643,11 @@ public class VehicleActivity extends Activity {
         EcarxVehicleAdapter.Result result = new EcarxVehicleAdapter(this).set(functionId, zone, value);
         Ui.toast(this, result.success ? "Команда отправлена" : "Команда не выполнена");
         refreshState();
+    }
+
+    private void openAvmCamera() {
+        EcarxDvrAdapter.Result result = new EcarxDvrAdapter(this).openEvs(EcarxDvrAdapter.EVS_CAMERA_AVM);
+        Ui.toast(this, result.success ? "360 открыт через EVS" : "360 не открыт: " + result.message);
     }
 
     private void showMirrorDialogSheet() {
