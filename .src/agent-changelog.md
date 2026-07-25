@@ -321,10 +321,13 @@ Implemented in this pass:
   - `BCM_CHILD_SAFETY_LOCK` now uses rear-door zones instead of a broken global write path.
 - voice door commands no longer send `BCM_DOOR` to unsupported `ZONE_ALL`; they now require a concrete target door and map it to confirmed OEM areas.
 - vehicle UI `Child lock` action now writes both rear child-lock zones directly, which matches the rear-door area model seen in runtime callbacks.
+- body diagnostics now use float/custom readback for position-like BCM properties instead of pretending they are plain integer states:
+  - `BCM_DOOR_POS` is shown through `getCustomizeFunctionValue(...)` for the confirmed rear-door area;
+  - `BCM_WINDOW_POS` and `BCM_WINDOW_CURRENT_POS` are shown through float readback for front-left/front-right zones.
+- vehicle top summaries now surface live window/door position information, which makes BCM body diagnostics much closer to the actual OEM callback model.
 
 Still open inside stage 2:
 
-- review whether `BCM_WINDOW_POS`, `BCM_WINDOW_CURRENT_POS`, and `BCM_DOOR_POS` should move to float/custom readback paths in the generic adapter instead of remaining activity-local diagnostics;
 - inspect remaining trunk/door automation entry points and decide whether any body actions should be disabled until their per-zone semantics are proven from runtime behavior;
 - add clearer per-zone body diagnostics once the useful OEM zone mapping is narrowed down from logs.
 

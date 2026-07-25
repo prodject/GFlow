@@ -730,7 +730,7 @@ public class VehicleActivity extends Activity {
     private String compact(String message) {
         if (message == null || message.trim().isEmpty()) return "--";
         String line = message.replace('\n', ' ').trim();
-        line = line.replace("getFunctionValue", "").trim();
+        line = line.replace("getFunctionValue", "").replace("getCustomizeFunctionValue", "").trim();
         int eq = line.indexOf('=');
         if (eq >= 0 && eq + 1 < line.length()) line = line.substring(eq + 1).trim();
         return line.length() > 84 ? line.substring(0, 84) : line;
@@ -740,20 +740,28 @@ public class VehicleActivity extends Activity {
         EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
         StringBuilder sb = new StringBuilder();
         sb.append("DOOR_STATUS ").append(rawStatus(adapter.get(EcarxVehicleAdapter.BCM_DOOR_STATUS))).append("\n");
+        sb.append("DOOR_POS rear ").append(floatBodyReadback(EcarxVehicleAdapter.BCM_DOOR_POS, EcarxVehicleAdapter.BCM_DOOR_REAR)).append("\n");
         sb.append("DOOR_LOCK ").append(compact(adapter.get(EcarxVehicleAdapter.BCM_DOOR_LOCK).message)).append("\n");
-        sb.append("WINDOW ").append(compact(adapter.get(EcarxVehicleAdapter.BCM_WINDOW).message));
+        sb.append("WINDOW ").append(compact(adapter.get(EcarxVehicleAdapter.BCM_WINDOW).message)).append("\n");
+        sb.append("WINDOW_POS FL ").append(floatBodyReadback(EcarxVehicleAdapter.BCM_WINDOW_POS, EcarxVehicleAdapter.BCM_WINDOW_ROW_1_LEFT))
+                .append(" · FR ").append(floatBodyReadback(EcarxVehicleAdapter.BCM_WINDOW_POS, EcarxVehicleAdapter.BCM_WINDOW_ROW_1_RIGHT)).append("\n");
+        sb.append("WINDOW_CUR FL ").append(floatBodyReadback(EcarxVehicleAdapter.BCM_WINDOW_CURRENT_POS, EcarxVehicleAdapter.BCM_WINDOW_ROW_1_LEFT))
+                .append(" · FR ").append(floatBodyReadback(EcarxVehicleAdapter.BCM_WINDOW_CURRENT_POS, EcarxVehicleAdapter.BCM_WINDOW_ROW_1_RIGHT));
         return sb.toString();
     }
 
     private String bodyDoorSummary() {
-        return rawStatus(new EcarxVehicleAdapter(this).get(EcarxVehicleAdapter.BCM_DOOR_STATUS));
+        EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
+        return rawStatus(adapter.get(EcarxVehicleAdapter.BCM_DOOR_STATUS))
+                + " · rear " + floatBodyReadback(EcarxVehicleAdapter.BCM_DOOR_POS, EcarxVehicleAdapter.BCM_DOOR_REAR);
     }
 
     private String bodyWindowSummary() {
         EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
         String moving = compact(adapter.get(EcarxVehicleAdapter.BCM_WINDOW_MOVING_STATE).message);
-        String base = compact(adapter.get(EcarxVehicleAdapter.BCM_WINDOW).message);
-        return "cmd " + base + " · mov " + moving;
+        String frontLeft = floatBodyReadback(EcarxVehicleAdapter.BCM_WINDOW_CURRENT_POS, EcarxVehicleAdapter.BCM_WINDOW_ROW_1_LEFT);
+        String frontRight = floatBodyReadback(EcarxVehicleAdapter.BCM_WINDOW_CURRENT_POS, EcarxVehicleAdapter.BCM_WINDOW_ROW_1_RIGHT);
+        return "FL " + frontLeft + " · FR " + frontRight + " · mov " + moving;
     }
 
     private String bodyStatusSummary() {
@@ -765,6 +773,12 @@ public class VehicleActivity extends Activity {
     private String rawStatus(EcarxVehicleAdapter.Result result) {
         if (result == null) return "--";
         return binary32(result.value);
+    }
+
+    private String floatBodyReadback(int functionId, int zone) {
+        EcarxVehicleAdapter.Result support = new EcarxVehicleAdapter(this).support(functionId, zone);
+        if (support != null && !support.isSupported()) return "--";
+        return compact(new EcarxVehicleAdapter(this).getFloat(functionId, zone).message);
     }
 
     private String binary32(int value) {
