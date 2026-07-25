@@ -217,25 +217,8 @@ public class ParkingActivity extends Activity {
     private LinearLayout buildRadarAndVisualPanel() {
         LinearLayout panel = Ui.glassCard(this);
         panel.addView(Ui.label(this, "Радары / Визуальная помощь"));
-        panel.addView(Ui.muted(this, "Радарный режим и confirmed PAS overlays оставлены как команды. AVM-вход идет через EVS, а не через raw PAS write."));
-
-        addCommandGroup(panel, "Режим радаров", EcarxVehicleAdapter.PAS_RADAR_WORK_MODE,
-                new String[]{"Выкл", "Ожидание", "Перед + зад", "Только перед", "Только зад"},
-                new int[]{EcarxVehicleAdapter.PAS_RADAR_WORK_MODE_OFF, EcarxVehicleAdapter.PAS_RADAR_WORK_MODE_STANDBY, EcarxVehicleAdapter.PAS_RADAR_WORK_MODE_FRONT_REAR_ACTIVE, EcarxVehicleAdapter.PAS_RADAR_WORK_MODE_FRONT_ACTIVE, EcarxVehicleAdapter.PAS_RADAR_WORK_MODE_REAR_ACTIVE});
-        addCommand(panel, "Направляющие траектории Вкл", EcarxVehicleAdapter.PAS_PAC_OVERLAY_STEERPATH, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(panel, "Направляющие траектории Выкл", EcarxVehicleAdapter.PAS_PAC_OVERLAY_STEERPATH, EcarxVehicleAdapter.COMMON_OFF);
-        addCommand(panel, "Оверлей дистанции Вкл", EcarxVehicleAdapter.PAS_PAC_OVERLAY_DSTINFO, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(panel, "Оверлей дистанции Выкл", EcarxVehicleAdapter.PAS_PAC_OVERLAY_DSTINFO, EcarxVehicleAdapter.COMMON_OFF);
-        addCommand(panel, "Оверлей фаркопа Вкл", EcarxVehicleAdapter.PAS_PAC_OVERLAY_TOWBAR, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(panel, "Оверлей фаркопа Выкл", EcarxVehicleAdapter.PAS_PAC_OVERLAY_TOWBAR, EcarxVehicleAdapter.COMMON_OFF);
-        addCommand(panel, "PAS-графика Вкл", EcarxVehicleAdapter.PAS_SHOW_GRAPHICS, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(panel, "PAS-графика Выкл", EcarxVehicleAdapter.PAS_SHOW_GRAPHICS, EcarxVehicleAdapter.COMMON_OFF);
-        addCommand(panel, "Прозрачная модель Вкл", EcarxVehicleAdapter.PAS_PAC_CAR_MODE_TRANSPARENT, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(panel, "Прозрачная модель Выкл", EcarxVehicleAdapter.PAS_PAC_CAR_MODE_TRANSPARENT, EcarxVehicleAdapter.COMMON_OFF);
-        addCommand(panel, "Вид сверху Вкл", EcarxVehicleAdapter.PAS_PAC_TOP_VIEW_ZOOM_IN, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(panel, "Вид сверху Выкл", EcarxVehicleAdapter.PAS_PAC_TOP_VIEW_ZOOM_IN, EcarxVehicleAdapter.COMMON_OFF);
-        addCommand(panel, "Круговой обзор Вкл", EcarxVehicleAdapter.PAS_PAC_TOURING_VIEW, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(panel, "Круговой обзор Выкл", EcarxVehicleAdapter.PAS_PAC_TOURING_VIEW, EcarxVehicleAdapter.COMMON_OFF);
+        panel.addView(Ui.muted(this, "Direct PAS write-path отключен: в логах 2026-07-25 для radar/RCTA/overlay/top-view есть setFunctionValue result:false, а для остальных PAS visual controls нет подтвержденной успешной записи. Здесь оставлены только readback и EVS/OEM entry."));
+        addActionButton(panel, "Открыть AVM 360 через EVS", this::openAvmCamera);
         addDiagnostic(panel, "Статус радаров и оверлеев",
                 EcarxVehicleAdapter.PAS_STATUS,
                 EcarxVehicleAdapter.PAS_RADAR_WORK_MODE,
@@ -350,7 +333,7 @@ public class ParkingActivity extends Activity {
 
         LinearLayout avm = Ui.glassCard(this);
         avm.addView(Ui.text(this, "PAS / AVM", 18, true));
-        avm.addView(Ui.muted(this, "Raw PAS / AVM diagnostics. OEM/EVS entry подтвержден только для открытия 360, а прямые PAS write здесь остаются support-gated и вторичными."));
+        avm.addView(Ui.muted(this, "Raw PAS / AVM diagnostics. Direct PAS write выключен до появления подтвержденных успешных setFunctionValue для этой прошивки."));
         addDiagnostic(avm, "Состояние камер PAC / AVM",
                 EcarxVehicleAdapter.PAS_PAC_ACTIVATION,
                 EcarxVehicleAdapter.PAS_AVM_OR_APA_ACTIVATION,
@@ -375,51 +358,6 @@ public class ParkingActivity extends Activity {
                 EcarxVehicleAdapter.PAS_RCTA_LEFT_WARNING,
                 EcarxVehicleAdapter.PAS_RCTA_RIGHT_WARNING);
         addActionButton(avm, "Открыть AVM 360 через EVS", this::openAvmCamera);
-        addPreset(avm, "PAC Вкл (если backend writable)",
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.PAS_PAC_ACTIVATION, EcarxVehicleAdapter.COMMON_ON));
-        addPreset(avm, "PAC Выкл (если backend writable)",
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.PAS_PAC_ACTIVATION, EcarxVehicleAdapter.COMMON_OFF));
-        addCommandGroup(avm, "Автокамера заднего хода", EcarxVehicleAdapter.PAS_PAC_AUTO_REVERSE_CAMERA,
-                new String[]{"Выкл", "Задняя", "Вид сверху"},
-                new int[]{EcarxVehicleAdapter.PAS_AUTO_REVERSE_CAMERA_OFF, EcarxVehicleAdapter.PAS_AUTO_REVERSE_CAMERA_REAR, EcarxVehicleAdapter.PAS_AUTO_REVERSE_CAMERA_TOP});
-        addCommandGroup(avm, "Режим радаров", EcarxVehicleAdapter.PAS_RADAR_WORK_MODE,
-                new String[]{"Выкл", "Ожидание", "Перед + зад", "Только перед", "Только зад"},
-                new int[]{EcarxVehicleAdapter.PAS_RADAR_WORK_MODE_OFF, EcarxVehicleAdapter.PAS_RADAR_WORK_MODE_STANDBY, EcarxVehicleAdapter.PAS_RADAR_WORK_MODE_FRONT_REAR_ACTIVE, EcarxVehicleAdapter.PAS_RADAR_WORK_MODE_FRONT_ACTIVE, EcarxVehicleAdapter.PAS_RADAR_WORK_MODE_REAR_ACTIVE});
-        addCommandGroup(avm, "Вид PAC 3D", EcarxVehicleAdapter.PAS_PAC_VIEW_SELECTION,
-                new String[]{"3D-обзор", "3D сзади слева", "3D сзади справа"},
-                new int[]{EcarxVehicleAdapter.PAS_PAC_VIEW_SELECTION_3D, EcarxVehicleAdapter.PAS_PAC_VIEW_REAR_LEFT_3D, EcarxVehicleAdapter.PAS_PAC_VIEW_REAR_RIGHT_3D});
-        addCommandGroup(avm, "Позиция PAC 3D", EcarxVehicleAdapter.PAS_PAC_3DVIEW_POSITION,
-                new String[]{"Выкл", "Спереди центр", "Спереди слева", "Спереди справа", "Слева", "Справа", "Сзади центр", "Сзади слева", "Сзади справа"},
-                new int[]{EcarxVehicleAdapter.PAS_PAC_3D_POS_OFF, EcarxVehicleAdapter.PAS_PAC_3D_POS_FRONT_CENTER, EcarxVehicleAdapter.PAS_PAC_3D_POS_FRONT_LEFT, EcarxVehicleAdapter.PAS_PAC_3D_POS_FRONT_RIGHT, EcarxVehicleAdapter.PAS_PAC_3D_POS_LEFT, EcarxVehicleAdapter.PAS_PAC_3D_POS_RIGHT, EcarxVehicleAdapter.PAS_PAC_3D_POS_REAR_CENTER, EcarxVehicleAdapter.PAS_PAC_3D_POS_REAR_LEFT, EcarxVehicleAdapter.PAS_PAC_3D_POS_REAR_RIGHT});
-        addCommand(avm, "Направляющие траектории Вкл", EcarxVehicleAdapter.PAS_PAC_OVERLAY_STEERPATH, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(avm, "Направляющие траектории Выкл", EcarxVehicleAdapter.PAS_PAC_OVERLAY_STEERPATH, EcarxVehicleAdapter.COMMON_OFF);
-        addCommand(avm, "Оверлей дистанции Вкл", EcarxVehicleAdapter.PAS_PAC_OVERLAY_DSTINFO, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(avm, "Оверлей дистанции Выкл", EcarxVehicleAdapter.PAS_PAC_OVERLAY_DSTINFO, EcarxVehicleAdapter.COMMON_OFF);
-        addCommand(avm, "Оверлей фаркопа Вкл", EcarxVehicleAdapter.PAS_PAC_OVERLAY_TOWBAR, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(avm, "Оверлей фаркопа Выкл", EcarxVehicleAdapter.PAS_PAC_OVERLAY_TOWBAR, EcarxVehicleAdapter.COMMON_OFF);
-        addCommand(avm, "Прозрачная модель Вкл", EcarxVehicleAdapter.PAS_PAC_CAR_MODE_TRANSPARENT, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(avm, "Прозрачная модель Выкл", EcarxVehicleAdapter.PAS_PAC_CAR_MODE_TRANSPARENT, EcarxVehicleAdapter.COMMON_OFF);
-        addCommand(avm, "Вид сверху Вкл", EcarxVehicleAdapter.PAS_PAC_TOP_VIEW_ZOOM_IN, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(avm, "Вид сверху Выкл", EcarxVehicleAdapter.PAS_PAC_TOP_VIEW_ZOOM_IN, EcarxVehicleAdapter.COMMON_OFF);
-        addCommand(avm, "Круговой обзор Вкл", EcarxVehicleAdapter.PAS_PAC_TOURING_VIEW, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(avm, "Круговой обзор Выкл", EcarxVehicleAdapter.PAS_PAC_TOURING_VIEW, EcarxVehicleAdapter.COMMON_OFF);
-        addCommand(avm, "PAS-графика Вкл", EcarxVehicleAdapter.PAS_SHOW_GRAPHICS, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(avm, "PAS-графика Выкл", EcarxVehicleAdapter.PAS_SHOW_GRAPHICS, EcarxVehicleAdapter.COMMON_OFF);
-        addCommand(avm, "PAS без звука Вкл", EcarxVehicleAdapter.PAS_MUTE, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(avm, "PAS без звука Выкл", EcarxVehicleAdapter.PAS_MUTE, EcarxVehicleAdapter.COMMON_OFF);
-        addCommandGroup(avm, "Режим SAP", EcarxVehicleAdapter.PAS_SAP_PARK_TYPE,
-                new String[]{"Заезд", "Выезд"},
-                new int[]{EcarxVehicleAdapter.PAS_SAP_PARK_TYPE_IN, EcarxVehicleAdapter.PAS_SAP_PARK_TYPE_OUT});
-        addCommandGroup(avm, "Тип заезда SAP", EcarxVehicleAdapter.PAS_SAP_PARK_IN_TYPE,
-                new String[]{"Перпендикулярная", "Параллельная"},
-                new int[]{EcarxVehicleAdapter.PAS_SAP_PARK_IN_TYPE_PERP, EcarxVehicleAdapter.PAS_SAP_PARK_IN_TYPE_PARA});
-        addCommand(avm, "RCTA Вкл", EcarxVehicleAdapter.PAS_RCTA_ACTIVATION, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(avm, "RCTA Выкл", EcarxVehicleAdapter.PAS_RCTA_ACTIVATION, EcarxVehicleAdapter.COMMON_OFF);
-        addCommand(avm, "Графика RCTA Вкл", EcarxVehicleAdapter.PAS_RCTA_SHOW_GRAPHICS, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(avm, "Графика RCTA Выкл", EcarxVehicleAdapter.PAS_RCTA_SHOW_GRAPHICS, EcarxVehicleAdapter.COMMON_OFF);
-        addCommandGroup(avm, "Громкость предупреждения RCTA", EcarxVehicleAdapter.PAS_RCTA_WARNING_VOLUME,
-                new String[]{"Выкл", "Низкая", "Средняя", "Высокая"},
-                new int[]{EcarxVehicleAdapter.PAS_RCTA_VOLUME_OFF, EcarxVehicleAdapter.PAS_RCTA_VOLUME_LOW, EcarxVehicleAdapter.PAS_RCTA_VOLUME_MID, EcarxVehicleAdapter.PAS_RCTA_VOLUME_HIGH});
         advancedHost.addView(avm, lpMatchWrap(0, 0, 0, 0));
     }
 

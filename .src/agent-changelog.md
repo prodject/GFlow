@@ -392,12 +392,24 @@ Implemented in this pass:
   - `PDC / Radar` now reads live ADAS PDC + PAS radar mode state;
   - `RCTA / SAP` now reads live RCTA activation/warning state.
 - parking diagnostics are now more compact and backend-oriented, combining support and readback for each function instead of dumping the same two-line pattern repeatedly.
+- direct PAS write classification was then tightened against the collected logs from July 25, 2026:
+  - `PAS_FUNC_RCTA_ACTIVATION (0x23050100)` logged `setFunctionValue ... result:false` for both `0` and `1`;
+  - `PAS_FUNC_PAC_OVERLAY_STEERPATH (0x23030800)` logged `setFunctionValue ... result:false`;
+  - `PAS_FUNC_PAS_RADAR_WORK_MODE (0x23021000)` logged `setFunctionValue ... result:false`;
+  - `PAS_FUNC_PAC_TOP_VIEW_ZOOM_IN (0x23032400)` logged `setFunctionValue ... result:false`.
+- because no successful `setFunctionValue` evidence was found for the rest of the remaining direct PAS visual controls on this firmware, `ParkingActivity` no longer presents them as actionable commands:
+  - radar/overlay/PAS visual controls were removed from the main parking action layer;
+  - advanced `PAS / AVM` direct write buttons were removed entirely;
+  - the screen now keeps only confirmed control paths there:
+    - `CarSignalManagerAdapter` for APA/RPA signals;
+    - OEM `BCM_CUSTOM_KEY` entry for `Auto Park`;
+    - EVS open for visible `360`.
+- remaining PAS properties in the parking screen are now treated as diagnostics/readback-only until a successful write is proven in logs or OEM code paths.
 
 Still open inside stage 4:
 
 - confirm whether `Auto Park UI` through `BCM custom key 0x65` is actually effective on this firmware or should also be downgraded to diagnostics-only;
-- decide which remaining PAS / AVM commands are truly writable and which are just state/report properties;
-- confirm on-device whether PAC-only direct writes are worth keeping visible or should also be demoted behind diagnostics once more logs are collected.
+- verify on-device whether any PAS write path outside `CarSignalManagerAdapter` is actually successful on this firmware, or whether the whole `ICarFunction` PAS control layer should stay permanently diagnostic-only.
 
 ### Stage 5 Progress: 360 / AVM Entrypoint Started
 
