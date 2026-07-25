@@ -239,7 +239,7 @@ public class VehicleActivity extends Activity {
         addActionChip(actions, "Замки", () -> showActionSheet("Замки", new QuickItem[]{
                 new QuickItem("Lock On", () -> sendVehicle(EcarxVehicleAdapter.BCM_DOOR_LOCK, EcarxVehicleAdapter.COMMON_ON)),
                 new QuickItem("Lock Off", () -> sendVehicle(EcarxVehicleAdapter.BCM_DOOR_LOCK, EcarxVehicleAdapter.COMMON_OFF)),
-                new QuickItem("Child lock", () -> sendVehicle(EcarxVehicleAdapter.BCM_CHILD_SAFETY_LOCK, EcarxVehicleAdapter.COMMON_ON))
+                new QuickItem("Child lock", () -> setRearChildLock(EcarxVehicleAdapter.COMMON_ON))
         }));
         addActionChip(actions, "Окна", () -> showActionSheet("Окна", new QuickItem[]{
                 new QuickItem("All Open", () -> sendVehicle(EcarxVehicleAdapter.BCM_WINDOW, EcarxVehicleAdapter.WINDOW_OPEN)),
@@ -648,6 +648,14 @@ public class VehicleActivity extends Activity {
     private void openAvmCamera() {
         EcarxDvrAdapter.Result result = new EcarxDvrAdapter(this).openEvs(EcarxDvrAdapter.EVS_CAMERA_AVM);
         Ui.toast(this, result.success ? "360 открыт через EVS" : "360 не открыт: " + result.message);
+    }
+
+    private void setRearChildLock(int value) {
+        EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
+        EcarxVehicleAdapter.Result left = adapter.set(EcarxVehicleAdapter.BCM_CHILD_SAFETY_LOCK, EcarxVehicleAdapter.BCM_DOOR_ROW_2_LEFT, value);
+        EcarxVehicleAdapter.Result right = adapter.set(EcarxVehicleAdapter.BCM_CHILD_SAFETY_LOCK, EcarxVehicleAdapter.BCM_DOOR_ROW_2_RIGHT, value);
+        Ui.toast(this, left.success && right.success ? "Команда отправлена" : "Команда не выполнена");
+        refreshState();
     }
 
     private void showMirrorDialogSheet() {
