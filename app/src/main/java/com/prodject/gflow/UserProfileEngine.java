@@ -253,9 +253,9 @@ final class UserProfileEngine {
     private static int seatLevel(String value) {
         int level = AutomationEngine.parseInt(value, 0);
         if (level <= 0) return EcarxVehicleAdapter.COMMON_OFF;
-        if (level == 1) return EcarxVehicleAdapter.SEAT_LEVEL_1;
-        if (level == 3) return EcarxVehicleAdapter.SEAT_LEVEL_3;
-        return EcarxVehicleAdapter.SEAT_LEVEL_2;
+        if (level == 1) return EcarxVehicleAdapter.HVAC_SEAT_HEATING_LEVEL_1;
+        if (level == 3) return EcarxVehicleAdapter.HVAC_SEAT_HEATING_LEVEL_3;
+        return EcarxVehicleAdapter.HVAC_SEAT_HEATING_LEVEL_2;
     }
 
     private static int fanValue(String value) {

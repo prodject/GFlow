@@ -281,12 +281,21 @@ Implemented in this first pass:
 - climate fan commands no longer send raw `1..9`; they now map to real HVAC enum values based on the IDs found in OEM sources and logs.
 - climate seat-heat / seat-vent actions were converted from fixed one-shot values to simple cycling logic so they behave like level-based functions instead of binary toggles.
 - climate command toasts now reflect command success instead of always reporting `HVAC updated`.
+- HVAC seat and steering-wheel value enums were corrected against OEM `IHvac` values:
+  - seat heating now uses `0x10050201/02/03` instead of the previous mismatched `0x100503..` block;
+  - seat ventilation now uses `0x10050101/02/03`;
+  - steering wheel heat now uses `0x10090101/02/03` instead of the previous `AUTO_STEERING_WHEEL_HEAT` values.
+- climate screen wheel heating now cycles through real wheel-heat levels instead of always forcing a fixed mid-level command.
+- climate commands now preflight support by function/zone before sending writes, so unsupported HVAC controls fail early with a clear reason instead of looking like silent UI no-ops.
+- the corrected HVAC seat/wheel enums were propagated to:
+  - voice climate commands;
+  - smart climate automation;
+  - stored user-profile seat-heat writes.
 
 Still open inside stage 1:
 
 - validate whether `HVAC_FAN_SPEED` should finally stay on the current zone choice or move to another confirmed HVAC area after more backend evidence;
-- normalize wheel-heat cycling the same way as seat levels instead of leaving a fixed mid-level command;
-- review other HVAC call sites outside `ClimateActivity`, especially `MainActivity` and `SmartClimateController`, so they stop bypassing the repaired mapping.
+- review remaining HVAC call sites outside the repaired set, especially `MainActivity`, so they stop bypassing the corrected support-aware mapping.
 
 ### Stage 2 Progress: BCM / Vehicle Body Started
 
