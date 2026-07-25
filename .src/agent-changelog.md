@@ -373,12 +373,31 @@ Implemented in this pass:
   - the previous implementation was pretending that `BCM_CUSTOM_KEY_360` was a valid proven route when it is not.
 - AVM/PAC preset composition was cleaned so it no longer appends the broken `BCM_CUSTOM_KEY_360` call to otherwise parking-related PAS actions.
 - confirmed APA scenario control remains on `CarSignalManagerAdapter` signal methods instead of being folded back into speculative `ICarFunction` writes.
+- `ParkingActivity` now uses the same confirmed EVS path as the rest of the app for visible `360` actions:
+  - hero `360`;
+  - primary parking `Открыть 360`;
+  - assist shortcut `Top View`;
+  - advanced parking `Открыть 360-панораму`;
+  - bottom dock `360`.
+- parking write actions no longer go straight to `CarCommandBus`:
+  - direct PAS / RCTA / PDC writes are now preflighted through `EcarxVehicleAdapter.support(...)`;
+  - unsupported parking properties fail early with an explicit `Функция недоступна...` message instead of pretending the command path is valid.
+- advanced PAS / AVM controls were reframed as `support-gated + diagnostics-first`:
+  - raw AVM open/close presets that mixed PAC and speculative AVM activation were removed;
+  - EVS open is now the only promoted AVM entrypoint in the parking screen;
+  - PAC-only presets remain as cautious secondary actions when the backend really reports writable support.
+- parking status cards are no longer static filler:
+  - `AVM / PAC` now reads live PAC status / view state plus the EVS-entry note;
+  - `APA / RPA` now reads live `CarSignalManager` APA display/state signals;
+  - `PDC / Radar` now reads live ADAS PDC + PAS radar mode state;
+  - `RCTA / SAP` now reads live RCTA activation/warning state.
+- parking diagnostics are now more compact and backend-oriented, combining support and readback for each function instead of dumping the same two-line pattern repeatedly.
 
 Still open inside stage 4:
 
 - confirm whether `Auto Park UI` through `BCM custom key 0x65` is actually effective on this firmware or should also be downgraded to diagnostics-only;
-- decide which PAS / AVM commands are truly writable and which are just state/report properties;
-- trace the real 360 / AVM entry backend before re-enabling any user-facing 360 launch button.
+- decide which remaining PAS / AVM commands are truly writable and which are just state/report properties;
+- confirm on-device whether PAC-only direct writes are worth keeping visible or should also be demoted behind diagnostics once more logs are collected.
 
 ### Stage 5 Progress: 360 / AVM Entrypoint Started
 
@@ -400,5 +419,4 @@ Implemented in this pass:
 Still open inside stage 5:
 
 - review every remaining textual or automation entrypoint that may still mention `BCM_CUSTOM_KEY_360`, especially legacy notes/examples and any background automation not yet wired through `EcarxDvrAdapter`;
-- decide whether `ParkingActivity` should re-enable a visible 360 button now that EVS is the preferred backend, or keep parking conservative until AVM lifecycle behavior is confirmed on-device;
 - verify whether EVS `openEvs(EVS_CAMERA_AVM)` should also be paired with an explicit close/lifecycle hook in some flows to avoid sticky camera sessions on this firmware.
