@@ -765,7 +765,7 @@ public class VoiceActivity extends Activity {
             return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_TRUNK);
         }
         if (has(cmd, "360") || has(cmd, "камера")) {
-            return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_360);
+            return openAvmCamera();
         }
         if (has(cmd, "dvr") || has(cmd, "регистратор")) {
             return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_DVR);
@@ -852,6 +852,11 @@ public class VoiceActivity extends Activity {
         if (has(cmd, "steering feel")) return parseCustomSteering(cmd);
         if (has(cmd, "drive climate")) return parseCustomClimate(cmd);
         return null;
+    }
+
+    private EcarxVehicleAdapter.Result openAvmCamera() {
+        EcarxDvrAdapter.Result result = new EcarxDvrAdapter(this).openEvs(EcarxDvrAdapter.EVS_CAMERA_AVM);
+        return EcarxVehicleAdapter.Result.external("AVM 360 via EVS: " + result.message, result.success, true);
     }
 
     private EcarxVehicleAdapter.Result parseCustomPropulsion(String cmd) {
