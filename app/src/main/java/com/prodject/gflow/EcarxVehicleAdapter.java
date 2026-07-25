@@ -107,6 +107,7 @@ final class EcarxVehicleAdapter {
     static final int HVAC_IONIZER_CLS_WIN_POPUP = 0x10141500;
     static final int HVAC_AQS_STATUS = 0x10141600;
     static final int HVAC_FAN_SPEED_BLOWER = 0x10141700;
+    static final int HVAC_SEAT_LEVEL_OFF = 0x0;
 
     static final int FAN_SPEED_1 = 0x10020101;
     static final int FAN_SPEED_2 = 0x10020102;
@@ -705,57 +706,109 @@ final class EcarxVehicleAdapter {
     }
 
     Result set(int functionId, int zone, int value) {
-
         Log.i(TAG, "setFunctionValue id=" + hex(functionId)
-        + " value=" + hex(value)
-        + " uiZone=" + zone);
+                + " zone=" + hex(zone)
+                + " value=" + hex(value));
 
         try {
             Object fn = function();
-            Method method = fn.getClass().getMethod(
-                    "setFunctionValue",
-                    int.class,
-                    int.class
-            );
 
-            Object result = method.invoke(fn, functionId, value);
-            boolean success = Boolean.TRUE.equals(result);
+            try {
+                Method method = fn.getClass().getMethod(
+                        "setFunctionValue",
+                        int.class,
+                        int.class,
+                        int.class
+                );
 
-            Log.i(TAG, "setFunctionValue result=" + result);
-            
-            return Result.ok(
-                    functionId,
-                    zone,
-                    value,
-                    success,
-                    "AdaptAPI setFunctionValue(function, value)"
-            );
+                Object result = method.invoke(fn, functionId, zone, value);
+                boolean success = Boolean.TRUE.equals(result);
+
+                Log.i(TAG, "setFunctionValue(function, zone, value)"
+                        + " result=" + result);
+
+                return Result.ok(
+                        functionId,
+                        zone,
+                        value,
+                        success,
+                        "AdaptAPI setFunctionValue(function, zone, value)"
+                );
+            } catch (NoSuchMethodException e) {
+                Log.w(TAG, "Zoned setFunctionValue unavailable, using fallback");
+
+                Method method = fn.getClass().getMethod(
+                        "setFunctionValue",
+                        int.class,
+                        int.class
+                );
+
+                Object result = method.invoke(fn, functionId, value);
+                boolean success = Boolean.TRUE.equals(result);
+
+                Log.i(TAG, "setFunctionValue(function, value)"
+                        + " result=" + result);
+
+                return Result.ok(
+                        functionId,
+                        zone,
+                        value,
+                        success,
+                        "AdaptAPI setFunctionValue(function, value) fallback"
+                );
+            }
         } catch (Exception e) {
-            Log.e(TAG, "setFunctionValue failed id=" + hex(functionId), e);
+            Log.e(TAG, "setFunctionValue failed"
+                    + " id=" + hex(functionId)
+                    + " zone=" + hex(zone)
+                    + " value=" + hex(value), e);
+
             return Result.error(functionId, zone, value, e);
         }
-        
     }
 
     Result get(int functionId, int zone) {
         Log.i(TAG, "getFunctionValue id=" + hex(functionId)
-                + " uiZone=" + zone);
+                + " zone=" + hex(zone));
 
         try {
             Object fn = function();
-            Method method = fn.getClass().getMethod(
-                    "getFunctionValue",
-                    int.class
-            );
 
-            Object result = method.invoke(fn, functionId);
-            int value = ((Number) result).intValue();
+            try {
+                Method method = fn.getClass().getMethod(
+                        "getFunctionValue",
+                        int.class,
+                        int.class
+                );
 
-            Log.i(TAG, "getFunctionValue result=" + hex(value));
+                Object result = method.invoke(fn, functionId, zone);
+                int value = ((Number) result).intValue();
 
-            return Result.value(functionId, zone, value);
+                Log.i(TAG, "getFunctionValue(function, zone)"
+                        + " result=" + hex(value));
+
+                return Result.value(functionId, zone, value);
+            } catch (NoSuchMethodException e) {
+                Log.w(TAG, "Zoned getFunctionValue unavailable, using fallback");
+
+                Method method = fn.getClass().getMethod(
+                        "getFunctionValue",
+                        int.class
+                );
+
+                Object result = method.invoke(fn, functionId);
+                int value = ((Number) result).intValue();
+
+                Log.i(TAG, "getFunctionValue(function)"
+                        + " result=" + hex(value));
+
+                return Result.value(functionId, zone, value);
+            }
         } catch (Exception e) {
-            Log.e(TAG, "getFunctionValue failed id=" + hex(functionId), e);
+            Log.e(TAG, "getFunctionValue failed"
+                    + " id=" + hex(functionId)
+                    + " zone=" + hex(zone), e);
+
             return Result.error(functionId, zone, 0, e);
         }
     }
@@ -784,26 +837,52 @@ final class EcarxVehicleAdapter {
 
     Result support(int functionId, int zone) {
         Log.i(TAG, "isFunctionSupported id=" + hex(functionId)
-                + " uiZone=" + zone);
+                + " zone=" + hex(zone));
 
         try {
             Object fn = function();
-            Method method = fn.getClass().getMethod(
-                    "isFunctionSupported",
-                    int.class
-            );
 
-            Object status = method.invoke(fn, functionId);
+            try {
+                Method method = fn.getClass().getMethod(
+                        "isFunctionSupported",
+                        int.class,
+                        int.class
+                );
 
-            Log.i(TAG, "isFunctionSupported result=" + status);
+                Object status = method.invoke(fn, functionId, zone);
 
-            return Result.status(
-                    functionId,
-                    zone,
-                    "isFunctionSupported(function) -> " + status
-            );
+                Log.i(TAG, "isFunctionSupported(function, zone)"
+                        + " result=" + status);
+
+                return Result.status(
+                        functionId,
+                        zone,
+                        "isFunctionSupported(function, zone) -> " + status
+                );
+            } catch (NoSuchMethodException e) {
+                Log.w(TAG, "Zoned isFunctionSupported unavailable, using fallback");
+
+                Method method = fn.getClass().getMethod(
+                        "isFunctionSupported",
+                        int.class
+                );
+
+                Object status = method.invoke(fn, functionId);
+
+                Log.i(TAG, "isFunctionSupported(function)"
+                        + " result=" + status);
+
+                return Result.status(
+                        functionId,
+                        zone,
+                        "isFunctionSupported(function) -> " + status
+                );
+            }
         } catch (Exception e) {
-            Log.e(TAG, "isFunctionSupported failed id=" + hex(functionId), e);
+            Log.e(TAG, "isFunctionSupported failed"
+                    + " id=" + hex(functionId)
+                    + " zone=" + hex(zone), e);
+
             return Result.error(functionId, zone, 0, e);
         }
     }
@@ -843,6 +922,78 @@ final class EcarxVehicleAdapter {
 
     private static int defaultZone(int functionId) {
         switch (functionId) {
+            case HVAC_POWER:
+            case HVAC_AUTO:
+            case HVAC_AC:
+            case HVAC_AC_MAX:
+            case HVAC_CIRCULATION:
+            case HVAC_BLOWING_MODE:
+            case HVAC_AUTO_BLOWING_MODE:
+            case HVAC_DEFROST_FRONT:
+            case HVAC_DEFROST_FRONT_MAX:
+            case HVAC_DEFROST_REAR:
+            case HVAC_CLIMATE_ZONE:
+            case HVAC_AUTO_FAN_SETTING:
+            case HVAC_CIRCULATION_TIMER:
+            case HVAC_CIRCULATION_LONG_TOUCH:
+            case HVAC_AUTO_DEFROST_REAR:
+            case HVAC_AUTO_DEFROST_FRONT:
+            case HVAC_AUTO_DEFROST_REQUEST:
+            case HVAC_AUTO_DEFROST_CONFIRM:
+            case HVAC_TEMP_DUAL:
+            case HVAC_TEMP_UNIT:
+            case HVAC_TEMP_HARD_KEY:
+            case HVAC_SWEEPING_MODE:
+            case HVAC_DIRECTION_MODE:
+            case HVAC_SWEEPING_HORIZONTAL_POS:
+            case HVAC_SWEEPING_VERTICAL_POS:
+            case HVAC_BLOWING_TEMP_COLOR:
+            case HVAC_ECO:
+            case HVAC_AQS_SWITCH:
+            case HVAC_AUTO_DEHUMIDIFICATION:
+            case HVAC_OVERHEAT_PROTECTION:
+            case HVAC_IONS_SWITCH:
+            case HVAC_STEERING_WHEEL_HEAT:
+            case HVAC_AUTO_STEERING_WHEEL_HEAT:
+            case HVAC_AUTO_STEERING_WHEEL_HEAT_TIME:
+            case HVAC_AUTO_STEERING_WHEEL_HEAT_SWITCH:
+            case HVAC_PRE_CLIMATISATION:
+            case HVAC_POST_CLIMATISATION:
+            case HVAC_AI_POWER:
+            case HVAC_AIR_FRAGRANCE:
+            case HVAC_AIR_FRAGRANCE_TYPE:
+            case HVAC_AIR_FRAGRANCE_LEVEL:
+            case HVAC_AIR_FRAGRANCE_RATIO:
+            case HVAC_AUTO_ION_REQUEST:
+            case HVAC_AUTO_ION_CONFIRM:
+            case HVAC_AUTO_DEHUMIDIFICATION_REQUEST:
+            case HVAC_AUTO_DEHUMIDIFICATION_CONFIRM:
+            case HVAC_CO2_SWITCH:
+            case HVAC_AUTO_CLOSE_WINDOW_REMIND:
+            case HVAC_AUTO_SECOND_ROW_CLIMATE:
+            case HVAC_CLIMATE_LOCK:
+            case HVAC_DISPLAY_WINDOW_TAB:
+            case HVAC_G_CLEAN:
+            case HVAC_AUTOMATIC_VENTILATION_DRY:
+            case HVAC_AUTO_CZIS:
+            case HVAC_VENTILATION_ONTIME:
+            case HVAC_CLIMATE_HARDKEY_SOUND:
+            case HVAC_INTELLIGENT_RECOMMENDATION:
+            case HVAC_TEMP_OPTIMIZE:
+            case HVAC_MODULE_CONNECT_STATUS:
+            case HVAC_ELECTRICAL_AIR_VENT:
+            case HVAC_HARDKEY:
+            case HVAC_FILTER_ELEMENT_LIFE:
+            case HVAC_RESET_FILTER_ELEMENT_LIFE:
+            case HVAC_RAPID_COOLING:
+            case HVAC_RAPID_WARMING:
+            case HVAC_IONIZER_CLS_WIN_POPUP_SETTING:
+            case HVAC_IONIZER_CLS_WIN_POPUP:
+            case HVAC_AQS_STATUS:
+                return ZONE_ALL;
+            case HVAC_FAN_SPEED:
+            case HVAC_FAN_SPEED_BLOWER:
+                return ZONE_ROW_1_ALL;
             case HVAC_SEAT_HEATING:
             case HVAC_SEAT_VENTILATION:
             case HVAC_SEAT_MASSAGE:
@@ -899,49 +1050,57 @@ final class EcarxVehicleAdapter {
         final int zone;
         final int value;
         final boolean success;
+        final boolean supported;
         final String message;
 
-        private Result(int functionId, int zone, int value, boolean success, String message) {
+        private Result(int functionId, int zone, int value, boolean success, boolean supported, String message) {
             this.functionId = functionId;
             this.zone = zone;
             this.value = value;
             this.success = success;
+            this.supported = supported;
             this.message = message;
         }
 
         static Result ok(int functionId, int zone, int value, boolean apiResult, String path) {
-            return new Result(functionId, zone, value, apiResult,
+            return new Result(functionId, zone, value, apiResult, apiResult,
                     path + " -> " + apiResult + " " + hex(functionId) + "/" + zone + "=" + hex(value));
         }
 
         static Result value(int functionId, int zone, int value) {
-            return new Result(functionId, zone, value, true,
+            return new Result(functionId, zone, value, true, value != 0xff,
                     String.format(Locale.US, "getFunctionValue %s/%d = %s", hex(functionId), zone, hex(value)));
         }
 
         static Result status(int functionId, int zone, String status) {
-            return new Result(functionId, zone, 0, true,
+            String normalized = status == null ? "" : status.toLowerCase(Locale.US);
+            boolean supported = !(normalized.contains("notavailable") || normalized.contains("unsupported") || normalized.contains("false"));
+            return new Result(functionId, zone, 0, true, supported,
                     String.format(Locale.US, "%s/%d %s", hex(functionId), zone, status));
         }
 
         static Result floatValue(int functionId, int zone, float value, boolean apiResult, String path) {
-            return new Result(functionId, zone, 0, apiResult,
+            return new Result(functionId, zone, 0, apiResult, apiResult,
                     String.format(Locale.US, "%s -> %s %s/%d=%.1f", path, apiResult, hex(functionId), zone, value));
         }
 
         static Result floatStatus(int functionId, int zone, float value) {
-            return new Result(functionId, zone, 0, true,
+            return new Result(functionId, zone, 0, true, true,
                     String.format(Locale.US, "getCustomizeFunctionValue %s/%d = %.1f", hex(functionId), zone, value));
         }
 
         static Result error(int functionId, int zone, int value, Exception e) {
-            return new Result(functionId, zone, value, false,
+            return new Result(functionId, zone, value, false, false,
                     "Ошибка AdaptAPI " + hex(functionId) + "/" + zone + "=" + hex(value) + ": " + compact(e));
         }
 
         static Result floatError(int functionId, int zone, float value, Exception e) {
-            return new Result(functionId, zone, 0, false,
+            return new Result(functionId, zone, 0, false, false,
                     String.format(Locale.US, "Ошибка AdaptAPI %s/%d=%.1f: %s", hex(functionId), zone, value, compact(e)));
+        }
+
+        boolean isSupported() {
+            return supported;
         }
     }
 

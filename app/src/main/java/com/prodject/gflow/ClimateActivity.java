@@ -297,7 +297,7 @@ public class ClimateActivity extends Activity {
             @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 fanLabel.setText("Вентилятор: " + (progress + 1));
                 if (fromUser) {
-                    command(EcarxVehicleAdapter.HVAC_FAN_SPEED, progress + 1);
+                    command(EcarxVehicleAdapter.HVAC_FAN_SPEED, fanSpeedValue(progress + 1));
                     animatePulse(flow);
                 }
             }
@@ -320,8 +320,8 @@ public class ClimateActivity extends Activity {
 
         LinearLayout seats = Ui.row(this);
         seats.setWeightSum(4f);
-        addClimateActionChip(seats, "Подогрев сид.", () -> command(EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_LEVEL_2));
-        addClimateActionChip(seats, "Вентиляция", () -> command(EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_LEVEL_2));
+        addClimateActionChip(seats, "Подогрев сид.", () -> cycleSeatClimate(EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.ZONE_DRIVER_LEFT));
+        addClimateActionChip(seats, "Вентиляция", () -> cycleSeatClimate(EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, EcarxVehicleAdapter.ZONE_DRIVER_LEFT));
         addClimateActionChip(seats, "Руль", () -> command(EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT, EcarxVehicleAdapter.WHEEL_HEAT_MID));
         addClimateActionChip(seats, "Обдув стекла", this::showDefrostSheet);
         panel.addView(seats, lpMatchWrap(0, 16, 0, 0));
@@ -331,14 +331,14 @@ public class ClimateActivity extends Activity {
         addClimateActionChip(presets, "Тихий", () -> applyClimatePreset(
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_ON),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_AUTO, EcarxVehicleAdapter.COMMON_ON),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_1)));
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_FAN_SPEED, fanSpeedValue(1))));
         addClimateActionChip(presets, "Комфорт", () -> applyClimatePreset(
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_ON),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_AUTO, EcarxVehicleAdapter.COMMON_ON),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_3)));
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_FAN_SPEED, fanSpeedValue(3))));
         addClimateActionChip(presets, "Прогрев", () -> applyClimatePreset(
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_ON),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_5),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_FAN_SPEED, fanSpeedValue(5)),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_LEG_AND_FRONT_WINDOW)));
         panel.addView(presets, lpMatchWrap(0, 12, 0, 0));
         return panel;
@@ -841,15 +841,15 @@ public class ClimateActivity extends Activity {
     }
 
     private void command(int functionId, int value) {
-        new EcarxVehicleAdapter(this).set(functionId, value);
+        EcarxVehicleAdapter.Result result = new EcarxVehicleAdapter(this).set(functionId, value);
         refreshState();
-        Ui.toast(this, "HVAC updated");
+        Ui.toast(this, result.success ? "HVAC updated" : "Команда не выполнена");
     }
 
     private void command(int functionId, int zone, int value) {
-        new EcarxVehicleAdapter(this).set(functionId, zone, value);
+        EcarxVehicleAdapter.Result result = new EcarxVehicleAdapter(this).set(functionId, zone, value);
         refreshState();
-        Ui.toast(this, "HVAC updated");
+        Ui.toast(this, result.success ? "HVAC updated" : "Команда не выполнена");
     }
 
     private void applyClimatePreset(EcarxVehicleAdapter.Command... commands) {
@@ -885,11 +885,12 @@ public class ClimateActivity extends Activity {
     private String simpleState(int functionId, String fallback) {
         EcarxVehicleAdapter.Result result = new EcarxVehicleAdapter(this).get(functionId);
         if (result == null || result.message == null || result.message.trim().isEmpty()) return fallback;
+        if (!result.isSupported()) return fallback;
         return compact(result.message);
     }
 
     private String floatState(int functionId, int zone) {
-        EcarxVehicleAdapter.Result result = new EcarxVehicleAdapter(this).get(functionId, zone);
+        EcarxVehicleAdapter.Result result = new EcarxVehicleAdapter(this).getFloat(functionId, zone);
         if (result == null || result.message == null || result.message.trim().isEmpty()) return "--";
         return compact(result.message);
     }
@@ -903,7 +904,7 @@ public class ClimateActivity extends Activity {
     }
 
     private String floatReadback(int functionId, int zone) {
-        return compact(new EcarxVehicleAdapter(this).support(functionId).message) + "\n" + compact(new EcarxVehicleAdapter(this).get(functionId, zone).message);
+        return compact(new EcarxVehicleAdapter(this).support(functionId, zone).message) + "\n" + compact(new EcarxVehicleAdapter(this).getFloat(functionId, zone).message);
     }
 
     private String readback(String... lines) {
@@ -928,7 +929,31 @@ public class ClimateActivity extends Activity {
     private String compact(String message) {
         if (message == null) return "--";
         String line = message.replace('\n', ' ').trim();
+        line = line.replace("getCustomizeFunctionValue", "").replace("getFunctionValue", "").trim();
+        int eq = line.indexOf('=');
+        if (eq >= 0 && eq + 1 < line.length()) line = line.substring(eq + 1).trim();
         return line.length() > 72 ? line.substring(0, 72) : line;
+    }
+
+    private int fanSpeedValue(int level) {
+        int normalized = Math.max(0, Math.min(9, level));
+        if (normalized == 0) return EcarxVehicleAdapter.COMMON_OFF;
+        return EcarxVehicleAdapter.HVAC_FAN_SPEED + normalized;
+    }
+
+    private void cycleSeatClimate(int functionId, int zone) {
+        EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
+        EcarxVehicleAdapter.Result current = adapter.get(functionId, zone);
+        int next = nextSeatClimateLevel(current == null ? 0 : current.value);
+        EcarxVehicleAdapter.Result result = adapter.set(functionId, zone, next);
+        refreshState();
+        Ui.toast(this, result.success ? "HVAC updated" : "Команда не выполнена");
+    }
+
+    private int nextSeatClimateLevel(int current) {
+        if (current <= 0 || current == 0xff) return EcarxVehicleAdapter.HVAC_SEAT_LEVEL_OFF + 1;
+        int next = current + 1;
+        return next > 3 ? EcarxVehicleAdapter.HVAC_SEAT_LEVEL_OFF : next;
     }
 
     private void updateHeroControls() {
