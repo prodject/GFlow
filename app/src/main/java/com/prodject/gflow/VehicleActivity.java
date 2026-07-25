@@ -484,7 +484,7 @@ public class VehicleActivity extends Activity {
     private GridLayout buildStatusGrid() {
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(2);
-        addStatusCard(grid, "Кузов", readback(EcarxVehicleAdapter.BCM_DOOR, EcarxVehicleAdapter.BCM_DOOR_LOCK, EcarxVehicleAdapter.BCM_WINDOW), Ui.SUCCESS);
+        addStatusCard(grid, "Кузов", bodyReadback(), Ui.SUCCESS);
         addStatusCard(grid, "Свет", readback(EcarxVehicleAdapter.BCM_LIGHT_DIPPED_BEAM, EcarxVehicleAdapter.BCM_LIGHT_HAZARD, EcarxVehicleAdapter.BCM_LIGHT_GRILLE), Ui.CYAN);
         addStatusCard(grid, "Drive / Сиденья", readback(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_STEERING_MODE, EcarxVehicleAdapter.SEAT_POSITION_SET), Ui.WARNING);
         addStatusCard(grid, "Люк / Зеркала", readback(EcarxVehicleAdapter.BCM_SUNROOF_OPEN, EcarxVehicleAdapter.BCM_SUNCURT_OPEN, EcarxVehicleAdapter.BCM_MIRROR_FOLD), Color.rgb(129, 149, 255));
@@ -695,10 +695,10 @@ public class VehicleActivity extends Activity {
     }
 
     private void refreshState() {
-        if (topDoorsValue != null) topDoorsValue.setText(compact(new EcarxVehicleAdapter(this).get(EcarxVehicleAdapter.BCM_DOOR).message));
-        if (topWindowsValue != null) topWindowsValue.setText(compact(new EcarxVehicleAdapter(this).get(EcarxVehicleAdapter.BCM_WINDOW).message));
+        if (topDoorsValue != null) topDoorsValue.setText(bodyDoorSummary());
+        if (topWindowsValue != null) topWindowsValue.setText(bodyWindowSummary());
         if (topDriveValue != null) topDriveValue.setText(compact(new EcarxVehicleAdapter(this).get(EcarxVehicleAdapter.DRIVE_MODE_SELECT).message));
-        if (heroStatusValue != null) heroStatusValue.setText("Статус кузова: " + compact(new EcarxVehicleAdapter(this).get(EcarxVehicleAdapter.BCM_DOOR_STATUS).message));
+        if (heroStatusValue != null) heroStatusValue.setText("Статус кузова: " + bodyStatusSummary());
         if (heroLocksValue != null) heroLocksValue.setText("Замки: " + compact(new EcarxVehicleAdapter(this).get(EcarxVehicleAdapter.BCM_DOOR_LOCK).message));
         if (heroRoofValue != null) heroRoofValue.setText("Люк: " + compact(new EcarxVehicleAdapter(this).get(EcarxVehicleAdapter.BCM_SUNROOF_OPEN).message));
         if (heroLightsValue != null) heroLightsValue.setText("Свет: " + compact(new EcarxVehicleAdapter(this).get(EcarxVehicleAdapter.BCM_LIGHT_DIPPED_BEAM).message));
@@ -717,7 +717,45 @@ public class VehicleActivity extends Activity {
     private String compact(String message) {
         if (message == null || message.trim().isEmpty()) return "--";
         String line = message.replace('\n', ' ').trim();
+        line = line.replace("getFunctionValue", "").trim();
+        int eq = line.indexOf('=');
+        if (eq >= 0 && eq + 1 < line.length()) line = line.substring(eq + 1).trim();
         return line.length() > 84 ? line.substring(0, 84) : line;
+    }
+
+    private String bodyReadback() {
+        EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
+        StringBuilder sb = new StringBuilder();
+        sb.append("DOOR_STATUS ").append(rawStatus(adapter.get(EcarxVehicleAdapter.BCM_DOOR_STATUS))).append("\n");
+        sb.append("DOOR_LOCK ").append(compact(adapter.get(EcarxVehicleAdapter.BCM_DOOR_LOCK).message)).append("\n");
+        sb.append("WINDOW ").append(compact(adapter.get(EcarxVehicleAdapter.BCM_WINDOW).message));
+        return sb.toString();
+    }
+
+    private String bodyDoorSummary() {
+        return rawStatus(new EcarxVehicleAdapter(this).get(EcarxVehicleAdapter.BCM_DOOR_STATUS));
+    }
+
+    private String bodyWindowSummary() {
+        EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
+        String moving = compact(adapter.get(EcarxVehicleAdapter.BCM_WINDOW_MOVING_STATE).message);
+        String base = compact(adapter.get(EcarxVehicleAdapter.BCM_WINDOW).message);
+        return "cmd " + base + " · mov " + moving;
+    }
+
+    private String bodyStatusSummary() {
+        EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
+        return rawStatus(adapter.get(EcarxVehicleAdapter.BCM_DOOR_STATUS))
+                + " · lock " + compact(adapter.get(EcarxVehicleAdapter.BCM_DOOR_LOCK).message);
+    }
+
+    private String rawStatus(EcarxVehicleAdapter.Result result) {
+        if (result == null) return "--";
+        return binary32(result.value);
+    }
+
+    private String binary32(int value) {
+        return String.format(Locale.US, "0x%08x bits=%32s", value, Integer.toBinaryString(value)).replace(' ', '0');
     }
 
     private LinearLayout.LayoutParams lpMatchWrap(int l, int t, int r, int b) {

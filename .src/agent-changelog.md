@@ -287,3 +287,23 @@ Still open inside stage 1:
 - validate whether `HVAC_FAN_SPEED` should finally stay on the current zone choice or move to another confirmed HVAC area after more backend evidence;
 - normalize wheel-heat cycling the same way as seat levels instead of leaving a fixed mid-level command;
 - review other HVAC call sites outside `ClimateActivity`, especially `MainActivity` and `SmartClimateController`, so they stop bypassing the repaired mapping.
+
+### Stage 2 Progress: BCM / Vehicle Body Started
+
+Next repair work moved into:
+
+- [VehicleActivity.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/VehicleActivity.java)
+- [EcarxVehicleAdapter.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/EcarxVehicleAdapter.java)
+
+Implemented in this pass:
+
+- `BCM_DOOR_STATUS` is no longer treated as a normal unsupported boolean when it returns `0xff`; for this function the raw value is now preserved as a known body-status readback.
+- `VehicleActivity` top stats and hero summary no longer frame body status as a simple on/off field.
+- body readback now surfaces `BCM_DOOR_STATUS` as raw `0x........ bits=...` output so ambiguous BCM state is visible without being mislabeled as API failure.
+- window and lock summaries were separated from raw body status so working BCM commands remain visible even when one status property looks unusual.
+
+Still open inside stage 2:
+
+- review whether `BCM_WINDOW_POS`, `BCM_WINDOW_CURRENT_POS`, and `BCM_DOOR_POS` should move to float/custom readback paths in the generic adapter instead of remaining activity-local diagnostics;
+- inspect voice and other entry points that still assume generic BCM readback semantics;
+- add clearer per-zone body diagnostics once the useful OEM zone mapping is narrowed down from logs.
