@@ -307,3 +307,25 @@ Still open inside stage 2:
 - review whether `BCM_WINDOW_POS`, `BCM_WINDOW_CURRENT_POS`, and `BCM_DOOR_POS` should move to float/custom readback paths in the generic adapter instead of remaining activity-local diagnostics;
 - inspect voice and other entry points that still assume generic BCM readback semantics;
 - add clearer per-zone body diagnostics once the useful OEM zone mapping is narrowed down from logs.
+
+### Stage 3 Progress: ADAS Gating Started
+
+ADAS command-path cleanup moved into:
+
+- [AdasActivity.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/AdasActivity.java)
+
+Implemented in this pass:
+
+- ADAS commands no longer go directly to `CarCommandBus` without a preflight check.
+- before sending a command, `AdasActivity` now asks `EcarxVehicleAdapter.support(functionId)` and stops when the function is not supported on this vehicle.
+- a first explicit readback/status-only blacklist was added for ADAS IDs that should not be treated as writable controls from this screen.
+- user feedback now distinguishes between:
+  - unsupported AdaptAPI functions on this car;
+  - readback/status IDs that should not be written at all;
+  - genuine command-send failures.
+
+Still open inside stage 3:
+
+- move from a local blacklist toward a fuller per-function registry with `writable/backend/value-kind` metadata;
+- review parking-adjacent ADAS items like `PDC` so their control path stays aligned with the later parking/APA split;
+- revisit `Max cruising speed` and other selector-style controls to confirm that their value payloads match the real backend contract on this firmware.
