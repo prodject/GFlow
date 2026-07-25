@@ -485,6 +485,18 @@ public class AdasActivity extends Activity {
     }
 
     private void sendVehicle(String label, int functionId, int value) {
+        if (!isWritableAdasFunction(functionId)) {
+            rememberCommand(label, functionId, value, false);
+            Ui.toast(this, "Это readback/status, а не управляющая команда");
+            return;
+        }
+        EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
+        EcarxVehicleAdapter.Result support = adapter.support(functionId);
+        if (support == null || !support.isSupported()) {
+            rememberCommand(label, functionId, value, false);
+            Ui.toast(this, "Функция недоступна в AdaptAPI этого автомобиля");
+            return;
+        }
         EcarxVehicleAdapter.Result result = CarCommandBus.sendVehicle(this, functionId, value);
         rememberCommand(label, functionId, value, result.success);
         Ui.toast(this, result.success ? "Команда отправлена" : "Команда не выполнена");
@@ -494,6 +506,30 @@ public class AdasActivity extends Activity {
         lastCommandLabel = label + (success ? " · ok" : " · error");
         lastCommandRaw = "0x" + Integer.toHexString(functionId) + " = 0x" + Integer.toHexString(value);
         refreshHeaderState();
+    }
+
+    private boolean isWritableAdasFunction(int functionId) {
+        switch (functionId) {
+            case EcarxVehicleAdapter.ADAS_APB_MODE:
+            case EcarxVehicleAdapter.ADAS_SPEED_LIMIT_WARNING_MODE:
+            case EcarxVehicleAdapter.ADAS_DRIVE_PILOT_STATUS:
+            case EcarxVehicleAdapter.ADAS_DRIVE_NZP_STATUS:
+            case EcarxVehicleAdapter.ADAS_DRIVE_PILOT_ALARM_INFO:
+            case EcarxVehicleAdapter.ADAS_DRIVE_PILOT_ALARM_INFO_CANCEL:
+            case EcarxVehicleAdapter.ADAS_TRAFFIC_SIGN_INFORMATION_FAILURE:
+            case EcarxVehicleAdapter.ADAS_LANE_KEEPING_ASSISTANCE_FAILURE:
+            case EcarxVehicleAdapter.ADAS_EMERGENCY_LANE_OCCUPANCY_FAILURE:
+            case EcarxVehicleAdapter.ADAS_EMERGENCY_STEERING_FAILURE:
+            case EcarxVehicleAdapter.ADAS_FORWARD_PRECOLLISION_FAULT:
+            case EcarxVehicleAdapter.ADAS_FRONT_SIDE_ASSIST_FAILURE:
+            case EcarxVehicleAdapter.ADAS_ADAPTIVE_CRUISE_FAILURE:
+            case EcarxVehicleAdapter.ADAS_REAR_COLLISION_WARNING_FAILURE:
+            case EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHTS_IDENTIFY_FAULTS:
+            case EcarxVehicleAdapter.ADAS_DRIVER_FATIGUE_FAILURE:
+                return false;
+            default:
+                return true;
+        }
     }
 
     private void refreshHeaderState() {
