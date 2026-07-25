@@ -23,6 +23,13 @@ final class EcarxVehicleAdapter {
     static final int ZONE_ROW_3_CENTER = 0x200;
     static final int ZONE_ROW_3_RIGHT = 0x400;
     static final int ZONE_ROW_3_ALL = 0x800;
+    static final int BCM_WINDOW_ROW_1_LEFT = 0x10;
+    static final int BCM_WINDOW_ROW_1_RIGHT = 0x20;
+    static final int BCM_WINDOW_ROW_1_ALL = 0x30;
+    static final int BCM_WINDOW_ROW_2_LEFT = 0x100;
+    static final int BCM_WINDOW_ROW_2_RIGHT = 0x200;
+    static final int BCM_WINDOW_ROW_2_ALL = 0x300;
+    static final int BCM_WINDOW_ALL = 0x330;
 
     static final int HVAC_POWER = 0x10010100;
     static final int HVAC_AUTO = 0x10010200;
@@ -1022,6 +1029,7 @@ final class EcarxVehicleAdapter {
             case BCM_WINDOW_POS:
             case BCM_WINDOW_CURRENT_POS:
             case BCM_WINDOW_MOVING_STATE:
+                return BCM_WINDOW_ALL;
             case BCM_DOOR:
             case BCM_DOOR_CONTROL:
             case BCM_DOOR_LOCK:

@@ -732,10 +732,10 @@ public class VoiceActivity extends Activity {
             return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HVAC_CLIMATE_ZONE, EcarxVehicleAdapter.CLIMATE_ZONE_SINGLE);
         }
         if (has(cmd, "окн") && (has(cmd, "откр") || has(cmd, "open"))) {
-            return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_WINDOW, zoneFromCommand(cmd, EcarxVehicleAdapter.ZONE_ALL), EcarxVehicleAdapter.WINDOW_OPEN);
+            return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_WINDOW, windowZoneFromCommand(cmd), EcarxVehicleAdapter.WINDOW_OPEN);
         }
         if (has(cmd, "окн") && (has(cmd, "закр") || has(cmd, "close"))) {
-            return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_WINDOW, zoneFromCommand(cmd, EcarxVehicleAdapter.ZONE_ALL), EcarxVehicleAdapter.WINDOW_CLOSE);
+            return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_WINDOW, windowZoneFromCommand(cmd), EcarxVehicleAdapter.WINDOW_CLOSE);
         }
         if (has(cmd, "двер") && (has(cmd, "откр") || has(cmd, "open"))) {
             return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_DOOR, zoneFromCommand(cmd, EcarxVehicleAdapter.ZONE_ALL), EcarxVehicleAdapter.DOOR_OPEN);
@@ -973,6 +973,16 @@ public class VoiceActivity extends Activity {
         if (has(cmd, "пассаж") || has(cmd, "прав") || has(cmd, "right")) return EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT;
         if (has(cmd, "водител") || has(cmd, "лев") || has(cmd, "left")) return EcarxVehicleAdapter.ZONE_DRIVER_LEFT;
         return fallback;
+    }
+
+    private int windowZoneFromCommand(String cmd) {
+        if (has(cmd, "все") || has(cmd, "all")) return EcarxVehicleAdapter.BCM_WINDOW_ALL;
+        if (has(cmd, "задн") && (has(cmd, "лев") || has(cmd, "left"))) return EcarxVehicleAdapter.BCM_WINDOW_ROW_2_LEFT;
+        if (has(cmd, "задн") && (has(cmd, "прав") || has(cmd, "right"))) return EcarxVehicleAdapter.BCM_WINDOW_ROW_2_RIGHT;
+        if (has(cmd, "задн")) return EcarxVehicleAdapter.BCM_WINDOW_ROW_2_ALL;
+        if (has(cmd, "пассаж") || has(cmd, "прав") || has(cmd, "right")) return EcarxVehicleAdapter.BCM_WINDOW_ROW_1_RIGHT;
+        if (has(cmd, "водител") || has(cmd, "лев") || has(cmd, "left")) return EcarxVehicleAdapter.BCM_WINDOW_ROW_1_LEFT;
+        return EcarxVehicleAdapter.BCM_WINDOW_ALL;
     }
 
     private boolean has(String cmd, String value) {

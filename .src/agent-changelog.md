@@ -310,11 +310,16 @@ Implemented in this pass:
 - `VehicleActivity` top stats and hero summary no longer frame body status as a simple on/off field.
 - body readback now surfaces `BCM_DOOR_STATUS` as raw `0x........ bits=...` output so ambiguous BCM state is visible without being mislabeled as API failure.
 - window and lock summaries were separated from raw body status so working BCM commands remain visible even when one status property looks unusual.
+- BCM window control is no longer treated like HVAC zoning:
+  - OEM `VehicleWindow` areas `0x10/0x20/0x100/0x200` were added explicitly;
+  - aggregated window areas `front=0x30`, `rear=0x300`, `all=0x330` are now available for BCM window commands;
+  - default `BCM_WINDOW*` calls no longer fall back to unsupported `ZONE_ALL`.
+- voice window commands now use BCM-specific window areas instead of reusing generic HVAC/seat zones, which previously made `all/left/right/rear` window actions hit the wrong backend area.
 
 Still open inside stage 2:
 
 - review whether `BCM_WINDOW_POS`, `BCM_WINDOW_CURRENT_POS`, and `BCM_DOOR_POS` should move to float/custom readback paths in the generic adapter instead of remaining activity-local diagnostics;
-- inspect voice and other entry points that still assume generic BCM readback semantics;
+- inspect remaining door/trunk/child-lock entry points that still assume generic BCM zone semantics;
 - add clearer per-zone body diagnostics once the useful OEM zone mapping is narrowed down from logs.
 
 ### Stage 3 Progress: ADAS Gating Started
