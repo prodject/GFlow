@@ -130,8 +130,8 @@ public class ParkingActivity extends Activity {
         hero.addView(row);
 
         LinearLayout quick = Ui.row(this);
-        addActionChip(quick, "Auto Park", () -> sendVehicle(EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_AUTO_PARK));
-        addActionChip(quick, "360", () -> sendVehicle(EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_360));
+        addActionChip(quick, "Auto Park", this::openAutoParkUi);
+        addActionChip(quick, "360", this::showAvmBackendPending);
         addActionChip(quick, "PDC", () -> sendVehicle(EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.COMMON_ON));
         addActionChip(quick, "Advanced", this::toggleAdvancedParking);
         hero.addView(quick, lpMatchWrap(0, 16, 0, 0));
@@ -159,8 +159,8 @@ public class ParkingActivity extends Activity {
 
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(3);
-        addTile(grid, "Открыть Auto Park", Ui.CYAN, () -> sendVehicle(EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_AUTO_PARK));
-        addTile(grid, "Открыть 360", Color.rgb(72, 153, 255), () -> sendVehicle(EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_360));
+        addTile(grid, "Открыть Auto Park", Ui.CYAN, this::openAutoParkUi);
+        addTile(grid, "Открыть 360", Color.rgb(72, 153, 255), this::showAvmBackendPending);
         addTile(grid, "PDC Вкл", Ui.SUCCESS, () -> sendVehicle(EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.COMMON_ON));
         addTile(grid, "PDC Выкл", Ui.ERROR, () -> sendVehicle(EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.COMMON_OFF));
         addTile(grid, "RCTA Вкл", Ui.WARNING, () -> sendVehicle(EcarxVehicleAdapter.PAS_RCTA_ACTIVATION, EcarxVehicleAdapter.COMMON_ON));
@@ -256,7 +256,7 @@ public class ParkingActivity extends Activity {
                 ? "Штатный вход в Auto Park, выбор сценария парковки, подтверждение, отмена и self-search доступны прямо в основном экране."
                 : "Штатный запуск Auto Park и выбор сценария доступны сразу. Дополнительные кнопки подтверждения, отмены и self-search открываются в Experimental."));
 
-        addCommand(panel, "Открыть штатный Auto Park", EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_AUTO_PARK);
+        addActionButton(panel, "Открыть штатный Auto Park", this::openAutoParkUi);
         addSignalDiagnostic(panel, "Статус APA",
                 "getDrvrAsscSysDisp", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_DISP,
                 "getDrvrAsscSysSts", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_STS,
@@ -309,8 +309,8 @@ public class ParkingActivity extends Activity {
         LinearLayout apa = Ui.glassCard(this);
         apa.addView(Ui.text(this, "APA / RPA", 18, true));
         apa.addView(Ui.muted(this, "Raw parking controls, remote parking и HAL readback. Основные APA-сценарии вынесены выше в отдельный блок."));
-        addCommand(apa, "Открыть штатный Auto Park UI", EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_AUTO_PARK);
-        addCommand(apa, "Открыть 360-панораму", EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_360);
+        addActionButton(apa, "Открыть штатный Auto Park UI", this::openAutoParkUi);
+        addActionButton(apa, "Открыть 360-панораму", this::showAvmBackendPending);
         addDiagnostic(apa, "Вход в parking через BCM", EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.ADAS_PDC_WARNING_VOLUME);
         if (experimentalFeaturesEnabled()) {
             addSignalDiagnostic(apa, "Статус APA/RPA",
@@ -375,8 +375,7 @@ public class ParkingActivity extends Activity {
                 EcarxVehicleAdapter.PAS_RCTA_RIGHT_WARNING);
         addPreset(avm, "Запустить AVM / PAC",
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.PAS_PAC_ACTIVATION, EcarxVehicleAdapter.COMMON_ON),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.PAS_AVM_OR_APA_ACTIVATION, EcarxVehicleAdapter.COMMON_ON),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_360));
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.PAS_AVM_OR_APA_ACTIVATION, EcarxVehicleAdapter.COMMON_ON));
         addPreset(avm, "Остановить AVM / PAC",
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.PAS_PAC_ACTIVATION, EcarxVehicleAdapter.COMMON_OFF),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.PAS_AVM_OR_APA_ACTIVATION, EcarxVehicleAdapter.COMMON_OFF));
@@ -457,8 +456,8 @@ public class ParkingActivity extends Activity {
         dock.setOrientation(LinearLayout.HORIZONTAL);
         dock.setGravity(Gravity.CENTER_VERTICAL);
         dock.setPadding(Ui.dp(this, 18), Ui.dp(this, 14), Ui.dp(this, 18), Ui.dp(this, 14));
-        addDockButton(dock, "Auto Park", () -> sendVehicle(EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_AUTO_PARK), true);
-        addDockButton(dock, "360", () -> sendVehicle(EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_360), false);
+        addDockButton(dock, "Auto Park", this::openAutoParkUi, true);
+        addDockButton(dock, "360", this::showAvmBackendPending, false);
         addDockButton(dock, "PDC", () -> sendVehicle(EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.COMMON_ON), false);
         addDockButton(dock, "RCTA", () -> sendVehicle(EcarxVehicleAdapter.PAS_RCTA_ACTIVATION, EcarxVehicleAdapter.COMMON_ON), false);
         addDockButton(dock, "EXP", this::scrollAdvancedIntoView, false);
@@ -574,6 +573,15 @@ public class ParkingActivity extends Activity {
         Ui.toast(this, result.success ? "Команда отправлена" : "Команда не выполнена");
     }
 
+    private void openAutoParkUi() {
+        EcarxVehicleAdapter.Result result = CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_AUTO_PARK);
+        Ui.toast(this, result.success ? "Команда отправлена" : "Команда не выполнена");
+    }
+
+    private void showAvmBackendPending() {
+        Ui.toast(this, "360 отключен: backend входа не подтвержден");
+    }
+
     private void sendSignalParkMode(int mode) {
         CarSignalManagerAdapter.Result result = new CarSignalManagerAdapter(this)
                 .set("setDrvrAsscSysParkMod", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_PARK_MOD, mode);
@@ -615,6 +623,12 @@ public class ParkingActivity extends Activity {
             Ui.toast(this, result.success ? "Команда отправлена" : "Команда не выполнена");
             root.addView(Ui.text(this, result.message, 13, false), Math.min(3, root.getChildCount()));
         });
+        root.addView(b, lpMatchWrap(0, 6, 0, 0));
+    }
+
+    private void addActionButton(LinearLayout root, String label, Runnable action) {
+        Button b = Ui.button(this, label);
+        b.setOnClickListener(v -> action.run());
         root.addView(b, lpMatchWrap(0, 6, 0, 0));
     }
 

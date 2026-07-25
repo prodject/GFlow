@@ -329,3 +329,26 @@ Still open inside stage 3:
 - move from a local blacklist toward a fuller per-function registry with `writable/backend/value-kind` metadata;
 - review parking-adjacent ADAS items like `PDC` so their control path stays aligned with the later parking/APA split;
 - revisit `Max cruising speed` and other selector-style controls to confirm that their value payloads match the real backend contract on this firmware.
+
+### Stage 4 Progress: Parking / APA Backend Split Started
+
+Parking backend cleanup moved into:
+
+- [ParkingActivity.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/ParkingActivity.java)
+
+Implemented in this pass:
+
+- parking UI now treats `Auto Park` and `360` differently instead of assuming both are valid `BCM custom key` command entries.
+- `Auto Park` was kept as a cautious “open stock Auto Park UI” action because that path is still the least risky entrypoint referenced by the OEM notes.
+- `360` was removed from the active parking command path because:
+  - manual testing already showed the button does not open 360;
+  - no confirmed backend entrypoint is available yet;
+  - the previous implementation was pretending that `BCM_CUSTOM_KEY_360` was a valid proven route when it is not.
+- AVM/PAC preset composition was cleaned so it no longer appends the broken `BCM_CUSTOM_KEY_360` call to otherwise parking-related PAS actions.
+- confirmed APA scenario control remains on `CarSignalManagerAdapter` signal methods instead of being folded back into speculative `ICarFunction` writes.
+
+Still open inside stage 4:
+
+- confirm whether `Auto Park UI` through `BCM custom key 0x65` is actually effective on this firmware or should also be downgraded to diagnostics-only;
+- decide which PAS / AVM commands are truly writable and which are just state/report properties;
+- trace the real 360 / AVM entry backend before re-enabling any user-facing 360 launch button.
