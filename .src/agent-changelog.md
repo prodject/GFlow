@@ -315,11 +315,17 @@ Implemented in this pass:
   - aggregated window areas `front=0x30`, `rear=0x300`, `all=0x330` are now available for BCM window commands;
   - default `BCM_WINDOW*` calls no longer fall back to unsupported `ZONE_ALL`.
 - voice window commands now use BCM-specific window areas instead of reusing generic HVAC/seat zones, which previously made `all/left/right/rear` window actions hit the wrong backend area.
+- BCM door/control zoning is now split by confirmed behavior instead of using one generic fallback:
+  - `BCM_DOOR_LOCK` and `BCM_DOOR_CONTROL` stay on global `ZONE_ALL`, because logs show them active there;
+  - `BCM_DOOR` now has explicit OEM areas for row1/row2/hood/rear;
+  - `BCM_CHILD_SAFETY_LOCK` now uses rear-door zones instead of a broken global write path.
+- voice door commands no longer send `BCM_DOOR` to unsupported `ZONE_ALL`; they now require a concrete target door and map it to confirmed OEM areas.
+- vehicle UI `Child lock` action now writes both rear child-lock zones directly, which matches the rear-door area model seen in runtime callbacks.
 
 Still open inside stage 2:
 
 - review whether `BCM_WINDOW_POS`, `BCM_WINDOW_CURRENT_POS`, and `BCM_DOOR_POS` should move to float/custom readback paths in the generic adapter instead of remaining activity-local diagnostics;
-- inspect remaining door/trunk/child-lock entry points that still assume generic BCM zone semantics;
+- inspect remaining trunk/door automation entry points and decide whether any body actions should be disabled until their per-zone semantics are proven from runtime behavior;
 - add clearer per-zone body diagnostics once the useful OEM zone mapping is narrowed down from logs.
 
 ### Stage 3 Progress: ADAS Gating Started

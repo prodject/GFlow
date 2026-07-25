@@ -23,6 +23,12 @@ final class EcarxVehicleAdapter {
     static final int ZONE_ROW_3_CENTER = 0x200;
     static final int ZONE_ROW_3_RIGHT = 0x400;
     static final int ZONE_ROW_3_ALL = 0x800;
+    static final int BCM_DOOR_ROW_1_LEFT = 0x1;
+    static final int BCM_DOOR_ROW_1_RIGHT = 0x4;
+    static final int BCM_DOOR_ROW_2_LEFT = 0x10;
+    static final int BCM_DOOR_ROW_2_RIGHT = 0x40;
+    static final int BCM_DOOR_HOOD = 0x10000000;
+    static final int BCM_DOOR_REAR = 0x20000000;
     static final int BCM_WINDOW_ROW_1_LEFT = 0x10;
     static final int BCM_WINDOW_ROW_1_RIGHT = 0x20;
     static final int BCM_WINDOW_ROW_1_ALL = 0x30;
@@ -1031,12 +1037,16 @@ final class EcarxVehicleAdapter {
             case BCM_WINDOW_MOVING_STATE:
                 return BCM_WINDOW_ALL;
             case BCM_DOOR:
-            case BCM_DOOR_CONTROL:
-            case BCM_DOOR_LOCK:
+                return BCM_DOOR_ROW_1_LEFT;
             case BCM_DOOR_POS:
             case BCM_DOOR_STATUS:
+                return BCM_DOOR_REAR;
             case BCM_CHILD_SAFETY_LOCK:
+                return BCM_DOOR_ROW_2_LEFT;
             case BCM_CHILD_SAFETY_LOCK_SCENE:
+                return ZONE_ALL;
+            case BCM_DOOR_CONTROL:
+            case BCM_DOOR_LOCK:
                 return ZONE_ALL;
             case BCM_REAR_MIRROR_ADJUST:
                 return ZONE_DRIVER_LEFT;

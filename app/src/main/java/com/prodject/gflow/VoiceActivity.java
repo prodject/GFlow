@@ -738,16 +738,24 @@ public class VoiceActivity extends Activity {
             return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_WINDOW, windowZoneFromCommand(cmd), EcarxVehicleAdapter.WINDOW_CLOSE);
         }
         if (has(cmd, "двер") && (has(cmd, "откр") || has(cmd, "open"))) {
-            return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_DOOR, zoneFromCommand(cmd, EcarxVehicleAdapter.ZONE_ALL), EcarxVehicleAdapter.DOOR_OPEN);
+            int zone = doorZoneFromCommand(cmd);
+            if (zone == EcarxVehicleAdapter.ZONE_ALL) {
+                return EcarxVehicleAdapter.Result.external("Уточните дверь: левая, правая, задняя левая/правая, капот или багажник", false, true);
+            }
+            return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_DOOR, zone, EcarxVehicleAdapter.DOOR_OPEN);
         }
         if (has(cmd, "двер") && (has(cmd, "закр") || has(cmd, "close"))) {
-            return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_DOOR, zoneFromCommand(cmd, EcarxVehicleAdapter.ZONE_ALL), EcarxVehicleAdapter.DOOR_CLOSE);
+            int zone = doorZoneFromCommand(cmd);
+            if (zone == EcarxVehicleAdapter.ZONE_ALL) {
+                return EcarxVehicleAdapter.Result.external("Уточните дверь: левая, правая, задняя левая/правая, капот или багажник", false, true);
+            }
+            return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_DOOR, zone, EcarxVehicleAdapter.DOOR_CLOSE);
         }
         if (has(cmd, "зам") && has(cmd, "двер")) {
             return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_DOOR_LOCK, off(cmd) ? EcarxVehicleAdapter.COMMON_OFF : EcarxVehicleAdapter.COMMON_ON);
         }
         if (has(cmd, "дет") && (has(cmd, "зам") || has(cmd, "lock"))) {
-            return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_CHILD_SAFETY_LOCK, off(cmd) ? EcarxVehicleAdapter.COMMON_OFF : EcarxVehicleAdapter.COMMON_ON);
+            return setRearChildLock(off(cmd) ? EcarxVehicleAdapter.COMMON_OFF : EcarxVehicleAdapter.COMMON_ON);
         }
         if (has(cmd, "люк") && has(cmd, "откр")) {
             return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_SUNROOF_OPEN, EcarxVehicleAdapter.COMMON_ON);
@@ -983,6 +991,27 @@ public class VoiceActivity extends Activity {
         if (has(cmd, "пассаж") || has(cmd, "прав") || has(cmd, "right")) return EcarxVehicleAdapter.BCM_WINDOW_ROW_1_RIGHT;
         if (has(cmd, "водител") || has(cmd, "лев") || has(cmd, "left")) return EcarxVehicleAdapter.BCM_WINDOW_ROW_1_LEFT;
         return EcarxVehicleAdapter.BCM_WINDOW_ALL;
+    }
+
+    private int doorZoneFromCommand(String cmd) {
+        if (has(cmd, "капот") || has(cmd, "hood")) return EcarxVehicleAdapter.BCM_DOOR_HOOD;
+        if (has(cmd, "багаж") || has(cmd, "trunk") || has(cmd, "rear")) return EcarxVehicleAdapter.BCM_DOOR_REAR;
+        if (has(cmd, "задн") && (has(cmd, "лев") || has(cmd, "left"))) return EcarxVehicleAdapter.BCM_DOOR_ROW_2_LEFT;
+        if (has(cmd, "задн") && (has(cmd, "прав") || has(cmd, "right"))) return EcarxVehicleAdapter.BCM_DOOR_ROW_2_RIGHT;
+        if (has(cmd, "пассаж") || has(cmd, "прав") || has(cmd, "right")) return EcarxVehicleAdapter.BCM_DOOR_ROW_1_RIGHT;
+        if (has(cmd, "водител") || has(cmd, "лев") || has(cmd, "left")) return EcarxVehicleAdapter.BCM_DOOR_ROW_1_LEFT;
+        return EcarxVehicleAdapter.ZONE_ALL;
+    }
+
+    private EcarxVehicleAdapter.Result setRearChildLock(int value) {
+        EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
+        EcarxVehicleAdapter.Result left = adapter.set(EcarxVehicleAdapter.BCM_CHILD_SAFETY_LOCK, EcarxVehicleAdapter.BCM_DOOR_ROW_2_LEFT, value);
+        EcarxVehicleAdapter.Result right = adapter.set(EcarxVehicleAdapter.BCM_CHILD_SAFETY_LOCK, EcarxVehicleAdapter.BCM_DOOR_ROW_2_RIGHT, value);
+        boolean success = left.success && right.success;
+        return EcarxVehicleAdapter.Result.external(
+                "Child lock rear: L=" + left.message + " | R=" + right.message,
+                success,
+                left.isSupported() || right.isSupported());
     }
 
     private boolean has(String cmd, String value) {
