@@ -657,6 +657,12 @@ public class ParkingActivity extends Activity {
 
     private EcarxVehicleAdapter.Result executeVehicleCommand(int functionId, int value) {
         EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
+        if (!adapter.isWritable(functionId)) {
+            return EcarxVehicleAdapter.Result.external(
+                    "Функция переведена в diagnostics/readback-only: " + compact(EcarxVehicleAdapter.hex(functionId)),
+                    false,
+                    true);
+        }
         EcarxVehicleAdapter.Result support = adapter.support(functionId);
         if (!support.isSupported()) {
             return EcarxVehicleAdapter.Result.external(

@@ -7,6 +7,7 @@ import android.util.Log;
 
 final class EcarxVehicleAdapter {
     private static final String TAG = "GFlowCarApi";
+    private static final Spec SPEC_DEFAULT = new Spec(0, Backend.ADAPT_API, true, false, false);
     
     static final int COMMON_OFF = 0x0;
     static final int COMMON_ON = 0x1;
@@ -715,6 +716,18 @@ final class EcarxVehicleAdapter {
         this.context = context.getApplicationContext();
     }
 
+    Spec spec(int functionId) {
+        return specFor(functionId);
+    }
+
+    boolean isWritable(int functionId) {
+        return spec(functionId).writable;
+    }
+
+    boolean isFloatFunction(int functionId) {
+        return spec(functionId).floatValue;
+    }
+
     Result set(int functionId, int value) {
         return set(functionId, defaultZone(functionId), value);
     }
@@ -943,6 +956,37 @@ final class EcarxVehicleAdapter {
     }
 
     private static int defaultZone(int functionId) {
+        return specFor(functionId).defaultZone;
+    }
+
+    private static Spec specFor(int functionId) {
+        if (isGlobalHvac(functionId)) return new Spec(ZONE_ALL, Backend.ADAPT_API, true, false, false);
+        if (functionId == HVAC_FAN_SPEED || functionId == HVAC_FAN_SPEED_BLOWER) {
+            return new Spec(ZONE_ROW_1_ALL, Backend.ADAPT_API, true, false, false);
+        }
+        if (isDriverSeatFunction(functionId)) return new Spec(ZONE_DRIVER_LEFT, Backend.ADAPT_API, true, false, false);
+        if (functionId == HVAC_TEMP) return new Spec(0, Backend.ADAPT_API_FLOAT, true, true, false);
+        if (functionId == HVAC_TEMP_MAX || functionId == HVAC_TEMP_MIN || functionId == HVAC_TEMP_STEP) {
+            return new Spec(0, Backend.ADAPT_API_FLOAT, false, true, false);
+        }
+        if (isBcmWindowFunction(functionId)) {
+            boolean writable = functionId == BCM_WINDOW || functionId == BCM_WINDOW_LOCK;
+            return new Spec(BCM_WINDOW_ALL, Backend.ADAPT_API, writable, false, false);
+        }
+        if (functionId == BCM_DOOR) return new Spec(BCM_DOOR_ROW_1_LEFT, Backend.ADAPT_API, true, false, false);
+        if (functionId == BCM_DOOR_POS) return new Spec(BCM_DOOR_REAR, Backend.ADAPT_API_FLOAT, false, true, false);
+        if (functionId == BCM_DOOR_STATUS) return new Spec(BCM_DOOR_REAR, Backend.ADAPT_API, false, false, true);
+        if (functionId == BCM_CHILD_SAFETY_LOCK) return new Spec(BCM_DOOR_ROW_2_LEFT, Backend.ADAPT_API, true, false, false);
+        if (functionId == BCM_CHILD_SAFETY_LOCK_SCENE || functionId == BCM_DOOR_CONTROL || functionId == BCM_DOOR_LOCK) {
+            return new Spec(ZONE_ALL, Backend.ADAPT_API, true, false, false);
+        }
+        if (functionId == BCM_REAR_MIRROR_ADJUST) return new Spec(ZONE_DRIVER_LEFT, Backend.ADAPT_API, true, false, false);
+        if (isPasDirectFunction(functionId)) return new Spec(ZONE_ALL, Backend.ADAPT_API, false, false, false);
+        if (isReadOnlyAdasFunction(functionId)) return new Spec(0, Backend.ADAPT_API, false, false, false);
+        return SPEC_DEFAULT;
+    }
+
+    private static boolean isGlobalHvac(int functionId) {
         switch (functionId) {
             case HVAC_POWER:
             case HVAC_AUTO:
@@ -1012,10 +1056,14 @@ final class EcarxVehicleAdapter {
             case HVAC_IONIZER_CLS_WIN_POPUP_SETTING:
             case HVAC_IONIZER_CLS_WIN_POPUP:
             case HVAC_AQS_STATUS:
-                return ZONE_ALL;
-            case HVAC_FAN_SPEED:
-            case HVAC_FAN_SPEED_BLOWER:
-                return ZONE_ROW_1_ALL;
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private static boolean isDriverSeatFunction(int functionId) {
+        switch (functionId) {
             case HVAC_SEAT_HEATING:
             case HVAC_SEAT_VENTILATION:
             case HVAC_SEAT_MASSAGE:
@@ -1029,29 +1077,98 @@ final class EcarxVehicleAdapter {
             case SEAT_POSITION_SET:
             case SEAT_RESTORE:
             case SEAT_ONE_KEY_COMFORT:
-                return ZONE_DRIVER_LEFT;
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private static boolean isBcmWindowFunction(int functionId) {
+        switch (functionId) {
             case BCM_WINDOW:
             case BCM_WINDOW_LOCK:
             case BCM_WINDOW_POS:
             case BCM_WINDOW_CURRENT_POS:
             case BCM_WINDOW_MOVING_STATE:
-                return BCM_WINDOW_ALL;
-            case BCM_DOOR:
-                return BCM_DOOR_ROW_1_LEFT;
-            case BCM_DOOR_POS:
-            case BCM_DOOR_STATUS:
-                return BCM_DOOR_REAR;
-            case BCM_CHILD_SAFETY_LOCK:
-                return BCM_DOOR_ROW_2_LEFT;
-            case BCM_CHILD_SAFETY_LOCK_SCENE:
-                return ZONE_ALL;
-            case BCM_DOOR_CONTROL:
-            case BCM_DOOR_LOCK:
-                return ZONE_ALL;
-            case BCM_REAR_MIRROR_ADJUST:
-                return ZONE_DRIVER_LEFT;
+                return true;
             default:
-                return 0;
+                return false;
+        }
+    }
+
+    private static boolean isPasDirectFunction(int functionId) {
+        switch (functionId) {
+            case PAS_ACTIVATED:
+            case PAS_STATUS:
+            case PAS_MUTE:
+            case PAS_SHOW_GRAPHICS:
+            case PAS_RADAR_WORK_MODE:
+            case PAS_RADAR_WORK_STATUS:
+            case PAS_RADAR_FRONT_CENTER:
+            case PAS_RADAR_REAR_CENTER:
+            case PAS_PAC_ACTIVATION:
+            case PAS_PAC_STATUS:
+            case PAS_PAC_STEER_LINK:
+            case PAS_PAC_AUTO_FRONT_ACTIV:
+            case PAS_PAC_AUTO_REVERSE_CAMERA:
+            case PAS_PAC_CAMERA_TYPE:
+            case PAS_PAC_OVERLAY_STEERPATH:
+            case PAS_PAC_OVERLAY_TOWBAR:
+            case PAS_PAC_OVERLAY_DSTINFO:
+            case PAS_PAC_VIEW_SELECTION:
+            case PAS_PAC_3DVIEW_POSITION:
+            case PAS_PAC_SYS_AVA_STATUS:
+            case PAS_PAC_3DVIEW_LOCK:
+            case PAS_PAC_APP_INIT_COMPLETED:
+            case PAS_PAC_CAR_MODE_TRANSPARENT:
+            case PAS_PAC_NEARBY_OBJ_TRIGGER:
+            case PAS_PAC_OBSTACLE_DETECTION:
+            case PAS_PAC_TOP_VIEW_ZOOM_IN:
+            case PAS_PAC_TOURING_VIEW:
+            case PAS_SAP_ACTIVATION:
+            case PAS_SAP_PARK_TYPE:
+            case PAS_SAP_PARK_IN_TYPE:
+            case PAS_SAP_PARK_IN_RESUME:
+            case PAS_SAP_PARK_OUT_CONFIRM:
+            case PAS_SAP_PROGRESS:
+            case PAS_SAP_PARK_IN_TYPE_RECOMMEND:
+            case PAS_SAP_PARK_IN_NOTI:
+            case PAS_SAP_PARK_OUT_NOTI:
+            case PAS_RCTA_ACTIVATION:
+            case PAS_RCTA_LEFT_WARNING:
+            case PAS_RCTA_RIGHT_WARNING:
+            case PAS_RCTA_SHOW_GRAPHICS:
+            case PAS_RCTA_WARNING_VOLUME:
+            case PAS_AVM_OR_APA_ACTIVATION:
+            case PAS_PRKG_AUX_INFO_DISP:
+            case PAS_PRKG_INTRPT_RELD_BTN:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private static boolean isReadOnlyAdasFunction(int functionId) {
+        switch (functionId) {
+            case ADAS_APB_MODE:
+            case ADAS_SPEED_LIMIT_WARNING_MODE:
+            case ADAS_DRIVE_PILOT_STATUS:
+            case ADAS_DRIVE_NZP_STATUS:
+            case ADAS_DRIVE_PILOT_ALARM_INFO:
+            case ADAS_DRIVE_PILOT_ALARM_INFO_CANCEL:
+            case ADAS_TRAFFIC_SIGN_INFORMATION_FAILURE:
+            case ADAS_LANE_KEEPING_ASSISTANCE_FAILURE:
+            case ADAS_EMERGENCY_LANE_OCCUPANCY_FAILURE:
+            case ADAS_EMERGENCY_STEERING_FAILURE:
+            case ADAS_FORWARD_PRECOLLISION_FAULT:
+            case ADAS_FRONT_SIDE_ASSIST_FAILURE:
+            case ADAS_ADAPTIVE_CRUISE_FAILURE:
+            case ADAS_REAR_COLLISION_WARNING_FAILURE:
+            case ADAS_TRAFFIC_LIGHTS_IDENTIFY_FAULTS:
+            case ADAS_DRIVER_FATIGUE_FAILURE:
+                return true;
+            default:
+                return false;
         }
     }
 
@@ -1135,7 +1252,33 @@ final class EcarxVehicleAdapter {
         }
 
         private static boolean isKnownRawStatus(int functionId) {
-            return functionId == BCM_DOOR_STATUS;
+            return specFor(functionId).knownRawStatus;
+        }
+    }
+
+    enum Backend {
+        ADAPT_API,
+        ADAPT_API_FLOAT,
+        SIGNAL,
+        EVS,
+        SAFETY,
+        OEM_ENTRY,
+        UNKNOWN
+    }
+
+    static final class Spec {
+        final int defaultZone;
+        final Backend backend;
+        final boolean writable;
+        final boolean floatValue;
+        final boolean knownRawStatus;
+
+        Spec(int defaultZone, Backend backend, boolean writable, boolean floatValue, boolean knownRawStatus) {
+            this.defaultZone = defaultZone;
+            this.backend = backend;
+            this.writable = writable;
+            this.floatValue = floatValue;
+            this.knownRawStatus = knownRawStatus;
         }
     }
 

@@ -432,3 +432,35 @@ Still open inside stage 5:
 
 - review every remaining textual or automation entrypoint that may still mention `BCM_CUSTOM_KEY_360`, especially legacy notes/examples and any background automation not yet wired through `EcarxDvrAdapter`;
 - verify whether EVS `openEvs(EVS_CAMERA_AVM)` should also be paired with an explicit close/lifecycle hook in some flows to avoid sticky camera sessions on this firmware.
+
+### Stage 6 Progress: Registry Cleanup Started
+
+Registry cleanup moved into:
+
+- [EcarxVehicleAdapter.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/EcarxVehicleAdapter.java)
+- [AdasActivity.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/AdasActivity.java)
+- [ParkingActivity.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/ParkingActivity.java)
+
+Implemented in this pass:
+
+- `EcarxVehicleAdapter` now owns a central per-function spec layer instead of spreading behavior across activities:
+  - `defaultZone`;
+  - `backend`;
+  - `writable` vs `read-only`;
+  - `floatValue` vs integer value;
+  - `knownRawStatus`.
+- the old `defaultZone(...)` switch is now backed by that spec layer instead of being the only source of function metadata.
+- the registry currently captures the backend split already proven during the repair passes:
+  - global HVAC functions stay `AdaptAPI` on `ZONE_ALL`;
+  - HVAC temperature is marked as `AdaptAPI float/customize-function`;
+  - BCM window / door / child-lock defaults and raw-status behavior now live in the adapter spec;
+  - direct PAS `ICarFunction` properties are marked read-only for this firmware until successful write evidence appears;
+  - ADAS readback/failure/status IDs that were previously blacklisted only in `AdasActivity` are now marked read-only in the adapter registry itself.
+- `AdasActivity` no longer owns a local `isWritableAdasFunction(...)` blacklist; it now asks the adapter registry whether a function is writable.
+- `ParkingActivity` write gating is now also driven by the same adapter registry, so any PAS function classified as diagnostics/readback-only is blocked centrally instead of by screen-specific assumptions.
+- this makes the July 25, 2026 parking classification reusable outside the parking screen: the same PAS metadata now follows the function wherever it is referenced.
+
+Still open inside stage 6:
+
+- broaden the registry from the current repaired sets into a fuller repo-wide spec for the remaining BCM / seat / drive / comfort functions that still fall through to the default writable path;
+- decide whether some of the existing `backend` enum values (`SIGNAL`, `EVS`, `SAFETY`, `OEM_ENTRY`) should later be wired into a higher-level command router instead of staying descriptive metadata for now.
