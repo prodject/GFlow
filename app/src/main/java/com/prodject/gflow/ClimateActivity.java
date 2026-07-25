@@ -322,7 +322,7 @@ public class ClimateActivity extends Activity {
         seats.setWeightSum(4f);
         addClimateActionChip(seats, "Подогрев сид.", () -> cycleSeatClimate(EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.ZONE_DRIVER_LEFT));
         addClimateActionChip(seats, "Вентиляция", () -> cycleSeatClimate(EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, EcarxVehicleAdapter.ZONE_DRIVER_LEFT));
-        addClimateActionChip(seats, "Руль", () -> command(EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT, EcarxVehicleAdapter.WHEEL_HEAT_MID));
+        addClimateActionChip(seats, "Руль", this::cycleWheelHeat);
         addClimateActionChip(seats, "Обдув стекла", this::showDefrostSheet);
         panel.addView(seats, lpMatchWrap(0, 16, 0, 0));
 
@@ -841,15 +841,27 @@ public class ClimateActivity extends Activity {
     }
 
     private void command(int functionId, int value) {
-        EcarxVehicleAdapter.Result result = new EcarxVehicleAdapter(this).set(functionId, value);
+        EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
+        EcarxVehicleAdapter.Result support = adapter.support(functionId);
+        if (support != null && !support.isSupported()) {
+            Ui.toast(this, "Функция недоступна в AdaptAPI этого автомобиля");
+            return;
+        }
+        EcarxVehicleAdapter.Result result = adapter.set(functionId, value);
         refreshState();
-        Ui.toast(this, result.success ? "HVAC updated" : "Команда не выполнена");
+        Ui.toast(this, result.success ? "HVAC updated" : result.message);
     }
 
     private void command(int functionId, int zone, int value) {
-        EcarxVehicleAdapter.Result result = new EcarxVehicleAdapter(this).set(functionId, zone, value);
+        EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
+        EcarxVehicleAdapter.Result support = adapter.support(functionId, zone);
+        if (support != null && !support.isSupported()) {
+            Ui.toast(this, "Функция недоступна в этой зоне");
+            return;
+        }
+        EcarxVehicleAdapter.Result result = adapter.set(functionId, zone, value);
         refreshState();
-        Ui.toast(this, result.success ? "HVAC updated" : "Команда не выполнена");
+        Ui.toast(this, result.success ? "HVAC updated" : result.message);
     }
 
     private void applyClimatePreset(EcarxVehicleAdapter.Command... commands) {
@@ -943,17 +955,58 @@ public class ClimateActivity extends Activity {
 
     private void cycleSeatClimate(int functionId, int zone) {
         EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
+        EcarxVehicleAdapter.Result support = adapter.support(functionId, zone);
+        if (support != null && !support.isSupported()) {
+            Ui.toast(this, "Функция недоступна в этой зоне");
+            return;
+        }
         EcarxVehicleAdapter.Result current = adapter.get(functionId, zone);
         int next = nextSeatClimateLevel(current == null ? 0 : current.value);
         EcarxVehicleAdapter.Result result = adapter.set(functionId, zone, next);
         refreshState();
-        Ui.toast(this, result.success ? "HVAC updated" : "Команда не выполнена");
+        Ui.toast(this, result.success ? "HVAC updated" : result.message);
     }
 
     private int nextSeatClimateLevel(int current) {
-        if (current <= 0 || current == 0xff) return EcarxVehicleAdapter.HVAC_SEAT_LEVEL_OFF + 1;
-        int next = current + 1;
-        return next > 3 ? EcarxVehicleAdapter.HVAC_SEAT_LEVEL_OFF : next;
+        if (current == EcarxVehicleAdapter.HVAC_SEAT_HEATING_LEVEL_1
+                || current == EcarxVehicleAdapter.HVAC_SEAT_VENTILATION_LEVEL_1) {
+            return current + 1;
+        }
+        if (current == EcarxVehicleAdapter.HVAC_SEAT_HEATING_LEVEL_2
+                || current == EcarxVehicleAdapter.HVAC_SEAT_VENTILATION_LEVEL_2) {
+            return current + 1;
+        }
+        if (current == EcarxVehicleAdapter.HVAC_SEAT_HEATING_LEVEL_3
+                || current == EcarxVehicleAdapter.HVAC_SEAT_VENTILATION_LEVEL_3
+                || current == EcarxVehicleAdapter.HVAC_SEAT_HEATING_AUTO
+                || current == EcarxVehicleAdapter.HVAC_SEAT_VENTILATION_AUTO) {
+            return EcarxVehicleAdapter.HVAC_SEAT_LEVEL_OFF;
+        }
+        if (current <= 0 || current == 0xff) return EcarxVehicleAdapter.HVAC_SEAT_HEATING_LEVEL_1;
+        return current;
+    }
+
+    private void cycleWheelHeat() {
+        EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
+        EcarxVehicleAdapter.Result support = adapter.support(EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT);
+        if (support != null && !support.isSupported()) {
+            Ui.toast(this, "Подогрев руля недоступен в AdaptAPI этого автомобиля");
+            return;
+        }
+        EcarxVehicleAdapter.Result current = adapter.get(EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT);
+        int next = nextWheelHeatLevel(current == null ? 0 : current.value);
+        EcarxVehicleAdapter.Result result = adapter.set(EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT, next);
+        refreshState();
+        Ui.toast(this, result.success ? "HVAC updated" : result.message);
+    }
+
+    private int nextWheelHeatLevel(int current) {
+        if (current == EcarxVehicleAdapter.WHEEL_HEAT_LOW) return EcarxVehicleAdapter.WHEEL_HEAT_MID;
+        if (current == EcarxVehicleAdapter.WHEEL_HEAT_MID) return EcarxVehicleAdapter.WHEEL_HEAT_HIGH;
+        if (current == EcarxVehicleAdapter.WHEEL_HEAT_HIGH || current == EcarxVehicleAdapter.WHEEL_HEAT_AUTO) {
+            return EcarxVehicleAdapter.COMMON_OFF;
+        }
+        return EcarxVehicleAdapter.WHEEL_HEAT_LOW;
     }
 
     private void updateHeroControls() {

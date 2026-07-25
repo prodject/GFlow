@@ -802,10 +802,10 @@ public class VoiceActivity extends Activity {
             return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT, off(cmd) ? EcarxVehicleAdapter.COMMON_OFF : EcarxVehicleAdapter.WHEEL_HEAT_MID);
         }
         if (has(cmd, "сиден") && has(cmd, "подогрев")) {
-            return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HVAC_SEAT_HEATING, zoneFromCommand(cmd, EcarxVehicleAdapter.ZONE_DRIVER_LEFT), off(cmd) ? EcarxVehicleAdapter.COMMON_OFF : EcarxVehicleAdapter.SEAT_LEVEL_2);
+            return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HVAC_SEAT_HEATING, zoneFromCommand(cmd, EcarxVehicleAdapter.ZONE_DRIVER_LEFT), off(cmd) ? EcarxVehicleAdapter.COMMON_OFF : EcarxVehicleAdapter.HVAC_SEAT_HEATING_LEVEL_2);
         }
         if (has(cmd, "сиден") && has(cmd, "вент")) {
-            return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, zoneFromCommand(cmd, EcarxVehicleAdapter.ZONE_DRIVER_LEFT), off(cmd) ? EcarxVehicleAdapter.COMMON_OFF : EcarxVehicleAdapter.SEAT_LEVEL_2);
+            return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, zoneFromCommand(cmd, EcarxVehicleAdapter.ZONE_DRIVER_LEFT), off(cmd) ? EcarxVehicleAdapter.COMMON_OFF : EcarxVehicleAdapter.HVAC_SEAT_VENTILATION_LEVEL_2);
         }
         if (has(cmd, "hud") || has(cmd, "проектор")) {
             return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HUD_ACTIVE, off(cmd) ? EcarxVehicleAdapter.COMMON_OFF : EcarxVehicleAdapter.COMMON_ON);
@@ -942,7 +942,7 @@ public class VoiceActivity extends Activity {
                     new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_ON),
                     new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_DEFROST_FRONT, EcarxVehicleAdapter.COMMON_ON),
                     new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_DEFROST_REAR, EcarxVehicleAdapter.COMMON_ON),
-                    new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_LEVEL_2),
+                    new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.HVAC_SEAT_HEATING_LEVEL_2),
                     new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT, EcarxVehicleAdapter.WHEEL_HEAT_MID));
         }
         if (has(cmd, "охлаж") || has(cmd, "cool")) {
@@ -951,7 +951,7 @@ public class VoiceActivity extends Activity {
                     new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_AC, EcarxVehicleAdapter.COMMON_ON),
                     new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_AC_MAX, EcarxVehicleAdapter.COMMON_ON),
                     new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_5),
-                    new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_LEVEL_2));
+                    new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.HVAC_SEAT_VENTILATION_LEVEL_2));
         }
         return null;
     }

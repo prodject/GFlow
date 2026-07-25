@@ -108,6 +108,14 @@ final class EcarxVehicleAdapter {
     static final int HVAC_AQS_STATUS = 0x10141600;
     static final int HVAC_FAN_SPEED_BLOWER = 0x10141700;
     static final int HVAC_SEAT_LEVEL_OFF = 0x0;
+    static final int HVAC_SEAT_HEATING_LEVEL_1 = 0x10050201;
+    static final int HVAC_SEAT_HEATING_LEVEL_2 = 0x10050202;
+    static final int HVAC_SEAT_HEATING_LEVEL_3 = 0x10050203;
+    static final int HVAC_SEAT_HEATING_AUTO = 0x1005020f;
+    static final int HVAC_SEAT_VENTILATION_LEVEL_1 = 0x10050101;
+    static final int HVAC_SEAT_VENTILATION_LEVEL_2 = 0x10050102;
+    static final int HVAC_SEAT_VENTILATION_LEVEL_3 = 0x10050103;
+    static final int HVAC_SEAT_VENTILATION_AUTO = 0x1005010f;
 
     static final int FAN_SPEED_1 = 0x10020101;
     static final int FAN_SPEED_2 = 0x10020102;
@@ -157,12 +165,13 @@ final class EcarxVehicleAdapter {
     static final int DIRECTION_MODE_AVOID = 0x10070302;
     static final int SWEEPING_MODE_ALL = 0x10070201;
     static final int SWEEPING_MODE_CUSTOM = 0x10070203;
-    static final int SEAT_LEVEL_1 = 0x10050301;
-    static final int SEAT_LEVEL_2 = 0x10050302;
-    static final int SEAT_LEVEL_3 = 0x10050303;
-    static final int WHEEL_HEAT_LOW = 0x10090201;
-    static final int WHEEL_HEAT_MID = 0x10090202;
-    static final int WHEEL_HEAT_HIGH = 0x10090203;
+    static final int SEAT_LEVEL_1 = HVAC_SEAT_HEATING_LEVEL_1;
+    static final int SEAT_LEVEL_2 = HVAC_SEAT_HEATING_LEVEL_2;
+    static final int SEAT_LEVEL_3 = HVAC_SEAT_HEATING_LEVEL_3;
+    static final int WHEEL_HEAT_LOW = 0x10090101;
+    static final int WHEEL_HEAT_MID = 0x10090102;
+    static final int WHEEL_HEAT_HIGH = 0x10090103;
+    static final int WHEEL_HEAT_AUTO = 0x1009010f;
 
     static final int BCM_WINDOW = 0x21030100;
     static final int BCM_WINDOW_LOCK = 0x21030200;
