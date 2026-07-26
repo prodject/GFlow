@@ -177,6 +177,8 @@
         </activity>
         <activity android:name=".VoiceAppLaunchActivity" android:exported="false" android:excludeFromRecents="true" />
         <activity android:name=".VoiceAssistantActivity" android:exported="false" />
+        <activity android:name=".SplitLauncherActivity" android:exported="true" android:excludeFromRecents="true" android:launchMode="singleTask" android:noHistory="true" android:resizeableActivity="true" android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+        <activity android:name=".MultiWindowHeatingActivity" android:exported="false" android:excludeFromRecents="true" android:finishOnTaskLaunch="true" android:noHistory="true" android:resizeableActivity="true" android:theme="@android:style/Theme.Translucent.NoTitleBar" />
         <activity android:name=".ShareLocationReceiverActivity" android:exported="true" android:excludeFromRecents="true">
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
@@ -236,6 +238,13 @@
         <receiver android:name=".DiagnosticsAutomationReceiver" android:exported="true">
             <intent-filter>
                 <action android:name="com.prodject.gflow.RUN_AUTODIAGNOSTICS" />
+            </intent-filter>
+        </receiver>
+        <receiver android:name=".SplitCommandReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="com.prodject.gflow.SPLIT_LAUNCH" />
+                <action android:name="com.prodject.gflow.SPLIT_LAUNCH_LAST" />
+                <action android:name="com.prodject.gflow.SPLIT_CLOSE" />
             </intent-filter>
         </receiver>
         <provider

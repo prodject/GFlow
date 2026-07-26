@@ -185,6 +185,7 @@ public class DesktopActivity extends Activity {
         addStatusCard(grid, "Theme", themeLabel(), Color.rgb(129, 149, 255));
         addNavCard(grid, "Dock apps", "Пины, порядок и быстрый запуск", Ui.CYAN, () -> openMode(Mode.DOCK));
         addNavCard(grid, "OneOS Dock", "Bridge-команды и handover", Ui.SUCCESS, () -> openMode(Mode.ONE_OS));
+        addNavCard(grid, "Split Apps", "Запуск пары приложений через новый split backend", Ui.WARNING, this::openSplitLauncher);
         addNavCard(grid, "Профили", "Desktop pins сохраняются в profiles", Ui.WARNING, () -> startActivity(new Intent(this, ProfileActivity.class)));
         addNavCard(grid, "Браузер / Погода", "Переход к weather/browser экрану", Color.rgb(129, 149, 255), () -> startActivity(new Intent(this, WeatherActivity.class)));
         return grid;
@@ -284,6 +285,7 @@ public class DesktopActivity extends Activity {
 
         LinearLayout row = Ui.row(this);
         addMiniAction(row, "Open", () -> launchPackage(pkg, label));
+        addMiniAction(row, "Split", () -> openSplitWith(pkg));
         addMiniAction(row, pinned.contains(pkg) ? "Pinned" : "Pin", () -> {
             if (!pinned.contains(pkg)) pinned.add(pkg);
             savePinned();
@@ -325,6 +327,7 @@ public class DesktopActivity extends Activity {
         addDockButton(dock, "Home", () -> openMode(Mode.HOME), mode == Mode.HOME);
         addDockButton(dock, "Dock", () -> openMode(Mode.DOCK), mode == Mode.DOCK);
         addDockButton(dock, "OneOS", () -> openMode(Mode.ONE_OS), mode == Mode.ONE_OS);
+        addDockButton(dock, "Split", this::openSplitLauncher, false);
         addDockButton(dock, "Theme", this::chooseTheme, false);
         addDockButton(dock, "Back", this::finish, false);
         return dock;
@@ -398,6 +401,57 @@ public class DesktopActivity extends Activity {
     private void openMode(Mode next) {
         mode = next;
         renderContent();
+    }
+
+    private void openSplitLauncher() {
+        SplitLaunchManager manager = new SplitLaunchManager(this);
+        List<SplitLaunchManager.LaunchableApp> apps = manager.apps();
+        if (apps.isEmpty()) {
+            Ui.toast(this, "Нет приложений для split-запуска");
+            return;
+        }
+        String[] labels = new String[apps.size()];
+        for (int i = 0; i < apps.size(); i++) labels[i] = apps.get(i).label;
+        SplitLaunchManager.Config last = manager.loadLast();
+        AlertDialog.Builder builder = new AlertDialog.Builder(this).setTitle("Первое приложение").setItems(labels, (d, firstIndex) -> {
+            SplitLaunchManager.LaunchableApp first = apps.get(firstIndex);
+            new AlertDialog.Builder(this).setTitle("Второе приложение").setItems(labels, (d2, secondIndex) -> {
+                SplitLaunchManager.LaunchableApp second = apps.get(secondIndex);
+                SplitLaunchManager.Config config = new SplitLaunchManager.Config(
+                        first.packageName,
+                        second.packageName,
+                        last == null ? SplitLaunchManager.MODE_NATIVE : last.mode,
+                        last == null ? 400L : last.secondWindowDelayMs,
+                        last == null ? 0 : last.bottomWindowShift
+                );
+                manager.startLauncher(this, config);
+            }).show();
+        });
+        if (last != null) builder.setNeutralButton("Последний split", (d, which) -> manager.launchLast(this));
+        builder.show();
+    }
+
+    private void openSplitWith(String firstPackage) {
+        SplitLaunchManager manager = new SplitLaunchManager(this);
+        List<SplitLaunchManager.LaunchableApp> apps = manager.apps();
+        if (apps.isEmpty()) {
+            Ui.toast(this, "Нет приложений для split-запуска");
+            return;
+        }
+        String[] labels = new String[apps.size()];
+        for (int i = 0; i < apps.size(); i++) labels[i] = apps.get(i).label;
+        SplitLaunchManager.Config last = manager.loadLast();
+        new AlertDialog.Builder(this).setTitle("Второе приложение").setItems(labels, (d, secondIndex) -> {
+            SplitLaunchManager.LaunchableApp second = apps.get(secondIndex);
+            SplitLaunchManager.Config config = new SplitLaunchManager.Config(
+                    firstPackage,
+                    second.packageName,
+                    last == null ? SplitLaunchManager.MODE_NATIVE : last.mode,
+                    last == null ? 400L : last.secondWindowDelayMs,
+                    last == null ? 0 : last.bottomWindowShift
+            );
+            manager.startLauncher(this, config);
+        }).show();
     }
 
     private String activeProfile() {

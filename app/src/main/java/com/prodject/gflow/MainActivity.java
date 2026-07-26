@@ -590,6 +590,7 @@ public class MainActivity extends Activity {
         addDrawerAction(drawer, "Камеры / DVR", () -> startActivity(new Intent(this, CameraActivity.class)));
         addDrawerAction(drawer, "Парковка / APA", this::openParkingScreen);
         addDrawerAction(drawer, "HUD / Cluster", this::showHudMenu);
+        addDrawerAction(drawer, "Split Apps", this::openSplitLauncher);
         addDrawerAction(drawer, "Подсветка", this::showAmbienceLight);
         addDrawerAction(drawer, "Автоматизация", this::showAutomation);
         addDrawerAction(drawer, "Профили", this::showProfilesMenu);
@@ -1933,25 +1934,32 @@ public class MainActivity extends Activity {
     private void showSystem() { startActivity(new Intent(this, AdbShellActivity.class)); }
     private void showWeb() { startActivity(new Intent(this, WeatherActivity.class)); }
     private void openSplitLauncher() {
-        Intent query = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER);
-        List<ResolveInfo> apps = getPackageManager().queryIntentActivities(query, 0);
-        Collections.sort(apps, Comparator.comparing(a -> a.loadLabel(getPackageManager()).toString().toLowerCase(Locale.ROOT)));
+        SplitLaunchManager manager = new SplitLaunchManager(this);
+        List<SplitLaunchManager.LaunchableApp> apps = manager.apps();
         if (apps.isEmpty()) {
             Ui.toast(this, "Нет приложений для split-запуска");
             return;
         }
         String[] labels = new String[apps.size()];
-        for (int i = 0; i < apps.size(); i++) labels[i] = apps.get(i).loadLabel(getPackageManager()).toString();
-        new AlertDialog.Builder(this).setTitle("Запустить рядом").setItems(labels, (d, which) -> {
-            ResolveInfo info = apps.get(which);
-            Intent launch = getPackageManager().getLaunchIntentForPackage(info.activityInfo.packageName);
-            if (launch == null) {
-                launch = new Intent(Intent.ACTION_MAIN)
-                        .addCategory(Intent.CATEGORY_LAUNCHER)
-                        .setClassName(info.activityInfo.packageName, info.activityInfo.name);
-            }
-            launch.addFlags(Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
-            startActivity(launch);
-        }).show();
+        for (int i = 0; i < apps.size(); i++) labels[i] = apps.get(i).label;
+        SplitLaunchManager.Config last = manager.loadLast();
+        AlertDialog.Builder builder = new AlertDialog.Builder(this).setTitle("Первое приложение").setItems(labels, (d, firstIndex) -> {
+            SplitLaunchManager.LaunchableApp first = apps.get(firstIndex);
+            new AlertDialog.Builder(this).setTitle("Второе приложение").setItems(labels, (d2, secondIndex) -> {
+                SplitLaunchManager.LaunchableApp second = apps.get(secondIndex);
+                SplitLaunchManager.Config config = new SplitLaunchManager.Config(
+                        first.packageName,
+                        second.packageName,
+                        last == null ? SplitLaunchManager.MODE_NATIVE : last.mode,
+                        last == null ? 400L : last.secondWindowDelayMs,
+                        last == null ? 0 : last.bottomWindowShift
+                );
+                manager.startLauncher(this, config);
+            }).show();
+        });
+        if (last != null) {
+            builder.setNeutralButton("Последний split", (d, which) -> manager.launchLast(this));
+        }
+        builder.show();
     }
 }
