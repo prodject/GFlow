@@ -177,6 +177,7 @@
         </activity>
         <activity android:name=".VoiceAppLaunchActivity" android:exported="false" android:excludeFromRecents="true" />
         <activity android:name=".VoiceAssistantActivity" android:exported="false" />
+        <activity android:name=".TransparentBootActivity" android:exported="false" android:excludeFromRecents="true" android:noHistory="true" android:theme="@android:style/Theme.Translucent.NoTitleBar" />
         <activity android:name=".SplitLauncherActivity" android:exported="true" android:excludeFromRecents="true" android:launchMode="singleTask" android:noHistory="true" android:resizeableActivity="true" android:theme="@android:style/Theme.Translucent.NoTitleBar" />
         <activity android:name=".MultiWindowHeatingActivity" android:exported="false" android:excludeFromRecents="true" android:finishOnTaskLaunch="true" android:noHistory="true" android:resizeableActivity="true" android:theme="@android:style/Theme.Translucent.NoTitleBar" />
         <activity android:name=".ShareLocationReceiverActivity" android:exported="true" android:excludeFromRecents="true">
@@ -194,6 +195,8 @@
         </activity>
 
         <service android:name=".DvrService" android:exported="false" android:foregroundServiceType="camera|microphone" />
+        <service android:name=".CameraForegroundService" android:exported="false" android:foregroundServiceType="camera|microphone|connectedDevice" />
+        <service android:name=".CameraRecordingService" android:exported="false" android:foregroundServiceType="camera|microphone" />
         <service android:name=".LowSpeedCameraService" android:exported="false" />
         <service android:name=".VoiceForegroundService" android:exported="false" android:foregroundServiceType="microphone" />
         <service android:name=".HudPresentationService" android:exported="false" />

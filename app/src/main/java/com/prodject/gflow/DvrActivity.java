@@ -41,11 +41,11 @@ public class DvrActivity extends Activity {
         addSettingsUi();
         start.setOnClickListener(v -> {
             saveSettings();
-            startForegroundService(new Intent(this, DvrService.class).setAction(DvrService.ACTION_START));
+            startForegroundService(new Intent(this, CameraRecordingService.class).setAction(CameraRecordingService.ACTION_START_RECORDING));
             refresh();
         });
         stop.setOnClickListener(v -> {
-            startService(new Intent(this, DvrService.class).setAction(DvrService.ACTION_STOP));
+            startService(new Intent(this, CameraRecordingService.class).setAction(CameraRecordingService.ACTION_STOP_RECORDING));
             refresh();
         });
         save.setOnClickListener(v -> {
@@ -145,10 +145,13 @@ public class DvrActivity extends Activity {
         Button b = Ui.button(this, label);
         styleActionButton(b);
         b.setOnClickListener(v -> {
-            EcarxDvrAdapter adapter = new EcarxDvrAdapter(this);
-            EcarxDvrAdapter.Result result = open ? adapter.openEvs(cameraId) : adapter.closeEvs(cameraId);
-            Ui.toast(this, result.success ? "EVS команда отправлена" : "EVS ошибка");
-            status.setText(result.message + "\n\n" + status.getText());
+            Intent intent = new Intent(this, CameraRecordingService.class)
+                    .setAction(open ? CameraRecordingService.ACTION_OPEN_EVS : CameraRecordingService.ACTION_CLOSE_EVS)
+                    .putExtra(CameraRecordingService.EXTRA_CAMERA_ID, cameraId);
+            if (open) startForegroundService(intent);
+            else startService(intent);
+            Ui.toast(this, open ? "EVS open delegated" : "EVS close delegated");
+            refresh();
         });
         root.addView(b);
     }
@@ -180,6 +183,8 @@ public class DvrActivity extends Activity {
             sb.append("Ошибка Camera2: ").append(e.getMessage()).append("\n");
         }
         sb.append("\nEVS источники из OneOS AdaptAPI: evs:rear, evs:360, evs:dvr\n");
+        RecordingStateController.Snapshot snapshot = new RecordingStateController(this).snapshot();
+        sb.append("\nRecording state: ").append(snapshot.state.name()).append(" / ").append(snapshot.source).append("\n");
         sb.append("\nUSB кандидаты:\n").append(usbRootsSummary());
         sb.append("\n").append(DvrArchive.summary(this));
         status.setText(sb.toString());

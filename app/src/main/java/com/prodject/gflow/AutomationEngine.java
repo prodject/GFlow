@@ -87,13 +87,13 @@ final class AutomationEngine {
         if ("user_profile".equals(action.name)) return UserProfileEngine.apply(context, action.value);
         if ("smart_climate".equals(action.name)) return runSmartClimate(context);
         if ("start_dvr".equals(action.name)) {
-            Intent intent = new Intent(context, DvrService.class).setAction(DvrService.ACTION_START);
+            Intent intent = new Intent(context, CameraRecordingService.class).setAction(CameraRecordingService.ACTION_START_RECORDING);
             if (Build.VERSION.SDK_INT >= 26) context.startForegroundService(intent);
             else context.startService(intent);
             return "DVR start requested";
         }
         if ("stop_dvr".equals(action.name)) {
-            Intent intent = new Intent(context, DvrService.class).setAction(DvrService.ACTION_STOP);
+            Intent intent = new Intent(context, CameraRecordingService.class).setAction(CameraRecordingService.ACTION_STOP_RECORDING);
             context.startService(intent);
             return "DVR stop requested";
         }

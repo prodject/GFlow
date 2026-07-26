@@ -82,8 +82,11 @@ public class LowSpeedCameraService extends BaseForegroundService {
         }
         lastOpenedAt = now;
         armed = false;
-        EcarxDvrAdapter.Result result = new EcarxDvrAdapter(this).openEvs(EcarxDvrAdapter.EVS_CAMERA_AVM);
-        save("open 360 by speed=" + speed + " km/h -> " + result.message + "\n" + signals.status());
+        Intent intent = new Intent(this, CameraRecordingService.class)
+                .setAction(CameraRecordingService.ACTION_OPEN_EVS)
+                .putExtra(CameraRecordingService.EXTRA_CAMERA_ID, EcarxDvrAdapter.EVS_CAMERA_AVM);
+        startForegroundService(intent);
+        save("open 360 by speed=" + speed + " km/h -> delegated to CameraRecordingService\n" + signals.status());
     }
 
     private void save(String value) {

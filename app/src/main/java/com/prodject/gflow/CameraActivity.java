@@ -28,6 +28,8 @@ import java.util.Comparator;
 import java.util.Locale;
 
 public class CameraActivity extends Activity {
+    private TextView recordingTopValue;
+    private TextView sourceTopValue;
     private TextView archiveSummary;
     private TextView cameraSummary;
     private TextView diagSummary;
@@ -82,8 +84,10 @@ public class CameraActivity extends Activity {
         titleBlock.addView(title);
         bar.addView(titleBlock, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
-        bar.addView(buildTopStat("Запись", "Ожидание"));
-        bar.addView(buildTopStat("Источник", "Camera2 / EVS"));
+        recordingTopValue = buildTopStat("Запись", "Ожидание");
+        bar.addView(recordingTopValue);
+        sourceTopValue = buildTopStat("Источник", "Camera2 / EVS");
+        bar.addView(sourceTopValue);
         bar.addView(buildTopStat("Архив", "GFlowDvr"));
         return bar;
     }
@@ -310,19 +314,22 @@ public class CameraActivity extends Activity {
     }
 
     private void startRecording() {
-        startForegroundService(new Intent(this, DvrService.class).setAction(DvrService.ACTION_START));
+        startForegroundService(new Intent(this, CameraRecordingService.class).setAction(CameraRecordingService.ACTION_START_RECORDING));
         refreshStatus();
     }
 
     private void stopRecording() {
-        startService(new Intent(this, DvrService.class).setAction(DvrService.ACTION_STOP));
+        startService(new Intent(this, CameraRecordingService.class).setAction(CameraRecordingService.ACTION_STOP_RECORDING));
         refreshStatus();
     }
 
     private void runEvs(int cameraId, boolean open) {
-        EcarxDvrAdapter adapter = new EcarxDvrAdapter(this);
-        EcarxDvrAdapter.Result result = open ? adapter.openEvs(cameraId) : adapter.closeEvs(cameraId);
-        Ui.toast(this, result.success ? "EVS команда отправлена" : "EVS ошибка");
+        Intent intent = new Intent(this, CameraRecordingService.class)
+                .setAction(open ? CameraRecordingService.ACTION_OPEN_EVS : CameraRecordingService.ACTION_CLOSE_EVS)
+                .putExtra(CameraRecordingService.EXTRA_CAMERA_ID, cameraId);
+        if (open) startForegroundService(intent);
+        else startService(intent);
+        Ui.toast(this, open ? "EVS open delegated" : "EVS close delegated");
         refreshStatus();
     }
 
@@ -355,6 +362,9 @@ public class CameraActivity extends Activity {
     }
 
     private void refreshStatus() {
+        RecordingStateController.Snapshot snapshot = new RecordingStateController(this).snapshot();
+        if (recordingTopValue != null) recordingTopValue.setText(snapshot.state.name());
+        if (sourceTopValue != null) sourceTopValue.setText(snapshot.source == null || snapshot.source.isEmpty() ? "Camera2 / EVS" : snapshot.source);
         if (archiveSummary != null) archiveSummary.setText(DvrArchive.summary(this));
         if (cameraSummary != null) cameraSummary.setText(cameraSummaryText());
         if (diagSummary != null) diagSummary.setText(diagnosticSummaryText());
@@ -381,6 +391,8 @@ public class CameraActivity extends Activity {
         StringBuilder sb = new StringBuilder();
         EcarxDvrAdapter adapter = new EcarxDvrAdapter(this);
         sb.append("Availability: ").append(adapter.availability()).append("\n");
+        RecordingStateController.Snapshot snapshot = new RecordingStateController(this).snapshot();
+        sb.append("Recording state: ").append(snapshot.state.name()).append(" / ").append(snapshot.source).append("\n");
         sb.append("DVR online: ").append(adapter.dvrCameraOnline().message).append("\n");
         sb.append("DVR capture: ").append(adapter.dvrCapture().message).append("\n");
         sb.append("DVR mode: ").append(adapter.dvrCurrentMode().message).append("\n");
