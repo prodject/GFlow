@@ -1029,3 +1029,50 @@ GSplit backend transfer update on Sunday, July 26, 2026:
 - still open after this step:
   - add an explicit settings UI for changing split mode/delay/shift instead of reusing persisted defaults only;
   - if native split still behaves inconsistently on the target firmware, the next step should be accessibility-based `replace/close split` support, not more inline flag tweaking.
+
+EVCam service-stack transfer update on Sunday, July 26, 2026:
+
+- the previous camera stack in `GControl` was still too close to a UI-driven utility layout:
+  - `CameraActivity` and `DvrActivity` triggered recording directly through `DvrService`;
+  - `DvrService` mixed recording orchestration, EVS opening, screenrecord fallback, segment rotation, and foreground lifetime in one legacy class;
+  - low-speed 360 opening bypassed any common camera service layer.
+- the practical `EVCam` takeaway was transferred as a service split, not as a blind Camera2 recorder transplant.
+- new service-stack files added:
+  - [RecordingStateController.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/RecordingStateController.java)
+  - [CameraForegroundService.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/CameraForegroundService.java)
+  - [CameraRecordingService.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/CameraRecordingService.java)
+  - [TransparentBootActivity.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/TransparentBootActivity.java)
+- transferred architecture from `EVCam` into `GControl`:
+  - a dedicated foreground keepalive service now exists separately from recording commands;
+  - the actual recording/EVS command backend now lives in `CameraRecordingService`;
+  - recording state is no longer implicit UI state and is tracked centrally through `RecordingStateController` with:
+    - `IDLE`;
+    - `INITIALIZING`;
+    - `RECORDING`;
+    - `STOPPING`;
+    - `ERROR`.
+- `CameraRecordingService` now exposes explicit actions in the same spirit as `EVCam`'s recording service split:
+  - `ACTION_START_RECORDING`;
+  - `ACTION_STOP_RECORDING`;
+  - `ACTION_OPEN_EVS`;
+  - `ACTION_CLOSE_EVS`.
+- practical migration details:
+  - the old [DvrService.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/DvrService.java) was demoted into a compatibility shim that simply forwards legacy `DVR_START / DVR_STOP` requests to `CameraRecordingService`;
+  - this preserves compatibility with existing callers while moving real behavior into the new service backend.
+- boot/background orchestration was also aligned with the `EVCam` model:
+  - [BootReceiver.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/BootReceiver.java) now starts `CameraForegroundService` at boot in addition to the previous voice/automation work;
+  - `TransparentBootActivity` was added as the minimal transparent activity counterpart for future camera-safe boot flows that need an activity context.
+- shared callers were rewired to the new backend:
+  - [AutomationEngine.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/AutomationEngine.java) now sends `start_dvr / stop_dvr` through `CameraRecordingService`;
+  - [LowSpeedCameraService.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/LowSpeedCameraService.java) now delegates low-speed `360` opening into `CameraRecordingService` instead of opening EVS directly on its own;
+  - [CameraActivity.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/CameraActivity.java) and [DvrActivity.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/DvrActivity.java) now call the new explicit camera actions rather than talking to the old monolithic service path.
+- user-visible improvement:
+  - camera screens now show central recording state/readback from `RecordingStateController`, so the UI is reading one common backend state instead of guessing from button presses.
+- manifest updates:
+  - `CameraForegroundService`, `CameraRecordingService`, and `TransparentBootActivity` were added to [AndroidManifest.xml](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/AndroidManifest.xml).
+- practical effect:
+  - EVS open/close, recording start/stop, boot persistence, and automation now all go through one shared camera backend layer;
+  - this moves `GControl` much closer to the stable `EVCam` service model without forcing a premature migration to full multi-camera `Camera2` recorder internals everywhere.
+- still open after this step:
+  - if `GControl` later needs true multi-camera simultaneous recording rather than the current mixed `Camera2` / EVS-screenrecord approach, that should be a separate deliberate migration from `EVCam`'s `MultiCameraManager`;
+  - background whitelist/start-list scripts from `EVCam` were intentionally not transplanted automatically, because those touch system files and should stay explicit and reversible.
