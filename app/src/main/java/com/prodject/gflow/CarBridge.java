@@ -50,6 +50,51 @@ final class CarBridge {
         return sensor;
     }
 
+    static Object getCarManager(Context context, String name) throws Exception {
+        Object car = create(context);
+        callOptional(car, "connect");
+        try {
+            Method getter = car.getClass().getMethod("getCarManager", String.class);
+            Object manager = getter.invoke(car, name);
+            if (manager != null) return manager;
+        } catch (NoSuchMethodException ignored) {
+        }
+        try {
+            Method getter = car.getClass().getMethod("getCarManager", String.class, Class.forName("ecarx.car.IECarXCar"));
+            Object remote = getECarXCarService();
+            Object manager = getter.invoke(car, name, remote);
+            if (manager != null) return manager;
+        } catch (NoSuchMethodException ignored) {
+        }
+        throw new IllegalStateException("getCarManager returned null for " + name);
+    }
+
+    static Object getVfmiscManager(Context context) throws Exception {
+        Object setManager = getCarManager(context, "car_publicattribute");
+        Method getter = setManager.getClass().getMethod("getECarXCarVfmiscManager");
+        Object manager = getter.invoke(setManager);
+        if (manager == null) {
+            throw new IllegalStateException("getECarXCarVfmiscManager returned null");
+        }
+        return manager;
+    }
+
+    private static Object getECarXCarService() throws Exception {
+        Class<?> serviceManagerClass = Class.forName("android.os.ServiceManager");
+        Method getServiceMethod = serviceManagerClass.getMethod("getService", String.class);
+        Object binder = getServiceMethod.invoke(null, "ecarxcar_service");
+        if (binder == null) {
+            throw new IllegalStateException("ecarxcar_service binder is null");
+        }
+        Class<?> stubClass = Class.forName("ecarx.car.IECarXCar$Stub");
+        Method asInterfaceMethod = stubClass.getMethod("asInterface", Class.forName("android.os.IBinder"));
+        Object remote = asInterfaceMethod.invoke(null, binder);
+        if (remote == null) {
+            throw new IllegalStateException("IECarXCar.Stub.asInterface returned null");
+        }
+        return remote;
+    }
+
     private static void callOptional(Object target, String name) {
         try {
             target.getClass().getMethod(name).invoke(target);

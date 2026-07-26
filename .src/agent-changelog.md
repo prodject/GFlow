@@ -766,5 +766,35 @@ EVCam camera-recording cross-check update on Sunday, July 26, 2026:
     - signal observation;
     - boot/keep-alive orchestration;
     - whitelist strategy;
-    - central session/state management;
+  - central session/state management;
   - but not to blindly transplant its full multi-camera recorder into GControl without first deciding whether GControl should stay EVS-centric or become a real recorder app.
+
+GInputBridge backend transfer update on Sunday, July 26, 2026:
+
+- the first concrete runtime transfer from GInputBridge has now been applied to GControl backend code.
+- [CarBridge.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/CarBridge.java) now has a dedicated reflection path for OEM `Vfmisc` access:
+  - `getCarManager(context, "car_publicattribute")`;
+  - `getECarXCarVfmiscManager()`;
+  - fallback service lookup through `ecarxcar_service` / `IECarXCar.Stub.asInterface(...)` when the overloaded manager getter needs the remote binder instance.
+- [EcarxVehicleAdapter.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/EcarxVehicleAdapter.java) no longer leaves `BCM_CUSTOM_KEY` as a descriptive `OEM_ENTRY` placeholder only:
+  - `BCM_CUSTOM_KEY` is now marked writable on the `OEM_ENTRY` backend;
+  - direct writes for that function now route to `CB_SelfDefineFuncReq(...)` instead of `ICarFunction.setFunctionValue(...)`;
+  - support probing for `BCM_CUSTOM_KEY` now checks whether the `Vfmisc` manager is actually obtainable on-device.
+- the `GInputBridge` custom-key remap was transferred into GControl for the write path:
+  - `DIM_FULL_SCREEN_MAP 3 -> 0`;
+  - `DVR 0 -> 1`;
+  - `360 1 -> 2`;
+  - `NAVIGATION 2 -> 3`;
+  - `SOUND_SWITCH 4 -> 4`;
+  - `COLLECT_FAV 5 -> 5`;
+  - `LOUD_SPEAKER 99 -> 6`;
+  - `REAR_MIRROR_ADJUST 6 -> 7`;
+  - `TRUNK 100 -> 8`;
+  - `AUTO_PARK 101 -> 9`;
+  - `DRIVING_MODE 102 -> 10`.
+- practical effect of this transfer:
+  - custom-key actions like trunk / DVR / driving-mode now have a real OEM backend path in GControl instead of falling through to the broken generic BCM write assumption;
+  - this is the first actual code migration from GInputBridge, not just cross-reference documentation.
+- still open after this transfer:
+  - verify on-device which custom keys truly execute on the target firmware through `Vfmisc`;
+  - keep `360` and `auto park` behavior conservative in UI until logs confirm that those specific custom-key actions really launch the expected stock screens on this head unit.

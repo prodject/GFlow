@@ -710,6 +710,7 @@ final class EcarxVehicleAdapter {
     private final Context context;
     private Object car;
     private Object carFunction;
+    private Object vfmiscManager;
     private String lastError = "";
 
     EcarxVehicleAdapter(Context context) {
@@ -744,6 +745,9 @@ final class EcarxVehicleAdapter {
         Spec spec = spec(functionId);
         if (!spec.writable) {
             return Result.external("Функция переведена в diagnostics/readback-only: " + hex(functionId), false, true);
+        }
+        if (spec.backend == Backend.OEM_ENTRY) {
+            return setOemEntry(functionId, zone, value);
         }
         if (spec.backend == Backend.ADAPT_API) {
             Result support = support(functionId, zone);
@@ -813,6 +817,9 @@ final class EcarxVehicleAdapter {
     }
 
     Result get(int functionId, int zone) {
+        if (spec(functionId).backend == Backend.OEM_ENTRY) {
+            return Result.external("OEM entry не поддерживает прямой readback: " + hex(functionId), false, true);
+        }
         Log.i(TAG, "getFunctionValue id=" + hex(functionId)
                 + " zone=" + hex(zone));
 
@@ -889,6 +896,18 @@ final class EcarxVehicleAdapter {
     }
 
     Result support(int functionId, int zone) {
+        Spec spec = spec(functionId);
+        if (spec.backend == Backend.OEM_ENTRY) {
+            try {
+                if (functionId == BCM_CUSTOM_KEY) {
+                    vfmisc();
+                    return Result.external("OEM entry available via Vfmisc: " + hex(functionId), true, true);
+                }
+                return Result.external("OEM entry backend not implemented: " + hex(functionId), false, false);
+            } catch (Exception e) {
+                return Result.external("OEM entry unavailable: " + hex(functionId) + " " + compact(e), false, false);
+            }
+        }
         Log.i(TAG, "isFunctionSupported id=" + hex(functionId)
                 + " zone=" + hex(zone));
 
@@ -1018,7 +1037,7 @@ final class EcarxVehicleAdapter {
                 || functionId == BCM_LIGHT_HAZARD) {
             return new Spec(ZONE_ALL, Backend.ADAPT_API, false, false, false);
         }
-        if (functionId == BCM_CUSTOM_KEY) return new Spec(ZONE_ALL, Backend.OEM_ENTRY, false, false, false);
+        if (functionId == BCM_CUSTOM_KEY) return new Spec(ZONE_ALL, Backend.OEM_ENTRY, true, false, false);
         if (functionId == DRIVE_MODE_SELECT) return new Spec(ZONE_ALL, Backend.ADAPT_API, false, false, false);
         if (isPasDirectFunction(functionId)) return new Spec(ZONE_ALL, Backend.ADAPT_API, false, false, false);
         if (isHudDirectFunction(functionId)) return new Spec(ZONE_ALL, Backend.ADAPT_API, false, false, false);
@@ -1234,6 +1253,71 @@ final class EcarxVehicleAdapter {
             target.getClass().getMethod(name).invoke(target);
         } catch (Exception ignored) {
         }
+    }
+
+    private Result setOemEntry(int functionId, int zone, int value) {
+        if (functionId != BCM_CUSTOM_KEY) {
+            return Result.external("OEM entry backend not implemented: " + hex(functionId), false, false);
+        }
+        try {
+            Object manager = vfmisc();
+            int hardwareValue = toHardwareApiCustomKey(value);
+            Method method = manager.getClass().getMethod("CB_SelfDefineFuncReq", int.class);
+            Object raw = method.invoke(manager, hardwareValue);
+            boolean success = isVfmiscSuccess(raw);
+            return Result.external(
+                    "Vfmisc CB_SelfDefineFuncReq -> " + raw
+                            + " adapt=" + hex(value)
+                            + " hw=" + hex(hardwareValue),
+                    success,
+                    true
+            );
+        } catch (Exception e) {
+            return Result.external("OEM entry BCM_CUSTOM_KEY failed: " + compact(e), false, false);
+        }
+    }
+
+    private Object vfmisc() throws Exception {
+        if (vfmiscManager != null) return vfmiscManager;
+        vfmiscManager = CarBridge.getVfmiscManager(context);
+        return vfmiscManager;
+    }
+
+    private static int toHardwareApiCustomKey(int adaptApiValue) {
+        switch (adaptApiValue) {
+            case CUSTOM_KEY_DIM_FULL_SCREEN_MAP:
+                return 0;
+            case CUSTOM_KEY_DVR:
+                return 1;
+            case CUSTOM_KEY_360:
+                return 2;
+            case CUSTOM_KEY_NAVIGATION:
+                return 3;
+            case CUSTOM_KEY_SOUND_SWITCH:
+                return 4;
+            case CUSTOM_KEY_COLLECT_FAV:
+                return 5;
+            case CUSTOM_KEY_LOUD_SPEAKER:
+                return 6;
+            case CUSTOM_KEY_REAR_MIRROR_ADJUST:
+                return 7;
+            case CUSTOM_KEY_TRUNK:
+                return 8;
+            case CUSTOM_KEY_AUTO_PARK:
+                return 9;
+            case CUSTOM_KEY_DRIVING_MODE:
+                return 10;
+            default:
+                return adaptApiValue;
+        }
+    }
+
+    private static boolean isVfmiscSuccess(Object raw) {
+        if (raw == null) return false;
+        if (raw instanceof Boolean) return (Boolean) raw;
+        if (raw instanceof Number) return ((Number) raw).intValue() != 0;
+        String value = String.valueOf(raw).toLowerCase(Locale.US);
+        return value.contains("succeed") || value.contains("success") || value.equals("ok") || value.equals("true");
     }
 
     private static String compact(Throwable t) {
