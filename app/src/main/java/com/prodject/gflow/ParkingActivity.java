@@ -296,6 +296,15 @@ public class ParkingActivity extends Activity {
         addActionButton(apa, "Открыть штатный Auto Park UI", this::openAutoParkUi);
         addActionButton(apa, "Открыть 360-панораму", this::openAvmCamera);
         addDiagnostic(apa, "Вход в parking через BCM", EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.ADAS_PDC_WARNING_VOLUME);
+        addDiagnostic(apa, "GInputBridge PAS inventory",
+                EcarxVehicleAdapter.PAS_DRVR_ASSC_SYS_BTN_PUSH,
+                EcarxVehicleAdapter.PAS_DRVR_ASSC_SYS_PARK_MOD,
+                EcarxVehicleAdapter.PAS_AUT_PRKG_SLOT_NR_REQ,
+                EcarxVehicleAdapter.PAS_PAC_ACTIVATION,
+                EcarxVehicleAdapter.PAS_PAC_STEER_LINK,
+                EcarxVehicleAdapter.PAS_PAC_CAR_MODE_TRANSPARENT,
+                EcarxVehicleAdapter.PAS_ACTIVATED,
+                EcarxVehicleAdapter.PAS_VOLUME);
         if (experimentalFeaturesEnabled()) {
             addSignalDiagnostic(apa, "Статус APA/RPA",
                     "getDrvrAsscSysDisp", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_DISP,
@@ -335,6 +344,8 @@ public class ParkingActivity extends Activity {
         avm.addView(Ui.text(this, "PAS / AVM", 18, true));
         avm.addView(Ui.muted(this, "Raw PAS / AVM diagnostics. Direct PAS write выключен до появления подтвержденных успешных setFunctionValue для этой прошивки."));
         addDiagnostic(avm, "Состояние камер PAC / AVM",
+                EcarxVehicleAdapter.PAS_DRVR_ASSC_SYS_BTN_PUSH,
+                EcarxVehicleAdapter.PAS_DRVR_ASSC_SYS_PARK_MOD,
                 EcarxVehicleAdapter.PAS_PAC_ACTIVATION,
                 EcarxVehicleAdapter.PAS_AVM_OR_APA_ACTIVATION,
                 EcarxVehicleAdapter.PAS_PAC_STATUS,
@@ -704,10 +715,13 @@ public class ParkingActivity extends Activity {
     }
 
     private String apaStatusSummary() {
+        EcarxVehicleAdapter vehicleAdapter = new EcarxVehicleAdapter(this);
         CarSignalManagerAdapter adapter = new CarSignalManagerAdapter(this);
         String disp = compact(adapter.get("getDrvrAsscSysDisp", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_DISP).message);
         String sts = compact(adapter.get("getDrvrAsscSysSts", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_STS).message);
-        return disp + " · " + sts;
+        String propBtn = compact(vehicleAdapter.get(EcarxVehicleAdapter.PAS_DRVR_ASSC_SYS_BTN_PUSH).message);
+        String propMode = compact(vehicleAdapter.get(EcarxVehicleAdapter.PAS_DRVR_ASSC_SYS_PARK_MOD).message);
+        return disp + " · " + sts + " · " + propBtn + " · " + propMode;
     }
 
     private String pdcStatusSummary() {

@@ -823,3 +823,43 @@ GInputBridge entrypoint transfer update on Sunday, July 26, 2026:
     - `backend accepted`;
     - `stock UI actually opened`;
     so diagnostics stay honest.
+
+GInputBridge parking inventory transfer update on Sunday, July 26, 2026:
+
+- the next safe transfer from GInputBridge was not to re-enable speculative PAS writes, but to bring its confirmed parking property inventory into GControl so diagnostics and future fixes use the same property map.
+- [EcarxVehicleAdapter.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/EcarxVehicleAdapter.java) now includes the confirmed GInputBridge parking properties:
+  - `PAS_DRVR_ASSC_SYS_BTN_PUSH = 0x23100500`;
+  - `PAS_DRVR_ASSC_SYS_PARK_MOD = 0x23100700`;
+  - `PAS_AUT_PRKG_SLOT_NR_REQ = 0x23100600`.
+- the confirmed GInputBridge value map for those properties was also added as constants for reference and diagnostics:
+  - button-push values such as:
+    - `SELT_APA = 0x23100501`;
+    - `SELT_RPA = 0x23100502`;
+    - `UNDO = 0x23100503`;
+    - `ENTER_APA_OR_AVM = 0x23100506`;
+    - `MANUAL = 0x23100507`;
+    - `ENTER_APA = 0x23100509`;
+    - `CONFIRM_PARK_OUT = 0x2310050a`;
+    - `SUSPEND = 0x2310050b`;
+    - `ABORT = 0x2310050c`.
+  - park-mode values such as:
+    - `HORIZ_PARK_IN = 0x23100702`;
+    - `PERPDIR_PARK_IN = 0x23100703`;
+    - `HORIZ_LEFT_PARK_OUT = 0x23100709`;
+    - `HORIZ_RIGHT_PARK_OUT = 0x2310070a`;
+    - left/right forward/backward park-out variants through `0x2310070e`.
+- these properties were classified into the existing PAS direct-property bucket, which keeps them diagnostics-first on this firmware instead of falsely promoting them to confirmed writable controls.
+- [ParkingActivity.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/ParkingActivity.java) now surfaces this inventory explicitly:
+  - a new `GInputBridge PAS inventory` diagnostic block was added to the APA section;
+  - advanced PAC / AVM diagnostics now also include `PAS_DRVR_ASSC_SYS_BTN_PUSH` and `PAS_DRVR_ASSC_SYS_PARK_MOD`;
+  - the APA status summary now appends direct property readback for those two confirmed GInputBridge parking properties next to the existing `CarSignalManager` signals.
+- practical effect:
+  - parking diagnostics now align much more closely with the property map proven in GInputBridge;
+  - the next parking debug pass can compare:
+    - signal-manager state;
+    - direct PAS property readback;
+    - UI behavior;
+    without inventing new property IDs on the fly.
+- still open after this step:
+  - confirm on-device whether these direct PAS properties ever report useful live values on the target firmware;
+  - only after that decide whether any of them deserve promotion from diagnostics-first to a real control path in GControl.

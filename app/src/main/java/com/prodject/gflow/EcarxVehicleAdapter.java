@@ -436,6 +436,9 @@ final class EcarxVehicleAdapter {
     static final int PAS_RCTA_SHOW_GRAPHICS = 0x23050400;
     static final int PAS_RCTA_WARNING_VOLUME = 0x23050500;
     static final int PAS_AVM_OR_APA_ACTIVATION = 0x23100400;
+    static final int PAS_AUT_PRKG_SLOT_NR_REQ = 0x23100600;
+    static final int PAS_DRVR_ASSC_SYS_BTN_PUSH = 0x23100500;
+    static final int PAS_DRVR_ASSC_SYS_PARK_MOD = 0x23100700;
     static final int PAS_PRKG_AUX_INFO_DISP = 0x23110400;
     static final int PAS_PRKG_INTRPT_RELD_BTN = 0x23110600;
 
@@ -467,6 +470,26 @@ final class EcarxVehicleAdapter {
     static final int PAS_RCTA_VOLUME_LOW = 0x23050501;
     static final int PAS_RCTA_VOLUME_MID = 0x23050502;
     static final int PAS_RCTA_VOLUME_HIGH = 0x23050503;
+    static final int PAS_DRVR_ASSC_SYS_BTN_SELT_APA = 0x23100501;
+    static final int PAS_DRVR_ASSC_SYS_BTN_SELT_RPA = 0x23100502;
+    static final int PAS_DRVR_ASSC_SYS_BTN_UNDO = 0x23100503;
+    static final int PAS_DRVR_ASSC_SYS_BTN_ENTER_APA_OR_AVM = 0x23100506;
+    static final int PAS_DRVR_ASSC_SYS_BTN_MANUAL = 0x23100507;
+    static final int PAS_DRVR_ASSC_SYS_BTN_ENTER_APA = 0x23100509;
+    static final int PAS_DRVR_ASSC_SYS_BTN_CONFIRM_PARK_OUT = 0x2310050a;
+    static final int PAS_DRVR_ASSC_SYS_BTN_SUSPEND = 0x2310050b;
+    static final int PAS_DRVR_ASSC_SYS_BTN_ABORT = 0x2310050c;
+    static final int PAS_DRVR_ASSC_SYS_PARK_MOD_CANCEL = 0x23100701;
+    static final int PAS_DRVR_ASSC_SYS_PARK_MOD_HORIZ_PARK_IN = 0x23100702;
+    static final int PAS_DRVR_ASSC_SYS_PARK_MOD_PERPDIR_PARK_IN = 0x23100703;
+    static final int PAS_DRVR_ASSC_SYS_PARK_MOD_PERPDIR_PARK_IN_FW = 0x23100704;
+    static final int PAS_DRVR_ASSC_SYS_PARK_MOD_PERPDIR_PARK_IN_BW = 0x23100705;
+    static final int PAS_DRVR_ASSC_SYS_PARK_MOD_HORIZ_LEFT_PARK_OUT = 0x23100709;
+    static final int PAS_DRVR_ASSC_SYS_PARK_MOD_HORIZ_RIGHT_PARK_OUT = 0x2310070a;
+    static final int PAS_DRVR_ASSC_SYS_PARK_MOD_PERPDIR_LEFT_PARK_OUT_FW = 0x2310070b;
+    static final int PAS_DRVR_ASSC_SYS_PARK_MOD_PERPDIR_RIGHT_PARK_OUT_FW = 0x2310070c;
+    static final int PAS_DRVR_ASSC_SYS_PARK_MOD_PERPDIR_LEFT_PARK_OUT_BW = 0x2310070d;
+    static final int PAS_DRVR_ASSC_SYS_PARK_MOD_PERPDIR_RIGHT_PARK_OUT_BW = 0x2310070e;
 
     static final int VEHICLE_AVAS_SWITCH = 0x201a0500;
     static final int VEHICLE_AVAS_VOLUME = 0x201a0600;
@@ -1199,6 +1222,9 @@ final class EcarxVehicleAdapter {
             case PAS_RCTA_SHOW_GRAPHICS:
             case PAS_RCTA_WARNING_VOLUME:
             case PAS_AVM_OR_APA_ACTIVATION:
+            case PAS_AUT_PRKG_SLOT_NR_REQ:
+            case PAS_DRVR_ASSC_SYS_BTN_PUSH:
+            case PAS_DRVR_ASSC_SYS_PARK_MOD:
             case PAS_PRKG_AUX_INFO_DISP:
             case PAS_PRKG_INTRPT_RELD_BTN:
                 return true;
