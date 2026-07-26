@@ -863,3 +863,31 @@ GInputBridge parking inventory transfer update on Sunday, July 26, 2026:
 - still open after this step:
   - confirm on-device whether these direct PAS properties ever report useful live values on the target firmware;
   - only after that decide whether any of them deserve promotion from diagnostics-first to a real control path in GControl.
+
+GInputBridge diagnostics-group transfer update on Sunday, July 26, 2026:
+
+- the next transfer step was to stop keeping the new GInputBridge-confirmed inventory only inside individual screens and expose it in the shared diagnostics surfaces as well.
+- [SettingsActivity.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/SettingsActivity.java) and [DiagnosticsRunner.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/DiagnosticsRunner.java) now include the extra confirmed GInputBridge parking properties inside the common `Parking / APA / AVM` diagnostics group:
+  - `PAS_DRVR_ASSC_SYS_BTN_PUSH`;
+  - `PAS_DRVR_ASSC_SYS_PARK_MOD`;
+  - `PAS_AUT_PRKG_SLOT_NR_REQ`.
+- both shared diagnostics surfaces now also have a dedicated `OEM Custom Keys` group containing:
+  - `BCM_CUSTOM_KEY`;
+  - `CUSTOM_KEY_DVR`;
+  - `CUSTOM_KEY_TRUNK`;
+  - `CUSTOM_KEY_360`;
+  - `CUSTOM_KEY_NAVIGATION`;
+  - `CUSTOM_KEY_DIM_FULL_SCREEN_MAP`;
+  - `CUSTOM_KEY_SOUND_SWITCH`;
+  - `CUSTOM_KEY_COLLECT_FAV`;
+  - `CUSTOM_KEY_REAR_MIRROR_ADJUST`;
+  - `CUSTOM_KEY_LOUD_SPEAKER`;
+  - `CUSTOM_KEY_AUTO_PARK`;
+  - `CUSTOM_KEY_DRIVING_MODE`.
+- practical effect:
+  - auto-diagnostics and settings diagnostics now see the same custom-key and parking inventory already transferred into the runtime backend;
+  - future log collection can compare these properties across:
+    - per-screen diagnostics;
+    - shared settings diagnostics;
+    - headless diagnostic runs.
+- this keeps the GInputBridge transfer consistent: inventory is now reflected in backend, UI/voice entrypoints, parking diagnostics, and shared diagnostic sweeps rather than being fragmented.

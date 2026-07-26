@@ -458,6 +458,7 @@ public class SettingsActivity extends Activity {
         groups.put("Parking / APA / AVM", resolveFunctionIds(
                 "PAS_ACTIVATED", "PAS_STATUS", "PAS_SHOW_GRAPHICS", "PAS_RADAR_FRONT_CENTER",
                 "PAS_RADAR_REAR_CENTER", "PAS_RADAR_WORK_MODE", "PAS_RADAR_WORK_STATUS",
+                "PAS_DRVR_ASSC_SYS_BTN_PUSH", "PAS_DRVR_ASSC_SYS_PARK_MOD", "PAS_AUT_PRKG_SLOT_NR_REQ",
                 "PAS_PAC_ACTIVATION", "PAS_PAC_STATUS", "PAS_PAC_AUTO_REVERSE_CAMERA",
                 "PAS_PAC_VIEW_SELECTION", "PAS_PAC_3DVIEW_POSITION", "PAS_PAC_OVERLAY_STEERPATH",
                 "PAS_PAC_OVERLAY_TOWBAR", "PAS_PAC_OVERLAY_DSTINFO", "PAS_PAC_CAR_MODE_TRANSPARENT",
@@ -465,6 +466,14 @@ public class SettingsActivity extends Activity {
                 "PAS_SAP_PARK_TYPE", "PAS_SAP_PARK_IN_TYPE", "PAS_RCTA_ACTIVATION",
                 "PAS_RCTA_LEFT_WARNING", "PAS_RCTA_RIGHT_WARNING", "PAS_RCTA_WARNING_VOLUME",
                 "PAS_AVM_OR_APA_ACTIVATION"
+        ));
+        groups.put("OEM Custom Keys", resolveFunctionIds(
+                "BCM_CUSTOM_KEY",
+                "CUSTOM_KEY_DVR", "CUSTOM_KEY_TRUNK", "CUSTOM_KEY_360",
+                "CUSTOM_KEY_NAVIGATION", "CUSTOM_KEY_DIM_FULL_SCREEN_MAP",
+                "CUSTOM_KEY_SOUND_SWITCH", "CUSTOM_KEY_COLLECT_FAV",
+                "CUSTOM_KEY_REAR_MIRROR_ADJUST", "CUSTOM_KEY_LOUD_SPEAKER",
+                "CUSTOM_KEY_AUTO_PARK", "CUSTOM_KEY_DRIVING_MODE"
         ));
         groups.put("HUD / OneOS", resolveFunctionIds(
                 "HUD_ACTIVE", "HUD_DISPLAY_SAFETY", "HUD_DISPLAY_MEDIA", "HUD_DISPLAY_NAVI",
