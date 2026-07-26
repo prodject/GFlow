@@ -941,3 +941,38 @@ GInputBridge ambience-light and auto-park cross-check update on Sunday, July 26,
 - still open after this cross-check:
   - if needed, import the remaining GInputBridge parking inventory as diagnostics-only constants first, not as writable UI actions;
   - keep treating `CUSTOM_KEY_360` and `CUSTOM_KEY_AUTO_PARK` separately from "stock UI definitely opened", because backend acceptance alone is not sufficient proof on this firmware.
+
+GInputBridge ambience-entrypoint and diagnostics inventory transfer on Sunday, July 26, 2026:
+
+- the next practical gap was not backend support but discoverability: the ambience-light screen already existed in code, but had no obvious route from the current home UI, which is why it was effectively invisible during manual testing.
+- [MainActivity.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/MainActivity.java) now exposes `Подсветка` from real user-facing entrypoints:
+  - a new drawer action was added in the home navigation drawer;
+  - the `Vehicle` dock quick sheet now also links directly to the ambience screen.
+- the existing `Experimental: Подсветка` screen was also expanded with a dedicated `GInputBridge ambience extras` diagnostics block so the remaining vendor inventory is visible without pretending it is fully proven writable on this firmware.
+- [EcarxVehicleAdapter.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/EcarxVehicleAdapter.java) now includes additional ambience-light properties confirmed from local `GInputBridge`, including:
+  - `AMBIENCE_LIGHT_BRIGHTNESS_DRIVING = 0x200a0700`;
+  - `AMBIENCE_LIGHT_BRIGHTNESS_STATIONARY = 0x200a0600`;
+  - `AMBIENCE_LIGHT_COLOR_TYPE = 0x200a0a00`;
+  - `AMBIENCE_LIGHT_CLIMATE = 0x2a080200`;
+  - `AMBIENCE_LIGHT_GOODBYE_SHOW = 0x2a050200`;
+  - `AMBIENCE_LIGHT_PHONE_CALL_REMINDER = 0x2a050400`;
+  - `AMBIENCE_LIGHT_SLIDING_DOOR_REMINDER = 0x2a050900`;
+  - `AMBIENCE_LIGHT_INTERACTIVE_EFFECT = 0x200a0800`;
+  - `AMBIENCE_LIGHT_SOLID_COLOR_SET = 0x2a500000`;
+  - `AMBIENCE_LIGHT_BREATHE_COLOR_SET = 0x2a500100`;
+  - `AMBIENCE_LIGHT_ENDURANCE_MILE_REMINDER = 0x2a050500`;
+  - `AMBIENCE_LIGHT_ICHARGING_REMIND = 0x2a080300`.
+- the same step also imported the next safe parking inventory from `GInputBridge` as diagnostics/readback IDs:
+  - `PAS_APA_SELF_RECOMMENDED = 0x23060100`;
+  - `PAS_APA_DETECT_PARKING_SPACE = 0x23a80100`;
+  - `PAS_APA_RPA_SWITCH = 0x23a80200`;
+  - `PAS_PRKG_INTRPT_RELD_BTN = 0x23110600`.
+- these extra parking IDs were added to the PAS direct-property bucket on purpose, which keeps them diagnostics-first instead of silently promoting them to normal write actions.
+- [SettingsActivity.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/SettingsActivity.java) and [DiagnosticsRunner.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/DiagnosticsRunner.java) now include those new ambience and parking properties in shared diagnostics as well.
+- practical effect:
+  - you now have a visible path to the ambience screen from the running UI;
+  - the remaining ambience and APA/RPA inventory proven by `GInputBridge` is now visible in both on-screen and shared diagnostics;
+  - future stock-app or manual tests can compare those IDs against runtime behavior without adding speculative write buttons first.
+- still open after this step:
+  - decide later which of the new ambience extras deserve real command widgets rather than diagnostics-only exposure;
+  - collect logs before promoting any of the newly imported APA/RPA properties to ordinary parking controls.
