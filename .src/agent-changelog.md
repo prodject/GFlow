@@ -798,3 +798,28 @@ GInputBridge backend transfer update on Sunday, July 26, 2026:
 - still open after this transfer:
   - verify on-device which custom keys truly execute on the target firmware through `Vfmisc`;
   - keep `360` and `auto park` behavior conservative in UI until logs confirm that those specific custom-key actions really launch the expected stock screens on this head unit.
+
+GInputBridge entrypoint transfer update on Sunday, July 26, 2026:
+
+- the next transfer step from GInputBridge was to stop treating confirmed custom-key values as backend-only constants and expose them through real GControl entrypoints.
+- [VehicleActivity.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/VehicleActivity.java) now has an explicit `OEM Custom Keys` card wired through the new `Vfmisc` backend for:
+  - `Trunk`;
+  - `DVR`;
+  - `Navigation`;
+  - `Full Map`.
+- `Custom Drive` in the same screen continues to use `BCM_CUSTOM_KEY / CUSTOM_KEY_DRIVING_MODE`, but it now benefits from the real OEM backend that was added in the previous step.
+- [VoiceActivity.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/VoiceActivity.java) now routes additional confirmed GInputBridge custom-key actions through `BCM_CUSTOM_KEY` as well:
+  - navigation / map;
+  - full-screen map;
+  - custom-drive menu;
+  - trunk;
+  - DVR.
+- practical effect:
+  - confirmed GInputBridge custom keys are no longer stranded as raw constants in the adapter;
+  - they now have user-facing entrypoints in both UI and voice, all going through the same backend instead of one-off assumptions.
+- still open after this step:
+  - verify on-device which of these OEM custom-key entrypoints actually open the expected stock experiences on this firmware;
+  - if some of them still no-op despite successful `Vfmisc` calls, split them into:
+    - `backend accepted`;
+    - `stock UI actually opened`;
+    so diagnostics stay honest.

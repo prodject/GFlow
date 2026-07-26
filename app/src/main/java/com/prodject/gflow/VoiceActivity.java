@@ -778,6 +778,17 @@ public class VoiceActivity extends Activity {
         if (has(cmd, "dvr") || has(cmd, "регистратор")) {
             return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_DVR);
         }
+        if ((has(cmd, "нави") || has(cmd, "navigation") || has(cmd, "карта")) && !has(cmd, "360")) {
+            return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_NAVIGATION);
+        }
+        if ((has(cmd, "полная карта") || has(cmd, "full map") || has(cmd, "fullscreen map"))
+                || (has(cmd, "карта") && has(cmd, "полный"))) {
+            return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_DIM_FULL_SCREEN_MAP);
+        }
+        if ((has(cmd, "custom drive") || has(cmd, "кастом драйв") || has(cmd, "драйв меню"))
+                || (has(cmd, "режим") && has(cmd, "драйв") && has(cmd, "меню"))) {
+            return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_DRIVING_MODE);
+        }
         if (has(cmd, "дворник") || has(cmd, "wiper")) {
             if (off(cmd)) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_WIPER, EcarxVehicleAdapter.WIPER_OFF);
             if (has(cmd, "авто") || has(cmd, "auto")) return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_WIPER, EcarxVehicleAdapter.WIPER_AUTO);

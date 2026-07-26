@@ -368,6 +368,12 @@ public class VehicleActivity extends Activity {
                 new QuickItem("Open 360", this::openAvmCamera),
                 new QuickItem("Custom Drive", () -> sendVehicle(EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_DRIVING_MODE))
         });
+        addAdvancedCard(grid, "OEM Custom Keys", "Подтвержденные точки входа из GInputBridge", new QuickItem[]{
+                new QuickItem("Trunk", this::openTrunkOemEntry),
+                new QuickItem("DVR", () -> sendVehicle(EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_DVR)),
+                new QuickItem("Navigation", () -> sendVehicle(EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_NAVIGATION)),
+                new QuickItem("Full Map", () -> sendVehicle(EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_DIM_FULL_SCREEN_MAP))
+        });
         panel.addView(grid, lpMatchWrap(0, 12, 0, 12));
 
         if (experimentalFeaturesEnabled()) {
