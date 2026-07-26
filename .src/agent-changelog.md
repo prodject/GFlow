@@ -891,3 +891,53 @@ GInputBridge diagnostics-group transfer update on Sunday, July 26, 2026:
     - shared settings diagnostics;
     - headless diagnostic runs.
 - this keeps the GInputBridge transfer consistent: inventory is now reflected in backend, UI/voice entrypoints, parking diagnostics, and shared diagnostic sweeps rather than being fragmented.
+
+GInputBridge ambience-light and auto-park cross-check update on Sunday, July 26, 2026:
+
+- a direct pass over the local [GInputBridge](/Volumes/Store/WORK_PROGRAMMER/GControl/.src/examples/GInputBridge) source confirmed that it contains two more relevant blocks:
+  - a large `IAmbienceLight` / `IVehicle` ambience-light inventory;
+  - extra `IPAS` / custom-key auto-park inventory.
+- ambience-light result:
+  - there is no missing backend breakthrough here; the main transferable ambience block is already present in GControl.
+  - [EcarxVehicleAdapter.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/EcarxVehicleAdapter.java) already carries the same core property IDs confirmed by GInputBridge, including:
+    - `AMBIENCE_LIGHT_THEME_COLOR`;
+    - `AMBIENCE_LIGHT_EFFECT`;
+    - `AMBIENCE_LIGHT_CONTROL_MODE`;
+    - `AMBIENCE_LIGHT_MUSIC`;
+    - `AMBIENCE_LIGHT_MUSIC_SHOW_MODE`;
+    - `AMBIENCE_LIGHT_WELCOME_SHOW`;
+    - `AMBIENCE_LIGHT_WELCOME_SHOW_MODE`;
+    - `AMBIENCE_LIGHT_VOICE`;
+    - `AMBIENCE_LIGHT_ZONE_EXPERIENCE`;
+    - `AMBIENCE_LIGHT_MAIN_ZONES`;
+    - `AMBIENCE_LIGHT_TOP_ZONES`;
+    - `AMBIENCE_LIGHT_BOT_ZONES`.
+  - [MainActivity.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/MainActivity.java) already exposes these as a real experimental screen with:
+    - theme colors;
+    - theme/effect presets;
+    - control modes;
+    - welcome/music/voice toggles;
+    - zone selection;
+    - diagnostics/readback block.
+  - [SettingsActivity.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/SettingsActivity.java) and [DiagnosticsRunner.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/DiagnosticsRunner.java) also already include ambience-light in shared diagnostics.
+- auto-park result:
+  - GInputBridge confirms again that `CUSTOM_KEY_TYPE_AUTO_PARK = 101` exists as a vendor custom key, and that several PAS properties belong to the same parking cluster already being imported into GControl.
+  - the custom-key side is already transferred into GControl through the `Vfmisc` backend remap:
+    - `CUSTOM_KEY_AUTO_PARK = 0x65` maps to hardware API slot `9`.
+  - the direct PAS-property side is also already partially transferred:
+    - `PAS_DRVR_ASSC_SYS_BTN_PUSH`;
+    - `PAS_DRVR_ASSC_SYS_PARK_MOD`;
+    - `PAS_AUT_PRKG_SLOT_NR_REQ`.
+  - GInputBridge also shows additional parking-related inventory worth keeping in mind for later verification:
+    - `PAS_FUNC_APA_SELF_RECOMMENDED`;
+    - `PAS_FUNC_APA_DETECT_PARKING_SPACE`;
+    - `PAS_FUNC_APA_RPA_SWITCH`;
+    - `PAS_FUNC_PRKG_INTRPT_RELD_BTN`;
+    - `PAS_FUNC_SAP_ACTIVATION`;
+    - `PAS_FUNC_RCTA_WARNING_VOLUME`.
+- practical conclusion:
+  - ambience-light is not the missing piece right now, because the core GInputBridge-backed implementation is already in GControl;
+  - auto-park is only partially transferred on purpose: inventory and backend hooks are there, but stock-firmware behavior is still not proven enough to promote every PAS path to a normal user-facing control.
+- still open after this cross-check:
+  - if needed, import the remaining GInputBridge parking inventory as diagnostics-only constants first, not as writable UI actions;
+  - keep treating `CUSTOM_KEY_360` and `CUSTOM_KEY_AUTO_PARK` separately from "stock UI definitely opened", because backend acceptance alone is not sufficient proof on this firmware.
