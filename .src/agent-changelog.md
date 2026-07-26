@@ -976,3 +976,56 @@ GInputBridge ambience-entrypoint and diagnostics inventory transfer on Sunday, J
 - still open after this step:
   - decide later which of the new ambience extras deserve real command widgets rather than diagnostics-only exposure;
   - collect logs before promoting any of the newly imported APA/RPA properties to ordinary parking controls.
+
+GSplit backend transfer update on Sunday, July 26, 2026:
+
+- the previous `GControl` split code was still only a thin UI hack:
+  - [MainActivity.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/MainActivity.java) directly queried launcher apps and fired one `startActivity(...)` with adjacent flags;
+  - there was no dedicated backend, no persisted last split, no freeform preheat, and no headless trigger path.
+- that gap is now closed with a dedicated split backend layer modeled on the `GSplit` architecture, but reduced to the pieces that actually fit `GControl` today.
+- new core backend file:
+  - [SplitLaunchManager.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/SplitLaunchManager.java)
+- what this backend now provides:
+  - central launch orchestration instead of inline split logic inside activities;
+  - persisted `last split` configuration in `gflow_split` preferences;
+  - explicit split modes:
+    - `native`;
+    - `freeform`;
+    - `adjacent`.
+  - configurable persisted timing inputs:
+    - `second_window_delay_ms`;
+    - `bottom_window_shift`.
+- the `GSplit`-style headless execution path was also transferred:
+  - [SplitLauncherActivity.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/SplitLauncherActivity.java) is now a dedicated no-UI launcher activity that receives resolved package pairs and runs the backend;
+  - [MultiWindowHeatingActivity.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/MultiWindowHeatingActivity.java) was added as the invisible freeform preheat activity, following the same architectural role as in `GSplit`.
+- broadcast entrypoints were added as well:
+  - [SplitCommandReceiver.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/SplitCommandReceiver.java)
+  - manifest actions now exposed:
+    - `com.prodject.gflow.SPLIT_LAUNCH`;
+    - `com.prodject.gflow.SPLIT_LAUNCH_LAST`;
+    - `com.prodject.gflow.SPLIT_CLOSE`.
+- transferred native-split behavior:
+  - `SplitLaunchManager` now uses the same `GSplit` keys for native split launch:
+    - `android.activity.windowingMode = 3`;
+    - `android:activity.splitScreenCreateMode = 0`.
+  - native split is launched through a staged reset-and-launch sequence rather than one naked adjacent intent.
+- transferred freeform behavior:
+  - freeform launch now goes through:
+    - invisible multiwindow preheat;
+    - central bounds calculation;
+    - reflective `ActivityOptions.setLaunchWindowingMode(5)`;
+    - central `setLaunchBounds(...)` application.
+  - bounds are now calculated once in the backend from real display metrics and status-bar height instead of being scattered in UI code.
+- user-facing wiring was updated so the backend is actually reachable:
+  - [MainActivity.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/MainActivity.java) now exposes `Split Apps` in the main drawer and routes package-pair selection into `SplitLaunchManager`;
+  - [DesktopActivity.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/DesktopActivity.java) now exposes split launch in:
+    - overview navigation;
+    - bottom dock;
+    - per-app `Split` action from the app library.
+- practical effect:
+  - split launch in `GControl` is no longer one isolated adjacent-intent hack;
+  - there is now one place to evolve timings, mode fallback, launch bounds, and external trigger behavior;
+  - adb or automation can trigger the same split backend through broadcast actions instead of only through visible UI taps.
+- still open after this step:
+  - add an explicit settings UI for changing split mode/delay/shift instead of reusing persisted defaults only;
+  - if native split still behaves inconsistently on the target firmware, the next step should be accessibility-based `replace/close split` support, not more inline flag tweaking.
