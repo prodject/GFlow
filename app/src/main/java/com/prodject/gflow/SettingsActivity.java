@@ -19,6 +19,7 @@ import android.widget.GridLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import androidx.core.content.FileProvider;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -46,7 +47,6 @@ public class SettingsActivity extends Activity {
     private static final String KEY_AUTO_UPDATE = "auto_update_enabled";
     private static final int REQ_CREATE_BACKUP = 4101;
     private static final int REQ_RESTORE_BACKUP = 4102;
-    private static final int REQ_EXPORT_DIAGNOSTICS = 4103;
 
     private LinearLayout contentHost;
     private String releaseState = "Источник: github.com/prodject/GFlow/releases";
@@ -75,7 +75,6 @@ public class SettingsActivity extends Activity {
         Uri uri = data.getData();
         if (requestCode == REQ_CREATE_BACKUP) writeBackupToUri(uri);
         else if (requestCode == REQ_RESTORE_BACKUP) restoreBackupFromUri(uri);
-        else if (requestCode == REQ_EXPORT_DIAGNOSTICS) exportDiagnosticsToUri(uri);
     }
 
     private View buildShell() {
@@ -350,75 +349,38 @@ public class SettingsActivity extends Activity {
         diagnosticsState = "Диагностика выполняется...";
         renderContent();
         new Thread(() -> {
-            try {
-                EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
-                StringBuilder log = new StringBuilder();
-                log.append("GFlow auto diagnostics\n").append(new Date()).append("\n\n");
-                log.append(safeDiagnosticsBlock("AdaptAPI availability", adapter::availability)).append("\n\n");
-                LinkedHashMap<String, int[]> groups = buildDiagnosticsGroups();
-                int total = 0;
-                for (Map.Entry<String, int[]> entry : groups.entrySet()) {
-                    log.append("== ").append(entry.getKey()).append(" ==\n");
-                    for (int id : entry.getValue()) {
-                        total++;
-                        final int functionId = id;
-                        log.append(safeDiagnosticsBlock("support " + EcarxVehicleAdapter.hex(functionId),
-                                () -> adapter.support(functionId).message)).append("\n");
-                        log.append(safeDiagnosticsBlock("get " + EcarxVehicleAdapter.hex(functionId),
-                                () -> adapter.get(functionId).message)).append("\n\n");
-                    }
+            DiagnosticsRunner.Result result = DiagnosticsRunner.run(this, true, "settings-ui");
+            runOnUiThread(() -> {
+                if (!result.success) diagnosticsState = result.message;
+                else if (result.removableSdFile != null) {
+                    diagnosticsState = "Лог сохранен на removable SD: " + result.removableSdFile.getAbsolutePath();
+                } else {
+                    diagnosticsState = "Диагностика завершена, но removable SD не найдена. Во внутреннее хранилище экспорт не выполнялся.";
                 }
-                appendAdvancedDiagnostics(log);
-                final int totalCount = total;
-                File file = new File(getCacheDir(), "gflow-diagnostics.txt");
-                try (FileOutputStream out = new FileOutputStream(file)) {
-                    out.write(log.toString().getBytes("UTF-8"));
-                }
-                runOnUiThread(() -> {
-                    diagnosticsState = "Лог готов: " + file.getAbsolutePath() + " · " + totalCount + " function IDs";
-                    renderContent();
-                });
-            } catch (Exception e) {
-                runOnUiThread(() -> {
-                    diagnosticsState = "Ошибка диагностики: " + e.getClass().getSimpleName() + ": " + e.getMessage();
-                    renderContent();
-                });
-            }
+                renderContent();
+            });
         }).start();
     }
 
     private void shareDiagnosticsIfExists() {
-        File file = new File(getCacheDir(), "gflow-diagnostics.txt");
-        if (!file.exists()) {
-            Ui.toast(this, "Сначала запустите автодиагностику");
+        File file = DiagnosticsRunner.saveLatestToRemovableSd(this);
+        if (file == null || !file.exists()) {
+            Ui.toast(this, "Removable SD не найдена или лог еще не готов");
             return;
         }
-        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
-        intent.addCategory(Intent.CATEGORY_OPENABLE);
-        intent.setType("text/plain");
-        intent.putExtra(Intent.EXTRA_TITLE, "gflow-diagnostics-" + System.currentTimeMillis() + ".txt");
-        startActivityForResult(intent, REQ_EXPORT_DIAGNOSTICS);
-    }
-
-    private void exportDiagnosticsToUri(Uri uri) {
-        File diagnostics = new File(getCacheDir(), "gflow-diagnostics.txt");
-        if (!diagnostics.exists()) {
-            Ui.toast(this, "Лог не найден");
-            return;
-        }
-        try (InputStream in = new java.io.FileInputStream(diagnostics);
-             OutputStream out = getContentResolver().openOutputStream(uri, "w")) {
-            if (out == null) throw new IOException("Не удалось открыть файл");
-            byte[] buf = new byte[8192];
-            for (int n; (n = in.read(buf)) > 0; ) out.write(buf, 0, n);
-            out.flush();
-            diagnosticsState = "Лог сохранен: " + uri;
+        try {
+            Uri uri = FileProvider.getUriForFile(this, getPackageName() + ".files", file);
+            Intent intent = new Intent(Intent.ACTION_SEND);
+            intent.setType("text/plain");
+            intent.putExtra(Intent.EXTRA_STREAM, uri);
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivity(Intent.createChooser(intent, "Share diagnostics"));
+            diagnosticsState = "Лог подготовлен на removable SD: " + file.getAbsolutePath();
             renderContent();
-            Ui.toast(this, "Лог сохранен");
         } catch (Exception e) {
-            diagnosticsState = "Ошибка экспорта: " + e.getMessage();
+            diagnosticsState = "Ошибка шаринга: " + e.getMessage();
             renderContent();
-            Ui.toast(this, "Не удалось сохранить лог");
+            Ui.toast(this, "Не удалось открыть share");
         }
     }
 

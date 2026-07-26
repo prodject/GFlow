@@ -545,3 +545,14 @@ Door/HUD follow-up after manual vehicle clarification on Sunday, July 26, 2026:
 - `BCM_DOOR`, `BCM_DOOR_STATUS`, `BCM_DOOR_CONTROL`, and `BCM_DOOR_POS` still have active runtime evidence in `logs_1.25`, so door handling should stay on targeted per-zone paths instead of being broadly demoted together with unrelated BCM lock/custom-key failures.
 - [HudActivity.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/HudActivity.java) now shifts visible actions away from direct `HUD_ACTIVE` toggles and toward DIM / cluster / bridge tooling plus readback diagnostics.
 - [VehicleActivity.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/VehicleActivity.java) now prioritizes concrete door-zone actions and body status readback instead of presenting fake global lock/unlock shortcuts as the main body controls.
+
+Diagnostics automation update on Sunday, July 26, 2026:
+
+- Settings auto diagnostics no longer depends on `ACTION_CREATE_DOCUMENT` for its normal export path.
+- diagnostics now run through a shared runner that performs:
+  - support/readback coverage;
+  - automatic write sweep across UI-facing command probes;
+  - latest cache copy for reuse;
+  - removable-SD export only, with no fallback export into internal storage.
+- added exported adb/broadcast entrypoint `com.prodject.gflow.RUN_AUTODIAGNOSTICS` for headless triggering without opening UI and manually pressing buttons.
+- added [scripts/collect-gflow-diagnostics.sh](/Volumes/Store/WORK_PROGRAMMER/GControl/scripts/collect-gflow-diagnostics.sh) to trigger the sweep over adb, wait for completion, collect logcat, and pull the newest removable-SD report automatically.
