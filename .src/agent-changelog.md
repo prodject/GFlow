@@ -556,3 +556,85 @@ Diagnostics automation update on Sunday, July 26, 2026:
   - removable-SD export only, with no fallback export into internal storage.
 - added exported adb/broadcast entrypoint `com.prodject.gflow.RUN_AUTODIAGNOSTICS` for headless triggering without opening UI and manually pressing buttons.
 - added [scripts/collect-gflow-diagnostics.sh](/Volumes/Store/WORK_PROGRAMMER/GControl/scripts/collect-gflow-diagnostics.sh) to trigger the sweep over adb, wait for completion, collect logcat, and pull the newest removable-SD report automatically.
+
+Stock-app logging helper update on Sunday, July 26, 2026:
+
+- added [collect-adb-log-stock.sh](/Volumes/Store/WORK_PROGRAMMER/GControl/collect-adb-log-stock.sh) for manual reverse-engineering of stock/system apps.
+- the script asks which package to track before log capture starts, so package selection is no longer hardcoded to GFlow.
+- during capture the user can type comments like `:note climate fan +1` and they are saved into the session as `Введена функция: ...`, making button presses and stock-setting actions easier to correlate with log timestamps.
+
+GInputBridge cross-check update on Sunday, July 26, 2026:
+
+- local reference repo [`.src/examples/GInputBridge`](./examples/GInputBridge) confirms that it uses the same general vendor stack family as GFlow:
+  - `AdaptAPI`;
+  - `ECarXCarProxy`;
+  - `CarSignalManager`.
+- the most important backend finding is that `BCM_CUSTOM_KEY` is not handled there as a plain generic `ICarFunction.setFunctionValue(...)` write:
+  - custom-key execution is routed through `ECarXCarVfmiscManager.CB_SelfDefineFuncReq(...)`;
+  - that is consistent with the current GFlow repair direction where OEM-entry custom keys should not be treated as ordinary direct writable BCM properties.
+- confirmed `BCM_CUSTOM_KEY` values from GInputBridge:
+  - `360 panorama = 1`;
+  - `navigation = 2`;
+  - `full-screen map = 3`;
+  - `sound switch = 4`;
+  - `collect favorite = 5`;
+  - `mirror adjust = 6`;
+  - `loud speaker = 99`;
+  - `trunk = 100`;
+  - `auto park = 101`;
+  - `driving mode = 102`.
+- GInputBridge also applies a custom-key remap before sending values to the hardware API, which matters for future OEM-entry cleanup:
+  - `3 -> 0`;
+  - `0 -> 1`;
+  - `1 -> 2`;
+  - `2 -> 3`;
+  - `4 -> 4`;
+  - `5 -> 5`;
+  - `99 -> 6`;
+  - `6 -> 7`;
+  - `100 -> 8`;
+  - `101 -> 9`;
+  - `102 -> 10`.
+- confirmed body area IDs from GInputBridge match the OEM area model already used in the GFlow body repair work:
+  - doors:
+    - `front-left = 0x1`;
+    - `front-right = 0x4`;
+    - `rear-left = 0x10`;
+    - `rear-right = 0x40`;
+    - `hood = 0x10000000`;
+    - `rear/trunk = 0x20000000`.
+  - windows:
+    - `front-left = 0x10`;
+    - `front-right = 0x20`;
+    - `rear-left = 0x100`;
+    - `rear-right = 0x200`.
+  - global zone:
+    - `ZONE_ALL = Integer.MIN_VALUE`.
+- confirmed `BCM_DOOR` values from GInputBridge:
+  - `close = 0`;
+  - `open = 1`;
+  - `pause = 553779457`.
+- confirmed HVAC value enums from GInputBridge match the corrected GFlow HVAC rewrite:
+  - seat heating:
+    - `off = 0`;
+    - `level 1 = 0x10050101`;
+    - `level 2 = 0x10050102`;
+    - `level 3 = 0x10050103`;
+    - `auto = 0x1005010f`.
+  - seat ventilation:
+    - `off = 0`;
+    - `level 1 = 0x10050001`;
+    - `level 2 = 0x10050002`;
+    - `level 3 = 0x10050003`;
+    - `auto = 0x1005000f`.
+- confirmed parking-related property inventory from GInputBridge:
+  - `PAS_FUNC_DRVR_ASSC_SYS_BTN_PUSH = 0x23100100`;
+  - `DRVR_ASSC_SYS_BTN_PUSH_ENTER_APA_OR_AVM = 0x23100106`;
+  - `PAS_FUNC_PAC_ACTIVATION = 0x23030000`;
+  - `PAS_FUNC_PAS_ACTIVATED = 0x200d0000`;
+  - `PAS_FUNC_PAS_VOLUME = 0x200d0100`.
+- GInputBridge inventory also keeps `BCM_FUNC_CUSTOM_KEY`, `PAS_FUNC_PAS_ACTIVATED`, and `PAS_FUNC_PAS_VOLUME` in its practical property preset set, which makes it a useful cross-check for property discovery, naming, and enum mapping.
+- important limitation:
+  - these GInputBridge findings confirm backend shape, enum values, and OEM area IDs;
+  - they do not prove that the same direct writes are actually writable on the target car firmware;
+  - specifically, `CUSTOM_KEY_360 = 1` is confirmed as a vendor mapping, but user testing on the current firmware already showed that this alone does not open the stock `360` UI.

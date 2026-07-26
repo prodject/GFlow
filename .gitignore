@@ -10,3 +10,4 @@ local.properties
 .codex/
 log.sh
 collect-adb-log.sh
+collect-adb-log-stock.sh
