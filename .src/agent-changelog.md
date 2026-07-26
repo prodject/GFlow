@@ -686,3 +686,85 @@ GSplit split-launch cross-check update on Sunday, July 26, 2026:
 - important limitation:
   - GSplit proves practical launch patterns for Android automotive-style firmware, but it does not prove that every same flag/key combination will behave identically in GControl on this head unit;
   - migration should therefore be staged: first isolate backend, then add freeform/native launch modes, then validate on-device which path is actually stable.
+
+EVCam camera-recording cross-check update on Sunday, July 26, 2026:
+
+- local reference repo [`.src/examples/EVCam`](./examples/EVCam) confirms that its stable camera/recording behavior is built as a service stack, not around a visible activity lifecycle.
+- the most useful architectural takeaway for GControl:
+  - EVS / camera preview entry and camera recording must be separated;
+  - anything expected to survive backgrounding, boot, or delayed signal triggers needs a dedicated service/controller path instead of living only in `CameraActivity`.
+- confirmed service split from EVCam:
+  - `CameraForegroundService` keeps the process alive, owns the foreground notification, wake-lock handling, remote-service startup, and restart/repair logic;
+  - `service/CameraRecordingService` owns the actual recording/blind-spot commands through explicit actions:
+    - `ACTION_START_RECORDING`;
+    - `ACTION_STOP_RECORDING`;
+    - `ACTION_START_BLIND_SPOT`;
+    - `ACTION_STOP_BLIND_SPOT`.
+  - `recording/RecordingController` is a separate state machine for `IDLE / INITIALIZING / RECORDING / PAUSED / STOPPING / ERROR`, instead of mixing recording state directly into UI.
+- confirmed boot/background orchestration pattern from EVCam:
+  - `BootReceiver` immediately starts the foreground service on `BOOT_COMPLETED` / `QUICKBOOT_POWERON`;
+  - delayed initialization is done afterwards instead of blocking boot handling;
+  - a transparent `TransparentBootActivity` is used only when camera initialization really requires an activity context.
+- this is directly relevant to GControl because the same pattern can stabilize camera-related automation:
+  - do not require the visible camera screen to be open for every delayed or boot-triggered action;
+  - keep camera startup logic behind service-safe commands first, then escalate to activity launch only when the backend truly needs a foreground camera context.
+- confirmed vehicle-signal integration patterns from EVCam:
+  - there are two distinct signal backends:
+    - reflection-based `CarSignalManagerObserver` / `DoorSignalObserver` via `ecarxcar_service` and `getCarManager(\"car_signal\", ...)`;
+    - native `VhalSignalObserver` using a JNI bridge (`libvhal_decoder.so`) plus gRPC stream decoding.
+  - `CarSignalManagerObserver` polls `getIndcrSts()` and `DoorSignalObserver` polls:
+    - `getDoorDrvrSts()`;
+    - `getDoorPassSts()`;
+    - `getDoorLeReSts()`;
+    - `getDoorRiReSts()`.
+- practical implication for GControl:
+  - if some body/camera-trigger workflows remain unreliable through generic `ICarFunction` writes, side-channel observers for turn-signal / door status can be useful as trigger sources even when they are not command backends;
+  - these observers should live in a dedicated vehicle-signal layer, not inside UI activities.
+- confirmed native VHAL bridge shape from EVCam:
+  - `VhalNative` exposes:
+    - gRPC host/port discovery;
+    - stream/send-all method names;
+    - native `decode(byte[])`;
+    - configurable custom-key speed/button property IDs.
+  - decoded event types include:
+    - turn signal;
+    - door open;
+    - door close;
+    - speed;
+    - custom key.
+- this is useful for GControl as a research direction:
+  - if the head unit exposes the same vehicle API stream, a native bridge could become a better source of passive signals than logcat scraping or fragile UI polling;
+  - this should be treated as an optional advanced backend, not as the first repair path.
+- confirmed automotive persistence/whitelist pattern from EVCam assets:
+  - [add_evcam_config.sh](/Volumes/Store/WORK_PROGRAMMER/GControl/.src/examples/EVCam/app/src/main/assets/add_evcam_config.sh) patches three system files:
+    - `/system/etc/geely_lifectl_start_list.xml`;
+    - `/system/etc/ecarx_str_policies.xml`;
+    - `/vendor/etc/bgms_config.xml`.
+  - the script explicitly preserves `com.geely.avm_app` while editing BGMS config, which is a strong hint that camera/AVM-related background behavior on this firmware is tied to system whitelist/start-list integration.
+- concrete GControl implication:
+  - if long-lived camera or EVS helpers are needed, they may require the same kind of Geely/ECARX whitelist/start-list treatment rather than only manifest/service changes inside the APK;
+  - any such script must be defensive and must preserve stock `avm_app` entries exactly, just like EVCam does.
+- confirmed recording backend details worth copying conceptually, not blindly:
+  - `MultiCameraManager` is centralized and owns:
+    - multi-camera session setup;
+    - segmented recording timing;
+    - watchdog/rebuild fallback;
+    - alternate recording backends (`MediaRecorder` vs `MediaCodec`);
+    - final-save vs relay-write storage behavior.
+  - this supports the same design rule for GControl:
+    - one central camera/session manager should own EVS/camera lifecycle, not scattered button handlers.
+- transferable items worth moving into GControl:
+  - add a dedicated camera/recording service layer with explicit actions;
+  - add a separate recording/EVS state controller instead of deriving state from UI widgets;
+  - add boot-safe foreground-service startup before any heavy camera work;
+  - isolate signal observers from UI and reuse them for automation triggers;
+  - keep any future whitelist/system-config tooling separate, explicit, and reversible.
+- important limitation:
+  - EVCam is a practical automotive camera app, but much of its stack targets direct Camera2 multi-recording rather than the existing EVS-open flow already used in GControl;
+  - the safest migration path is therefore to borrow:
+    - service architecture;
+    - signal observation;
+    - boot/keep-alive orchestration;
+    - whitelist strategy;
+    - central session/state management;
+  - but not to blindly transplant its full multi-camera recorder into GControl without first deciding whether GControl should stay EVS-centric or become a real recorder app.
