@@ -15,9 +15,6 @@ import android.provider.Settings;
 import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.WindowManager;
-import androidx.activity.ComponentActivity;
-import androidx.lifecycle.DefaultLifecycleObserver;
-import androidx.lifecycle.LifecycleOwner;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -152,8 +149,8 @@ final class SplitLaunchManager {
             return;
         }
         saveLast(config);
-        if (MODE_NATIVE.equals(config.mode) && activity instanceof ComponentActivity) {
-            launchNativeSplit((ComponentActivity) activity, config);
+        if (MODE_NATIVE.equals(config.mode)) {
+            launchNativeSplit(activity, config);
             return;
         }
         if (MODE_FREEFORM.equals(config.mode)) {
@@ -189,7 +186,7 @@ final class SplitLaunchManager {
         }, config.secondWindowDelayMs);
     }
 
-    private void launchNativeSplit(ComponentActivity activity, Config config) {
+    private void launchNativeSplit(Activity activity, Config config) {
         Intent first = buildLaunchIntent(config.firstPackage);
         Intent second = buildLaunchIntent(config.secondPackage);
         if (first == null || second == null) {
@@ -197,46 +194,36 @@ final class SplitLaunchManager {
             activity.finish();
             return;
         }
-        DefaultLifecycleObserver observer = new DefaultLifecycleObserver() {
-            @Override public void onStop(LifecycleOwner owner) {
-                Intent intentTop = cloneIntent(first);
-                Intent intentBottom = cloneIntent(second);
-                BundleOptions options = buildNativeSplitOptions();
-                mainHandler.postDelayed(() -> {
-                    try {
-                        intentTop.addCategory(Intent.CATEGORY_LAUNCHER);
-                        intentBottom.addCategory(Intent.CATEGORY_LAUNCHER);
-                        intentTop.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
-                        intentBottom.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
-                        if (options.bundle != null) activity.startActivities(new Intent[]{intentBottom, intentTop}, options.bundle);
-                        else {
-                            activity.startActivity(intentBottom);
-                            mainHandler.postDelayed(() -> activity.startActivity(intentTop), 80L);
-                        }
-                    } catch (Exception e) {
-                        Ui.toast(activity, "Native split fallback: " + compact(e));
-                        launchAdjacent(activity, new Config(config.firstPackage, config.secondPackage, MODE_ADJACENT, config.secondWindowDelayMs, config.bottomWindowShift));
-                        return;
-                    } finally {
-                        activity.getLifecycle().removeObserver(this);
-                        activity.finish();
-                    }
-                }, config.secondWindowDelayMs);
-            }
-        };
-        activity.getLifecycle().addObserver(observer);
         try {
-            Intent resetIntent = cloneIntent(first);
-            resetIntent.addCategory(Intent.CATEGORY_LAUNCHER);
-            resetIntent.setFlags(Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
-                    | Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    | Intent.FLAG_ACTIVITY_NO_HISTORY
-                    | Intent.FLAG_ACTIVITY_NEW_TASK
-                    | Intent.FLAG_ACTIVITY_NO_ANIMATION
-                    | Intent.FLAG_ACTIVITY_TASK_ON_HOME);
-            activity.startActivity(resetIntent);
+            Intent home = new Intent(Intent.ACTION_MAIN)
+                    .addCategory(Intent.CATEGORY_HOME)
+                    .addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION
+                            | Intent.FLAG_ACTIVITY_NEW_TASK
+                            | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+            activity.startActivity(home);
+            Intent intentTop = cloneIntent(first);
+            Intent intentBottom = cloneIntent(second);
+            BundleOptions options = buildNativeSplitOptions();
+            mainHandler.postDelayed(() -> {
+                try {
+                    intentTop.addCategory(Intent.CATEGORY_LAUNCHER);
+                    intentBottom.addCategory(Intent.CATEGORY_LAUNCHER);
+                    intentTop.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
+                    intentBottom.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
+                    if (options.bundle != null) activity.startActivities(new Intent[]{intentBottom, intentTop}, options.bundle);
+                    else {
+                        activity.startActivity(intentBottom);
+                        mainHandler.postDelayed(() -> activity.startActivity(intentTop), 80L);
+                    }
+                } catch (Exception e) {
+                    Ui.toast(activity, "Native split fallback: " + compact(e));
+                    launchAdjacent(activity, new Config(config.firstPackage, config.secondPackage, MODE_ADJACENT, config.secondWindowDelayMs, config.bottomWindowShift));
+                    return;
+                } finally {
+                    activity.finish();
+                }
+            }, config.secondWindowDelayMs);
         } catch (Exception e) {
-            activity.getLifecycle().removeObserver(observer);
             Ui.toast(activity, "Ошибка native split reset: " + compact(e));
             launchAdjacent(activity, new Config(config.firstPackage, config.secondPackage, MODE_ADJACENT, config.secondWindowDelayMs, config.bottomWindowShift));
         }
