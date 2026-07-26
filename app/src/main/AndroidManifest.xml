@@ -233,6 +233,11 @@
                 <action android:name="app.monji.VOICE" />
             </intent-filter>
         </receiver>
+        <receiver android:name=".DiagnosticsAutomationReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="com.prodject.gflow.RUN_AUTODIAGNOSTICS" />
+            </intent-filter>
+        </receiver>
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.files"
