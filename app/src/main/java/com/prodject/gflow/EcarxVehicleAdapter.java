@@ -995,18 +995,31 @@ final class EcarxVehicleAdapter {
         if (functionId == BCM_DOOR_POS) return new Spec(BCM_DOOR_REAR, Backend.ADAPT_API_FLOAT, false, true, false);
         if (functionId == BCM_DOOR_STATUS) return new Spec(BCM_DOOR_REAR, Backend.ADAPT_API, false, false, true);
         if (functionId == BCM_CHILD_SAFETY_LOCK) return new Spec(BCM_DOOR_ROW_2_LEFT, Backend.ADAPT_API, true, false, false);
-        if (functionId == BCM_CHILD_SAFETY_LOCK_SCENE || functionId == BCM_DOOR_CONTROL || functionId == BCM_DOOR_LOCK) {
+        if (functionId == BCM_CHILD_SAFETY_LOCK_SCENE || functionId == BCM_DOOR_CONTROL) {
             return new Spec(ZONE_ALL, Backend.ADAPT_API, true, false, false);
         }
+        if (functionId == BCM_DOOR_LOCK) return new Spec(ZONE_ALL, Backend.ADAPT_API, false, false, false);
         if (functionId == BCM_REAR_MIRROR_ADJUST) return new Spec(ZONE_DRIVER_LEFT, Backend.ADAPT_API, true, false, false);
         if (functionId == BCM_MIRROR_FOLD
-                || functionId == BCM_SUNROOF_OPEN
-                || functionId == BCM_SUNROOF_CLOSE
-                || functionId == BCM_SUNCURT_OPEN
-                || functionId == BCM_SUNCURT_CLOSE) {
+                || functionId == BCM_LIGHT_DIPPED_BEAM
+                || functionId == BCM_LIGHT_MAIN_BEAM
+                || functionId == BCM_LIGHT_FRONT_FOG
+                || functionId == BCM_LIGHT_REAR_FOG
+                || functionId == BCM_LIGHT_GRILLE
+                || functionId == BCM_ALL_READING_LIGHTS
+                || functionId == BCM_WIPER
+                || functionId == BCM_WASHER) {
             return new Spec(ZONE_ALL, Backend.ADAPT_API, true, false, false);
         }
-        if (functionId == BCM_CUSTOM_KEY) return new Spec(ZONE_ALL, Backend.OEM_ENTRY, true, false, false);
+        if (functionId == BCM_SUNROOF_OPEN
+                || functionId == BCM_SUNROOF_CLOSE
+                || functionId == BCM_SUNCURT_OPEN
+                || functionId == BCM_SUNCURT_CLOSE
+                || functionId == BCM_LIGHT_HAZARD) {
+            return new Spec(ZONE_ALL, Backend.ADAPT_API, false, false, false);
+        }
+        if (functionId == BCM_CUSTOM_KEY) return new Spec(ZONE_ALL, Backend.OEM_ENTRY, false, false, false);
+        if (functionId == DRIVE_MODE_SELECT) return new Spec(ZONE_ALL, Backend.ADAPT_API, false, false, false);
         if (isPasDirectFunction(functionId)) return new Spec(ZONE_ALL, Backend.ADAPT_API, false, false, false);
         if (isHudDirectFunction(functionId)) return new Spec(ZONE_ALL, Backend.ADAPT_API, false, false, false);
         if (isReadOnlyAdasFunction(functionId)) return new Spec(0, Backend.ADAPT_API, false, false, false);
