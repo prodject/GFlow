@@ -464,3 +464,65 @@ Still open inside stage 6:
 
 - broaden the registry from the current repaired sets into a fuller repo-wide spec for the remaining BCM / seat / drive / comfort functions that still fall through to the default writable path;
 - decide whether some of the existing `backend` enum values (`SIGNAL`, `EVS`, `SAFETY`, `OEM_ENTRY`) should later be wired into a higher-level command router instead of staying descriptive metadata for now.
+
+### Stage 6 Follow-up: Logs 1.25 Regression Sweep
+
+New evidence from `.src/logs_1.25` on Sunday, July 26, 2026 showed that several remaining command paths still misbehave on the target firmware:
+
+- `HUD_ACTIVE (0x20110100)` repeatedly reports `status:notavailable` and direct writes return `result:false`.
+- an older 1.25 session still showed legacy `zone 0x0` write attempts for:
+  - `HVAC_POWER (0x10010100)`;
+  - `HVAC_AUTO (0x10010200)`;
+  - `HVAC_FAN_SPEED (0x10020100)`;
+  - `HVAC_CLIMATE_ZONE (0x10010500)`.
+- the same log set also showed failed direct BCM writes for:
+  - `BCM_DOOR_LOCK (0x21020200)`;
+  - `BCM_SUNROOF_OPEN/CLOSE (0x21200200 / 0x21200300)`;
+  - `BCM_SUNCURT_OPEN/CLOSE (0x21200400 / 0x21200500)`;
+  - `BCM_MIRROR_FOLD (0x21060100)`;
+  - `BCM_CUSTOM_KEY (0x21110100)`.
+
+Follow-up fixes applied after reviewing the 1.25 logs:
+
+- `EcarxVehicleAdapter.set(...)` and `setFloat(...)` now preflight `writable` and `support` centrally instead of relying on each activity to do that correctly.
+- direct unsupported HUD writes are now blocked centrally by the adapter registry, not only by individual screens.
+- BCM roof / curtain / mirror-fold / custom-key functions now have explicit default zones in the adapter registry instead of silently falling back to `0x0`.
+- this means legacy callers that still go through `CarCommandBus.sendVehicle(...)` now inherit the repaired registry behavior instead of repeating the old broken zone path.
+
+Still open after the 1.25 sweep:
+
+- re-validate on-device whether the new explicit BCM default zones improve `door lock / roof / mirror / custom key` behavior or whether some of those functions must also be demoted to diagnostics-only on this firmware;
+- if `logs_1.25` still show fresh `zone 0x0` HVAC writes after these fixes are installed, trace the remaining caller and remove that path explicitly.
+
+### 2026-07-26 Follow-up: Logs 1.25 Findings
+
+New runtime evidence from [`.src/logs_1.25`](./logs_1.25) showed that the app still had live command paths bypassing the repaired model.
+
+Confirmed issues from the July 26, 2026 logs:
+
+- `IVehicle.SETTING_FUNC_HUD_ACTIVE [0x20110100]` repeatedly returned:
+  - `status:notavailable`
+  - `setFunctionValue ... result:false`
+- HVAC still had active call paths producing wrong-zone support checks:
+  - `IHvac.HVAC_FUNC_TEMP [0x10060100]` was still seen against `VehicleWindow.WINDOW_ROW_1_LEFT [0x10]`;
+  - `IHvac.HVAC_FUNC_SEAT_VENTILATION [0x10050100]` was still seen against `VEHICLE_AREA_TYPE_ZONE [0x1]` and `VEHICLE_AREA_TYPE_DOOR [0x4]`.
+- in the early `gflow-20260726-143138` session there were also direct write failures for still-exposed UI commands such as:
+  - `IBcm.BCM_FUNC_DOOR_LOCK [0x21020200]`
+  - `IBcm.BCM_FUNC_FOLD_REAR_MIRROR [0x21060100]`
+  - `IBcm.BCM_FUNC_CUSTOM_KEY [0x21110100]`
+  - `IBcm.BCM_FUNC_SUNROOF_* [0x21200200..0x21200500]`
+  - raw main-screen HVAC writes including `HVAC_POWER`, `HVAC_AUTO`, `HVAC_CLIMATE_ZONE`, and `HVAC_FAN_SPEED`.
+
+Implemented from those findings:
+
+- `EcarxVehicleAdapter` registry now marks direct HUD `AdaptAPI` functions as diagnostics/readback-only instead of leaving them on a writable path.
+- [HudActivity.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/HudActivity.java) now routes HUD vehicle actions through centralized writable/support gating, so the screen stops pretending the unsupported HUD direct backend is valid on this firmware.
+- [VehicleActivity.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/VehicleActivity.java) now also uses centralized writable/support gating for direct BCM commands instead of always sending them blindly.
+- [MainActivity.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/MainActivity.java) no longer bypasses the repaired command model:
+  - main-screen HVAC fan writes now use the real fan enum mapping instead of raw `progress + 1`;
+  - main-screen HVAC / ADAS / HUD toggles now go through support-aware helper methods instead of direct `CarCommandBus` calls.
+
+Still open after the 1.25 follow-up:
+
+- trace the remaining HVAC wrong-zone evidence until the exact call site producing `HVAC_TEMP -> zone 0x10` and `HVAC_SEAT_VENTILATION -> door/zone area` is narrowed down with certainty;
+- review whether the newly gated BCM roof / mirror / lock paths should be fully demoted in UI if future logs keep showing `result:false` despite `support=active`.

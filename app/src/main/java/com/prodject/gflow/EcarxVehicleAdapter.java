@@ -741,6 +741,16 @@ final class EcarxVehicleAdapter {
     }
 
     Result set(int functionId, int zone, int value) {
+        Spec spec = spec(functionId);
+        if (!spec.writable) {
+            return Result.external("Функция переведена в diagnostics/readback-only: " + hex(functionId), false, true);
+        }
+        if (spec.backend == Backend.ADAPT_API) {
+            Result support = support(functionId, zone);
+            if (!support.isSupported()) {
+                return Result.external("Функция недоступна в AdaptAPI: " + hex(functionId) + "/" + zone, false, false);
+            }
+        }
         Log.i(TAG, "setFunctionValue id=" + hex(functionId)
                 + " zone=" + hex(zone)
                 + " value=" + hex(value));
@@ -849,6 +859,14 @@ final class EcarxVehicleAdapter {
     }
 
     Result setFloat(int functionId, int zone, float value) {
+        Spec spec = spec(functionId);
+        if (!spec.writable) {
+            return Result.external("Функция переведена в diagnostics/readback-only: " + hex(functionId), false, true);
+        }
+        Result support = support(functionId, zone);
+        if (!support.isSupported()) {
+            return Result.external("Функция недоступна в AdaptAPI: " + hex(functionId) + "/" + zone, false, false);
+        }
         try {
             Object fn = function();
             Method method = fn.getClass().getMethod("setCustomizeFunctionValue", int.class, int.class, float.class);
@@ -981,7 +999,16 @@ final class EcarxVehicleAdapter {
             return new Spec(ZONE_ALL, Backend.ADAPT_API, true, false, false);
         }
         if (functionId == BCM_REAR_MIRROR_ADJUST) return new Spec(ZONE_DRIVER_LEFT, Backend.ADAPT_API, true, false, false);
+        if (functionId == BCM_MIRROR_FOLD
+                || functionId == BCM_SUNROOF_OPEN
+                || functionId == BCM_SUNROOF_CLOSE
+                || functionId == BCM_SUNCURT_OPEN
+                || functionId == BCM_SUNCURT_CLOSE) {
+            return new Spec(ZONE_ALL, Backend.ADAPT_API, true, false, false);
+        }
+        if (functionId == BCM_CUSTOM_KEY) return new Spec(ZONE_ALL, Backend.OEM_ENTRY, true, false, false);
         if (isPasDirectFunction(functionId)) return new Spec(ZONE_ALL, Backend.ADAPT_API, false, false, false);
+        if (isHudDirectFunction(functionId)) return new Spec(ZONE_ALL, Backend.ADAPT_API, false, false, false);
         if (isReadOnlyAdasFunction(functionId)) return new Spec(0, Backend.ADAPT_API, false, false, false);
         return SPEC_DEFAULT;
     }
@@ -1166,6 +1193,23 @@ final class EcarxVehicleAdapter {
             case ADAS_REAR_COLLISION_WARNING_FAILURE:
             case ADAS_TRAFFIC_LIGHTS_IDENTIFY_FAULTS:
             case ADAS_DRIVER_FATIGUE_FAILURE:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private static boolean isHudDirectFunction(int functionId) {
+        switch (functionId) {
+            case HUD_ACTIVE:
+            case HUD_CALIBRATION:
+            case HUD_ANGLE_RESET:
+            case HUD_SNOW_MODE:
+            case HUD_DISPLAY_SAFETY:
+            case HUD_DISPLAY_MEDIA:
+            case HUD_DISPLAY_NAVI:
+            case HUD_DISPLAY_BTPHONE:
+            case HUD_DISPLAY_DRIVE_ENVIRONMENT:
                 return true;
             default:
                 return false;

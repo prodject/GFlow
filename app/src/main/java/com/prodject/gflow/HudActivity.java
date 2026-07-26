@@ -317,8 +317,8 @@ public class HudActivity extends Activity {
     }
 
     private void sendVehicle(int functionId, int value) {
-        EcarxVehicleAdapter.Result result = CarCommandBus.sendVehicle(this, functionId, value);
-        Ui.toast(this, result.success ? "Команда отправлена" : "Команда не выполнена");
+        EcarxVehicleAdapter.Result result = executeVehicleCommand(functionId, value);
+        Ui.toast(this, result.success ? "Команда отправлена" : result.message);
     }
 
     private void requestDimNight() {
@@ -344,11 +344,29 @@ public class HudActivity extends Activity {
     private void addCommand(LinearLayout root, String label, int functionId, int value) {
         Button b = Ui.button(this, label);
         b.setOnClickListener(v -> {
-            EcarxVehicleAdapter.Result result = CarCommandBus.sendVehicle(this, functionId, value);
-            Ui.toast(this, result.success ? "Команда отправлена" : "Команда не выполнена");
+            EcarxVehicleAdapter.Result result = executeVehicleCommand(functionId, value);
+            Ui.toast(this, result.success ? "Команда отправлена" : result.message);
             root.addView(Ui.text(this, result.message, 13, false), Math.min(3, root.getChildCount()));
         });
         root.addView(b, lpMatchWrap(0, 6, 0, 0));
+    }
+
+    private EcarxVehicleAdapter.Result executeVehicleCommand(int functionId, int value) {
+        EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
+        if (!adapter.isWritable(functionId)) {
+            return EcarxVehicleAdapter.Result.external(
+                    "HUD direct AdaptAPI path отключен: функция переведена в diagnostics/readback-only",
+                    false,
+                    true);
+        }
+        EcarxVehicleAdapter.Result support = adapter.support(functionId);
+        if (!support.isSupported()) {
+            return EcarxVehicleAdapter.Result.external(
+                    "Функция HUD недоступна в AdaptAPI этого автомобиля",
+                    false,
+                    false);
+        }
+        return CarCommandBus.sendVehicle(this, functionId, value);
     }
 
     private void addDiagnostic(LinearLayout root, String label, int... functionIds) {

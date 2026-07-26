@@ -1182,7 +1182,7 @@ public class MainActivity extends Activity {
         fan.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 fanLabel.setText("Вентилятор: " + (progress + 1));
-                if (fromUser) new EcarxVehicleAdapter(MainActivity.this).set(EcarxVehicleAdapter.HVAC_FAN_SPEED, progress + 1);
+                if (fromUser) sendVehicleChecked(EcarxVehicleAdapter.HVAC_FAN_SPEED, fanSpeedValue(progress + 1));
             }
             @Override public void onStartTrackingTouch(SeekBar seekBar) {}
             @Override public void onStopTrackingTouch(SeekBar seekBar) {}
@@ -1190,9 +1190,9 @@ public class MainActivity extends Activity {
         panel.addView(fanLabel);
         panel.addView(fan);
         LinearLayout actions = Ui.row(this);
-        addMiniAction(actions, "Auto", () -> new EcarxVehicleAdapter(this).set(EcarxVehicleAdapter.HVAC_AUTO, EcarxVehicleAdapter.COMMON_ON));
-        addMiniAction(actions, "A/C", () -> new EcarxVehicleAdapter(this).set(EcarxVehicleAdapter.HVAC_AC, EcarxVehicleAdapter.COMMON_ON));
-        addMiniAction(actions, "Стекло", () -> new EcarxVehicleAdapter(this).set(EcarxVehicleAdapter.HVAC_DEFROST_FRONT, EcarxVehicleAdapter.COMMON_ON));
+        addMiniAction(actions, "Auto", () -> sendVehicleChecked(EcarxVehicleAdapter.HVAC_AUTO, EcarxVehicleAdapter.COMMON_ON));
+        addMiniAction(actions, "A/C", () -> sendVehicleChecked(EcarxVehicleAdapter.HVAC_AC, EcarxVehicleAdapter.COMMON_ON));
+        addMiniAction(actions, "Стекло", () -> sendVehicleChecked(EcarxVehicleAdapter.HVAC_DEFROST_FRONT, EcarxVehicleAdapter.COMMON_ON));
         panel.addView(actions);
         root.addView(panel, lpMatchWrap(0, 0, 0, 12));
     }
@@ -1274,10 +1274,10 @@ public class MainActivity extends Activity {
         card.addView(Ui.text(this, "Ассистенты водителя", 22, true));
         card.addView(Ui.muted(this, "Основные переключатели вынесены наверх. Подробные firmware-команды и диагностика находятся ниже."));
         LinearLayout safety = Ui.row(this);
-        addToggleAction(safety, "AEB", () -> CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.ADAS_AEB, EcarxVehicleAdapter.COMMON_ON));
-        addToggleAction(safety, "FCW", () -> CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.ADAS_FCW, EcarxVehicleAdapter.COMMON_ON));
-        addToggleAction(safety, "LKA", () -> CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.ADAS_LKA, EcarxVehicleAdapter.COMMON_ON));
-        addToggleAction(safety, "PDC", () -> CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.COMMON_ON));
+        addToggleAction(safety, "AEB", () -> sendVehicleChecked(EcarxVehicleAdapter.ADAS_AEB, EcarxVehicleAdapter.COMMON_ON));
+        addToggleAction(safety, "FCW", () -> sendVehicleChecked(EcarxVehicleAdapter.ADAS_FCW, EcarxVehicleAdapter.COMMON_ON));
+        addToggleAction(safety, "LKA", () -> sendVehicleChecked(EcarxVehicleAdapter.ADAS_LKA, EcarxVehicleAdapter.COMMON_ON));
+        addToggleAction(safety, "PDC", () -> sendVehicleChecked(EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.COMMON_ON));
         card.addView(safety);
         SeekBar gap = new SeekBar(this);
         gap.setMax(4);
@@ -1286,7 +1286,7 @@ public class MainActivity extends Activity {
         gap.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 gapText.setText("ACC дистанция: " + (progress + 1));
-                if (fromUser) CarCommandBus.sendVehicle(MainActivity.this, EcarxVehicleAdapter.ADAS_ACC_TIME_GAP, progress + 1);
+                if (fromUser) sendVehicleChecked(EcarxVehicleAdapter.ADAS_ACC_TIME_GAP, progress + 1);
             }
             @Override public void onStartTrackingTouch(SeekBar seekBar) {}
             @Override public void onStopTrackingTouch(SeekBar seekBar) {}
@@ -1301,9 +1301,9 @@ public class MainActivity extends Activity {
         card.addView(Ui.text(this, "Проектор и OneOS", 22, true));
         card.addView(Ui.muted(this, new EcarxHudDimAdapter(this).availability()));
         LinearLayout row = Ui.row(this);
-        addToggleAction(row, "HUD on", () -> CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.COMMON_ON));
-        addToggleAction(row, "Навигация", () -> CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HUD_DISPLAY_NAVI, EcarxVehicleAdapter.COMMON_ON));
-        addToggleAction(row, "Медиа", () -> CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HUD_DISPLAY_MEDIA, EcarxVehicleAdapter.COMMON_ON));
+        addToggleAction(row, "HUD on", () -> sendVehicleChecked(EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.COMMON_ON));
+        addToggleAction(row, "Навигация", () -> sendVehicleChecked(EcarxVehicleAdapter.HUD_DISPLAY_NAVI, EcarxVehicleAdapter.COMMON_ON));
+        addToggleAction(row, "Медиа", () -> sendVehicleChecked(EcarxVehicleAdapter.HUD_DISPLAY_MEDIA, EcarxVehicleAdapter.COMMON_ON));
         addToggleAction(row, "DIM night", () -> new EcarxHudDimAdapter(this).requestDayNightMode());
         card.addView(row);
         root.addView(card, lpMatchWrap(0, 0, 0, 12));
@@ -1433,8 +1433,8 @@ public class MainActivity extends Activity {
     private void addCommand(LinearLayout root, String label, int functionId, int value) {
         Button b = addCommandRow(root, label, safetyFor(label), EcarxVehicleAdapter.hex(functionId) + "=" + EcarxVehicleAdapter.hex(value));
         b.setOnClickListener(v -> {
-            EcarxVehicleAdapter.Result result = CarCommandBus.sendVehicle(this, functionId, value);
-            Ui.toast(this, result.success ? "Команда отправлена" : "Команда не выполнена");
+            EcarxVehicleAdapter.Result result = sendVehicleChecked(functionId, value);
+            Ui.toast(this, result.success ? "Команда отправлена" : result.message);
             root.addView(Ui.text(this, result.message, 13, false), 2);
         });
     }
@@ -1442,10 +1442,39 @@ public class MainActivity extends Activity {
     private void addCommand(LinearLayout root, String label, int functionId, int zone, int value) {
         Button b = addCommandRow(root, label, safetyFor(label), EcarxVehicleAdapter.hex(functionId) + "/" + zone + "=" + EcarxVehicleAdapter.hex(value));
         b.setOnClickListener(v -> {
-            EcarxVehicleAdapter.Result result = CarCommandBus.sendVehicle(this, functionId, zone, value);
-            Ui.toast(this, result.success ? "Команда отправлена" : "Команда не выполнена");
+            EcarxVehicleAdapter.Result result = sendVehicleChecked(functionId, zone, value);
+            Ui.toast(this, result.success ? "Команда отправлена" : result.message);
             root.addView(Ui.text(this, result.message, 13, false), 2);
         });
+    }
+
+    private EcarxVehicleAdapter.Result sendVehicleChecked(int functionId, int value) {
+        EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
+        if (!adapter.isWritable(functionId)) {
+            return EcarxVehicleAdapter.Result.external("Функция переведена в diagnostics/readback-only", false, true);
+        }
+        EcarxVehicleAdapter.Result support = adapter.support(functionId);
+        if (!support.isSupported()) {
+            return EcarxVehicleAdapter.Result.external("Функция недоступна в AdaptAPI этого автомобиля", false, false);
+        }
+        return CarCommandBus.sendVehicle(this, functionId, value);
+    }
+
+    private EcarxVehicleAdapter.Result sendVehicleChecked(int functionId, int zone, int value) {
+        EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
+        if (!adapter.isWritable(functionId)) {
+            return EcarxVehicleAdapter.Result.external("Функция переведена в diagnostics/readback-only", false, true);
+        }
+        EcarxVehicleAdapter.Result support = adapter.support(functionId, zone);
+        if (!support.isSupported()) {
+            return EcarxVehicleAdapter.Result.external("Функция недоступна для этой зоны", false, false);
+        }
+        return CarCommandBus.sendVehicle(this, functionId, zone, value);
+    }
+
+    private int fanSpeedValue(int level) {
+        int normalized = Math.max(1, Math.min(9, level));
+        return EcarxVehicleAdapter.HVAC_FAN_SPEED + normalized;
     }
 
     private void addZoneCommands(LinearLayout root, String label, int functionId, int value, int... zones) {
