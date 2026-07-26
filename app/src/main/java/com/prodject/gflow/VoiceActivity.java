@@ -810,13 +810,19 @@ public class VoiceActivity extends Activity {
             return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT, off(cmd) ? EcarxVehicleAdapter.COMMON_OFF : EcarxVehicleAdapter.WHEEL_HEAT_MID);
         }
         if (has(cmd, "сиден") && has(cmd, "подогрев")) {
-            return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HVAC_SEAT_HEATING, zoneFromCommand(cmd, EcarxVehicleAdapter.ZONE_DRIVER_LEFT), off(cmd) ? EcarxVehicleAdapter.COMMON_OFF : EcarxVehicleAdapter.HVAC_SEAT_HEATING_LEVEL_2);
+            return sendFrontSeatClimateCommand(
+                    EcarxVehicleAdapter.HVAC_SEAT_HEATING,
+                    cmd,
+                    off(cmd) ? EcarxVehicleAdapter.COMMON_OFF : EcarxVehicleAdapter.HVAC_SEAT_HEATING_LEVEL_2);
         }
         if (has(cmd, "сиден") && has(cmd, "вент")) {
-            return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, zoneFromCommand(cmd, EcarxVehicleAdapter.ZONE_DRIVER_LEFT), off(cmd) ? EcarxVehicleAdapter.COMMON_OFF : EcarxVehicleAdapter.HVAC_SEAT_VENTILATION_LEVEL_2);
+            return sendFrontSeatClimateCommand(
+                    EcarxVehicleAdapter.HVAC_SEAT_VENTILATION,
+                    cmd,
+                    off(cmd) ? EcarxVehicleAdapter.COMMON_OFF : EcarxVehicleAdapter.HVAC_SEAT_VENTILATION_LEVEL_2);
         }
         if (has(cmd, "hud") || has(cmd, "проектор")) {
-            return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.HUD_ACTIVE, off(cmd) ? EcarxVehicleAdapter.COMMON_OFF : EcarxVehicleAdapter.COMMON_ON);
+            return sendVehicleChecked(EcarxVehicleAdapter.HUD_ACTIVE, off(cmd) ? EcarxVehicleAdapter.COMMON_OFF : EcarxVehicleAdapter.COMMON_ON);
         }
         EcarxVehicleAdapter.Result advancedDrive = parseAdvancedDriveCommand(cmd);
         if (advancedDrive != null) return advancedDrive;
@@ -920,6 +926,43 @@ public class VoiceActivity extends Activity {
         return new EcarxVehicleAdapter(this).setFloat(EcarxVehicleAdapter.HVAC_TEMP, zone, value);
     }
 
+    private EcarxVehicleAdapter.Result sendFrontSeatClimateCommand(int functionId, String cmd, int value) {
+        int zone = frontSeatZoneFromCommand(cmd);
+        if (zone == EcarxVehicleAdapter.ZONE_ALL
+                || zone == EcarxVehicleAdapter.ZONE_ROW_2_LEFT
+                || zone == EcarxVehicleAdapter.ZONE_ROW_2_RIGHT) {
+            return EcarxVehicleAdapter.Result.external(
+                    "Seat climate подтвержден только для передних зон driver/passenger",
+                    false,
+                    true);
+        }
+        return sendVehicleChecked(functionId, zone, value);
+    }
+
+    private EcarxVehicleAdapter.Result sendVehicleChecked(int functionId, int value) {
+        EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
+        if (!adapter.isWritable(functionId)) {
+            return EcarxVehicleAdapter.Result.external("Функция переведена в diagnostics/readback-only", false, true);
+        }
+        EcarxVehicleAdapter.Result support = adapter.support(functionId);
+        if (!support.isSupported()) {
+            return EcarxVehicleAdapter.Result.external("Функция недоступна в AdaptAPI этого автомобиля", false, false);
+        }
+        return CarCommandBus.sendVehicle(this, functionId, value);
+    }
+
+    private EcarxVehicleAdapter.Result sendVehicleChecked(int functionId, int zone, int value) {
+        EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
+        if (!adapter.isWritable(functionId)) {
+            return EcarxVehicleAdapter.Result.external("Функция переведена в diagnostics/readback-only", false, true);
+        }
+        EcarxVehicleAdapter.Result support = adapter.support(functionId, zone);
+        if (!support.isSupported()) {
+            return EcarxVehicleAdapter.Result.external("Функция недоступна для этой зоны", false, false);
+        }
+        return CarCommandBus.sendVehicle(this, functionId, zone, value);
+    }
+
     private boolean isTemperatureCommand(String cmd) {
         return has(cmd, "температур") || has(cmd, "градус") || has(cmd, "temp") || has(cmd, "temperature");
     }
@@ -981,6 +1024,11 @@ public class VoiceActivity extends Activity {
         if (has(cmd, "пассаж") || has(cmd, "прав") || has(cmd, "right")) return EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT;
         if (has(cmd, "водител") || has(cmd, "лев") || has(cmd, "left")) return EcarxVehicleAdapter.ZONE_DRIVER_LEFT;
         return fallback;
+    }
+
+    private int frontSeatZoneFromCommand(String cmd) {
+        if (has(cmd, "пассаж") || has(cmd, "прав") || has(cmd, "right")) return EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT;
+        return EcarxVehicleAdapter.ZONE_DRIVER_LEFT;
     }
 
     private int windowZoneFromCommand(String cmd) {

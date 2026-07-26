@@ -908,7 +908,7 @@ public class ClimateActivity extends Activity {
     }
 
     private String zonedReadback(int functionId, int zone) {
-        return compact(new EcarxVehicleAdapter(this).support(functionId).message) + "\n" + compact(new EcarxVehicleAdapter(this).get(functionId, zone).message);
+        return compact(new EcarxVehicleAdapter(this).support(functionId, zone).message) + "\n" + compact(new EcarxVehicleAdapter(this).get(functionId, zone).message);
     }
 
     private String singleReadback(int functionId) {
