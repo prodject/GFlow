@@ -638,3 +638,51 @@ GInputBridge cross-check update on Sunday, July 26, 2026:
   - these GInputBridge findings confirm backend shape, enum values, and OEM area IDs;
   - they do not prove that the same direct writes are actually writable on the target car firmware;
   - specifically, `CUSTOM_KEY_360 = 1` is confirmed as a vendor mapping, but user testing on the current firmware already showed that this alone does not open the stock `360` UI.
+
+GSplit split-launch cross-check update on Sunday, July 26, 2026:
+
+- local reference repo [`.src/examples/GSplit`](./examples/GSplit) shows that stable split launch there is implemented as a dedicated subsystem, not as one direct `startActivity(...)` call.
+- the most useful architectural takeaway for GControl:
+  - split launch should be isolated behind a dedicated launcher/orchestrator class;
+  - UI buttons should call that orchestrator, not assemble split/freeform intents inline in activities.
+- confirmed native split path from GSplit:
+  - `NativeSplitModeUtil` uses `ActivityOptionsCompat.makeBasic()` plus hidden windowing bundle keys:
+    - `android.activity.windowingMode = 3` for split primary;
+    - `android:activity.splitScreenCreateMode = 0` for top/left dock.
+  - it resets the current window mode first by sending the user to `HOME`, then launches both target intents with:
+    - `FLAG_ACTIVITY_NEW_TASK`;
+    - `FLAG_ACTIVITY_MULTIPLE_TASK`;
+    - launcher category;
+    - delayed paired launch.
+- confirmed freeform fallback path from GSplit:
+  - it starts an invisible `MultiWindowHeatingActivity`;
+  - that activity uses a `1x1` untouchable window and exits immediately;
+  - launch flags include:
+    - `FLAG_ACTIVITY_NEW_TASK`;
+    - `FLAG_ACTIVITY_LAUNCH_ADJACENT`;
+    - `FLAG_ACTIVITY_NO_ANIMATION`.
+- confirmed there is no single universal split backend even inside GSplit:
+  - native split is only one mode;
+  - the main repository also supports freeform-window launch with explicit bounds calculation through `ActivityOptions.setLaunchBounds(...)`-style behavior;
+  - an additional accessibility-service path is used for experimental native split replacement, window closing, replacement, and recovery when OEM behavior is inconsistent.
+- transferable implementation details worth moving into GControl:
+  - add a dedicated split launcher/orchestrator instead of scattering window-launch code across activities;
+  - add a small invisible “multiwindow heating” activity for freeform preparation on firmware where direct split launch is unreliable;
+  - separate `native split`, `freeform`, and `accessibility fallback` modes explicitly in code and settings, because they are different backends with different failure modes;
+  - compute window bounds centrally from real screen metrics, orientation, status-bar offset, and optional overlap/shift values instead of hardcoding one split geometry;
+  - support a short staged launch sequence with configurable delays between first and second window, because GSplit explicitly relies on that timing to avoid “only second app opened” behavior.
+- transferable operational patterns worth moving into GControl:
+  - use a dedicated exported launcher activity for headless split start by preset or explicit packages instead of tying split launch to visible UI only;
+  - expose broadcast entrypoints for `launch`, `launch last`, `replace window`, and `close split`, so split behavior can be triggered externally over adb/automation;
+  - keep overlay/accessibility helpers as optional layers, not as the only implementation path.
+- concrete GControl implication:
+  - if split-screen in GControl is still flaky, the next repair should not be “tweak one intent flag”;
+  - it should be a proper `SplitLaunchManager` with:
+    - mode selection;
+    - launch delays;
+    - invisible preheat activity;
+    - central bounds calculation;
+    - optional accessibility fallback.
+- important limitation:
+  - GSplit proves practical launch patterns for Android automotive-style firmware, but it does not prove that every same flag/key combination will behave identically in GControl on this head unit;
+  - migration should therefore be staged: first isolate backend, then add freeform/native launch modes, then validate on-device which path is actually stable.
