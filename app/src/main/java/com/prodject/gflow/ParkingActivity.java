@@ -515,8 +515,17 @@ public class ParkingActivity extends Activity {
     }
 
     private void openAutoParkUi() {
-        EcarxVehicleAdapter.Result result = CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_AUTO_PARK);
-        Ui.toast(this, result.success ? "Команда отправлена" : "Команда не выполнена");
+        EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
+        EcarxVehicleAdapter.Result result;
+        if (!adapter.isWritable(EcarxVehicleAdapter.BCM_CUSTOM_KEY)) {
+            result = EcarxVehicleAdapter.Result.external(
+                    "BCM custom key direct path отключен: auto park UI не подтвержден на этой прошивке",
+                    false,
+                    true);
+        } else {
+            result = CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_AUTO_PARK);
+        }
+        Ui.toast(this, result.success ? "Команда отправлена" : result.message);
         refreshStatusCards();
     }
 

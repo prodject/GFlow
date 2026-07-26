@@ -532,3 +532,9 @@ Additional fixes applied after the initial 1.25 review:
 - [ClimateActivity.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/ClimateActivity.java) zoned HVAC readback no longer calls plain `support(functionId)` for zone-scoped functions; it now uses `support(functionId, zone)`, which removes one real source of false seat-climate support noise in runtime logs.
 - [VoiceActivity.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/VoiceActivity.java) now routes seat climate and HUD voice commands through centralized writable/support checks instead of blind sends.
 - voice seat heating / ventilation is now intentionally limited to confirmed front-seat zones only; `rear` / `all` seat-climate requests are rejected as unsupported instead of being translated into speculative HVAC zones.
+
+Additional hard demotions from confirmed `result:false` write logs:
+
+- `DRIVE_MODE_SELECT [0x22010100]` is now classified as diagnostics/readback-only. The July 26, 2026 `logs_1.25` capture showed repeated direct write failures for eco / comfort / snow / rock / hdc / eco-plus through the AdaptAPI path, with no corresponding `result=true` evidence in the same capture.
+- `BCM_DOOR_LOCK [0x21020200]`, `BCM_CUSTOM_KEY [0x21110100]`, `BCM_SUNROOF_OPEN/CLOSE [0x21200200/0x21200300]`, `BCM_SUNCURT_OPEN/CLOSE [0x21200400/0x21200500]`, and `BCM_LIGHT_HAZARD [0x21050f00]` are now also demoted to readback-only because the current firmware logs show stable `INVALID/result:false` behavior for their direct command path.
+- [ParkingActivity.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/ParkingActivity.java) no longer pretends that `BCM_CUSTOM_KEY_AUTO_PARK` is a valid writable shortcut; it now reports that the direct path is disabled on this firmware instead of claiming a sent command.
