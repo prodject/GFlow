@@ -526,3 +526,9 @@ Still open after the 1.25 follow-up:
 
 - trace the remaining HVAC wrong-zone evidence until the exact call site producing `HVAC_TEMP -> zone 0x10` and `HVAC_SEAT_VENTILATION -> door/zone area` is narrowed down with certainty;
 - review whether the newly gated BCM roof / mirror / lock paths should be fully demoted in UI if future logs keep showing `result:false` despite `support=active`.
+
+Additional fixes applied after the initial 1.25 review:
+
+- [ClimateActivity.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/ClimateActivity.java) zoned HVAC readback no longer calls plain `support(functionId)` for zone-scoped functions; it now uses `support(functionId, zone)`, which removes one real source of false seat-climate support noise in runtime logs.
+- [VoiceActivity.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/VoiceActivity.java) now routes seat climate and HUD voice commands through centralized writable/support checks instead of blind sends.
+- voice seat heating / ventilation is now intentionally limited to confirmed front-seat zones only; `rear` / `all` seat-climate requests are rejected as unsupported instead of being translated into speculative HVAC zones.
