@@ -538,3 +538,10 @@ Additional hard demotions from confirmed `result:false` write logs:
 - `DRIVE_MODE_SELECT [0x22010100]` is now classified as diagnostics/readback-only. The July 26, 2026 `logs_1.25` capture showed repeated direct write failures for eco / comfort / snow / rock / hdc / eco-plus through the AdaptAPI path, with no corresponding `result=true` evidence in the same capture.
 - `BCM_DOOR_LOCK [0x21020200]`, `BCM_CUSTOM_KEY [0x21110100]`, `BCM_SUNROOF_OPEN/CLOSE [0x21200200/0x21200300]`, `BCM_SUNCURT_OPEN/CLOSE [0x21200400/0x21200500]`, and `BCM_LIGHT_HAZARD [0x21050f00]` are now also demoted to readback-only because the current firmware logs show stable `INVALID/result:false` behavior for their direct command path.
 - [ParkingActivity.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/ParkingActivity.java) no longer pretends that `BCM_CUSTOM_KEY_AUTO_PARK` is a valid writable shortcut; it now reports that the direct path is disabled on this firmware instead of claiming a sent command.
+
+Door/HUD follow-up after manual vehicle clarification on Sunday, July 26, 2026:
+
+- projection HUD is physically absent on this car, so direct HUD AdaptAPI actions must not stay exposed as normal interactive controls.
+- `BCM_DOOR`, `BCM_DOOR_STATUS`, `BCM_DOOR_CONTROL`, and `BCM_DOOR_POS` still have active runtime evidence in `logs_1.25`, so door handling should stay on targeted per-zone paths instead of being broadly demoted together with unrelated BCM lock/custom-key failures.
+- [HudActivity.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/HudActivity.java) now shifts visible actions away from direct `HUD_ACTIVE` toggles and toward DIM / cluster / bridge tooling plus readback diagnostics.
+- [VehicleActivity.java](/Volumes/Store/WORK_PROGRAMMER/GControl/app/src/main/java/com/prodject/gflow/VehicleActivity.java) now prioritizes concrete door-zone actions and body status readback instead of presenting fake global lock/unlock shortcuts as the main body controls.

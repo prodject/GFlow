@@ -224,29 +224,29 @@ public class VehicleActivity extends Activity {
 
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(3);
-        addTile(grid, "Запереть", Ui.CYAN, () -> sendVehicle(EcarxVehicleAdapter.BCM_DOOR_LOCK, EcarxVehicleAdapter.COMMON_ON));
-        addTile(grid, "Открыть", Ui.WARNING, () -> sendVehicle(EcarxVehicleAdapter.BCM_DOOR_LOCK, EcarxVehicleAdapter.COMMON_OFF));
+        addTile(grid, "Вод. дверь", Ui.CYAN, () -> sendVehicle(EcarxVehicleAdapter.BCM_DOOR, EcarxVehicleAdapter.BCM_DOOR_ROW_1_LEFT, EcarxVehicleAdapter.DOOR_OPEN));
+        addTile(grid, "Пасс. дверь", Ui.WARNING, () -> sendVehicle(EcarxVehicleAdapter.BCM_DOOR, EcarxVehicleAdapter.BCM_DOOR_ROW_1_RIGHT, EcarxVehicleAdapter.DOOR_OPEN));
+        addTile(grid, "Задние двери", Color.rgb(108, 132, 255), this::showDoorSheet);
         addTile(grid, "Окна вниз", Color.rgb(98, 162, 255), () -> sendVehicle(EcarxVehicleAdapter.BCM_WINDOW, EcarxVehicleAdapter.WINDOW_OPEN));
         addTile(grid, "Окна вверх", Color.rgb(91, 209, 167), () -> sendVehicle(EcarxVehicleAdapter.BCM_WINDOW, EcarxVehicleAdapter.WINDOW_CLOSE));
-        addTile(grid, "Люк открыть", Color.rgb(159, 122, 255), () -> sendVehicle(EcarxVehicleAdapter.BCM_SUNROOF_OPEN, EcarxVehicleAdapter.COMMON_ON));
-        addTile(grid, "Люк закрыть", Color.rgb(115, 136, 165), () -> sendVehicle(EcarxVehicleAdapter.BCM_SUNROOF_CLOSE, EcarxVehicleAdapter.COMMON_ON));
-        addTile(grid, "Шторка открыть", Color.rgb(255, 138, 80), () -> sendVehicle(EcarxVehicleAdapter.BCM_SUNCURT_OPEN, EcarxVehicleAdapter.COMMON_ON));
-        addTile(grid, "Шторка закрыть", Color.rgb(255, 179, 64), () -> sendVehicle(EcarxVehicleAdapter.BCM_SUNCURT_CLOSE, EcarxVehicleAdapter.COMMON_ON));
+        addTile(grid, "Капот", Color.rgb(159, 122, 255), () -> sendVehicle(EcarxVehicleAdapter.BCM_DOOR, EcarxVehicleAdapter.BCM_DOOR_HOOD, EcarxVehicleAdapter.DOOR_OPEN));
+        addTile(grid, "Багажник статус", Color.rgb(255, 138, 80), () -> showReadbackSheet("Багажник", compact(new EcarxVehicleAdapter(this).get(EcarxVehicleAdapter.BCM_DOOR_STATUS, EcarxVehicleAdapter.BCM_DOOR_REAR).message)));
+        addTile(grid, "Child lock", Color.rgb(255, 179, 64), () -> setRearChildLock(EcarxVehicleAdapter.COMMON_ON));
         addTile(grid, "Багажник", Color.rgb(94, 201, 196), this::openTrunkOemEntry);
         panel.addView(grid, lpMatchWrap(0, 12, 0, 0));
 
         LinearLayout actions = Ui.row(this);
         addActionChip(actions, "Замки", () -> showActionSheet("Замки", new QuickItem[]{
-                new QuickItem("Lock On", () -> sendVehicle(EcarxVehicleAdapter.BCM_DOOR_LOCK, EcarxVehicleAdapter.COMMON_ON)),
-                new QuickItem("Lock Off", () -> sendVehicle(EcarxVehicleAdapter.BCM_DOOR_LOCK, EcarxVehicleAdapter.COMMON_OFF)),
+                new QuickItem("Статус замков", () -> showReadbackSheet("Замки", compact(new EcarxVehicleAdapter(this).get(EcarxVehicleAdapter.BCM_DOOR_LOCK).message))),
                 new QuickItem("Child lock", () -> setRearChildLock(EcarxVehicleAdapter.COMMON_ON))
         }));
+        addActionChip(actions, "Двери", this::showDoorSheet);
         addActionChip(actions, "Окна", () -> showActionSheet("Окна", new QuickItem[]{
                 new QuickItem("All Open", () -> sendVehicle(EcarxVehicleAdapter.BCM_WINDOW, EcarxVehicleAdapter.WINDOW_OPEN)),
                 new QuickItem("All Close", () -> sendVehicle(EcarxVehicleAdapter.BCM_WINDOW, EcarxVehicleAdapter.WINDOW_CLOSE)),
                 new QuickItem("Half", () -> sendVehicle(EcarxVehicleAdapter.BCM_WINDOW, EcarxVehicleAdapter.WINDOW_HALF))
         }));
-        addActionChip(actions, "Люк", () -> openMode(Mode.MIRRORS));
+        addActionChip(actions, "Кузов статусы", this::showBodyStatusSheet);
         addActionChip(actions, "Drive", () -> openMode(Mode.DRIVE));
         panel.addView(actions, lpMatchWrap(0, 14, 0, 0));
         return panel;
@@ -679,6 +679,27 @@ public class VehicleActivity extends Activity {
         EcarxVehicleAdapter.Result result = CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_TRUNK);
         Ui.toast(this, result.success ? "OEM вход багажника отправлен" : "OEM вход багажника не выполнен");
         refreshState();
+    }
+
+    private void showDoorSheet() {
+        showActionSheet("Двери", new QuickItem[]{
+                new QuickItem("Водитель открыть", () -> sendVehicle(EcarxVehicleAdapter.BCM_DOOR, EcarxVehicleAdapter.BCM_DOOR_ROW_1_LEFT, EcarxVehicleAdapter.DOOR_OPEN)),
+                new QuickItem("Пассажир открыть", () -> sendVehicle(EcarxVehicleAdapter.BCM_DOOR, EcarxVehicleAdapter.BCM_DOOR_ROW_1_RIGHT, EcarxVehicleAdapter.DOOR_OPEN)),
+                new QuickItem("Задняя левая открыть", () -> sendVehicle(EcarxVehicleAdapter.BCM_DOOR, EcarxVehicleAdapter.BCM_DOOR_ROW_2_LEFT, EcarxVehicleAdapter.DOOR_OPEN)),
+                new QuickItem("Задняя правая открыть", () -> sendVehicle(EcarxVehicleAdapter.BCM_DOOR, EcarxVehicleAdapter.BCM_DOOR_ROW_2_RIGHT, EcarxVehicleAdapter.DOOR_OPEN)),
+                new QuickItem("Задняя дверь статус", () -> showReadbackSheet("BCM_DOOR_STATUS rear", compact(new EcarxVehicleAdapter(this).get(EcarxVehicleAdapter.BCM_DOOR_STATUS, EcarxVehicleAdapter.BCM_DOOR_REAR).message)))
+        });
+    }
+
+    private void showBodyStatusSheet() {
+        EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
+        String value = "Driver: " + compact(adapter.get(EcarxVehicleAdapter.BCM_DOOR_STATUS, EcarxVehicleAdapter.BCM_DOOR_ROW_1_LEFT).message)
+                + "\nPassenger: " + compact(adapter.get(EcarxVehicleAdapter.BCM_DOOR_STATUS, EcarxVehicleAdapter.BCM_DOOR_ROW_1_RIGHT).message)
+                + "\nRear left: " + compact(adapter.get(EcarxVehicleAdapter.BCM_DOOR_STATUS, EcarxVehicleAdapter.BCM_DOOR_ROW_2_LEFT).message)
+                + "\nRear right: " + compact(adapter.get(EcarxVehicleAdapter.BCM_DOOR_STATUS, EcarxVehicleAdapter.BCM_DOOR_ROW_2_RIGHT).message)
+                + "\nHood: " + compact(adapter.get(EcarxVehicleAdapter.BCM_DOOR_STATUS, EcarxVehicleAdapter.BCM_DOOR_HOOD).message)
+                + "\nRear: " + compact(adapter.get(EcarxVehicleAdapter.BCM_DOOR_STATUS, EcarxVehicleAdapter.BCM_DOOR_REAR).message);
+        showReadbackSheet("Кузов статусы", value);
     }
 
     private void setRearChildLock(int value) {
