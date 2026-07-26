@@ -3,8 +3,9 @@ package com.prodject.gflow;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import androidx.activity.ComponentActivity;
 
-public class SplitLauncherActivity extends Activity {
+public class SplitLauncherActivity extends ComponentActivity {
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         handleIntent(getIntent());

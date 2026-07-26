@@ -28,6 +28,16 @@ import java.util.Comparator;
 import java.util.Locale;
 
 public class CameraActivity extends Activity {
+    private static final class TopStat {
+        final LinearLayout view;
+        final TextView valueView;
+
+        TopStat(LinearLayout view, TextView valueView) {
+            this.view = view;
+            this.valueView = valueView;
+        }
+    }
+
     private TextView recordingTopValue;
     private TextView sourceTopValue;
     private TextView archiveSummary;
@@ -84,15 +94,17 @@ public class CameraActivity extends Activity {
         titleBlock.addView(title);
         bar.addView(titleBlock, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
-        recordingTopValue = buildTopStat("Запись", "Ожидание");
-        bar.addView(recordingTopValue);
-        sourceTopValue = buildTopStat("Источник", "Camera2 / EVS");
-        bar.addView(sourceTopValue);
-        bar.addView(buildTopStat("Архив", "GFlowDvr"));
+        TopStat recordingStat = buildTopStat("Запись", "Ожидание");
+        recordingTopValue = recordingStat.valueView;
+        bar.addView(recordingStat.view);
+        TopStat sourceStat = buildTopStat("Источник", "Camera2 / EVS");
+        sourceTopValue = sourceStat.valueView;
+        bar.addView(sourceStat.view);
+        bar.addView(buildTopStat("Архив", "GFlowDvr").view);
         return bar;
     }
 
-    private LinearLayout buildTopStat(String label, String value) {
+    private TopStat buildTopStat(String label, String value) {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
         card.setPadding(Ui.dp(this, 12), Ui.dp(this, 8), Ui.dp(this, 12), Ui.dp(this, 8));
@@ -104,7 +116,7 @@ public class CameraActivity extends Activity {
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         lp.leftMargin = Ui.dp(this, 10);
         card.setLayoutParams(lp);
-        return card;
+        return new TopStat(card, valueView);
     }
 
     private LinearLayout buildHeroPanel() {

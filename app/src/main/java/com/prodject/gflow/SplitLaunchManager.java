@@ -15,6 +15,7 @@ import android.provider.Settings;
 import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.WindowManager;
+import androidx.activity.ComponentActivity;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
 import java.lang.reflect.Method;
@@ -151,8 +152,8 @@ final class SplitLaunchManager {
             return;
         }
         saveLast(config);
-        if (MODE_NATIVE.equals(config.mode)) {
-            launchNativeSplit(activity, config);
+        if (MODE_NATIVE.equals(config.mode) && activity instanceof ComponentActivity) {
+            launchNativeSplit((ComponentActivity) activity, config);
             return;
         }
         if (MODE_FREEFORM.equals(config.mode)) {
@@ -188,7 +189,7 @@ final class SplitLaunchManager {
         }, config.secondWindowDelayMs);
     }
 
-    private void launchNativeSplit(Activity activity, Config config) {
+    private void launchNativeSplit(ComponentActivity activity, Config config) {
         Intent first = buildLaunchIntent(config.firstPackage);
         Intent second = buildLaunchIntent(config.secondPackage);
         if (first == null || second == null) {
