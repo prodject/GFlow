@@ -389,6 +389,7 @@ public class MainActivity extends Activity {
         addDockButton(dock, "Vehicle", this::showVehicleMenu, false, new QuickAction[]{
                 new QuickAction("Открыть кузов", this::showVehicleMenu),
                 new QuickAction("HUD", this::showHudMenu),
+                new QuickAction("Подсветка", this::showAmbienceLight),
                 new QuickAction("Профиль", this::showProfilesMenu)
         });
         addDockButton(dock, "Voice", () -> startActivity(new Intent(this, VoiceActivity.class)), false, new QuickAction[]{
@@ -589,6 +590,7 @@ public class MainActivity extends Activity {
         addDrawerAction(drawer, "Камеры / DVR", () -> startActivity(new Intent(this, CameraActivity.class)));
         addDrawerAction(drawer, "Парковка / APA", this::openParkingScreen);
         addDrawerAction(drawer, "HUD / Cluster", this::showHudMenu);
+        addDrawerAction(drawer, "Подсветка", this::showAmbienceLight);
         addDrawerAction(drawer, "Автоматизация", this::showAutomation);
         addDrawerAction(drawer, "Профили", this::showProfilesMenu);
         addDrawerAction(drawer, "Кнопки руля", this::showSteeringMenu);
@@ -1767,6 +1769,20 @@ public class MainActivity extends Activity {
         addCommandGroup(root, "Zones", EcarxVehicleAdapter.AMBIENCE_LIGHT_ZONE_EXPERIENCE,
                 new String[]{"Zone all", "Zone front", "Zone headrest", "Zone rear"},
                 new int[]{EcarxVehicleAdapter.AMBIENCE_LIGHT_ZONE_ALL, EcarxVehicleAdapter.AMBIENCE_LIGHT_ZONE_FRONT, EcarxVehicleAdapter.AMBIENCE_LIGHT_ZONE_HEADREST, EcarxVehicleAdapter.AMBIENCE_LIGHT_ZONE_REAR});
+        Ui.section(root, "GInputBridge extras", "Дополнительные функции подсветки из GInputBridge пока выведены как диагностика/readback.");
+        addDiagnostic(root, "GInputBridge ambience extras",
+                EcarxVehicleAdapter.AMBIENCE_LIGHT_BRIGHTNESS_DRIVING,
+                EcarxVehicleAdapter.AMBIENCE_LIGHT_BRIGHTNESS_STATIONARY,
+                EcarxVehicleAdapter.AMBIENCE_LIGHT_COLOR_TYPE,
+                EcarxVehicleAdapter.AMBIENCE_LIGHT_CLIMATE,
+                EcarxVehicleAdapter.AMBIENCE_LIGHT_GOODBYE_SHOW,
+                EcarxVehicleAdapter.AMBIENCE_LIGHT_PHONE_CALL_REMINDER,
+                EcarxVehicleAdapter.AMBIENCE_LIGHT_SLIDING_DOOR_REMINDER,
+                EcarxVehicleAdapter.AMBIENCE_LIGHT_INTERACTIVE_EFFECT,
+                EcarxVehicleAdapter.AMBIENCE_LIGHT_SOLID_COLOR_SET,
+                EcarxVehicleAdapter.AMBIENCE_LIGHT_BREATHE_COLOR_SET,
+                EcarxVehicleAdapter.AMBIENCE_LIGHT_ENDURANCE_MILE_REMINDER,
+                EcarxVehicleAdapter.AMBIENCE_LIGHT_ICHARGING_REMIND);
     }
 
     private void addAmbiencePreview(LinearLayout root) {

@@ -436,6 +436,9 @@ final class EcarxVehicleAdapter {
     static final int PAS_RCTA_SHOW_GRAPHICS = 0x23050400;
     static final int PAS_RCTA_WARNING_VOLUME = 0x23050500;
     static final int PAS_AVM_OR_APA_ACTIVATION = 0x23100400;
+    static final int PAS_APA_SELF_RECOMMENDED = 0x23060100;
+    static final int PAS_APA_DETECT_PARKING_SPACE = 0x23a80100;
+    static final int PAS_APA_RPA_SWITCH = 0x23a80200;
     static final int PAS_AUT_PRKG_SLOT_NR_REQ = 0x23100600;
     static final int PAS_DRVR_ASSC_SYS_BTN_PUSH = 0x23100500;
     static final int PAS_DRVR_ASSC_SYS_PARK_MOD = 0x23100700;
@@ -651,17 +654,24 @@ final class EcarxVehicleAdapter {
     static final int AMBIENCE_LIGHT_INTENSITY = 0x2a010100;
     static final int AMBIENCE_LIGHT_THEME_COLOR = 0x2a010200;
     static final int AMBIENCE_LIGHT_COLOR_WEATHER = 0x200a0b00;
+    static final int AMBIENCE_LIGHT_CLIMATE = 0x2a080200;
     static final int AMBIENCE_LIGHT_EFFECT = 0x2a080100;
     static final int AMBIENCE_LIGHT_CONTROL_MODE = 0x2a080600;
     static final int AMBIENCE_LIGHT_MUSIC = 0x2a050f00;
     static final int AMBIENCE_LIGHT_MUSIC_SHOW_MODE = 0x2a050800;
     static final int AMBIENCE_LIGHT_WELCOME_SHOW = 0x2a050100;
+    static final int AMBIENCE_LIGHT_GOODBYE_SHOW = 0x2a050200;
     static final int AMBIENCE_LIGHT_WELCOME_SHOW_MODE = 0x2a050700;
     static final int AMBIENCE_LIGHT_VOICE = 0x2a050d00;
     static final int AMBIENCE_LIGHT_ZONE_EXPERIENCE = 0x200a0100;
     static final int AMBIENCE_LIGHT_MAIN_ZONES = 0x200a0500;
     static final int AMBIENCE_LIGHT_TOP_ZONES = 0x200a0400;
     static final int AMBIENCE_LIGHT_BOT_ZONES = 0x200a0300;
+    static final int AMBIENCE_LIGHT_BRIGHTNESS_STATIONARY = 0x200a0600;
+    static final int AMBIENCE_LIGHT_BRIGHTNESS_DRIVING = 0x200a0700;
+    static final int AMBIENCE_LIGHT_INTERACTIVE_EFFECT = 0x200a0800;
+    static final int AMBIENCE_LIGHT_COLOR_SET = 0x200a0900;
+    static final int AMBIENCE_LIGHT_COLOR_TYPE = 0x200a0a00;
     static final int AMBIENCE_LIGHT_COLOR_RED = 0x2a010201;
     static final int AMBIENCE_LIGHT_COLOR_ORANGE = 0x2a010202;
     static final int AMBIENCE_LIGHT_COLOR_YELLOW = 0x2a010203;
@@ -686,6 +696,12 @@ final class EcarxVehicleAdapter {
     static final int AMBIENCE_LIGHT_WELCOME_PASSIONATE = 0x2a050701;
     static final int AMBIENCE_LIGHT_WELCOME_NORMAL = 0x2a050702;
     static final int AMBIENCE_LIGHT_WELCOME_SUBDUED = 0x2a050703;
+    static final int AMBIENCE_LIGHT_PHONE_CALL_REMINDER = 0x2a050400;
+    static final int AMBIENCE_LIGHT_SLIDING_DOOR_REMINDER = 0x2a050900;
+    static final int AMBIENCE_LIGHT_ENDURANCE_MILE_REMINDER = 0x2a050500;
+    static final int AMBIENCE_LIGHT_ICHARGING_REMIND = 0x2a080300;
+    static final int AMBIENCE_LIGHT_SOLID_COLOR_SET = 0x2a500000;
+    static final int AMBIENCE_LIGHT_BREATHE_COLOR_SET = 0x2a500100;
     static final int AMBIENCE_LIGHT_ZONE_ALL = 0x200a0100;
     static final int AMBIENCE_LIGHT_ZONE_FRONT = 0x200a0101;
     static final int AMBIENCE_LIGHT_ZONE_HEADREST = 0x200a0102;
@@ -1222,6 +1238,9 @@ final class EcarxVehicleAdapter {
             case PAS_RCTA_SHOW_GRAPHICS:
             case PAS_RCTA_WARNING_VOLUME:
             case PAS_AVM_OR_APA_ACTIVATION:
+            case PAS_APA_SELF_RECOMMENDED:
+            case PAS_APA_DETECT_PARKING_SPACE:
+            case PAS_APA_RPA_SWITCH:
             case PAS_AUT_PRKG_SLOT_NR_REQ:
             case PAS_DRVR_ASSC_SYS_BTN_PUSH:
             case PAS_DRVR_ASSC_SYS_PARK_MOD:
