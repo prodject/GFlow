@@ -104,9 +104,8 @@ public class HudActivity extends Activity {
         hero.addView(row);
 
         LinearLayout quick = Ui.row(this);
-        addActionChip(quick, "HUD вкл", () -> sendVehicle(EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.COMMON_ON));
-        addActionChip(quick, "Навигация", () -> sendVehicle(EcarxVehicleAdapter.HUD_DISPLAY_NAVI, EcarxVehicleAdapter.COMMON_ON));
         addActionChip(quick, "DIM Night", this::requestDimNight);
+        addActionChip(quick, "Presentation", () -> setDimPresentation(true));
         addActionChip(quick, "Расширенно", this::openAdvancedHud);
         hero.addView(quick, lpMatchWrap(0, 14, 0, 0));
         return hero;
@@ -121,16 +120,17 @@ public class HudActivity extends Activity {
 
     private LinearLayout buildControlPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Управление проекцией"));
+        panel.addView(Ui.label(this, "DIM / Cluster"));
+        panel.addView(Ui.muted(this, "Projection HUD отсутствует на этой машине; оставлены DIM / cluster / bridge действия и диагностика."));
 
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(3);
-        addTile(grid, "HUD вкл", Ui.CYAN, () -> sendVehicle(EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.COMMON_ON));
-        addTile(grid, "HUD выкл", Ui.ERROR, () -> sendVehicle(EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.COMMON_OFF));
-        addTile(grid, "Калибровка", Ui.WARNING, () -> sendVehicle(EcarxVehicleAdapter.HUD_CALIBRATION, EcarxVehicleAdapter.COMMON_ON));
-        addTile(grid, "Media", Color.rgb(119, 83, 132), () -> sendVehicle(EcarxVehicleAdapter.HUD_DISPLAY_MEDIA, EcarxVehicleAdapter.COMMON_ON));
-        addTile(grid, "Навигация", Color.rgb(72, 153, 255), () -> sendVehicle(EcarxVehicleAdapter.HUD_DISPLAY_NAVI, EcarxVehicleAdapter.COMMON_ON));
-        addTile(grid, "Safety", Ui.SUCCESS, () -> sendVehicle(EcarxVehicleAdapter.HUD_DISPLAY_SAFETY, EcarxVehicleAdapter.COMMON_ON));
+        addTile(grid, "DIM day/night", Ui.CYAN, this::requestDimNight);
+        addTile(grid, "Presentation on", Ui.SUCCESS, () -> setDimPresentation(true));
+        addTile(grid, "Presentation off", Ui.ERROR, () -> setDimPresentation(false));
+        addTile(grid, "Music tab", Color.rgb(119, 83, 132), () -> dimTab(EcarxHudDimAdapter.DIM_TAB_MUSIC));
+        addTile(grid, "Navi tab", Color.rgb(72, 153, 255), () -> dimTab(EcarxHudDimAdapter.DIM_TAB_NAVIGATION));
+        addTile(grid, "Control center", Ui.WARNING, () -> dimTab(EcarxHudDimAdapter.DIM_TAB_CONTROL_CENTER));
         panel.addView(grid, lpMatchWrap(0, 12, 0, 0));
 
         LinearLayout dim = Ui.row(this);
@@ -165,20 +165,10 @@ public class HudActivity extends Activity {
         advancedHost.removeAllViews();
 
         LinearLayout hud = Ui.glassCard(this);
-        hud.addView(Ui.text(this, "HUD / DIM Bridge", 18, true));
+        hud.addView(Ui.text(this, "DIM / Cluster Bridge", 18, true));
         hud.addView(Ui.muted(this, new EcarxHudDimAdapter(this).availability()));
-        hud.addView(Ui.muted(this, "Вид навигации на приборке определяет, как маршрут отображается на DIM: выключено, упрощенно, полно, AR или 3D-полосы."));
-        addCommand(hud, "HUD включить", EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(hud, "HUD выключить", EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.COMMON_OFF);
-        addCommand(hud, "HUD калибровка", EcarxVehicleAdapter.HUD_CALIBRATION, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(hud, "HUD сброс угла", EcarxVehicleAdapter.HUD_ANGLE_RESET, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(hud, "HUD snow mode", EcarxVehicleAdapter.HUD_SNOW_MODE, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(hud, "HUD safety on", EcarxVehicleAdapter.HUD_DISPLAY_SAFETY, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(hud, "HUD media on", EcarxVehicleAdapter.HUD_DISPLAY_MEDIA, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(hud, "HUD navi on", EcarxVehicleAdapter.HUD_DISPLAY_NAVI, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(hud, "HUD phone on", EcarxVehicleAdapter.HUD_DISPLAY_BTPHONE, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(hud, "HUD drive env on", EcarxVehicleAdapter.HUD_DISPLAY_DRIVE_ENVIRONMENT, EcarxVehicleAdapter.COMMON_ON);
-        addDiagnostic(hud, "HUD", EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.HUD_DISPLAY_NAVI, EcarxVehicleAdapter.HUD_DISPLAY_SAFETY);
+        hud.addView(Ui.muted(this, "Прямые HUD AdaptAPI кнопки убраны: на этом автомобиле нет projection HUD. Секция оставлена для readback, DIM и cluster bridge."));
+        addDiagnostic(hud, "HUD readback", EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.HUD_DISPLAY_NAVI, EcarxVehicleAdapter.HUD_DISPLAY_SAFETY);
         addHudDimAction(hud, "HUDInteraction: статус", a -> a.hudStatus());
         addHudDimAction(hud, "HUDInteraction: height/sync", a -> a.hudSync());
         addHudDimAction(hud, "DIMInteraction: статус", a -> a.dimStatus());
