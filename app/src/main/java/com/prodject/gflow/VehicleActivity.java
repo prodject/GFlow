@@ -635,14 +635,38 @@ public class VehicleActivity extends Activity {
     }
 
     private void sendVehicle(int functionId, int value) {
+        EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
+        if (!adapter.isWritable(functionId)) {
+            Ui.toast(this, "Функция переведена в diagnostics/readback-only");
+            refreshState();
+            return;
+        }
+        EcarxVehicleAdapter.Result support = adapter.support(functionId);
+        if (!support.isSupported()) {
+            Ui.toast(this, "Функция недоступна в AdaptAPI этого автомобиля");
+            refreshState();
+            return;
+        }
         EcarxVehicleAdapter.Result result = CarCommandBus.sendVehicle(this, functionId, value);
-        Ui.toast(this, result.success ? "Команда отправлена" : "Команда не выполнена");
+        Ui.toast(this, result.success ? "Команда отправлена" : result.message);
         refreshState();
     }
 
     private void sendVehicle(int functionId, int zone, int value) {
-        EcarxVehicleAdapter.Result result = new EcarxVehicleAdapter(this).set(functionId, zone, value);
-        Ui.toast(this, result.success ? "Команда отправлена" : "Команда не выполнена");
+        EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
+        if (!adapter.isWritable(functionId)) {
+            Ui.toast(this, "Функция переведена в diagnostics/readback-only");
+            refreshState();
+            return;
+        }
+        EcarxVehicleAdapter.Result support = adapter.support(functionId, zone);
+        if (!support.isSupported()) {
+            Ui.toast(this, "Функция недоступна для этой зоны");
+            refreshState();
+            return;
+        }
+        EcarxVehicleAdapter.Result result = adapter.set(functionId, zone, value);
+        Ui.toast(this, result.success ? "Команда отправлена" : result.message);
         refreshState();
     }
 
