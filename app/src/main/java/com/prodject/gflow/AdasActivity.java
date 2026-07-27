@@ -172,8 +172,8 @@ public class AdasActivity extends Activity {
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(3);
         addTile(grid, "AEB", Color.rgb(113, 91, 177), () -> sendVehicle("AEB включить", EcarxVehicleAdapter.ADAS_AEB, EcarxVehicleAdapter.COMMON_ON));
-        addTile(grid, "FCW", Color.rgb(95, 133, 255), () -> sendVehicle("FCW включить", EcarxVehicleAdapter.ADAS_FCW, EcarxVehicleAdapter.COMMON_ON));
-        addTile(grid, "LKA", Color.rgb(72, 184, 164), () -> sendVehicle("LKA включить", EcarxVehicleAdapter.ADAS_LKA, EcarxVehicleAdapter.COMMON_ON));
+        addTile(grid, "FCW", Color.rgb(95, 133, 255), () -> sendVehicle("FCW normal", EcarxVehicleAdapter.ADAS_FCW, EcarxVehicleAdapter.FCW_SENSITIVITY_NORMAL));
+        addTile(grid, "LKA", Color.rgb(72, 184, 164), () -> sendVehicle("LKA warn+intervention", EcarxVehicleAdapter.ADAS_LKA, EcarxVehicleAdapter.LKA_MODE_WARN_INTV));
         addTile(grid, "LDW", Color.rgb(255, 179, 64), () -> sendVehicle("LDW включить", EcarxVehicleAdapter.ADAS_LDW, EcarxVehicleAdapter.COMMON_ON));
         addTile(grid, "RCW", Color.rgb(255, 122, 89), () -> sendVehicle("RCW включить", EcarxVehicleAdapter.ADAS_RCW, EcarxVehicleAdapter.COMMON_ON));
         addTile(grid, "ELKA", Color.rgb(129, 149, 255), () -> sendVehicle("ELKA включить", EcarxVehicleAdapter.ADAS_ELKA, EcarxVehicleAdapter.COMMON_ON));
@@ -182,7 +182,7 @@ public class AdasActivity extends Activity {
         addTile(grid, "BSD", Color.rgb(95, 195, 156), () -> sendVehicle("Blind spot detection", EcarxVehicleAdapter.ADAS_BLIND_SPOT_DETECTION, EcarxVehicleAdapter.COMMON_ON));
         addTile(grid, "TSR", Color.rgb(255, 171, 78), () -> sendVehicle("Traffic sign recognition", EcarxVehicleAdapter.ADAS_TRAFFIC_SIGN_RECOGNITION, EcarxVehicleAdapter.COMMON_ON));
         addTile(grid, "Оповещение", Color.rgb(255, 128, 112), () -> sendVehicle("Traffic sign alert", EcarxVehicleAdapter.ADAS_TRAFFIC_SIGN_ALERT, EcarxVehicleAdapter.COMMON_ON));
-        addTile(grid, "Лимит", Color.rgb(177, 118, 255), () -> sendVehicle("Speed limit warning", EcarxVehicleAdapter.ADAS_SPEED_LIMIT_WARN, EcarxVehicleAdapter.COMMON_ON));
+        addTile(grid, "Лимит", Color.rgb(177, 118, 255), () -> sendVehicle("Speed limit warning sound", EcarxVehicleAdapter.ADAS_SPEED_LIMIT_WARN, EcarxVehicleAdapter.SPEED_LIMIT_WARNING_MODE_SOUND));
         panel.addView(grid, lpMatchWrap(0, 12, 0, 0));
         return panel;
     }
@@ -195,7 +195,7 @@ public class AdasActivity extends Activity {
         addActionChip(switches, "ACC", () -> sendVehicle("ACC режим", EcarxVehicleAdapter.ADAS_ACC_ICC_SWITCH, EcarxVehicleAdapter.ACC_ICC_ACC));
         addActionChip(switches, "ICC", () -> sendVehicle("ICC режим", EcarxVehicleAdapter.ADAS_ACC_ICC_SWITCH, EcarxVehicleAdapter.ACC_ICC_ICC));
         addActionChip(switches, "TSR", () -> sendVehicle("ACC with TSR", EcarxVehicleAdapter.ADAS_ACC_WITH_TSR, EcarxVehicleAdapter.COMMON_ON));
-        addActionChip(switches, "Лимит", () -> sendVehicle("Speed limitation mode", EcarxVehicleAdapter.ADAS_SPEED_LIMITATION_MODE, EcarxVehicleAdapter.COMMON_ON));
+        addActionChip(switches, "Лимит", () -> sendVehicle("Speed limitation AVSL", EcarxVehicleAdapter.ADAS_SPEED_LIMITATION_MODE, EcarxVehicleAdapter.SPEED_LIMITATION_MODE_AVSL));
         panel.addView(switches, lpMatchWrap(0, 12, 0, 0));
 
         TextView gapLabel = Ui.text(this, "Дистанция ACC: " + currentAccGap, 18, true);
@@ -311,15 +311,15 @@ public class AdasActivity extends Activity {
         addTile(toggles, "Выход из обгона", Color.rgb(108, 194, 255), () -> sendVehicle("Overtaking lane exit assist", EcarxVehicleAdapter.ADAS_AI_ASSIST_OUT_OVERTAKING_LANE, EcarxVehicleAdapter.COMMON_ON));
         addTile(toggles, "Светофор", Color.rgb(255, 179, 64), () -> sendVehicle("Traffic light attention", EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION, EcarxVehicleAdapter.COMMON_ON));
         addTile(toggles, "Звук светофора", Color.rgb(255, 142, 98), () -> sendVehicle("Traffic light attention sound", EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION_SOUND, EcarxVehicleAdapter.COMMON_ON));
-        addTile(toggles, "Paddle assist", Color.rgb(156, 128, 255), () -> sendVehicle("Paddle lane change assist", EcarxVehicleAdapter.ADAS_PADDLE_LANE_CHANGE_ASSIST, EcarxVehicleAdapter.COMMON_ON));
-        addTile(toggles, "Предупр. скорости", Color.rgb(103, 198, 157), () -> sendVehicle("Speed limit warning", EcarxVehicleAdapter.ADAS_SPEED_LIMIT_WARN, EcarxVehicleAdapter.COMMON_ON));
+        addTile(toggles, "Paddle assist", Color.rgb(156, 128, 255), () -> sendVehicle("Paddle lane change assist", EcarxVehicleAdapter.ADAS_PADDLE_LANE_CHANGE_ASSIST, EcarxVehicleAdapter.PADDLE_LANE_CHANGE_ENABLE));
+        addTile(toggles, "Предупр. скорости", Color.rgb(103, 198, 157), () -> sendVehicle("Speed limit warning sound", EcarxVehicleAdapter.ADAS_SPEED_LIMIT_WARN, EcarxVehicleAdapter.SPEED_LIMIT_WARNING_MODE_SOUND));
         panel.addView(toggles, lpMatchWrap(0, 12, 0, 0));
 
         LinearLayout togglesOff = Ui.row(this);
         addActionChip(togglesOff, "AI Default Off", () -> sendVehicle("AI Assist default off", EcarxVehicleAdapter.ADAS_AI_ASSIST_DEFAULT_ON, EcarxVehicleAdapter.COMMON_OFF));
         addActionChip(togglesOff, "Выход выкл", () -> sendVehicle("Overtaking lane exit off", EcarxVehicleAdapter.ADAS_AI_ASSIST_OUT_OVERTAKING_LANE, EcarxVehicleAdapter.COMMON_OFF));
         addActionChip(togglesOff, "Звук выкл", () -> sendVehicle("Traffic light sound off", EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION_SOUND, EcarxVehicleAdapter.COMMON_OFF));
-        addActionChip(togglesOff, "Paddle выкл", () -> sendVehicle("Paddle lane assist off", EcarxVehicleAdapter.ADAS_PADDLE_LANE_CHANGE_ASSIST, EcarxVehicleAdapter.COMMON_OFF));
+        addActionChip(togglesOff, "Paddle выкл", () -> sendVehicle("Paddle lane assist off", EcarxVehicleAdapter.ADAS_PADDLE_LANE_CHANGE_ASSIST, EcarxVehicleAdapter.PADDLE_LANE_CHANGE_DISABLE));
         panel.addView(togglesOff, lpMatchWrap(0, 12, 0, 0));
 
         LinearLayout tlbModes = Ui.row(this);
@@ -425,7 +425,7 @@ public class AdasActivity extends Activity {
         dock.setGravity(Gravity.CENTER_VERTICAL);
         dock.setPadding(Ui.dp(this, 18), Ui.dp(this, 14), Ui.dp(this, 18), Ui.dp(this, 14));
         addDockButton(dock, "AEB", () -> sendVehicle("AEB включить", EcarxVehicleAdapter.ADAS_AEB, EcarxVehicleAdapter.COMMON_ON), true);
-        addDockButton(dock, "LKA", () -> sendVehicle("LKA включить", EcarxVehicleAdapter.ADAS_LKA, EcarxVehicleAdapter.COMMON_ON), false);
+        addDockButton(dock, "LKA", () -> sendVehicle("LKA warn+intervention", EcarxVehicleAdapter.ADAS_LKA, EcarxVehicleAdapter.LKA_MODE_WARN_INTV), false);
         addDockButton(dock, "ACC", () -> sendVehicle("ACC режим", EcarxVehicleAdapter.ADAS_ACC_ICC_SWITCH, EcarxVehicleAdapter.ACC_ICC_ACC), false);
         addDockButton(dock, "ICC", () -> sendVehicle("ICC режим", EcarxVehicleAdapter.ADAS_ACC_ICC_SWITCH, EcarxVehicleAdapter.ACC_ICC_ICC), false);
         addDockButton(dock, "PDC", () -> sendVehicle("PDC включить", EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.COMMON_ON), false);

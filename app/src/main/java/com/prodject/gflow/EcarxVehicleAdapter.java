@@ -365,6 +365,10 @@ final class EcarxVehicleAdapter {
     static final int ACC_TIME_GAP_1 = 0x280a0d02;
     static final int ACC_TIME_GAP_2 = 0x280a0d03;
     static final int ACC_TIME_GAP_3 = 0x280a0d04;
+    static final int FCW_SENSITIVITY_NORMAL = 0x200e0202;
+    static final int LKA_MODE_WARN_INTV = 0x20070201;
+    static final int SPEED_LIMITATION_MODE_AVSL = 0x20030501;
+    static final int SPEED_LIMIT_WARNING_MODE_SOUND = 0x28060203;
     static final int TLB_MODE_LOW = 0x28080c01;
     static final int TLB_MODE_MIDDLE = 0x28080c02;
     static final int TLB_MODE_HIGH = 0x28080c03;
@@ -376,6 +380,8 @@ final class EcarxVehicleAdapter {
     static final int AI_LANE_CHANGE_WARNING_VOICE = 0x28080701;
     static final int AI_LANE_CHANGE_WARNING_VIBRATE = 0x28080702;
     static final int AI_LANE_CHANGE_WARNING_BOTH = 0x28080703;
+    static final int PADDLE_LANE_CHANGE_DISABLE = 0x100d00;
+    static final int PADDLE_LANE_CHANGE_ENABLE = 0x100d01;
 
     static final int PAS_ACTIVATED = 0x200d0100;
     static final int PAS_VOLUME = 0x200d0200;
@@ -443,7 +449,7 @@ final class EcarxVehicleAdapter {
     static final int PAS_DRVR_ASSC_SYS_BTN_PUSH = 0x23100500;
     static final int PAS_DRVR_ASSC_SYS_PARK_MOD = 0x23100700;
     static final int PAS_PRKG_AUX_INFO_DISP = 0x23110400;
-    static final int PAS_PRKG_INTRPT_RELD_BTN = 0x23110600;
+    static final int PAS_PRKG_INTRPT_RELD_BTN = 0x23100800;
 
     static final int PAS_RADAR_WORK_MODE_OFF = 0x0;
     static final int PAS_RADAR_WORK_MODE_STANDBY = 0x23021001;
@@ -739,6 +745,9 @@ final class EcarxVehicleAdapter {
     static final int SEAT_ONE_KEY_COMFORT = 0x2d411100;
     static final int SEAT_POSITION_1 = 0x2d400101;
     static final int SEAT_POSITION_2 = 0x2d400102;
+    static final int SEAT_MEMORY_1 = 0x1;
+    static final int SEAT_MEMORY_2 = 0x2;
+    static final int SEAT_MEMORY_3 = 0x3;
     static final int SEAT_FORWARD = 0x2d020101;
     static final int SEAT_BACKWARD = 0x2d020102;
     static final int SEAT_HEIGHT_UP = 0x2d020201;

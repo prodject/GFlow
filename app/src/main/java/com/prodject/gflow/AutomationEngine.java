@@ -238,7 +238,7 @@ final class AutomationEngine {
         String preset = parts[3];
         EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(context);
         StringBuilder sb = new StringBuilder("Профиль: ").append(name).append("\n");
-        sb.append(adapter.set(EcarxVehicleAdapter.SEAT_POSITION_SET, zone, memory).message).append("\n");
+        sb.append(adapter.set(EcarxVehicleAdapter.SEAT_POSITION_SET, zone, seatRestoreValue(memory)).message).append("\n");
         if (!preset.trim().isEmpty()) sb.append(runPreset(context, preset));
         p.edit().putString(KEY_ACTIVE_PROFILE, name).apply();
         return sb.toString();
@@ -255,6 +255,13 @@ final class AutomationEngine {
                 .putString(KEY_PROFILE_ORDER, join(order))
                 .apply();
         return save.message + "\nПрофиль сохранен локально: " + name;
+    }
+
+    private static int seatRestoreValue(int savedValue) {
+        if (savedValue == EcarxVehicleAdapter.SEAT_POSITION_1) return EcarxVehicleAdapter.SEAT_MEMORY_1;
+        if (savedValue == EcarxVehicleAdapter.SEAT_POSITION_2) return EcarxVehicleAdapter.SEAT_MEMORY_2;
+        if (savedValue == 0x2d400103) return EcarxVehicleAdapter.SEAT_MEMORY_3;
+        return savedValue;
     }
 
     static String runSmartClimate(Context context) {
