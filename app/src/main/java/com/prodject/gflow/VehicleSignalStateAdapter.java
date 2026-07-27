@@ -2,9 +2,10 @@ package com.prodject.gflow;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import com.ecarx.xui.adaptapi.FunctionStatus;
+import com.ecarx.xui.adaptapi.car.sensor.ISensor;
 import java.util.ArrayList;
 import java.util.List;
-import java.lang.reflect.Method;
 
 final class VehicleSignalStateAdapter {
     static final int SENSOR_CAR_SPEED = 0x100100;
@@ -23,7 +24,7 @@ final class VehicleSignalStateAdapter {
 
     private final Context context;
     private final ArrayList<String> status = new ArrayList<>();
-    private Object sensor;
+    private ISensor sensor;
 
     VehicleSignalStateAdapter(Context context) {
         this.context = context.getApplicationContext();
@@ -72,14 +73,12 @@ final class VehicleSignalStateAdapter {
 
     private float readFloat(String label, int sensorType, float fallback) {
         try {
-            Object manager = sensor();
+            ISensor manager = sensor();
             if (!isSupported(manager, sensorType)) {
                 status.add(label + " " + hex(sensorType) + " unsupported, fallback=" + fallback);
                 return fallback;
             }
-            Method method = manager.getClass().getMethod("getSensorLatestValue", int.class);
-            Object value = method.invoke(manager, sensorType);
-            float result = ((Number) value).floatValue();
+            float result = manager.getSensorLatestValue(sensorType);
             status.add(label + " " + hex(sensorType) + "=" + result);
             return result;
         } catch (Exception e) {
@@ -90,14 +89,12 @@ final class VehicleSignalStateAdapter {
 
     private int readEvent(String label, int sensorType, int fallback) {
         try {
-            Object manager = sensor();
+            ISensor manager = sensor();
             if (!isSupported(manager, sensorType)) {
                 status.add(label + " " + hex(sensorType) + " unsupported");
                 return fallback;
             }
-            Method method = manager.getClass().getMethod("getSensorEvent", int.class);
-            Object value = method.invoke(manager, sensorType);
-            int result = ((Number) value).intValue();
+            int result = manager.getSensorEvent(sensorType);
             status.add(label + " " + hex(sensorType) + "=" + hex(result));
             return result;
         } catch (Exception e) {
@@ -106,10 +103,9 @@ final class VehicleSignalStateAdapter {
         }
     }
 
-    private boolean isSupported(Object manager, int sensorType) {
+    private boolean isSupported(ISensor manager, int sensorType) {
         try {
-            Method method = manager.getClass().getMethod("isSensorSupported", int.class);
-            Object value = method.invoke(manager, sensorType);
+            FunctionStatus value = manager.isSensorSupported(sensorType);
             return value == null || "active".equalsIgnoreCase(String.valueOf(value));
         } catch (Exception ignored) {
             return true;
@@ -145,7 +141,7 @@ final class VehicleSignalStateAdapter {
         return value != Integer.MIN_VALUE && value != 0;
     }
 
-    private Object sensor() throws Exception {
+    private ISensor sensor() throws Exception {
         if (sensor != null) return sensor;
         sensor = CarBridge.getSensorManager(context);
         return sensor;

@@ -52,6 +52,7 @@ final class DiagnosticsRunner {
                 }
             }
 
+            appendSection(log, "Function Watcher", safeBlock("Function Watcher", () -> collectFunctionWatcherDiagnostics(adapter, groups)));
             appendAdvancedDiagnostics(context, log);
             if (includeWrites) appendWriteSweep(context, log);
 
@@ -152,6 +153,95 @@ final class DiagnosticsRunner {
         appendSection(log, "Camera2 Inventory", safeBlock("Camera2 Inventory", () -> collectCameraInventoryDiagnostics(context)));
         appendSection(log, "OneOS Dock", safeBlock("OneOS Dock", () -> collectDockDiagnostics(context)));
         appendSection(log, "ControlBoard", safeBlock("ControlBoard", () -> collectControlBoardDiagnostics(context)));
+    }
+
+    private static String collectFunctionWatcherDiagnostics(EcarxVehicleAdapter adapter, LinkedHashMap<String, int[]> groups) {
+        StringBuilder sb = new StringBuilder();
+        LinkedHashSet<Integer> ids = new LinkedHashSet<>();
+        for (int[] group : groups.values()) {
+            for (int id : group) ids.add(id);
+        }
+        int[] functionIds = new int[ids.size()];
+        int index = 0;
+        for (Integer id : ids) functionIds[index++] = id;
+
+        final Object lock = new Object();
+        final int[] events = {0};
+        boolean registered = adapter.watchFunctions(new EcarxVehicleAdapter.FunctionWatcher() {
+            @Override
+            public void onChanged(int functionId) {
+                appendEvent("changed", functionId, Integer.MIN_VALUE, 0, 0f);
+            }
+
+            @Override
+            public void onIntValue(int functionId, int zone, int value) {
+                appendEvent("int", functionId, zone, value, 0f);
+            }
+
+            @Override
+            public void onFloatValue(int functionId, int zone, float value) {
+                appendEvent("float", functionId, zone, 0, value);
+            }
+
+            @Override
+            public void onSupportChanged(int functionId, int zone, String status) {
+                synchronized (lock) {
+                    events[0]++;
+                    sb.append("support ")
+                            .append(EcarxVehicleAdapter.hex(functionId))
+                            .append("/")
+                            .append(zone)
+                            .append("=")
+                            .append(status)
+                            .append("\n");
+                    lock.notifyAll();
+                }
+            }
+
+            @Override
+            public void onSupportedValuesChanged(int functionId, int[] values) {
+                synchronized (lock) {
+                    events[0]++;
+                    sb.append("supportedValues ")
+                            .append(EcarxVehicleAdapter.hex(functionId))
+                            .append("=")
+                            .append(values == null ? 0 : values.length)
+                            .append(" values\n");
+                    lock.notifyAll();
+                }
+            }
+
+            private void appendEvent(String kind, int functionId, int zone, int intValue, float floatValue) {
+                synchronized (lock) {
+                    events[0]++;
+                    sb.append(kind)
+                            .append(" ")
+                            .append(EcarxVehicleAdapter.hex(functionId))
+                            .append("/")
+                            .append(zone);
+                    if ("float".equals(kind)) sb.append("=").append(floatValue);
+                    else if ("int".equals(kind)) sb.append("=").append(EcarxVehicleAdapter.hex(intValue));
+                    sb.append("\n");
+                    lock.notifyAll();
+                }
+            }
+        }, functionIds);
+
+        sb.append("registered=").append(registered).append(", ids=").append(functionIds.length).append("\n");
+        if (registered) {
+            synchronized (lock) {
+                if (events[0] == 0) {
+                    try {
+                        lock.wait(750L);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            }
+            adapter.unwatchFunctions();
+        }
+        if (events[0] == 0) sb.append("events=0\n");
+        return sb.toString();
     }
 
     private static void appendSection(StringBuilder log, String title, String body) {

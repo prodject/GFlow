@@ -1,7 +1,15 @@
 package com.prodject.gflow;
 
 import android.content.Context;
-import java.lang.reflect.Method;
+import com.ecarx.xui.adaptapi.FunctionStatus;
+import com.ecarx.xui.adaptapi.binder.IConnectable;
+import com.ecarx.xui.adaptapi.car.Car;
+import com.ecarx.xui.adaptapi.car.ICar;
+import com.ecarx.xui.adaptapi.car.base.ICarFunction;
+import com.ecarx.xui.adaptapi.car.base.ICarInfo;
+import com.ecarx.xui.adaptapi.car.sensor.ISensor;
+import ecarx.car.hardware.annotation.ApiResult;
+import ecarx.car.hardware.vehicle.ECarXCarVfmiscManager;
 import java.util.Locale;
 import android.util.Log;
 
@@ -756,10 +764,14 @@ final class EcarxVehicleAdapter {
     static final int SEAT_BACKREST_BACKWARD = 0x2d030202;
 
     private final Context context;
-    private Object car;
-    private Object carFunction;
-    private Object vfmiscManager;
+    private ICar car;
+    private ICarFunction carFunction;
+    private ISensor sensor;
+    private ICarInfo carInfo;
+    private ECarXCarVfmiscManager vfmiscManager;
+    private ICarFunction.IFunctionValueWatcher functionWatcher;
     private String lastError = "";
+    private boolean carIsConnected = true;
 
     EcarxVehicleAdapter(Context context) {
         this.context = context.getApplicationContext();
@@ -803,57 +815,17 @@ final class EcarxVehicleAdapter {
                 return Result.external("Функция недоступна в AdaptAPI: " + hex(functionId) + "/" + zone, false, false);
             }
         }
+        if (!carIsConnected) {
+            return Result.external("Car API не подключен: " + hex(functionId), false, false);
+        }
         Log.i(TAG, "setFunctionValue id=" + hex(functionId)
                 + " zone=" + hex(zone)
                 + " value=" + hex(value));
 
         try {
-            Object fn = function();
-
-            try {
-                Method method = fn.getClass().getMethod(
-                        "setFunctionValue",
-                        int.class,
-                        int.class,
-                        int.class
-                );
-
-                Object result = method.invoke(fn, functionId, zone, value);
-                boolean success = Boolean.TRUE.equals(result);
-
-                Log.i(TAG, "setFunctionValue(function, zone, value)"
-                        + " result=" + result);
-
-                return Result.ok(
-                        functionId,
-                        zone,
-                        value,
-                        success,
-                        "AdaptAPI setFunctionValue(function, zone, value)"
-                );
-            } catch (NoSuchMethodException e) {
-                Log.w(TAG, "Zoned setFunctionValue unavailable, using fallback");
-
-                Method method = fn.getClass().getMethod(
-                        "setFunctionValue",
-                        int.class,
-                        int.class
-                );
-
-                Object result = method.invoke(fn, functionId, value);
-                boolean success = Boolean.TRUE.equals(result);
-
-                Log.i(TAG, "setFunctionValue(function, value)"
-                        + " result=" + result);
-
-                return Result.ok(
-                        functionId,
-                        zone,
-                        value,
-                        success,
-                        "AdaptAPI setFunctionValue(function, value) fallback"
-                );
-            }
+            boolean success = function().setFunctionValue(functionId, zone, value);
+            Log.i(TAG, "setFunctionValue(function, zone, value) result=" + success);
+            return Result.ok(functionId, zone, value, success, "AdaptAPI typed setFunctionValue(function, zone, value)");
         } catch (Exception e) {
             Log.e(TAG, "setFunctionValue failed"
                     + " id=" + hex(functionId)
@@ -868,42 +840,16 @@ final class EcarxVehicleAdapter {
         if (spec(functionId).backend == Backend.OEM_ENTRY) {
             return Result.external("OEM entry не поддерживает прямой readback: " + hex(functionId), false, true);
         }
+        if (!carIsConnected) {
+            return Result.external("Car API не подключен: " + hex(functionId), false, false);
+        }
         Log.i(TAG, "getFunctionValue id=" + hex(functionId)
                 + " zone=" + hex(zone));
 
         try {
-            Object fn = function();
-
-            try {
-                Method method = fn.getClass().getMethod(
-                        "getFunctionValue",
-                        int.class,
-                        int.class
-                );
-
-                Object result = method.invoke(fn, functionId, zone);
-                int value = ((Number) result).intValue();
-
-                Log.i(TAG, "getFunctionValue(function, zone)"
-                        + " result=" + hex(value));
-
-                return Result.value(functionId, zone, value);
-            } catch (NoSuchMethodException e) {
-                Log.w(TAG, "Zoned getFunctionValue unavailable, using fallback");
-
-                Method method = fn.getClass().getMethod(
-                        "getFunctionValue",
-                        int.class
-                );
-
-                Object result = method.invoke(fn, functionId);
-                int value = ((Number) result).intValue();
-
-                Log.i(TAG, "getFunctionValue(function)"
-                        + " result=" + hex(value));
-
-                return Result.value(functionId, zone, value);
-            }
+            int value = function().getFunctionValue(functionId, zone);
+            Log.i(TAG, "getFunctionValue(function, zone) result=" + hex(value));
+            return Result.value(functionId, zone, value);
         } catch (Exception e) {
             Log.e(TAG, "getFunctionValue failed"
                     + " id=" + hex(functionId)
@@ -922,22 +868,24 @@ final class EcarxVehicleAdapter {
         if (!support.isSupported()) {
             return Result.external("Функция недоступна в AdaptAPI: " + hex(functionId) + "/" + zone, false, false);
         }
+        if (!carIsConnected) {
+            return Result.external("Car API не подключен: " + hex(functionId), false, false);
+        }
         try {
-            Object fn = function();
-            Method method = fn.getClass().getMethod("setCustomizeFunctionValue", int.class, int.class, float.class);
-            Object ok = method.invoke(fn, functionId, zone, value);
-            return Result.floatValue(functionId, zone, value, Boolean.TRUE.equals(ok), "AdaptAPI setCustomizeFunctionValue(function, zone, float)");
+            boolean ok = function().setCustomizeFunctionValue(functionId, zone, value);
+            return Result.floatValue(functionId, zone, value, ok, "AdaptAPI typed setCustomizeFunctionValue(function, zone, float)");
         } catch (Exception e) {
             return Result.floatError(functionId, zone, value, e);
         }
     }
 
     Result getFloat(int functionId, int zone) {
+        if (!carIsConnected) {
+            return Result.external("Car API не подключен: " + hex(functionId), false, false);
+        }
         try {
-            Object fn = function();
-            Method method = fn.getClass().getMethod("getCustomizeFunctionValue", int.class, int.class);
-            Object value = method.invoke(fn, functionId, zone);
-            return Result.floatStatus(functionId, zone, ((Number) value).floatValue());
+            float value = function().getCustomizeFunctionValue(functionId, zone);
+            return Result.floatStatus(functionId, zone, value);
         } catch (Exception e) {
             return Result.error(functionId, zone, 0, e);
         }
@@ -960,44 +908,9 @@ final class EcarxVehicleAdapter {
                 + " zone=" + hex(zone));
 
         try {
-            Object fn = function();
-
-            try {
-                Method method = fn.getClass().getMethod(
-                        "isFunctionSupported",
-                        int.class,
-                        int.class
-                );
-
-                Object status = method.invoke(fn, functionId, zone);
-
-                Log.i(TAG, "isFunctionSupported(function, zone)"
-                        + " result=" + status);
-
-                return Result.status(
-                        functionId,
-                        zone,
-                        "isFunctionSupported(function, zone) -> " + status
-                );
-            } catch (NoSuchMethodException e) {
-                Log.w(TAG, "Zoned isFunctionSupported unavailable, using fallback");
-
-                Method method = fn.getClass().getMethod(
-                        "isFunctionSupported",
-                        int.class
-                );
-
-                Object status = method.invoke(fn, functionId);
-
-                Log.i(TAG, "isFunctionSupported(function)"
-                        + " result=" + status);
-
-                return Result.status(
-                        functionId,
-                        zone,
-                        "isFunctionSupported(function) -> " + status
-                );
-            }
+            FunctionStatus status = function().isFunctionSupported(functionId, zone);
+            Log.i(TAG, "isFunctionSupported(function, zone) result=" + status);
+            return Result.status(functionId, zone, "isFunctionSupported(function, zone) -> " + status);
         } catch (Exception e) {
             Log.e(TAG, "isFunctionSupported failed"
                     + " id=" + hex(functionId)
@@ -1030,14 +943,170 @@ final class EcarxVehicleAdapter {
         return lastError;
     }
 
-    private Object function() throws Exception {
+    Result getSensorEvent(int sensorId) {
+        try {
+            int value = sensor().getSensorEvent(sensorId);
+            return Result.value(sensorId, Integer.MIN_VALUE, value);
+        } catch (Exception e) {
+            return Result.error(sensorId, Integer.MIN_VALUE, 0, e);
+        }
+    }
+
+    Result getSensorFloat(int sensorId) {
+        try {
+            float value = sensor().getSensorLatestValue(sensorId);
+            return Result.floatStatus(sensorId, Integer.MIN_VALUE, value);
+        } catch (Exception e) {
+            return Result.error(sensorId, Integer.MIN_VALUE, 0, e);
+        }
+    }
+
+    Result getInfoInt(int infoId) {
+        try {
+            int value = carInfo().getCarInfoInt(infoId);
+            return Result.value(infoId, Integer.MIN_VALUE, value);
+        } catch (Exception e) {
+            return Result.error(infoId, Integer.MIN_VALUE, 0, e);
+        }
+    }
+
+    Result getInfoFloat(int infoId) {
+        try {
+            float value = carInfo().getCarInfoFloat(infoId);
+            return Result.floatStatus(infoId, Integer.MIN_VALUE, value);
+        } catch (Exception e) {
+            return Result.error(infoId, Integer.MIN_VALUE, 0, e);
+        }
+    }
+
+    Result supportSensor(int sensorId) {
+        try {
+            return Result.status(sensorId, Integer.MIN_VALUE, "isSensorSupported -> " + sensor().isSensorSupported(sensorId));
+        } catch (Exception e) {
+            return Result.error(sensorId, Integer.MIN_VALUE, 0, e);
+        }
+    }
+
+    Result supportInfo(int infoId) {
+        try {
+            return Result.status(infoId, Integer.MIN_VALUE, "isCarInfoSupported -> " + carInfo().isCarInfoSupported(infoId));
+        } catch (Exception e) {
+            return Result.error(infoId, Integer.MIN_VALUE, 0, e);
+        }
+    }
+
+    int[] supportedValues(int functionId, int zone) {
+        try {
+            return function().getSupportedFunctionValue(functionId, zone);
+        } catch (Exception e) {
+            lastError = compact(e);
+            return new int[0];
+        }
+    }
+
+    int[] supportedZones(int functionId) {
+        try {
+            return function().getSupportedFunctionZones(functionId);
+        } catch (Exception e) {
+            lastError = compact(e);
+            return new int[0];
+        }
+    }
+
+    boolean watchFunctions(final FunctionWatcher watcher, int... functionIds) {
+        try {
+            if (functionWatcher != null) {
+                function().unregisterFunctionValueWatcher(functionWatcher);
+                functionWatcher = null;
+            }
+            functionWatcher = new ICarFunction.IFunctionValueWatcher() {
+                @Override
+                public void onCustomizeFunctionValueChanged(int functionId, int zone, float value) {
+                    watcher.onFloatValue(functionId, zone, value);
+                }
+
+                @Override
+                public void onFunctionChanged(int functionId) {
+                    watcher.onChanged(functionId);
+                }
+
+                @Override
+                public void onFunctionValueChanged(int functionId, int zone, int value) {
+                    watcher.onIntValue(functionId, zone, value);
+                }
+
+                @Override
+                public void onSupportedFunctionStatusChanged(int functionId, int zone, FunctionStatus status) {
+                    watcher.onSupportChanged(functionId, zone, String.valueOf(status));
+                }
+
+                @Override
+                public void onSupportedFunctionValueChanged(int functionId, int[] values) {
+                    watcher.onSupportedValuesChanged(functionId, values == null ? new int[0] : values);
+                }
+            };
+            if (functionIds == null || functionIds.length == 0) {
+                return function().registerFunctionValueWatcher(functionWatcher);
+            }
+            return function().registerFunctionValueWatcher(functionIds, functionWatcher);
+        } catch (Exception e) {
+            lastError = compact(e);
+            return false;
+        }
+    }
+
+    void unwatchFunctions() {
+        if (functionWatcher == null) return;
+        try {
+            function().unregisterFunctionValueWatcher(functionWatcher);
+        } catch (Exception e) {
+            lastError = compact(e);
+        }
+        functionWatcher = null;
+    }
+
+    private ICarFunction function() throws Exception {
         if (carFunction != null) return carFunction;
-        if (car == null) car = CarBridge.create(context);
-        callOptional(car, "connect");
-        Method getter = car.getClass().getMethod("getICarFunction");
-        carFunction = getter.invoke(car);
+        ICar currentCar = car();
+        carFunction = currentCar.getICarFunction();
         if (carFunction == null) throw new IllegalStateException("getICarFunction returned null");
         return carFunction;
+    }
+
+    private ISensor sensor() throws Exception {
+        if (sensor != null) return sensor;
+        sensor = car().getSensorManager();
+        if (sensor == null) throw new IllegalStateException("getSensorManager returned null");
+        return sensor;
+    }
+
+    private ICarInfo carInfo() throws Exception {
+        if (carInfo != null) return carInfo;
+        carInfo = car().getCarInfoManager();
+        if (carInfo == null) throw new IllegalStateException("getCarInfoManager returned null");
+        return carInfo;
+    }
+
+    private ICar car() throws Exception {
+        if (car != null) return car;
+        car = Car.create(context);
+        if (car == null) throw new IllegalStateException("Car.create returned null");
+        if (car instanceof IConnectable) {
+            IConnectable connectable = (IConnectable) car;
+            connectable.registerConnectWatcher(new IConnectable.IConnectWatcher() {
+                @Override
+                public void onConnected() {
+                    carIsConnected = true;
+                }
+
+                @Override
+                public void onDisConnected() {
+                    carIsConnected = false;
+                }
+            });
+            connectable.connect();
+        }
+        return car;
     }
 
     private static int defaultZone(int functionId) {
@@ -1302,22 +1371,14 @@ final class EcarxVehicleAdapter {
         }
     }
 
-    private void callOptional(Object target, String name) {
-        try {
-            target.getClass().getMethod(name).invoke(target);
-        } catch (Exception ignored) {
-        }
-    }
-
     private Result setOemEntry(int functionId, int zone, int value) {
         if (functionId != BCM_CUSTOM_KEY) {
             return Result.external("OEM entry backend not implemented: " + hex(functionId), false, false);
         }
         try {
-            Object manager = vfmisc();
+            ECarXCarVfmiscManager manager = vfmisc();
             int hardwareValue = toHardwareApiCustomKey(value);
-            Method method = manager.getClass().getMethod("CB_SelfDefineFuncReq", int.class);
-            Object raw = method.invoke(manager, hardwareValue);
+            ApiResult raw = manager.CB_SelfDefineFuncReq(hardwareValue);
             boolean success = isVfmiscSuccess(raw);
             return Result.external(
                     "Vfmisc CB_SelfDefineFuncReq -> " + raw
@@ -1331,7 +1392,7 @@ final class EcarxVehicleAdapter {
         }
     }
 
-    private Object vfmisc() throws Exception {
+    private ECarXCarVfmiscManager vfmisc() throws Exception {
         if (vfmiscManager != null) return vfmiscManager;
         vfmiscManager = CarBridge.getVfmiscManager(context);
         return vfmiscManager;
@@ -1491,5 +1552,17 @@ final class EcarxVehicleAdapter {
             this.zone = zone;
             this.value = value;
         }
+    }
+
+    interface FunctionWatcher {
+        void onChanged(int functionId);
+
+        void onIntValue(int functionId, int zone, int value);
+
+        void onFloatValue(int functionId, int zone, float value);
+
+        void onSupportChanged(int functionId, int zone, String status);
+
+        void onSupportedValuesChanged(int functionId, int[] values);
     }
 }
