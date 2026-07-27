@@ -45,10 +45,15 @@ final class DiagnosticsRunner {
                 log.append("== ").append(entry.getKey()).append(" ==\n");
                 for (int functionId : entry.getValue()) {
                     total++;
+                    int zone = adapter.spec(functionId).defaultZone;
+                    log.append(safeBlock("catalog " + EcarxVehicleAdapter.hex(functionId),
+                            () -> adapter.catalogSummary(functionId))).append("\n");
+                    log.append(safeBlock("values " + EcarxVehicleAdapter.hex(functionId),
+                            () -> adapter.valuesSummary(functionId, zone))).append("\n");
                     log.append(safeBlock("support " + EcarxVehicleAdapter.hex(functionId),
-                            () -> adapter.support(functionId).message)).append("\n");
+                            () -> adapter.catalogSupport(functionId, zone).message)).append("\n");
                     log.append(safeBlock("get " + EcarxVehicleAdapter.hex(functionId),
-                            () -> adapter.get(functionId).message)).append("\n\n");
+                            () -> adapter.catalogReadInt(functionId, zone).message)).append("\n\n");
                 }
             }
 

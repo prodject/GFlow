@@ -801,6 +801,42 @@ final class EcarxVehicleAdapter {
         return support(functionId, defaultZone(functionId));
     }
 
+    CarFunctionCatalog.Entry catalogEntry(int id) {
+        return CarFunctionCatalog.byId(id);
+    }
+
+    String catalogSummary(int id) {
+        CarFunctionCatalog.Entry entry = catalogEntry(id);
+        if (entry == null) return "catalog: missing " + hex(id);
+        return "catalog: " + entry.key
+                + " type=" + typeName(entry.type)
+                + " alias=" + entry.alias
+                + (entry.description.isEmpty() ? "" : " desc=" + entry.description);
+    }
+
+    String valuesSummary(int functionId, int zone) {
+        StringBuilder sb = new StringBuilder();
+        CarFunctionCatalog.Value[] staticValues = CarFunctionCatalog.staticValues(functionId);
+        sb.append("staticValues=").append(formatValues(staticValues));
+        if (CarFunctionCatalog.isFunction(functionId)) {
+            sb.append("\nruntimeZones=").append(formatInts(supportedZones(functionId)));
+            sb.append("\nruntimeValues=").append(formatInts(supportedValues(functionId, zone)));
+        }
+        return sb.toString();
+    }
+
+    Result catalogSupport(int id, int zone) {
+        if (CarFunctionCatalog.isSensor(id)) return supportSensor(id);
+        if (CarFunctionCatalog.isInfo(id)) return supportInfo(id);
+        return support(id, zone);
+    }
+
+    Result catalogReadInt(int id, int zone) {
+        if (CarFunctionCatalog.isSensor(id)) return getSensorEvent(id);
+        if (CarFunctionCatalog.isInfo(id)) return getInfoInt(id);
+        return get(id, zone);
+    }
+
     Result set(int functionId, int zone, int value) {
         Spec spec = spec(functionId);
         if (!spec.writable) {
@@ -1111,6 +1147,39 @@ final class EcarxVehicleAdapter {
 
     private static int defaultZone(int functionId) {
         return specFor(functionId).defaultZone;
+    }
+
+    private static String typeName(int type) {
+        switch (type) {
+            case CarFunctionCatalog.TYPE_INFO:
+                return "INFO";
+            case CarFunctionCatalog.TYPE_FUNCTION:
+                return "FUNCTION";
+            case CarFunctionCatalog.TYPE_SENSOR:
+                return "SENSOR";
+            default:
+                return String.valueOf(type);
+        }
+    }
+
+    private static String formatValues(CarFunctionCatalog.Value[] values) {
+        if (values == null || values.length == 0) return "[]";
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < values.length; i++) {
+            if (i > 0) sb.append(", ");
+            sb.append(values[i].key).append("=").append(hex(values[i].value));
+        }
+        return sb.append("]").toString();
+    }
+
+    private static String formatInts(int[] values) {
+        if (values == null || values.length == 0) return "[]";
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < values.length; i++) {
+            if (i > 0) sb.append(", ");
+            sb.append(hex(values[i]));
+        }
+        return sb.append("]").toString();
     }
 
     private static Spec specFor(int functionId) {
