@@ -43,6 +43,7 @@ public class AdasActivity extends Activity {
     private TextView heroLkaValue;
     private TextView heroPdcValue;
     private TextView heroAccValue;
+    private EcarxVehicleAdapter liveAdapter;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -62,6 +63,16 @@ public class AdasActivity extends Activity {
         outState.putString(STATE_LAST_LABEL, lastCommandLabel);
         outState.putString(STATE_LAST_RAW, lastCommandRaw);
         outState.putInt(STATE_ACC_GAP, currentAccGap);
+    }
+
+    @Override protected void onResume() {
+        super.onResume();
+        startFunctionWatcher();
+    }
+
+    @Override protected void onPause() {
+        super.onPause();
+        stopFunctionWatcher();
     }
 
     private View buildAdasShell() {
@@ -491,6 +502,16 @@ public class AdasActivity extends Activity {
             Ui.toast(this, "Это readback/status, а не управляющая команда");
             return;
         }
+        int zone = adapter.spec(functionId).defaultZone;
+        if (CarFunctionSelector.shouldSelect(this, functionId, zone, value)) {
+            CarFunctionSelector.show(this, label, functionId, zone, (id, area, selected) -> sendVehicleDirect(label, id, selected));
+            return;
+        }
+        sendVehicleDirect(label, functionId, value);
+    }
+
+    private void sendVehicleDirect(String label, int functionId, int value) {
+        EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
         EcarxVehicleAdapter.Result support = adapter.support(functionId);
         if (support == null || !support.isSupported()) {
             rememberCommand(label, functionId, value, false);
@@ -517,6 +538,49 @@ public class AdasActivity extends Activity {
         if (heroLkaValue != null) heroLkaValue.setText("LKA: active");
         if (heroPdcValue != null) heroPdcValue.setText("PDC: ready");
         if (heroAccValue != null) heroAccValue.setText("ACC: gap " + currentAccGap);
+    }
+
+    private void startFunctionWatcher() {
+        stopFunctionWatcher();
+        liveAdapter = new EcarxVehicleAdapter(this);
+        liveAdapter.watchFunctions(new EcarxVehicleAdapter.FunctionWatcher() {
+            @Override public void onChanged(int functionId) {}
+
+            @Override public void onIntValue(int functionId, int zone, int value) {
+                runOnUiThread(() -> updateLiveValue(functionId, value));
+            }
+
+            @Override public void onFloatValue(int functionId, int zone, float value) {}
+
+            @Override public void onSupportChanged(int functionId, int zone, String status) {
+                runOnUiThread(() -> updateLiveStatus(functionId, status));
+            }
+
+            @Override public void onSupportedValuesChanged(int functionId, int[] values) {}
+        }, EcarxVehicleAdapter.ADAS_AEB, EcarxVehicleAdapter.ADAS_FCW, EcarxVehicleAdapter.ADAS_LKA,
+                EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.ADAS_ACC_TIME_GAP);
+    }
+
+    private void stopFunctionWatcher() {
+        if (liveAdapter == null) return;
+        liveAdapter.unwatchFunctions();
+        liveAdapter = null;
+    }
+
+    private void updateLiveValue(int functionId, int value) {
+        String text = EcarxVehicleAdapter.hex(value);
+        if (functionId == EcarxVehicleAdapter.ADAS_AEB && heroAebValue != null) heroAebValue.setText("AEB: " + text);
+        else if (functionId == EcarxVehicleAdapter.ADAS_FCW && heroFcwValue != null) heroFcwValue.setText("FCW: " + text);
+        else if (functionId == EcarxVehicleAdapter.ADAS_LKA && heroLkaValue != null) heroLkaValue.setText("LKA: " + text);
+        else if (functionId == EcarxVehicleAdapter.ADAS_PDC && heroPdcValue != null) heroPdcValue.setText("PDC: " + text);
+        else if (functionId == EcarxVehicleAdapter.ADAS_ACC_TIME_GAP && heroAccValue != null) heroAccValue.setText("ACC: " + text);
+    }
+
+    private void updateLiveStatus(int functionId, String status) {
+        if (functionId == EcarxVehicleAdapter.ADAS_AEB && heroAebValue != null) heroAebValue.setText("AEB: " + status);
+        else if (functionId == EcarxVehicleAdapter.ADAS_FCW && heroFcwValue != null) heroFcwValue.setText("FCW: " + status);
+        else if (functionId == EcarxVehicleAdapter.ADAS_LKA && heroLkaValue != null) heroLkaValue.setText("LKA: " + status);
+        else if (functionId == EcarxVehicleAdapter.ADAS_PDC && heroPdcValue != null) heroPdcValue.setText("PDC: " + status);
     }
 
     private void addModeChip(LinearLayout row, String label, String mode) {

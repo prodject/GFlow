@@ -46,6 +46,7 @@ public class VehicleActivity extends Activity {
     private TextView heroRoofValue;
     private TextView heroLightsValue;
     private Mode mode = Mode.HOME;
+    private EcarxVehicleAdapter liveAdapter;
     private final Runnable stateTicker = new Runnable() {
         @Override public void run() {
             refreshState();
@@ -70,12 +71,14 @@ public class VehicleActivity extends Activity {
         super.onResume();
         handler.removeCallbacks(stateTicker);
         refreshState();
+        startFunctionWatcher();
         handler.post(stateTicker);
     }
 
     @Override protected void onPause() {
         super.onPause();
         handler.removeCallbacks(stateTicker);
+        stopFunctionWatcher();
     }
 
     private View buildVehicleShell() {
@@ -647,15 +650,12 @@ public class VehicleActivity extends Activity {
             refreshState();
             return;
         }
-        EcarxVehicleAdapter.Result support = adapter.support(functionId);
-        if (!support.isSupported()) {
-            Ui.toast(this, "Функция недоступна в AdaptAPI этого автомобиля");
-            refreshState();
+        int zone = adapter.spec(functionId).defaultZone;
+        if (CarFunctionSelector.shouldSelect(this, functionId, zone, value)) {
+            CarFunctionSelector.show(this, labelFor(functionId), functionId, zone, this::sendVehicleDirect);
             return;
         }
-        EcarxVehicleAdapter.Result result = CarCommandBus.sendVehicle(this, functionId, value);
-        Ui.toast(this, result.success ? "Команда отправлена" : result.message);
-        refreshState();
+        sendVehicleDirect(functionId, zone, value);
     }
 
     private void sendVehicle(int functionId, int zone, int value) {
@@ -665,6 +665,15 @@ public class VehicleActivity extends Activity {
             refreshState();
             return;
         }
+        if (CarFunctionSelector.shouldSelect(this, functionId, zone, value)) {
+            CarFunctionSelector.show(this, labelFor(functionId), functionId, zone, this::sendVehicleDirect);
+            return;
+        }
+        sendVehicleDirect(functionId, zone, value);
+    }
+
+    private void sendVehicleDirect(int functionId, int zone, int value) {
+        EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
         EcarxVehicleAdapter.Result support = adapter.support(functionId, zone);
         if (!support.isSupported()) {
             Ui.toast(this, "Функция недоступна для этой зоны");
@@ -674,6 +683,11 @@ public class VehicleActivity extends Activity {
         EcarxVehicleAdapter.Result result = adapter.set(functionId, zone, value);
         Ui.toast(this, result.success ? "Команда отправлена" : result.message);
         refreshState();
+    }
+
+    private String labelFor(int functionId) {
+        CarFunctionCatalog.Entry entry = new EcarxVehicleAdapter(this).catalogEntry(functionId);
+        return entry == null ? EcarxVehicleAdapter.hex(functionId) : entry.description.isEmpty() ? entry.key : entry.description;
     }
 
     private void openAvmCamera() {
@@ -773,6 +787,49 @@ public class VehicleActivity extends Activity {
         if (heroLocksValue != null) heroLocksValue.setText("Замки: " + compact(new EcarxVehicleAdapter(this).get(EcarxVehicleAdapter.BCM_DOOR_LOCK).message));
         if (heroRoofValue != null) heroRoofValue.setText("Люк: " + compact(new EcarxVehicleAdapter(this).get(EcarxVehicleAdapter.BCM_SUNROOF_OPEN).message));
         if (heroLightsValue != null) heroLightsValue.setText("Свет: " + compact(new EcarxVehicleAdapter(this).get(EcarxVehicleAdapter.BCM_LIGHT_DIPPED_BEAM).message));
+    }
+
+    private void startFunctionWatcher() {
+        stopFunctionWatcher();
+        liveAdapter = new EcarxVehicleAdapter(this);
+        liveAdapter.watchFunctions(new EcarxVehicleAdapter.FunctionWatcher() {
+            @Override public void onChanged(int functionId) {}
+
+            @Override public void onIntValue(int functionId, int zone, int value) {
+                runOnUiThread(() -> updateLiveValue(functionId, value));
+            }
+
+            @Override public void onFloatValue(int functionId, int zone, float value) {}
+
+            @Override public void onSupportChanged(int functionId, int zone, String status) {
+                runOnUiThread(() -> updateLiveStatus(functionId, status));
+            }
+
+            @Override public void onSupportedValuesChanged(int functionId, int[] values) {}
+        }, EcarxVehicleAdapter.BCM_DOOR_STATUS, EcarxVehicleAdapter.BCM_DOOR_LOCK,
+                EcarxVehicleAdapter.BCM_WINDOW, EcarxVehicleAdapter.BCM_SUNROOF_OPEN,
+                EcarxVehicleAdapter.BCM_LIGHT_DIPPED_BEAM, EcarxVehicleAdapter.DRIVE_MODE_SELECT);
+    }
+
+    private void stopFunctionWatcher() {
+        if (liveAdapter == null) return;
+        liveAdapter.unwatchFunctions();
+        liveAdapter = null;
+    }
+
+    private void updateLiveValue(int functionId, int value) {
+        String text = EcarxVehicleAdapter.hex(value);
+        if (functionId == EcarxVehicleAdapter.BCM_DOOR_STATUS && heroStatusValue != null) heroStatusValue.setText("Двери: " + text);
+        else if (functionId == EcarxVehicleAdapter.BCM_DOOR_LOCK && heroLocksValue != null) heroLocksValue.setText("Замки: " + text);
+        else if (functionId == EcarxVehicleAdapter.BCM_WINDOW && topWindowsValue != null) topWindowsValue.setText(text);
+        else if (functionId == EcarxVehicleAdapter.BCM_SUNROOF_OPEN && heroRoofValue != null) heroRoofValue.setText("Люк: " + text);
+        else if (functionId == EcarxVehicleAdapter.BCM_LIGHT_DIPPED_BEAM && heroLightsValue != null) heroLightsValue.setText("Свет: " + text);
+        else if (functionId == EcarxVehicleAdapter.DRIVE_MODE_SELECT && topDriveValue != null) topDriveValue.setText(text);
+    }
+
+    private void updateLiveStatus(int functionId, String status) {
+        if (functionId == EcarxVehicleAdapter.BCM_DOOR_STATUS && heroStatusValue != null) heroStatusValue.setText("Двери: " + status);
+        else if (functionId == EcarxVehicleAdapter.DRIVE_MODE_SELECT && topDriveValue != null) topDriveValue.setText(status);
     }
 
     private String readback(int... ids) {
