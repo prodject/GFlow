@@ -137,6 +137,29 @@
     <uses-permission android:name="android.car.permission.GET_CAR_VENDOR_CATEGORY_LIGHT" />
     <uses-permission android:name="android.car.permission.SET_CAR_VENDOR_CATEGORY_LIGHT" />
 
+    <queries>
+        <package android:name="com.android.settings" />
+        <package android:name="com.android.car.settings" />
+        <package android:name="com.ecarx.settings" />
+        <package android:name="com.ecarx.xui.settings" />
+        <package android:name="com.zeekr.settings" />
+        <package android:name="com.geely.settings" />
+        <package android:name="com.ecarx.car" />
+        <package android:name="com.android.car" />
+        <package android:name="com.geely.hvac" />
+        <package android:name="com.desaysv.engmode" />
+        <package android:name="com.desaysv.permission.service" />
+        <package android:name="com.geely.service.oneosapi" />
+        <package android:name="com.autolink.carproxyservice" />
+        <package android:name="com.autolink.diminteraction" />
+        <package android:name="com.autolink.audioextservice" />
+        <package android:name="com.autolink.tcamservice" />
+        <package android:name="com.avm.arcsoft_service" />
+        <package android:name="ecarx.controlboard" />
+        <package android:name="com.android.systemui" />
+        <package android:name="com.ecarx.systemui.plugin" />
+    </queries>
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
