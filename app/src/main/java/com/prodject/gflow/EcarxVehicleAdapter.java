@@ -727,6 +727,8 @@ final class EcarxVehicleAdapter {
     static final int AMBIENCE_LIGHT_ICHARGING_REMIND = 0x2a080300;
     static final int AMBIENCE_LIGHT_SOLID_COLOR_SET = 0x2a500000;
     static final int AMBIENCE_LIGHT_BREATHE_COLOR_SET = 0x2a500100;
+    static final int AMBIENCE_LIGHT_TRANSITION_START_COLOR = 0x2a070200;
+    static final int AMBIENCE_LIGHT_TRANSITION_END_COLOR = 0x2a070300;
     static final int AMBIENCE_LIGHT_ZONE_ALL = 0x200a0100;
     static final int AMBIENCE_LIGHT_ZONE_FRONT = 0x200a0101;
     static final int AMBIENCE_LIGHT_ZONE_HEADREST = 0x200a0102;
@@ -777,6 +779,7 @@ final class EcarxVehicleAdapter {
 
     static final int WPC_WORK_MODE = 0x26010100;
     static final int WPC_WORK_MODE_AUTO = 0x26010101;
+    static final int WPC_CHARGE_STATES = 0x26020100;
 
     private final Context context;
     private ICar car;
@@ -849,6 +852,7 @@ final class EcarxVehicleAdapter {
     Result catalogReadInt(int id, int zone) {
         if (CarFunctionCatalog.isSensor(id)) return getSensorEvent(id);
         if (CarFunctionCatalog.isInfo(id)) return getInfoInt(id);
+        if (isFloatFunction(id)) return getFloat(id, zone);
         return get(id, zone);
     }
 
@@ -1240,6 +1244,10 @@ final class EcarxVehicleAdapter {
         if (functionId == BCM_CUSTOM_KEY) return new Spec(ZONE_ALL, Backend.OEM_ENTRY, true, false, false);
         if (functionId == VEHICLE_EASY_INGRESS_EGRESS) return new Spec(ZONE_DRIVER_LEFT, Backend.ADAPT_API, true, false, false);
         if (functionId == DAYMODE_BRIGHTNESS_SCREEN) return new Spec(ZONE_ALL, Backend.ADAPT_API, true, true, false);
+        if (functionId == DAYMODE_BRIGHTNESS_MAX || functionId == DAYMODE_PSD_BRIGHTNESS_SCREEN) {
+            return new Spec(ZONE_ALL, Backend.ADAPT_API, false, true, false);
+        }
+        if (functionId == WPC_CHARGE_STATES) return new Spec(ZONE_ALL, Backend.ADAPT_API, false, false, false);
         if (functionId == VEHICLE_ENGINE_STOP_START
                 || functionId == VEHICLE_ESC_SPORT_MODE
                 || functionId == VEHICLE_LAMP_APPROACH_LIGHT
