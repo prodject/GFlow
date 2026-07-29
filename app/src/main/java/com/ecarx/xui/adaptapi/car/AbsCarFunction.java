@@ -486,7 +486,7 @@ public abstract class AbsCarFunction extends AbsVehicle {
             }).filter(new Predicate() { // from class: com.ecarx.xui.adaptapi.car.-$$Lambda$AbsCarFunction$1$-SR5LxuG5KggWTJyDy2WRKPGQ7w
                 @Override // java.util.function.Predicate
                 public final boolean test(Object obj) {
-                    return AbsCarFunction.AnonymousClass1.lambda$onPAChanged$1(i, (VehicleFunction.ZoneTask) obj);
+                    return AnonymousClass1.this.lambda$onPAChanged$1(i, (VehicleFunction.ZoneTask) obj);
                 }
             });
         }
@@ -495,7 +495,7 @@ public abstract class AbsCarFunction extends AbsVehicle {
             return vehicleFunction.getZoneTask(AbsCarFunction.this.getVehicleType(), i);
         }
 
-        static /* synthetic */ boolean lambda$onPAChanged$1(int i, VehicleFunction.ZoneTask zoneTask) {
+        /* synthetic */ boolean lambda$onPAChanged$1(int i, VehicleFunction.ZoneTask zoneTask) {
             return zoneTask != null && zoneTask.containerProperty(i);
         }
 
@@ -508,7 +508,7 @@ public abstract class AbsCarFunction extends AbsVehicle {
             }).filter(new Predicate() { // from class: com.ecarx.xui.adaptapi.car.-$$Lambda$AbsCarFunction$1$PWxqUbwwTOvxgxJbE70andEzjRI
                 @Override // java.util.function.Predicate
                 public final boolean test(Object obj) {
-                    return AbsCarFunction.AnonymousClass1.lambda$onPAChanged$5(i, (VehicleFunction.ZoneTask) obj);
+                    return AnonymousClass1.this.lambda$onPAChanged$5(i, (VehicleFunction.ZoneTask) obj);
                 }
             });
         }
@@ -517,7 +517,7 @@ public abstract class AbsCarFunction extends AbsVehicle {
             return vehicleFunction.getZoneTask(AbsCarFunction.this.getVehicleType(), i);
         }
 
-        static /* synthetic */ boolean lambda$onPAChanged$5(int i, VehicleFunction.ZoneTask zoneTask) {
+        /* synthetic */ boolean lambda$onPAChanged$5(int i, VehicleFunction.ZoneTask zoneTask) {
             return zoneTask != null && zoneTask.containerProperty(i);
         }
     }
