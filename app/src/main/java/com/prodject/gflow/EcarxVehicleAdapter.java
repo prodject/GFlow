@@ -1239,6 +1239,7 @@ final class EcarxVehicleAdapter {
         }
         if (functionId == BCM_CUSTOM_KEY) return new Spec(ZONE_ALL, Backend.OEM_ENTRY, true, false, false);
         if (functionId == VEHICLE_EASY_INGRESS_EGRESS) return new Spec(ZONE_DRIVER_LEFT, Backend.ADAPT_API, true, false, false);
+        if (functionId == DAYMODE_BRIGHTNESS_SCREEN) return new Spec(ZONE_ALL, Backend.ADAPT_API, true, true, false);
         if (functionId == VEHICLE_ENGINE_STOP_START
                 || functionId == VEHICLE_ESC_SPORT_MODE
                 || functionId == VEHICLE_LAMP_APPROACH_LIGHT

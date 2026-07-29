@@ -1863,6 +1863,12 @@ public class MainActivity extends Activity {
     }
 
     private void addBrightnessCommands(LinearLayout root, String label, int functionId) {
+        if (functionId == EcarxVehicleAdapter.DAYMODE_BRIGHTNESS_SCREEN) {
+            addFloatCommand(root, label + " 2", functionId, EcarxVehicleAdapter.ZONE_ALL, 2.0f);
+            addFloatCommand(root, label + " 8", functionId, EcarxVehicleAdapter.ZONE_ALL, 8.0f);
+            addFloatCommand(root, label + " 14", functionId, EcarxVehicleAdapter.ZONE_ALL, 14.0f);
+            return;
+        }
         addCommand(root, label + " 25", functionId, 25);
         addCommand(root, label + " 50", functionId, 50);
         addCommand(root, label + " 75", functionId, 75);
