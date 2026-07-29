@@ -8,6 +8,8 @@ import android.util.Log;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Date;
@@ -59,6 +61,7 @@ final class DiagnosticsRunner {
 
             appendSection(log, "Function Watcher", safeBlock("Function Watcher", () -> collectFunctionWatcherDiagnostics(adapter, groups)));
             appendAdvancedDiagnostics(context, log);
+            appendSection(log, "Logcat Snapshot", safeBlock("Logcat Snapshot", DiagnosticsRunner::collectLogcatSnapshot));
             if (includeWrites) appendWriteSweep(context, log);
 
             File cacheFile = new File(context.getCacheDir(), LATEST_REPORT);
@@ -468,6 +471,47 @@ final class DiagnosticsRunner {
 
     private static String collectControlBoardDiagnostics(Context context) {
         return new EcarxControlBoardAdapter(context).availability();
+    }
+
+    private static String collectLogcatSnapshot() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(runLogcatCommand("recent", new String[]{"logcat", "-d", "-v", "threadtime", "-t", "400"}));
+        sb.append("\n");
+        sb.append(runLogcatCommand("gflow-filtered", new String[]{
+                "logcat", "-d", "-v", "threadtime", "-s",
+                "GFlowCarApi", "GFlowDiagnostics", "GFlow"
+        }));
+        return sb.toString();
+    }
+
+    private static String runLogcatCommand(String label, String[] command) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("-- ").append(label).append(" --\n");
+        Process process = null;
+        try {
+            process = new ProcessBuilder(command).redirectErrorStream(true).start();
+            int lines = 0;
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                for (String line; (line = reader.readLine()) != null; ) {
+                    if (lines++ >= 500 || sb.length() > 120000) {
+                        sb.append("[truncated]\n");
+                        break;
+                    }
+                    sb.append(line).append("\n");
+                }
+            }
+            int exit = process.waitFor();
+            sb.append("exit=").append(exit).append("\n");
+        } catch (Exception e) {
+            sb.append("error ")
+                    .append(e.getClass().getSimpleName())
+                    .append(": ")
+                    .append(e.getMessage())
+                    .append("\n");
+        } finally {
+            if (process != null) process.destroy();
+        }
+        return sb.toString();
     }
 
     private static String facingName(Integer facing) {

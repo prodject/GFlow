@@ -3,7 +3,6 @@ package com.prodject.gflow;
 import android.content.Context;
 import com.ecarx.xui.adaptapi.FunctionStatus;
 import com.ecarx.xui.adaptapi.binder.IConnectable;
-import com.ecarx.xui.adaptapi.car.Car;
 import com.ecarx.xui.adaptapi.car.ICar;
 import com.ecarx.xui.adaptapi.car.base.ICarFunction;
 import com.ecarx.xui.adaptapi.car.base.ICarInfo;
@@ -1125,8 +1124,7 @@ final class EcarxVehicleAdapter {
 
     private ICar car() throws Exception {
         if (car != null) return car;
-        car = Car.create(context);
-        if (car == null) throw new IllegalStateException("Car.create returned null");
+        car = CarBridge.createCar(context);
         if (car instanceof IConnectable) {
             IConnectable connectable = (IConnectable) car;
             connectable.registerConnectWatcher(new IConnectable.IConnectWatcher() {
@@ -1140,8 +1138,8 @@ final class EcarxVehicleAdapter {
                     carIsConnected = false;
                 }
             });
-            connectable.connect();
         }
+        CarBridge.connectIfNeeded(car);
         return car;
     }
 
