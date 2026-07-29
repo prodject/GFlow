@@ -331,6 +331,7 @@ public class VehicleActivity extends Activity {
         addAdvancedCard(grid, "Accent Lights", "Grille, welcome, rear logo", new QuickItem[]{
                 new QuickItem("Grille", () -> sendVehicle(EcarxVehicleAdapter.BCM_LIGHT_GRILLE, EcarxVehicleAdapter.COMMON_ON)),
                 new QuickItem("Welcome", () -> sendVehicle(EcarxVehicleAdapter.BCM_LIGHT_WELCOME, EcarxVehicleAdapter.COMMON_ON)),
+                new QuickItem("Approach", () -> sendVehicle(EcarxVehicleAdapter.VEHICLE_LAMP_APPROACH_LIGHT, EcarxVehicleAdapter.COMMON_ON)),
                 new QuickItem("Rear logo", () -> sendVehicle(EcarxVehicleAdapter.BCM_LIGHT_REAR_LOGO, EcarxVehicleAdapter.COMMON_ON)),
                 new QuickItem("Atmosphere", () -> sendVehicle(EcarxVehicleAdapter.BCM_LIGHT_ATMOSPHERE, EcarxVehicleAdapter.COMMON_ON))
         });
@@ -370,6 +371,18 @@ public class VehicleActivity extends Activity {
                 new QuickItem("Dynamic", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_STEERING_MODE, EcarxVehicleAdapter.STEERING_MODE_DYNAMIC)),
                 new QuickItem("Open 360", this::openAvmCamera),
                 new QuickItem("Custom Drive", () -> sendVehicle(EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_DRIVING_MODE))
+        });
+        addAdvancedCard(grid, "Штатные переключатели", "Пары function/zone/value из stock settings log", new QuickItem[]{
+                new QuickItem("Start/Stop OFF", () -> sendVehicle(EcarxVehicleAdapter.VEHICLE_ENGINE_STOP_START, EcarxVehicleAdapter.COMMON_OFF)),
+                new QuickItem("Auto Hold ON", () -> sendVehicle(EcarxVehicleAdapter.VEHICLE_AUTO_HOLD, EcarxVehicleAdapter.COMMON_ON)),
+                new QuickItem("EPB Auto ON", () -> sendVehicle(EcarxVehicleAdapter.VEHICLE_PBC_AUTO_APPLY, EcarxVehicleAdapter.COMMON_ON)),
+                new QuickItem("WPC Auto", () -> sendVehicle(EcarxVehicleAdapter.WPC_WORK_MODE, EcarxVehicleAdapter.WPC_WORK_MODE_AUTO))
+        });
+        addAdvancedCard(grid, "Штатные safety", "ESC Sport, HDC, easy ingress", new QuickItem[]{
+                new QuickItem("ESC Sport", () -> sendVehicle(EcarxVehicleAdapter.VEHICLE_ESC_SPORT_MODE, EcarxVehicleAdapter.COMMON_ON)),
+                new QuickItem("HDC ON", () -> sendVehicle(EcarxVehicleAdapter.VEHICLE_HDC_SWITCH, EcarxVehicleAdapter.COMMON_ON)),
+                new QuickItem("Easy Ingress", () -> sendVehicle(EcarxVehicleAdapter.VEHICLE_EASY_INGRESS_EGRESS, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.COMMON_ON)),
+                new QuickItem("WPC OFF", () -> sendVehicle(EcarxVehicleAdapter.WPC_WORK_MODE, EcarxVehicleAdapter.COMMON_OFF))
         });
         addAdvancedCard(grid, "OEM Custom Keys", "Подтвержденные точки входа из GInputBridge", new QuickItem[]{
                 new QuickItem("Trunk", this::openTrunkOemEntry),

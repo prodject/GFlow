@@ -312,6 +312,15 @@ final class EcarxVehicleAdapter {
     static final int ADAS_BLIND_SPOT_DETECTION = 0x28070100;
     static final int ADAS_TRAFFIC_SIGN_RECOGNITION = 0x200b0100;
     static final int ADAS_TRAFFIC_SIGN_ALERT = 0x200b0200;
+    static final int VEHICLE_ENGINE_STOP_START = 0x20020100;
+    static final int VEHICLE_ESC_SPORT_MODE = 0x20020300;
+    static final int VEHICLE_LAMP_APPROACH_LIGHT = 0x20040900;
+    static final int VEHICLE_PBC_AUTO_APPLY = 0x20060100;
+    static final int VEHICLE_AUTO_HOLD = 0x20060400;
+    static final int VEHICLE_HDC_SWITCH = 0x20060500;
+    static final int VEHICLE_LANE_KEEPING_AID_WARNING = 0x20070500;
+    static final int VEHICLE_REAR_CROSS_TRAFFIC_ALERT = 0x20070a00;
+    static final int VEHICLE_EASY_INGRESS_EGRESS = 0x20170100;
     static final int ADAS_SPEED_LIMIT_WARN = 0x28060100;
     static final int ADAS_SPEED_LIMIT_WARNING_MODE = 0x28060200;
     static final int ADAS_ACC_WITH_TSR = 0x28060300;
@@ -375,7 +384,10 @@ final class EcarxVehicleAdapter {
     static final int FCW_SENSITIVITY_NORMAL = 0x200e0202;
     static final int LKA_MODE_WARN_INTV = 0x20070201;
     static final int SPEED_LIMITATION_MODE_AVSL = 0x20030501;
+    static final int SPEED_LIMIT_WARNING_MODE_NO_WARNING = 0x28060201;
+    static final int SPEED_LIMIT_WARNING_MODE_FLASHING = 0x28060202;
     static final int SPEED_LIMIT_WARNING_MODE_SOUND = 0x28060203;
+    static final int LKA_WARNING_SOUND = 0x20070501;
     static final int TLB_MODE_LOW = 0x28080c01;
     static final int TLB_MODE_MIDDLE = 0x28080c02;
     static final int TLB_MODE_HIGH = 0x28080c03;
@@ -732,6 +744,7 @@ final class EcarxVehicleAdapter {
     static final int DAYMODE_DIM_BRIGHTNESS = 0x29020500;
     static final int DAYMODE_FLOODLIGHT_BRIGHTNESS = 0x29020900;
     static final int DAYMODE_ELECTRIC_REAR_VIEW_MIRROR = 0x29020d00;
+    static final int DAYMODE_BRIGHTNESS_DAYMODE = 0x29030200;
     static final int DAYMODE_BRIGHTNESS_SCREEN = 0x29030500;
     static final int DAYMODE_CUSTOM_DAY_TIME = 0x29030300;
     static final int DAYMODE_CUSTOM_NIGHT_TIME = 0x29030400;
@@ -761,6 +774,9 @@ final class EcarxVehicleAdapter {
     static final int SEAT_HEIGHT_DOWN = 0x2d020202;
     static final int SEAT_BACKREST_FORWARD = 0x2d030201;
     static final int SEAT_BACKREST_BACKWARD = 0x2d030202;
+
+    static final int WPC_WORK_MODE = 0x26010100;
+    static final int WPC_WORK_MODE_AUTO = 0x26010101;
 
     private final Context context;
     private ICar car;
@@ -1222,6 +1238,20 @@ final class EcarxVehicleAdapter {
             return new Spec(ZONE_ALL, Backend.ADAPT_API, false, false, false);
         }
         if (functionId == BCM_CUSTOM_KEY) return new Spec(ZONE_ALL, Backend.OEM_ENTRY, true, false, false);
+        if (functionId == VEHICLE_EASY_INGRESS_EGRESS) return new Spec(ZONE_DRIVER_LEFT, Backend.ADAPT_API, true, false, false);
+        if (functionId == VEHICLE_ENGINE_STOP_START
+                || functionId == VEHICLE_ESC_SPORT_MODE
+                || functionId == VEHICLE_LAMP_APPROACH_LIGHT
+                || functionId == VEHICLE_PBC_AUTO_APPLY
+                || functionId == VEHICLE_AUTO_HOLD
+                || functionId == VEHICLE_HDC_SWITCH
+                || functionId == VEHICLE_LANE_KEEPING_AID_WARNING
+                || functionId == VEHICLE_REAR_CROSS_TRAFFIC_ALERT
+                || functionId == WPC_WORK_MODE
+                || functionId == DAYMODE_BRIGHTNESS_DAYMODE
+                || functionId == ADAS_SPEED_LIMIT_WARNING_MODE) {
+            return new Spec(ZONE_ALL, Backend.ADAPT_API, true, false, false);
+        }
         if (functionId == DRIVE_MODE_SELECT) return new Spec(ZONE_ALL, Backend.ADAPT_API, false, false, false);
         if (isPasDirectFunction(functionId)) return new Spec(ZONE_ALL, Backend.ADAPT_API, false, false, false);
         if (isHudDirectFunction(functionId)) return new Spec(ZONE_ALL, Backend.ADAPT_API, false, false, false);
@@ -1400,7 +1430,6 @@ final class EcarxVehicleAdapter {
     private static boolean isReadOnlyAdasFunction(int functionId) {
         switch (functionId) {
             case ADAS_APB_MODE:
-            case ADAS_SPEED_LIMIT_WARNING_MODE:
             case ADAS_DRIVE_PILOT_STATUS:
             case ADAS_DRIVE_NZP_STATUS:
             case ADAS_DRIVE_PILOT_ALARM_INFO:

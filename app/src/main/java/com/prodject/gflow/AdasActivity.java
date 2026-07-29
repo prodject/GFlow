@@ -184,7 +184,7 @@ public class AdasActivity extends Activity {
         grid.setColumnCount(3);
         addTile(grid, "AEB", Color.rgb(113, 91, 177), () -> sendVehicle("AEB включить", EcarxVehicleAdapter.ADAS_AEB, EcarxVehicleAdapter.COMMON_ON));
         addTile(grid, "FCW", Color.rgb(95, 133, 255), () -> sendVehicle("FCW normal", EcarxVehicleAdapter.ADAS_FCW, EcarxVehicleAdapter.FCW_SENSITIVITY_NORMAL));
-        addTile(grid, "LKA", Color.rgb(72, 184, 164), () -> sendVehicle("LKA warn+intervention", EcarxVehicleAdapter.ADAS_LKA, EcarxVehicleAdapter.LKA_MODE_WARN_INTV));
+        addTile(grid, "LKA", Color.rgb(72, 184, 164), () -> sendVehicle("LKA включить", EcarxVehicleAdapter.ADAS_LKA, EcarxVehicleAdapter.COMMON_ON));
         addTile(grid, "LDW", Color.rgb(255, 179, 64), () -> sendVehicle("LDW включить", EcarxVehicleAdapter.ADAS_LDW, EcarxVehicleAdapter.COMMON_ON));
         addTile(grid, "RCW", Color.rgb(255, 122, 89), () -> sendVehicle("RCW включить", EcarxVehicleAdapter.ADAS_RCW, EcarxVehicleAdapter.COMMON_ON));
         addTile(grid, "ELKA", Color.rgb(129, 149, 255), () -> sendVehicle("ELKA включить", EcarxVehicleAdapter.ADAS_ELKA, EcarxVehicleAdapter.COMMON_ON));
@@ -193,7 +193,7 @@ public class AdasActivity extends Activity {
         addTile(grid, "BSD", Color.rgb(95, 195, 156), () -> sendVehicle("Blind spot detection", EcarxVehicleAdapter.ADAS_BLIND_SPOT_DETECTION, EcarxVehicleAdapter.COMMON_ON));
         addTile(grid, "TSR", Color.rgb(255, 171, 78), () -> sendVehicle("Traffic sign recognition", EcarxVehicleAdapter.ADAS_TRAFFIC_SIGN_RECOGNITION, EcarxVehicleAdapter.COMMON_ON));
         addTile(grid, "Оповещение", Color.rgb(255, 128, 112), () -> sendVehicle("Traffic sign alert", EcarxVehicleAdapter.ADAS_TRAFFIC_SIGN_ALERT, EcarxVehicleAdapter.COMMON_ON));
-        addTile(grid, "Лимит", Color.rgb(177, 118, 255), () -> sendVehicle("Speed limit warning sound", EcarxVehicleAdapter.ADAS_SPEED_LIMIT_WARN, EcarxVehicleAdapter.SPEED_LIMIT_WARNING_MODE_SOUND));
+        addTile(grid, "Лимит", Color.rgb(177, 118, 255), () -> sendVehicle("Speed limit flashing", EcarxVehicleAdapter.ADAS_SPEED_LIMIT_WARNING_MODE, EcarxVehicleAdapter.SPEED_LIMIT_WARNING_MODE_FLASHING));
         panel.addView(grid, lpMatchWrap(0, 12, 0, 0));
         return panel;
     }
@@ -342,7 +342,13 @@ public class AdasActivity extends Activity {
 
         LinearLayout summary = new LinearLayout(this);
         summary.setOrientation(LinearLayout.VERTICAL);
-        summary.addView(Ui.muted(this, "APB mode и speed warning mode оставлены как readback/raw controls: в текущем коде есть ID, но нет подтвержденных enum-значений, поэтому пользовательский selector для них пока не выдумывается."), lpMatchWrap(0, 0, 0, 8));
+        LinearLayout speedWarning = Ui.row(this);
+        addActionChip(speedWarning, "Speed no warning", () -> sendVehicle("Speed limit no warning", EcarxVehicleAdapter.ADAS_SPEED_LIMIT_WARNING_MODE, EcarxVehicleAdapter.SPEED_LIMIT_WARNING_MODE_NO_WARNING));
+        addActionChip(speedWarning, "Speed flashing", () -> sendVehicle("Speed limit flashing", EcarxVehicleAdapter.ADAS_SPEED_LIMIT_WARNING_MODE, EcarxVehicleAdapter.SPEED_LIMIT_WARNING_MODE_FLASHING));
+        addActionChip(speedWarning, "LKA sound", () -> sendVehicle("LKA warning sound", EcarxVehicleAdapter.VEHICLE_LANE_KEEPING_AID_WARNING, EcarxVehicleAdapter.LKA_WARNING_SOUND));
+        addActionChip(speedWarning, "RCTA", () -> sendVehicle("Rear cross traffic alert", EcarxVehicleAdapter.VEHICLE_REAR_CROSS_TRAFFIC_ALERT, EcarxVehicleAdapter.COMMON_ON));
+        summary.addView(speedWarning, lpMatchWrap(0, 0, 0, 8));
+        summary.addView(Ui.muted(this, "Speed warning/LKA/RCTA значения взяты из stock settings log. APB mode оставлен как readback/raw: подтвержденных set values пока нет."), lpMatchWrap(0, 0, 0, 8));
         summary.addView(diagnosticCard("Чтение режимов Pilot",
                 EcarxVehicleAdapter.ADAS_APB_MODE,
                 EcarxVehicleAdapter.ADAS_SPEED_LIMIT_WARNING_MODE,

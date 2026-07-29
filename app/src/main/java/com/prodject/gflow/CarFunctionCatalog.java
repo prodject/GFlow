@@ -51,6 +51,8 @@ final class CarFunctionCatalog {
         put(byId, byKey, new Entry("BCM_FUNC_DOOR_STATUS", 553785856, 2, "IBcm.BCM_FUNC_DOOR_STATUS", "Состояние дверей (открыто/закрыто).", new Value[] {
         }));
         put(byId, byKey, new Entry("BCM_FUNC_FOLD_REAR_MIRROR", 554041600, 2, "IBcm.BCM_FUNC_FOLD_REAR_MIRROR", "Складирование наружных зеркал.", new Value[] {
+                new Value("COMMON_OFF", 0),
+                new Value("COMMON_ON", 1),
         }));
         put(byId, byKey, new Entry("BCM_FUNC_FPL_FOLLOW_DRL", 555745536, 2, "IBcm.BCM_FUNC_FPL_FOLLOW_DRL", "Связь ближнего света с ДХО (сценарии).", new Value[] {
                 new Value("FPL_FOLLOW_DRL_MODE1", 555745537),
@@ -59,6 +61,8 @@ final class CarFunctionCatalog {
         put(byId, byKey, new Entry("BCM_FUNC_FUEL_CAP", 553780736, 2, "IBcm.BCM_FUNC_FUEL_CAP", "Электропривод лючка топливного бака.", new Value[] {
         }));
         put(byId, byKey, new Entry("BCM_FUNC_LIGHT_ATMOSPHERE_LAMPS", 553979904, 2, "IBcm.BCM_FUNC_LIGHT_ATMOSPHERE_LAMPS", "Атмосферная подсветка салона.", new Value[] {
+                new Value("COMMON_OFF", 0),
+                new Value("COMMON_ON", 1),
         }));
         put(byId, byKey, new Entry("BCM_FUNC_LIGHT_FRONT_FOG_LAMPS", 553976832, 2, "IBcm.BCM_FUNC_LIGHT_FRONT_FOG_LAMPS", "Передние противотуманные фары: вкл/выкл.", new Value[] {
         }));
@@ -1439,6 +1443,9 @@ final class CarFunctionCatalog {
                 new Value("AMBIENCE_LIGHT_CONTROL_MODE_TIME", 705168901),
         }));
         put(byId, byKey, new Entry("SETTING_FUNC_AMBIENCE_LIGHT_EFFECT_SET", 705167616, 2, "IAmbienceLight.SETTING_FUNC_AMBIENCE_LIGHT_EFFECT_SET", "Выбор эффекта подсветки.", new Value[] {
+                new Value("AMBIENCE_LIGHT_EFFECT_SOLID", 705167617),
+                new Value("AMBIENCE_LIGHT_EFFECT_GRADIENTS", 705167618),
+                new Value("AMBIENCE_LIGHT_EFFECT_BREATHE", 705167619),
         }));
         put(byId, byKey, new Entry("SETTING_FUNC_AMBIENCE_LIGHT_ENDURANCE_MIL_REMINDER", 704971520, 2, "IAmbienceLight.SETTING_FUNC_AMBIENCE_LIGHT_ENDURANCE_MIL_REMINDER", "", new Value[] {
         }));
@@ -1537,6 +1544,8 @@ final class CarFunctionCatalog {
                 new Value("AUTO_CLOSE_WINDOW_VEHICLE_LOCK", 537396225),
         }));
         put(byId, byKey, new Entry("SETTING_FUNC_AUTO_HOLD", 537265152, 2, "IVehicle.SETTING_FUNC_AUTO_HOLD", "Auto Hold: удержание после остановки.", new Value[] {
+                new Value("COMMON_OFF", 0),
+                new Value("COMMON_ON", 1),
         }));
         put(byId, byKey, new Entry("SETTING_FUNC_AUTO_LANE_CHANGE_ASSIST", 671351040, 2, "IADAS.SETTING_FUNC_AUTO_LANE_CHANGE_ASSIST", "Ассистент автоматической смены полосы.", new Value[] {
         }));
@@ -1578,6 +1587,8 @@ final class CarFunctionCatalog {
                 new Value("DAYMODE_SETTING_BRIGHTNESS_DAY", 538247425),
         }));
         put(byId, byKey, new Entry("SETTING_FUNC_BRIGHTNESS_DAYMODE", 688062976, 2, "ICarFunction.CAR_MODULE_DAYMODE", "Яркость в дневном режиме.", new Value[] {
+                new Value("DAYMODE_SETTING_AUTO", 538247427),
+                new Value("DAYMODE_SETTING_CUSTOM", 538247428),
         }));
         put(byId, byKey, new Entry("SETTING_FUNC_BRIGHTNESS_DIM", 687998208, 2, "IDayMode.SETTING_FUNC_BRIGHTNESS_DIM", "Яркость (режим DIM).", new Value[] {
         }));
@@ -1686,7 +1697,9 @@ final class CarFunctionCatalog {
         }));
         put(byId, byKey, new Entry("SETTING_FUNC_DRVR_SEB", 538379264, 2, "IVehicle.SETTING_FUNC_DRVR_SEB", "", new Value[] {
         }));
-        put(byId, byKey, new Entry("SETTING_FUNC_EASY_INGRESS_EGRESS", 538378496, 2, "IVehicle.SETTING_FUNC_EASY_INGRESS_EGRESS", "", new Value[] {
+        put(byId, byKey, new Entry("SETTING_FUNC_EASY_INGRESS_EGRESS", 538378496, 2, "IVehicle.SETTING_FUNC_EASY_INGRESS_EGRESS", "Лёгкая посадка/высадка водительского сиденья.", new Value[] {
+                new Value("COMMON_OFF", 0),
+                new Value("COMMON_ON", 1),
         }));
         put(byId, byKey, new Entry("SETTING_FUNC_ELECTRIC_MILEAGE_DISPLAY_MODE", 540281088, 2, "IVehicle.SETTING_FUNC_ELECTRIC_MILEAGE_DISPLAY_MODE", "", new Value[] {
         }));
@@ -1707,11 +1720,15 @@ final class CarFunctionCatalog {
                 new Value("ENERGY_REGENERATION_LEVEL_MID", 537003266),
                 new Value("ENERGY_REGENERATION_LEVEL_OFF", 0),
         }));
-        put(byId, byKey, new Entry("SETTING_FUNC_ENGINE_STOP_START", 537002240, 2, "IVehicle.SETTING_FUNC_ENGINE_STOP_START", "", new Value[] {
+        put(byId, byKey, new Entry("SETTING_FUNC_ENGINE_STOP_START", 537002240, 2, "IVehicle.SETTING_FUNC_ENGINE_STOP_START", "Автоматический старт/стоп двигателя.", new Value[] {
+                new Value("COMMON_OFF", 0),
+                new Value("COMMON_ON", 1),
         }));
         put(byId, byKey, new Entry("SETTING_FUNC_ENTER_AUTO_SHOW_MODE", 540279808, 2, "IVehicle.SETTING_FUNC_ENTER_AUTO_SHOW_MODE", "", new Value[] {
         }));
-        put(byId, byKey, new Entry("SETTING_FUNC_ESC_SPORT_MODE", 537002752, 2, "IVehicle.SETTING_FUNC_ESC_SPORT_MODE", "", new Value[] {
+        put(byId, byKey, new Entry("SETTING_FUNC_ESC_SPORT_MODE", 537002752, 2, "IVehicle.SETTING_FUNC_ESC_SPORT_MODE", "Спортивный режим ESC.", new Value[] {
+                new Value("COMMON_OFF", 0),
+                new Value("COMMON_ON", 1),
         }));
         put(byId, byKey, new Entry("SETTING_FUNC_ESM_SWITCH", 538575104, 2, "IVehicle.SETTING_FUNC_ESM_SWITCH", "", new Value[] {
         }));
@@ -1743,7 +1760,9 @@ final class CarFunctionCatalog {
                 new Value("FORWARD_COLLISION_WARN_SNVTY_NORMAL", 537788930),
                 new Value("FORWARD_COLLISION_WARN_SNVTY_OFF", 0),
         }));
-        put(byId, byKey, new Entry("SETTING_FUNC_HDC_SWITCH", 537265408, 2, "IVehicle.SETTING_FUNC_HDC_SWITCH", "", new Value[] {
+        put(byId, byKey, new Entry("SETTING_FUNC_HDC_SWITCH", 537265408, 2, "IVehicle.SETTING_FUNC_HDC_SWITCH", "Hill Descent Control.", new Value[] {
+                new Value("COMMON_OFF", 0),
+                new Value("COMMON_ON", 1),
         }));
         put(byId, byKey, new Entry("SETTING_FUNC_HEAD_LAMP_HEIGHT_ADJUST", 721488384, 2, "ILamp.SETTING_FUNC_HEAD_LAMP_HEIGHT_ADJUST", "", new Value[] {
                 new Value("HEAD_LAMP_HEIGHT_ADJUST_LV1", 721488385),
@@ -1798,7 +1817,9 @@ final class CarFunctionCatalog {
         }));
         put(byId, byKey, new Entry("SETTING_FUNC_LAMP_ADAPTIVE_FRONT_LIGHT", 537136384, 2, "ILamp.SETTING_FUNC_LAMP_ADAPTIVE_FRONT_LIGHT", "", new Value[] {
         }));
-        put(byId, byKey, new Entry("SETTING_FUNC_LAMP_APPROACH_LIGHT", 537135360, 2, "ILamp.SETTING_FUNC_LAMP_APPROACH_LIGHT", "", new Value[] {
+        put(byId, byKey, new Entry("SETTING_FUNC_LAMP_APPROACH_LIGHT", 537135360, 2, "ILamp.SETTING_FUNC_LAMP_APPROACH_LIGHT", "Подсветка при подходе к автомобилю.", new Value[] {
+                new Value("COMMON_OFF", 0),
+                new Value("COMMON_ON", 1),
         }));
         put(byId, byKey, new Entry("SETTING_FUNC_LAMP_AUTOMATIC_COURTESY_LIGHT", 537134592, 2, "ILamp.SETTING_FUNC_LAMP_AUTOMATIC_COURTESY_LIGHT", "", new Value[] {
         }));
@@ -1836,14 +1857,8 @@ final class CarFunctionCatalog {
         put(byId, byKey, new Entry("SETTING_FUNC_LANE_DEPARTURE_WARNING", 671285504, 2, "IADAS.SETTING_FUNC_LANE_DEPARTURE_WARNING", "", new Value[] {
         }));
         put(byId, byKey, new Entry("SETTING_FUNC_LANE_KEEPING_AID", 537329920, 2, "IVehicle.SETTING_FUNC_LANE_KEEPING_AID", "", new Value[] {
-                new Value("LANE_KEEPING_AID_MODE_INTV", 537330178),
-                new Value("LANE_KEEPING_AID_MODE_OFF", 0),
-                new Value("LANE_KEEPING_AID_MODE_WARN", 537330179),
-                new Value("LANE_KEEPING_AID_MODE_WARN_INTV", 537330177),
-                new Value("LANE_KEEPING_AID_WARNING_HAPTIC", 537330946),
-                new Value("LANE_KEEPING_AID_WARNING_OFF", 0),
-                new Value("LANE_KEEPING_AID_WARNING_SOUND", 537330945),
-                new Value("LANE_KEEPING_AID_WARNING_SOUND_HAPTIC", 537330947),
+                new Value("COMMON_OFF", 0),
+                new Value("COMMON_ON", 1),
         }));
         put(byId, byKey, new Entry("SETTING_FUNC_LANE_KEEPING_AID_MODE", 537330176, 2, "IVehicle.SETTING_FUNC_LANE_KEEPING_AID_MODE", "", new Value[] {
                 new Value("LANE_KEEPING_AID_MODE_INTV", 537330178),
@@ -1909,7 +1924,9 @@ final class CarFunctionCatalog {
         }));
         put(byId, byKey, new Entry("SETTING_FUNC_PASSIVE_ARMING", 537921280, 2, "IVehicle.SETTING_FUNC_PASSIVE_ARMING", "", new Value[] {
         }));
-        put(byId, byKey, new Entry("SETTING_FUNC_PBC_AUTO_APPLY", 537264384, 2, "IVehicle.SETTING_FUNC_PBC_AUTO_APPLY", "", new Value[] {
+        put(byId, byKey, new Entry("SETTING_FUNC_PBC_AUTO_APPLY", 537264384, 2, "IVehicle.SETTING_FUNC_PBC_AUTO_APPLY", "Автоматическое применение парковочного тормоза.", new Value[] {
+                new Value("COMMON_OFF", 0),
+                new Value("COMMON_ON", 1),
         }));
         put(byId, byKey, new Entry("SETTING_FUNC_PBC_DOUBLE_EPB_SWITCH", 537268480, 2, "IVehicle.SETTING_FUNC_PBC_DOUBLE_EPB_SWITCH", "", new Value[] {
         }));
@@ -1947,9 +1964,13 @@ final class CarFunctionCatalog {
         }));
         put(byId, byKey, new Entry("SETTING_FUNC_RAIN_SENSOR_SENSITIVITY", 540148224, 2, "IVehicle.SETTING_FUNC_RAIN_SENSOR_SENSITIVITY", "", new Value[] {
         }));
-        put(byId, byKey, new Entry("SETTING_FUNC_REAR_COLLISION_WARNING", 537333760, 2, "IVehicle.SETTING_FUNC_REAR_COLLISION_WARNING", "", new Value[] {
+        put(byId, byKey, new Entry("SETTING_FUNC_REAR_COLLISION_WARNING", 537333760, 2, "IVehicle.SETTING_FUNC_REAR_COLLISION_WARNING", "Предупреждение заднего столкновения.", new Value[] {
+                new Value("COMMON_OFF", 0),
+                new Value("COMMON_ON", 1),
         }));
-        put(byId, byKey, new Entry("SETTING_FUNC_REAR_CROSS_TRAFFIC_ALERT", 537332224, 2, "IADAS.SETTING_FUNC_REAR_CROSS_TRAFFIC_ALERT", "", new Value[] {
+        put(byId, byKey, new Entry("SETTING_FUNC_REAR_CROSS_TRAFFIC_ALERT", 537332224, 2, "IADAS.SETTING_FUNC_REAR_CROSS_TRAFFIC_ALERT", "Предупреждение поперечного движения сзади.", new Value[] {
+                new Value("COMMON_OFF", 0),
+                new Value("COMMON_ON", 1),
         }));
         put(byId, byKey, new Entry("SETTING_FUNC_REAR_MIRROR_FOLD", 539755776, 2, "IVehicle.SETTING_FUNC_REAR_MIRROR_FOLD", "", new Value[] {
         }));
