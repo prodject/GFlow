@@ -271,14 +271,20 @@ public class VehicleActivity extends Activity {
         addAdvancedCard(grid, "Спинка / Память", "Спинка, сохранение и вызов", new QuickItem[]{
                 new QuickItem("Спинка +", () -> sendVehicle(EcarxVehicleAdapter.SEAT_BACKREST, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_BACKREST_FORWARD)),
                 new QuickItem("Спинка -", () -> sendVehicle(EcarxVehicleAdapter.SEAT_BACKREST, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_BACKREST_BACKWARD)),
-                new QuickItem("Сохранить P1", () -> sendVehicle(EcarxVehicleAdapter.SEAT_POSITION_SAVE, EcarxVehicleAdapter.SEAT_POSITION_1)),
-                new QuickItem("Вызвать P1", () -> sendVehicle(EcarxVehicleAdapter.SEAT_POSITION_SET, EcarxVehicleAdapter.SEAT_MEMORY_1))
+                new QuickItem("Сохранить P2", () -> sendVehicle(EcarxVehicleAdapter.SEAT_POSITION_SAVE, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_STOCK_MEMORY_SAVE_2)),
+                new QuickItem("Вызвать P1", () -> sendVehicle(EcarxVehicleAdapter.SEAT_POSITION_SET, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_STOCK_MEMORY_SET_1))
+        });
+        addAdvancedCard(grid, "Сиденье пассажира", "Stock zone 0x4", new QuickItem[]{
+                new QuickItem("Вперед", () -> sendVehicle(EcarxVehicleAdapter.SEAT_LENGTH, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.SEAT_FORWARD)),
+                new QuickItem("Назад", () -> sendVehicle(EcarxVehicleAdapter.SEAT_LENGTH, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.SEAT_BACKWARD)),
+                new QuickItem("Спинка +", () -> sendVehicle(EcarxVehicleAdapter.SEAT_BACKREST, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.SEAT_BACKREST_FORWARD)),
+                new QuickItem("Спинка -", () -> sendVehicle(EcarxVehicleAdapter.SEAT_BACKREST, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.SEAT_BACKREST_BACKWARD))
         });
         panel.addView(grid, lpMatchWrap(0, 12, 0, 12));
 
         LinearLayout memory = Ui.row(this);
-        addActionChip(memory, "Сохранить P2", () -> sendVehicle(EcarxVehicleAdapter.SEAT_POSITION_SAVE, EcarxVehicleAdapter.SEAT_POSITION_2));
-        addActionChip(memory, "Вызвать P2", () -> sendVehicle(EcarxVehicleAdapter.SEAT_POSITION_SET, EcarxVehicleAdapter.SEAT_MEMORY_2));
+        addActionChip(memory, "Сохранить stock", () -> sendVehicle(EcarxVehicleAdapter.SEAT_POSITION_SAVE, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_STOCK_MEMORY_SAVE_2));
+        addActionChip(memory, "Вызвать stock", () -> sendVehicle(EcarxVehicleAdapter.SEAT_POSITION_SET, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_STOCK_MEMORY_SET_1));
         addActionChip(memory, "Комфорт", () -> sendVehicle(EcarxVehicleAdapter.SEAT_ONE_KEY_COMFORT, EcarxVehicleAdapter.COMMON_ON));
         addActionChip(memory, "Профили", () -> startActivity(new Intent(this, ProfileActivity.class)));
         panel.addView(memory, lpMatchWrap(0, 0, 0, 0));
@@ -299,15 +305,17 @@ public class VehicleActivity extends Activity {
                 new QuickItem("Обогрев", () -> sendVehicle(EcarxVehicleAdapter.BCM_MIRROR_DEFROST, EcarxVehicleAdapter.COMMON_ON))
         });
         addAdvancedCard(grid, "Люк / Шторка", "Люк и солнцезащитная шторка", new QuickItem[]{
-                new QuickItem("Люк открыть", () -> sendVehicle(EcarxVehicleAdapter.BCM_SUNROOF_OPEN, EcarxVehicleAdapter.COMMON_ON)),
-                new QuickItem("Люк закрыть", () -> sendVehicle(EcarxVehicleAdapter.BCM_SUNROOF_CLOSE, EcarxVehicleAdapter.COMMON_ON)),
-                new QuickItem("Шторка открыть", () -> sendVehicle(EcarxVehicleAdapter.BCM_SUNCURT_OPEN, EcarxVehicleAdapter.COMMON_ON)),
-                new QuickItem("Шторка закрыть", () -> sendVehicle(EcarxVehicleAdapter.BCM_SUNCURT_CLOSE, EcarxVehicleAdapter.COMMON_ON))
+                new QuickItem("Люк открыть", () -> sendVehicle(EcarxVehicleAdapter.BCM_SUNROOF_OPEN, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.COMMON_ON)),
+                new QuickItem("Люк закрыть", () -> sendVehicle(EcarxVehicleAdapter.BCM_SUNROOF_CLOSE, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.COMMON_ON)),
+                new QuickItem("Шторка открыть", () -> sendVehicle(EcarxVehicleAdapter.BCM_SUNCURT_OPEN, EcarxVehicleAdapter.ZONE_ROW_1_ALL, EcarxVehicleAdapter.COMMON_ON)),
+                new QuickItem("Шторка закрыть", () -> sendVehicle(EcarxVehicleAdapter.BCM_SUNCURT_CLOSE, EcarxVehicleAdapter.ZONE_ROW_1_ALL, EcarxVehicleAdapter.COMMON_ON))
         });
         panel.addView(grid, lpMatchWrap(0, 12, 0, 12));
 
         LinearLayout actions = Ui.row(this);
         addActionChip(actions, "Диалог зеркал", this::showMirrorDialogSheet);
+        addActionChip(actions, "Люк tilt", () -> sendVehicle(EcarxVehicleAdapter.BCM_SUNROOF_TILT, EcarxVehicleAdapter.COMMON_ON));
+        addActionChip(actions, "Roof init", () -> sendVehicle(EcarxVehicleAdapter.BCM_SUNROOF_INIT, EcarxVehicleAdapter.COMMON_ON));
         addActionChip(actions, "Позиция A", () -> sendVehicle(EcarxVehicleAdapter.BCM_DISPLAY_POSITION, EcarxVehicleAdapter.DISPLAY_POSITION_A));
         addActionChip(actions, "Позиция B", () -> sendVehicle(EcarxVehicleAdapter.BCM_DISPLAY_POSITION, EcarxVehicleAdapter.DISPLAY_POSITION_B));
         addActionChip(actions, "Назад", () -> openMode(Mode.HOME));
@@ -332,6 +340,7 @@ public class VehicleActivity extends Activity {
                 new QuickItem("Grille", () -> sendVehicle(EcarxVehicleAdapter.BCM_LIGHT_GRILLE, EcarxVehicleAdapter.COMMON_ON)),
                 new QuickItem("Welcome", () -> sendVehicle(EcarxVehicleAdapter.BCM_LIGHT_WELCOME, EcarxVehicleAdapter.COMMON_ON)),
                 new QuickItem("Approach", () -> sendVehicle(EcarxVehicleAdapter.VEHICLE_LAMP_APPROACH_LIGHT, EcarxVehicleAdapter.COMMON_ON)),
+                new QuickItem("Courtesy", () -> sendVehicle(EcarxVehicleAdapter.VEHICLE_LAMP_COURTESY_LIGHT, EcarxVehicleAdapter.COMMON_ON)),
                 new QuickItem("Rear logo", () -> sendVehicle(EcarxVehicleAdapter.BCM_LIGHT_REAR_LOGO, EcarxVehicleAdapter.COMMON_ON)),
                 new QuickItem("Atmosphere", () -> sendVehicle(EcarxVehicleAdapter.BCM_LIGHT_ATMOSPHERE, EcarxVehicleAdapter.COMMON_ON))
         });
@@ -383,6 +392,18 @@ public class VehicleActivity extends Activity {
                 new QuickItem("HDC ON", () -> sendVehicle(EcarxVehicleAdapter.VEHICLE_HDC_SWITCH, EcarxVehicleAdapter.COMMON_ON)),
                 new QuickItem("Easy Ingress", () -> sendVehicle(EcarxVehicleAdapter.VEHICLE_EASY_INGRESS_EGRESS, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.COMMON_ON)),
                 new QuickItem("WPC OFF", () -> sendVehicle(EcarxVehicleAdapter.WPC_WORK_MODE, EcarxVehicleAdapter.COMMON_OFF))
+        });
+        addAdvancedCard(grid, "Stock Settings", "Замки, поиск, звук", new QuickItem[]{
+                new QuickItem("Auto close", () -> sendVehicle(EcarxVehicleAdapter.VEHICLE_AUTO_CLOSE_WINDOW, 0x20080401)),
+                new QuickItem("Lock sound", () -> sendVehicle(EcarxVehicleAdapter.VEHICLE_AUDIBLE_LOCKING_FEEDBACK, EcarxVehicleAdapter.COMMON_ON)),
+                new QuickItem("Locator light", () -> sendVehicle(EcarxVehicleAdapter.VEHICLE_CAR_LOCATOR_REMINDER_MODE, 0x20160402)),
+                new QuickItem("P unlock", () -> sendVehicle(EcarxVehicleAdapter.VEHICLE_PGEAR_UNLOCK, EcarxVehicleAdapter.COMMON_ON))
+        });
+        addAdvancedCard(grid, "Stock Advanced", "Approach unlock, sound, steering", new QuickItem[]{
+                new QuickItem("Approach unlock", () -> sendVehicle(EcarxVehicleAdapter.VEHICLE_APPROACH_UNLOCK, EcarxVehicleAdapter.COMMON_ON)),
+                new QuickItem("Warn volume mid", () -> sendVehicle(EcarxVehicleAdapter.VEHICLE_SOUND_WARNING_VOLUME, 0x201d0102)),
+                new QuickItem("Button sound 1", () -> sendVehicle(EcarxVehicleAdapter.VEHICLE_SOFT_BUTTON_SOUND_TYPE, 0x2e020101)),
+                new QuickItem("Steer medium", () -> sendVehicle(EcarxVehicleAdapter.VEHICLE_STEERING_ASSISTANCE_LEVEL, EcarxVehicleAdapter.STEERING_ASSISTANCE_MEDIUM))
         });
         addAdvancedCard(grid, "OEM Custom Keys", "Подтвержденные точки входа из GInputBridge", new QuickItem[]{
                 new QuickItem("Trunk", this::openTrunkOemEntry),

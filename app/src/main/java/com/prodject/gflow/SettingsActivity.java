@@ -412,7 +412,8 @@ public class SettingsActivity extends Activity {
     private LinkedHashMap<String, int[]> buildDiagnosticsGroups() {
         LinkedHashMap<String, int[]> groups = new LinkedHashMap<>();
         groups.put("HVAC Core", resolveFunctionIds(
-                "HVAC_POWER", "HVAC_AUTO", "HVAC_AC", "HVAC_FAN_SPEED", "HVAC_TEMP",
+                "HVAC_POWER", "HVAC_AUTO", "HVAC_AC", "HVAC_AC_MAX", "HVAC_FAN_SPEED",
+                "HVAC_AUTO_FAN_SETTING", "HVAC_CIRCULATION", "HVAC_BLOWING_MODE", "HVAC_TEMP",
                 "HVAC_TEMP_UNIT", "HVAC_CLIMATE_ZONE", "HVAC_DEFROST_FRONT", "HVAC_DEFROST_FRONT_MAX",
                 "HVAC_DEFROST_REAR", "HVAC_SEAT_HEATING", "HVAC_SEAT_VENTILATION",
                 "HVAC_STEERING_WHEEL_HEAT", "HVAC_IONS_SWITCH", "HVAC_AQS_SWITCH",
@@ -422,11 +423,14 @@ public class SettingsActivity extends Activity {
         ));
         groups.put("Vehicle Body", resolveFunctionIds(
                 "BCM_WINDOW", "BCM_DOOR", "BCM_DOOR_LOCK", "BCM_DOOR_STATUS",
-                "BCM_SUNROOF_OPEN", "BCM_MIRROR_FOLD", "BCM_LIGHT_DIPPED_BEAM", "BCM_LIGHT_GRILLE"
+                "BCM_WINDOW_POS", "BCM_SUNROOF_OPEN", "BCM_SUNROOF_CLOSE", "BCM_SUNCURT_OPEN",
+                "BCM_SUNCURT_CLOSE", "BCM_SUNROOF_TILT", "BCM_SUNROOF_INIT",
+                "BCM_MIRROR_FOLD", "BCM_MIRROR_DEFROST", "BCM_LIGHT_DIPPED_BEAM", "BCM_LIGHT_GRILLE"
         ));
         groups.put("Drive / Cluster", resolveFunctionIds(
                 "DRIVE_MODE_SELECT", "DRIVE_CUSTOM_PROPULSION", "DRIVE_CUSTOM_SUSPENSION",
                 "DRIVE_CUSTOM_STEERING_FEEL", "DRIVE_CUSTOM_CLIMATE", "DRIVE_DIM_THEME_SET",
+                "DRIVE_STEERING_FEEL_SYNC_DRIVE_MODE",
                 "DRIVE_ENERGY_MODE", "DRIVE_CREEP_SET", "DRIVE_LAUNCH_CONTROL",
                 "DRIVE_NOISE_CONTROL", "DRIVE_ESC_LEVEL", "DRIVE_STARTRACK_MODE",
                 "DRIVE_PERFORMANCE_SAVING", "DRIVE_POWER_TRAIN_STOP"
@@ -483,6 +487,7 @@ public class SettingsActivity extends Activity {
         ));
         groups.put("Ambience / DayMode", resolveFunctionIds(
                 "AMBIENCE_LIGHT_THEME_COLOR", "AMBIENCE_LIGHT_EFFECT", "AMBIENCE_LIGHT_CONTROL_MODE",
+                "AMBIENCE_LIGHT_MAIN_COLOR", "AMBIENCE_LIGHT_INTENSITY",
                 "AMBIENCE_LIGHT_MUSIC", "AMBIENCE_LIGHT_MUSIC_SHOW_MODE", "AMBIENCE_LIGHT_WELCOME_SHOW",
                 "AMBIENCE_LIGHT_WELCOME_SHOW_MODE", "AMBIENCE_LIGHT_VOICE", "AMBIENCE_LIGHT_ZONE_EXPERIENCE",
                 "AMBIENCE_LIGHT_MAIN_ZONES", "AMBIENCE_LIGHT_TOP_ZONES", "AMBIENCE_LIGHT_BOT_ZONES",
@@ -508,7 +513,11 @@ public class SettingsActivity extends Activity {
                 "VEHICLE_DIGITAL_KEY_TERMINATION", "VEHICLE_DIGITAL_KEY_SUSPENSION",
                 "VEHICLE_DIGITAL_KEY_PAIRING_FAILED", "VEHICLE_DIGITAL_KEY_TRACKING_WAIT",
                 "VEHICLE_DIGITAL_KEY_TRACKING_RESULT", "VEHICLE_DIGITAL_KEY_RES_TIMEOUT",
-                "WPC_WORK_MODE", "WPC_CHARGE_STATES",
+                "WPC_WORK_MODE", "WPC_CHARGE_STATES", "VEHICLE_LAMP_COURTESY_LIGHT",
+                "VEHICLE_LAMP_HOME_SAFE_LIGHT", "VEHICLE_STEERING_ASSISTANCE_LEVEL",
+                "VEHICLE_AUTO_CLOSE_WINDOW", "VEHICLE_AUDIBLE_LOCKING_FEEDBACK",
+                "VEHICLE_CAR_LOCATOR_REMINDER_MODE", "VEHICLE_SOUND_WARNING_VOLUME",
+                "VEHICLE_PGEAR_UNLOCK", "VEHICLE_APPROACH_UNLOCK", "VEHICLE_SOFT_BUTTON_SOUND_TYPE",
                 "SEAT_LENGTH", "SEAT_HEIGHT", "SEAT_BACKREST", "SEAT_POSITION_SAVE",
                 "SEAT_POSITION_SET", "SEAT_RESTORE", "SEAT_ONE_KEY_COMFORT"
         ));

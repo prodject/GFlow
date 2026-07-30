@@ -151,6 +151,9 @@ final class EcarxVehicleAdapter {
     static final int CIRCULATION_INNER = 0x10030101;
     static final int CIRCULATION_OUTSIDE = 0x10030102;
     static final int CIRCULATION_AUTO = 0x10030103;
+    static final int AUTO_FAN_SETTING_SILENT = 0x10020201;
+    static final int AUTO_FAN_SETTING_NORMAL = 0x10020202;
+    static final int AUTO_FAN_SETTING_HIGH = 0x10020203;
     static final int BLOWING_MODE_FACE = 0x10070101;
     static final int BLOWING_MODE_LEG = 0x10070102;
     static final int BLOWING_MODE_FACE_AND_LEG = 0x10070103;
@@ -314,13 +317,23 @@ final class EcarxVehicleAdapter {
     static final int ADAS_TRAFFIC_SIGN_ALERT = 0x200b0200;
     static final int VEHICLE_ENGINE_STOP_START = 0x20020100;
     static final int VEHICLE_ESC_SPORT_MODE = 0x20020300;
+    static final int VEHICLE_LAMP_COURTESY_LIGHT = 0x20040600;
+    static final int VEHICLE_LAMP_HOME_SAFE_LIGHT = 0x20040700;
     static final int VEHICLE_LAMP_APPROACH_LIGHT = 0x20040900;
     static final int VEHICLE_PBC_AUTO_APPLY = 0x20060100;
     static final int VEHICLE_AUTO_HOLD = 0x20060400;
     static final int VEHICLE_HDC_SWITCH = 0x20060500;
     static final int VEHICLE_LANE_KEEPING_AID_WARNING = 0x20070500;
+    static final int VEHICLE_STEERING_ASSISTANCE_LEVEL = 0x20070800;
     static final int VEHICLE_REAR_CROSS_TRAFFIC_ALERT = 0x20070a00;
+    static final int VEHICLE_AUTO_CLOSE_WINDOW = 0x20080400;
+    static final int VEHICLE_AUDIBLE_LOCKING_FEEDBACK = 0x20100300;
+    static final int VEHICLE_CAR_LOCATOR_REMINDER_MODE = 0x20160400;
     static final int VEHICLE_EASY_INGRESS_EGRESS = 0x20170100;
+    static final int VEHICLE_SOUND_WARNING_VOLUME = 0x201d0100;
+    static final int VEHICLE_PGEAR_UNLOCK = 0x20320300;
+    static final int VEHICLE_APPROACH_UNLOCK = 0x2c010100;
+    static final int VEHICLE_SOFT_BUTTON_SOUND_TYPE = 0x2e020100;
     static final int ADAS_SPEED_LIMIT_WARN = 0x28060100;
     static final int ADAS_SPEED_LIMIT_WARNING_MODE = 0x28060200;
     static final int ADAS_ACC_WITH_TSR = 0x28060300;
@@ -562,6 +575,7 @@ final class EcarxVehicleAdapter {
     static final int DRIVE_MODE_ECO = 0x22010101;
     static final int DRIVE_MODE_COMFORT = 0x22010102;
     static final int DRIVE_MODE_DYNAMIC = 0x22010103;
+    static final int DRIVE_MODE_ADAPTIVE_STOCK = 0x22010116;
     static final int DRIVE_MODE_XC = 0x22010104;
     static final int DRIVE_MODE_HDC = 0x22010105;
     static final int DRIVE_MODE_PURE = 0x22010106;
@@ -598,6 +612,7 @@ final class EcarxVehicleAdapter {
     static final int DRIVE_CUSTOM_INTERIOR_LIGHT = 0x22030d00;
     static final int DRIVE_DIM_THEME_SYNC = 0x22040100;
     static final int DRIVE_DIM_THEME_SET = 0x22040200;
+    static final int DRIVE_STEERING_FEEL_SYNC_DRIVE_MODE = 0x22040300;
     static final int DRIVE_STEERING_MODE = 0x22040400;
     static final int DRIVE_ENERGY_MODE = 0x22040500;
     static final int DRIVE_CREEP_SET = 0x22040600;
@@ -613,6 +628,9 @@ final class EcarxVehicleAdapter {
     static final int DRIVE_POWER_TRAIN_STOP = 0x22041000;
     static final int STEERING_MODE_SOFT = 0x22040401;
     static final int STEERING_MODE_DYNAMIC = 0x22040402;
+    static final int STEERING_ASSISTANCE_HIGH = 0x20070801;
+    static final int STEERING_ASSISTANCE_MEDIUM = 0x20070802;
+    static final int STEERING_ASSISTANCE_LOW = 0x20070803;
     static final int CUSTOM_PROPULSION_ECO = 0x22030101;
     static final int CUSTOM_PROPULSION_COMFORT = 0x22030102;
     static final int CUSTOM_PROPULSION_SPORT = 0x22030103;
@@ -678,6 +696,7 @@ final class EcarxVehicleAdapter {
 
     static final int AMBIENCE_LIGHT_INTENSITY = 0x2a010100;
     static final int AMBIENCE_LIGHT_THEME_COLOR = 0x2a010200;
+    static final int AMBIENCE_LIGHT_MAIN_COLOR = 0x200a0200;
     static final int AMBIENCE_LIGHT_COLOR_WEATHER = 0x200a0b00;
     static final int AMBIENCE_LIGHT_CLIMATE = 0x2a080200;
     static final int AMBIENCE_LIGHT_EFFECT = 0x2a080100;
@@ -729,6 +748,10 @@ final class EcarxVehicleAdapter {
     static final int AMBIENCE_LIGHT_BREATHE_COLOR_SET = 0x2a500100;
     static final int AMBIENCE_LIGHT_TRANSITION_START_COLOR = 0x2a070200;
     static final int AMBIENCE_LIGHT_TRANSITION_END_COLOR = 0x2a070300;
+    static final int AMBIENCE_COLOR_BLUE_STOCK = 0x00005fff;
+    static final int AMBIENCE_COLOR_CYAN_STOCK = 0x0000ff66;
+    static final int AMBIENCE_COLOR_RED_STOCK = 0x00ff2a00;
+    static final int AMBIENCE_COLOR_ORANGE_STOCK = 0x00ff4500;
     static final int AMBIENCE_LIGHT_ZONE_ALL = 0x200a0100;
     static final int AMBIENCE_LIGHT_ZONE_FRONT = 0x200a0101;
     static final int AMBIENCE_LIGHT_ZONE_HEADREST = 0x200a0102;
@@ -767,6 +790,8 @@ final class EcarxVehicleAdapter {
     static final int SEAT_ONE_KEY_COMFORT = 0x2d411100;
     static final int SEAT_POSITION_1 = 0x2d400101;
     static final int SEAT_POSITION_2 = 0x2d400102;
+    static final int SEAT_STOCK_MEMORY_SET_1 = 0x1;
+    static final int SEAT_STOCK_MEMORY_SAVE_2 = 0x2;
     static final int SEAT_MEMORY_1 = 0x1;
     static final int SEAT_MEMORY_2 = 0x2;
     static final int SEAT_MEMORY_3 = 0x3;
@@ -864,7 +889,7 @@ final class EcarxVehicleAdapter {
         if (spec.backend == Backend.OEM_ENTRY) {
             return setOemEntry(functionId, zone, value);
         }
-        if (spec.backend == Backend.ADAPT_API) {
+        if (spec.backend == Backend.ADAPT_API && functionId != BCM_CUSTOM_KEY) {
             Result support = support(functionId, zone);
             if (!support.isSupported()) {
                 return Result.external("Функция недоступна в AdaptAPI: " + hex(functionId) + "/" + zone, false, false);
@@ -873,10 +898,19 @@ final class EcarxVehicleAdapter {
         if (!carIsConnected) {
             return Result.external("Car API не подключен: " + hex(functionId), false, false);
         }
+        if (functionId == BCM_CUSTOM_KEY) {
+            Result direct = setAdaptApiInt(functionId, zone, value);
+            if (direct.success) return direct;
+            Result fallback = setOemEntry(functionId, zone, value);
+            return Result.external(direct.message + "\nFallback: " + fallback.message, fallback.success, fallback.supported);
+        }
+        return setAdaptApiInt(functionId, zone, value);
+    }
+
+    private Result setAdaptApiInt(int functionId, int zone, int value) {
         Log.i(TAG, "setFunctionValue id=" + hex(functionId)
                 + " zone=" + hex(zone)
                 + " value=" + hex(value));
-
         try {
             boolean success = function().setFunctionValue(functionId, zone, value);
             Log.i(TAG, "setFunctionValue(function, zone, value) result=" + success);
@@ -1205,8 +1239,11 @@ final class EcarxVehicleAdapter {
         if (functionId == HVAC_FAN_SPEED || functionId == HVAC_FAN_SPEED_BLOWER) {
             return new Spec(ZONE_ROW_1_ALL, Backend.ADAPT_API, true, false, false);
         }
+        if (functionId == HVAC_AUTO_FAN_SETTING || functionId == HVAC_BLOWING_MODE) {
+            return new Spec(ZONE_ROW_1_ALL, Backend.ADAPT_API, true, false, false);
+        }
         if (isDriverSeatFunction(functionId)) return new Spec(ZONE_DRIVER_LEFT, Backend.ADAPT_API, true, false, false);
-        if (functionId == HVAC_TEMP) return new Spec(0, Backend.ADAPT_API_FLOAT, true, true, false);
+        if (functionId == HVAC_TEMP) return new Spec(ZONE_DRIVER_LEFT, Backend.ADAPT_API_FLOAT, true, true, false);
         if (functionId == HVAC_TEMP_MAX || functionId == HVAC_TEMP_MIN || functionId == HVAC_TEMP_STEP) {
             return new Spec(0, Backend.ADAPT_API_FLOAT, false, true, false);
         }
@@ -1223,6 +1260,9 @@ final class EcarxVehicleAdapter {
         }
         if (functionId == BCM_DOOR_LOCK) return new Spec(ZONE_ALL, Backend.ADAPT_API, false, false, false);
         if (functionId == BCM_REAR_MIRROR_ADJUST) return new Spec(ZONE_DRIVER_LEFT, Backend.ADAPT_API, true, false, false);
+        if (functionId == BCM_WINDOW_POS) {
+            return new Spec(ZONE_PASSENGER_RIGHT, Backend.ADAPT_API_FLOAT, true, true, false);
+        }
         if (functionId == BCM_MIRROR_FOLD
                 || functionId == BCM_LIGHT_DIPPED_BEAM
                 || functionId == BCM_LIGHT_MAIN_BEAM
@@ -1234,14 +1274,19 @@ final class EcarxVehicleAdapter {
                 || functionId == BCM_WASHER) {
             return new Spec(ZONE_ALL, Backend.ADAPT_API, true, false, false);
         }
-        if (functionId == BCM_SUNROOF_OPEN
-                || functionId == BCM_SUNROOF_CLOSE
-                || functionId == BCM_SUNCURT_OPEN
-                || functionId == BCM_SUNCURT_CLOSE
-                || functionId == BCM_LIGHT_HAZARD) {
+        if (functionId == BCM_SUNROOF_OPEN || functionId == BCM_SUNROOF_CLOSE) {
+            return new Spec(ZONE_PASSENGER_RIGHT, Backend.ADAPT_API, true, false, false);
+        }
+        if (functionId == BCM_SUNCURT_OPEN || functionId == BCM_SUNCURT_CLOSE) {
+            return new Spec(ZONE_ROW_1_ALL, Backend.ADAPT_API, true, false, false);
+        }
+        if (functionId == BCM_SUNROOF_TILT || functionId == BCM_SUNROOF_INIT || functionId == BCM_MIRROR_DEFROST) {
+            return new Spec(ZONE_ALL, Backend.ADAPT_API, true, false, false);
+        }
+        if (functionId == BCM_LIGHT_HAZARD) {
             return new Spec(ZONE_ALL, Backend.ADAPT_API, false, false, false);
         }
-        if (functionId == BCM_CUSTOM_KEY) return new Spec(ZONE_ALL, Backend.OEM_ENTRY, true, false, false);
+        if (functionId == BCM_CUSTOM_KEY) return new Spec(ZONE_ALL, Backend.ADAPT_API, true, false, false);
         if (functionId == VEHICLE_EASY_INGRESS_EGRESS) return new Spec(ZONE_DRIVER_LEFT, Backend.ADAPT_API, true, false, false);
         if (functionId == DAYMODE_BRIGHTNESS_SCREEN) return new Spec(ZONE_ALL, Backend.ADAPT_API, true, true, false);
         if (functionId == DAYMODE_BRIGHTNESS_MAX || functionId == DAYMODE_PSD_BRIGHTNESS_SCREEN) {
@@ -1255,13 +1300,32 @@ final class EcarxVehicleAdapter {
                 || functionId == VEHICLE_AUTO_HOLD
                 || functionId == VEHICLE_HDC_SWITCH
                 || functionId == VEHICLE_LANE_KEEPING_AID_WARNING
+                || functionId == VEHICLE_STEERING_ASSISTANCE_LEVEL
                 || functionId == VEHICLE_REAR_CROSS_TRAFFIC_ALERT
+                || functionId == VEHICLE_LAMP_COURTESY_LIGHT
+                || functionId == VEHICLE_LAMP_HOME_SAFE_LIGHT
+                || functionId == VEHICLE_AUTO_CLOSE_WINDOW
+                || functionId == VEHICLE_AUDIBLE_LOCKING_FEEDBACK
+                || functionId == VEHICLE_CAR_LOCATOR_REMINDER_MODE
+                || functionId == VEHICLE_SOUND_WARNING_VOLUME
+                || functionId == VEHICLE_PGEAR_UNLOCK
+                || functionId == VEHICLE_APPROACH_UNLOCK
+                || functionId == VEHICLE_SOFT_BUTTON_SOUND_TYPE
                 || functionId == WPC_WORK_MODE
                 || functionId == DAYMODE_BRIGHTNESS_DAYMODE
                 || functionId == ADAS_SPEED_LIMIT_WARNING_MODE) {
             return new Spec(ZONE_ALL, Backend.ADAPT_API, true, false, false);
         }
-        if (functionId == DRIVE_MODE_SELECT) return new Spec(ZONE_ALL, Backend.ADAPT_API, false, false, false);
+        if (functionId == DRIVE_MODE_SELECT || functionId == DRIVE_STEERING_FEEL_SYNC_DRIVE_MODE) {
+            return new Spec(ZONE_ALL, Backend.ADAPT_API, true, false, false);
+        }
+        if (functionId == AMBIENCE_LIGHT_INTENSITY) return new Spec(ZONE_ROW_1_ALL, Backend.ADAPT_API_FLOAT, true, true, false);
+        if (functionId == AMBIENCE_LIGHT_TRANSITION_START_COLOR
+                || functionId == AMBIENCE_LIGHT_TRANSITION_END_COLOR
+                || functionId == AMBIENCE_LIGHT_SOLID_COLOR_SET
+                || functionId == AMBIENCE_LIGHT_BREATHE_COLOR_SET) {
+            return new Spec(AMBIENCE_LIGHT_ZONE_ALL, Backend.ADAPT_API, true, false, false);
+        }
         if (isPasDirectFunction(functionId)) return new Spec(ZONE_ALL, Backend.ADAPT_API, false, false, false);
         if (isHudDirectFunction(functionId)) return new Spec(ZONE_ALL, Backend.ADAPT_API, false, false, false);
         if (isReadOnlyAdasFunction(functionId)) return new Spec(0, Backend.ADAPT_API, false, false, false);

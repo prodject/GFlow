@@ -11,3 +11,4 @@ local.properties
 log.sh
 collect-adb-log.sh
 collect-adb-log-stock.sh
+install_arm64.sh

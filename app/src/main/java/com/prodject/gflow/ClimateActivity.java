@@ -764,10 +764,12 @@ public class ClimateActivity extends Activity {
 
     private void showQuickHvacSheet() {
         showActionSheet("Быстрый HVAC", new QuickItem[]{
-                new QuickItem("HVAC вкл", () -> command(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_ON)),
+                new QuickItem("HVAC выкл", () -> command(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_OFF)),
                 new QuickItem("Auto", () -> command(EcarxVehicleAdapter.HVAC_AUTO, EcarxVehicleAdapter.COMMON_ON)),
-                new QuickItem("Рециркуляция Auto", () -> command(EcarxVehicleAdapter.HVAC_CIRCULATION, EcarxVehicleAdapter.CIRCULATION_AUTO)),
-                new QuickItem("Все зоны", () -> command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_ALL))
+                new QuickItem("AC Max", () -> command(EcarxVehicleAdapter.HVAC_AC_MAX, EcarxVehicleAdapter.COMMON_ON)),
+                new QuickItem("Auto fan normal", () -> command(EcarxVehicleAdapter.HVAC_AUTO_FAN_SETTING, EcarxVehicleAdapter.ZONE_ROW_1_ALL, EcarxVehicleAdapter.AUTO_FAN_SETTING_NORMAL)),
+                new QuickItem("Рецирк. внутр", () -> command(EcarxVehicleAdapter.HVAC_CIRCULATION, EcarxVehicleAdapter.CIRCULATION_INNER)),
+                new QuickItem("Рецирк. наруж", () -> command(EcarxVehicleAdapter.HVAC_CIRCULATION, EcarxVehicleAdapter.CIRCULATION_OUTSIDE))
         });
     }
 
@@ -833,10 +835,10 @@ public class ClimateActivity extends Activity {
 
     private void showBlowingSheet() {
         showActionSheet("Обдув", new QuickItem[]{
-                new QuickItem("Лицо", () -> command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_FACE)),
-                new QuickItem("Ноги", () -> command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_LEG)),
-                new QuickItem("Лицо + ноги", () -> command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_FACE_AND_LEG)),
-                new QuickItem("Стекло", () -> command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_FRONT_WINDOW))
+                new QuickItem("Стекло", () -> command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.ZONE_ROW_1_ALL, EcarxVehicleAdapter.BLOWING_MODE_FRONT_WINDOW)),
+                new QuickItem("Лицо + стекло", () -> command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.ZONE_ROW_1_ALL, EcarxVehicleAdapter.BLOWING_MODE_FACE_AND_FRONT_WINDOW)),
+                new QuickItem("Все зоны", () -> command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.ZONE_ROW_1_ALL, EcarxVehicleAdapter.BLOWING_MODE_ALL)),
+                new QuickItem("Лицо + ноги", () -> command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.ZONE_ROW_1_ALL, EcarxVehicleAdapter.BLOWING_MODE_FACE_AND_LEG))
         });
     }
 

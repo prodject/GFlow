@@ -1,5 +1,192 @@
 # Agent Changelog
 
+## 2026-07-30
+
+### Logs 1.30 and Full Stock Settings Import Plan
+
+`logs_1.30` showed that the 1.28 permission regression is fixed: the car API starts through `CarImpl`, and successful GFlow writes are present. Stock logs from `.src/logs_stock` produced 54 unique write contracts; GFlow 1.30 confirmed 13 of them.
+
+What works in GFlow 1.30:
+
+- base Car access;
+- HVAC `AUTO`, `AC`, front/rear defrost;
+- driver seat heat and steering wheel heat;
+- driver seat length/height/backrest;
+- windows through `BCM_WINDOW`;
+- engine start/stop.
+
+What must be transferred from stock logs:
+
+1. Climate:
+   - `0x10010100` HVAC power;
+   - `0x10010400` AC max;
+   - `0x10020100` fan speed, zone `0x8`, values `268566788/789/790`;
+   - `0x10020200` auto fan setting, zone `0x8`, values `268567041/042`;
+   - `0x10030100` recirculation, values `268632321/322`;
+   - `0x10060100` temperature float, zone `0x1`, values `17.0/18.5/20.0`;
+   - `0x10070100` blowing mode, zone `0x8`, values `268894468/469/471`;
+   - `0x10080100` eco switch;
+   - `0x21110600` mirror defrost.
+
+2. Sunroof / sun curtain:
+   - `0x21200200` sunroof open, zone `0x4`, values `0/1`;
+   - `0x21200300` sunroof close, zone `0x4`, values `0/1`;
+   - `0x21200400` curtain open, zone `0x8`, values `0/1`;
+   - `0x21200500` curtain close, zone `0x8`, values `0/1`;
+   - `0x21030400` sunroof tilt, global, values `0/1`;
+   - `0x21200000` sunroof init switch, global, values `0/1`;
+   - `0x21030300` position float, zones `0x4/0x8`, values `0/3/33/40/100`.
+
+3. Ambience light:
+   - `0x21051000` atmosphere lamps `0/1`;
+   - `0x200a0200` main color;
+   - `0x2a010100` intensity float, zone `0x8`, values `10..100`;
+   - `0x2a050400` phone call reminder `0/1`;
+   - `0x2a070200` transition start color;
+   - `0x2a070300` transition end color;
+   - `0x2a080100` effect set;
+   - `0x2a080200` climate sync `0/1`;
+   - `0x2a500000` solid color set;
+   - `0x2a500100` breathe color set.
+
+4. Drive / ADAS / steering:
+   - `0x22010100` drive mode select;
+   - `0x20070800` steering assistance level;
+   - `0x22040300` steering feel sync drive mode;
+   - `0x21200100` follow DRL.
+
+5. Light / locks / car locator / sound:
+   - `0x20040600` courtesy light;
+   - `0x20040700` home safe light;
+   - `0x20040900` approach light;
+   - `0x20080400` auto close window;
+   - `0x20100300` audible locking feedback;
+   - `0x20160400` car locator reminder mode;
+   - `0x201d0100` warning sound volume;
+   - `0x20320300` P-gear unlock;
+   - `0x2c010100` approach unlock;
+   - `0x2e020100` soft button sound type.
+
+6. Seats:
+   - `0x2d020100`, zone `0x4`, passenger length;
+   - `0x2d030200`, zone `0x4`, passenger backrest;
+   - `0x2d400100`, zone `0x1`, seat memory save, value `2`;
+   - `0x2d400200`, zone `0x1`, seat memory set, value `1`.
+
+`BCM_CUSTOM_KEY` stock writes directly to `0x21110100` with values `1`, `6`, `100`, `102`. GFlow should try normal `setFunctionValue` first and keep the existing `vfmisc` path as fallback until the machine confirms it.
+
+Transfer priority:
+
+1. climate fan/temp/blowing/circulation;
+2. sunroof/sun curtain zones `0x4` and `0x8`;
+3. ambience float brightness/color/effects;
+4. drive mode and steering assistance;
+5. sound/locks/car locator;
+6. passenger seat and memory.
+
+## 2026-07-29 / 2026-07-30
+
+### Logs 1.28 Regression and Stock Settings Import
+
+Runtime testing of the 1.28 build showed a regression back to the old AdaptAPI permission failure:
+
+- logs from `.src/logs_1.28` showed repeated `java.lang.SecurityException: Permission denied`;
+- the stack always entered through `com.ecarx.xui.adaptapi.car.Car.create(...)`;
+- vendor logs showed the firmware signature/whitelist check for `com.prodject.gflow`;
+- conclusion: the typed migration was correct for function signatures, but using `Car.create(context)` reintroduced the authority gate.
+
+Implemented after that finding:
+
+- commit `fc500cb Fix vehicle API startup and diagnostics capture`:
+  - `EcarxVehicleAdapter` no longer creates the car API through `Car.create(...)` as the primary path;
+  - `CarBridge.createCar(...)` now first instantiates `com.ecarx.xui.adaptapi.car.CarImpl(Context)` reflectively, then keeps the rest of the stack typed through `ICar` / `ICarFunction`;
+  - `Car.create(...)` remains only as fallback;
+  - added log markers for `createCar via CarImpl` vs fallback;
+  - diagnostics report now includes best-effort `logcat -d` output so missing `READ_LOGS` or logcat failures are visible in the report.
+
+The stock logging helper was also repaired after manual testing showed that its interactive package menu was being captured into the package variable:
+
+- commit `1f14d8e Improve stock logging and package visibility`:
+  - `collect-adb-log-stock.sh` now sends menu/prompt output to stderr and only emits the selected package on stdout;
+  - fixed the `File name too long` session-directory bug;
+  - added real firmware settings packages to the menu (`com.android.car.settings`, `com.ecarx.settings`, `com.ecarx.xui.settings`, `com.zeekr.settings`, `com.geely.settings`);
+  - added targeted manifest `<queries>` entries for observed vendor/system packages from the provided `dumpsys package` output.
+
+### Stock `main_шторка.log` Findings
+
+Manual stock settings/shade logging in `.src/main_шторка.log` was then used as runtime evidence for function/value import.
+
+The first pass extracted all unique `setFunctionValue` calls from the stock log:
+
+- 18 unique stock functions were found;
+- all 18 now have catalog entries and observed values in `possibleValues`;
+- `SETTING_FUNC_EASY_INGRESS_EGRESS` was confirmed to use zone `0x1`, not global `ZONE_ALL`;
+- several functions already existed in the catalog but had empty value lists, which made the generated UI/selectors incomplete.
+
+Implemented from that pass:
+
+- commit `6bc72b8 Align vehicle controls with stock settings logs`:
+  - added stock-confirmed values for Start/Stop, ESC Sport, Approach Light, PBC Auto Apply, Auto Hold, HDC, LKA switch, LKA warning, RCTA, RCW, Easy Ingress/Egress, atmosphere lamps, mirror fold, drive mode, WPC work mode, speed-limit warning mode, DayMode brightness mode, and ambience effect;
+  - fixed ADAS `LKA` so the visible button writes `0x20070100 -> 1` instead of sending mode values to the wrong function;
+  - fixed ADAS speed-limit warning so it writes to `0x28060200` with observed values instead of sending a `0x280602xx` value to `0x28060100`;
+  - added stock-confirmed quick controls in Vehicle/ADAS screens for the functions that had safe observed writes;
+  - added `DAYMODE_BRIGHTNESS_DAYMODE = 0x29030200` and included it in shared diagnostics.
+
+A second pass searched the stock log for slider/float behavior, because sliders do not necessarily appear as `setFunctionValue`:
+
+- the only unique `setFloatProperty` in `.src/main_шторка.log` was `SETTING_FUNC_MCD_AUTO_BRIGHTNESS_SCREEN`;
+- property/function id: `0x29030500`;
+- zone: `0x80000000`;
+- observed float range: `2.0..14.0`;
+- stock backend path: `setFloatProperty`;
+- GFlow path: `ICarFunction.setCustomizeFunctionValue(function, zone, float)`.
+
+Implemented from that pass:
+
+- commit `9df812f Handle stock screen brightness as float`:
+  - `DAYMODE_BRIGHTNESS_SCREEN` is now marked as a float/customize-function property;
+  - legacy screen brightness controls now send representative float values (`2.0`, `8.0`, `14.0`) instead of integer brightness values (`25`, `50`, `75`).
+
+A third pass extracted every observed `propertyId/areaId` from stock `setIntProperty`, `setFloatProperty`, `getIntProperty`, `getFloatProperty`, `callback`, and `isSupport` lines, not only active writes:
+
+- 34 unique property/area pairs were found;
+- after the import pass, missing catalog coverage is `0`;
+- missing adapter constants for observed non-sensor properties is `0`.
+
+Implemented from that pass:
+
+- commit `761a0ce Add stock log readback properties`:
+  - added adapter constants for stock-observed readback/callback properties:
+    - `WPC_CHARGE_STATES = 0x26020100`;
+    - `AMBIENCE_LIGHT_TRANSITION_START_COLOR = 0x2a070200`;
+    - `AMBIENCE_LIGHT_TRANSITION_END_COLOR = 0x2a070300`;
+  - marked float readback for:
+    - `DAYMODE_BRIGHTNESS_MAX = 0x20150500`;
+    - `DAYMODE_PSD_BRIGHTNESS_SCREEN = 0x29200100`;
+  - `catalogReadInt(...)` now routes float functions to `getCustomizeFunctionValue(...)`;
+  - shared diagnostics now include WPC charge state and ambience transition colors.
+
+Useful data now known from the stock log but intentionally not promoted to write buttons:
+
+- `WPC_FUNC_CHARGE_STATES` reported callback/status values across `ZONE_ALL`, `0x1`, and `0x8`, but no stock write was observed;
+- ambience transition/solid/breathe colors appeared as readback values, not as proven writes in this log;
+- `SENSOR_TYPE_DAY_NIGHT` produced a sensor readback and is already catalog-covered as a sensor, not a normal writable function;
+- `DAYMODE_BRIGHTNESS_MAX` and `DAYMODE_PSD_BRIGHTNESS_SCREEN` are useful float readbacks, not user-facing writes from this evidence.
+
+Current state after these commits:
+
+- all active stock writes observed in `.src/main_шторка.log` have matching function id / zone / value coverage;
+- all stock float properties observed in that log have been handled;
+- all observed non-sensor property IDs from get/set/callback/support lines have catalog or adapter coverage;
+- no broad inference was made for hidden functions that were not touched in the stock UI.
+
+Open follow-up:
+
+- collect a fuller stock settings log by slowly walking through each settings section and moving sliders min→max→min;
+- use new logs to expand only proven `possibleValues`, min/max/step, zones, and write types;
+- keep readback-only properties readback-only until a stock `set...` line proves the write contract.
+
+
 ## 2026-07-23
 
 ### Product Direction

@@ -1755,6 +1755,17 @@ public class MainActivity extends Activity {
         addCommandGroup(root, "Theme mode", EcarxVehicleAdapter.AMBIENCE_LIGHT_EFFECT,
                 new String[]{"Effect solid", "Effect gradients", "Effect breathe", "Theme radical", "Theme simple", "Theme liberating", "Theme agile", "Effect off"},
                 new int[]{EcarxVehicleAdapter.AMBIENCE_LIGHT_EFFECT_SOLID, EcarxVehicleAdapter.AMBIENCE_LIGHT_EFFECT_GRADIENTS, EcarxVehicleAdapter.AMBIENCE_LIGHT_EFFECT_BREATHE, EcarxVehicleAdapter.AMBIENCE_LIGHT_THEME_RADICAL, EcarxVehicleAdapter.AMBIENCE_LIGHT_THEME_SIMPLE, EcarxVehicleAdapter.AMBIENCE_LIGHT_THEME_LIBERATING, EcarxVehicleAdapter.AMBIENCE_LIGHT_THEME_AGILE, EcarxVehicleAdapter.COMMON_OFF});
+        Ui.section(root, "Stock ambience", "Значения из stock settings: яркость float zone 0x8, цвета и напоминания.");
+        addFloatCommand(root, "Intensity 10", EcarxVehicleAdapter.AMBIENCE_LIGHT_INTENSITY, EcarxVehicleAdapter.ZONE_ROW_1_ALL, 10.0f);
+        addFloatCommand(root, "Intensity 50", EcarxVehicleAdapter.AMBIENCE_LIGHT_INTENSITY, EcarxVehicleAdapter.ZONE_ROW_1_ALL, 50.0f);
+        addFloatCommand(root, "Intensity 100", EcarxVehicleAdapter.AMBIENCE_LIGHT_INTENSITY, EcarxVehicleAdapter.ZONE_ROW_1_ALL, 100.0f);
+        addCommand(root, "Atmosphere lamps on", EcarxVehicleAdapter.BCM_LIGHT_ATMOSPHERE, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "Phone reminder on", EcarxVehicleAdapter.AMBIENCE_LIGHT_PHONE_CALL_REMINDER, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "Climate sync on", EcarxVehicleAdapter.AMBIENCE_LIGHT_CLIMATE, EcarxVehicleAdapter.COMMON_ON);
+        addCommand(root, "Solid stock orange", EcarxVehicleAdapter.AMBIENCE_LIGHT_SOLID_COLOR_SET, EcarxVehicleAdapter.AMBIENCE_COLOR_ORANGE_STOCK);
+        addCommand(root, "Breathe stock orange", EcarxVehicleAdapter.AMBIENCE_LIGHT_BREATHE_COLOR_SET, EcarxVehicleAdapter.AMBIENCE_COLOR_ORANGE_STOCK);
+        addCommand(root, "Transition start orange", EcarxVehicleAdapter.AMBIENCE_LIGHT_TRANSITION_START_COLOR, EcarxVehicleAdapter.AMBIENCE_COLOR_ORANGE_STOCK);
+        addCommand(root, "Transition end cyan", EcarxVehicleAdapter.AMBIENCE_LIGHT_TRANSITION_END_COLOR, EcarxVehicleAdapter.AMBIENCE_COLOR_CYAN_STOCK);
         addCommandGroup(root, "Control mode", EcarxVehicleAdapter.AMBIENCE_LIGHT_CONTROL_MODE,
                 new String[]{"Control more", "Control music", "Control screen", "Control color", "Control time"},
                 new int[]{EcarxVehicleAdapter.AMBIENCE_LIGHT_CONTROL_MORE, EcarxVehicleAdapter.AMBIENCE_LIGHT_CONTROL_MUSIC, EcarxVehicleAdapter.AMBIENCE_LIGHT_CONTROL_SCREEN, EcarxVehicleAdapter.AMBIENCE_LIGHT_CONTROL_COLOR, EcarxVehicleAdapter.AMBIENCE_LIGHT_CONTROL_TIME});
@@ -1770,7 +1781,7 @@ public class MainActivity extends Activity {
         addCommandGroup(root, "Zones", EcarxVehicleAdapter.AMBIENCE_LIGHT_ZONE_EXPERIENCE,
                 new String[]{"Zone all", "Zone front", "Zone headrest", "Zone rear"},
                 new int[]{EcarxVehicleAdapter.AMBIENCE_LIGHT_ZONE_ALL, EcarxVehicleAdapter.AMBIENCE_LIGHT_ZONE_FRONT, EcarxVehicleAdapter.AMBIENCE_LIGHT_ZONE_HEADREST, EcarxVehicleAdapter.AMBIENCE_LIGHT_ZONE_REAR});
-        Ui.section(root, "GInputBridge extras", "Дополнительные функции подсветки из GInputBridge пока выведены как диагностика/readback.");
+        Ui.section(root, "GInputBridge extras", "Остальные функции подсветки пока выведены как диагностика/readback.");
         addDiagnostic(root, "GInputBridge ambience extras",
                 EcarxVehicleAdapter.AMBIENCE_LIGHT_BRIGHTNESS_DRIVING,
                 EcarxVehicleAdapter.AMBIENCE_LIGHT_BRIGHTNESS_STATIONARY,

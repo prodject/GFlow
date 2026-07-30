@@ -87,16 +87,28 @@ final class CarFunctionCatalog {
         put(byId, byKey, new Entry("BCM_FUNC_STEERING_WHEEL_ADJUST", 554107136, 2, "IBcm.BCM_FUNC_STEERING_WHEEL_ADJUST", "Электрорегулировка рулевой колонки.", new Value[] {
         }));
         put(byId, byKey, new Entry("BCM_FUNC_SUNCURT_CLS_BTN", 555746560, 2, "IBcm.BCM_FUNC_SUNCURT_OPEN_BTN", "Кнопка закрытия солнцезащитной шторки.", new Value[] {
+                new Value("COMMON_OFF", 0),
+                new Value("COMMON_ON", 1),
         }));
         put(byId, byKey, new Entry("BCM_FUNC_SUNCURT_OPEN_BTN", 555746304, 2, "IBcm.BCM_FUNC_SUNCURT_OPEN_BTN", "Кнопка открытия солнцезащитной шторки.", new Value[] {
+                new Value("COMMON_OFF", 0),
+                new Value("COMMON_ON", 1),
         }));
         put(byId, byKey, new Entry("BCM_FUNC_SUNROOF_CLS_BTN", 555746048, 2, "IBcm.BCM_FUNC_SUNROOF_CLS_BTN", "Кнопка закрытия люка.", new Value[] {
+                new Value("COMMON_OFF", 0),
+                new Value("COMMON_ON", 1),
         }));
         put(byId, byKey, new Entry("BCM_FUNC_SUNROOF_ININ_SWITCH", 555745280, 2, "IBcm.BCM_FUNC_SUNROOF_ININ_SWITCH", "Переключатель направления люка (вперёд/назад).", new Value[] {
+                new Value("COMMON_OFF", 0),
+                new Value("COMMON_ON", 1),
         }));
         put(byId, byKey, new Entry("BCM_FUNC_SUNROOF_OPEN_BTN", 555745792, 2, "IBcm.BCM_FUNC_SUNROOF_OPEN_BTN", "Кнопка открытия люка.", new Value[] {
+                new Value("COMMON_OFF", 0),
+                new Value("COMMON_ON", 1),
         }));
         put(byId, byKey, new Entry("BCM_FUNC_SUNROOF_TILT", 553845760, 2, "IBcm.BCM_FUNC_SUNROOF_TILT", "Режим приоткрытия (TILT) люка.", new Value[] {
+                new Value("COMMON_OFF", 0),
+                new Value("COMMON_ON", 1),
         }));
         put(byId, byKey, new Entry("BCM_FUNC_WASHER", 553910528, 2, "IBcm.BCM_FUNC_WASHER", "Омыватель ветрового стекла.", new Value[] {
         }));
@@ -559,6 +571,8 @@ final class CarFunctionCatalog {
                 new Value("AC_OFF", 0),
         }));
         put(byId, byKey, new Entry("HVAC_FUNC_AC_MAX", 268502016, 2, "IHvac.HVAC_FUNC_AC_MAX", "MAX A/C: максимальное охлаждение.", new Value[] {
+                new Value("AC_MAX_OFF", 0),
+                new Value("AC_MAX_ON", 1),
         }));
         put(byId, byKey, new Entry("HVAC_FUNC_AIR_FRAGRANCE", 269156608, 2, "IHvac.HVAC_FUNC_AIR_FRAGRANCE", "Система ароматизации салона (тип/уровень/слот).", new Value[] {
                 new Value("AIR_FRAGRANCE_JASMINE", 269156870),
@@ -836,6 +850,8 @@ final class CarFunctionCatalog {
         put(byId, byKey, new Entry("HVAC_FUNC_POST_CLIMATISATION", 269091328, 2, "IHvac.HVAC_FUNC_POST_CLIMATISATION", "Постклиматизация после поездки.", new Value[] {
         }));
         put(byId, byKey, new Entry("HVAC_FUNC_POWER", 268501248, 2, "IHvac.HVAC_FUNC_POWER", "Главный выключатель климат‑системы.", new Value[] {
+                new Value("HVAC_POWER_OFF", 0),
+                new Value("HVAC_POWER_ON", 1),
                 new Value("POWER_CHARGE_MODE_FAIL", 606078979),
                 new Value("POWER_CHARGE_MODE_FINISH", 606078980),
                 new Value("POWER_CHARGE_MODE_FUEL_LOW", 606078981),
@@ -1430,8 +1446,12 @@ final class CarFunctionCatalog {
         put(byId, byKey, new Entry("SETTING_FUNC_AMBIENCE_DOOR_OPEN_MUSIC_AUD_TYP", 709886976, 2, "IAmbienceLight.SETTING_FUNC_AMBIENCE_DOOR_OPEN_MUSIC_AUD_TYP", "Тип звука при открытии двери.", new Value[] {
         }));
         put(byId, byKey, new Entry("SETTING_FUNC_AMBIENCE_LIGHT_BREATHE_COLOR_SET", 709886208, 2, "IAmbienceLight.SETTING_FUNC_AMBIENCE_LIGHT_BREATHE_COLOR_SET", "", new Value[] {
+                new Value("STOCK_BREATHE_COLOR_PURPLE", 7470891),
+                new Value("STOCK_BREATHE_COLOR_ORANGE", 16724980),
         }));
         put(byId, byKey, new Entry("SETTING_FUNC_AMBIENCE_LIGHT_CLIMATE", 705167872, 2, "IAmbienceLight.SETTING_FUNC_AMBIENCE_LIGHT_CLIMATE", "", new Value[] {
+                new Value("COMMON_OFF", 0),
+                new Value("COMMON_ON", 1),
         }));
         put(byId, byKey, new Entry("SETTING_FUNC_AMBIENCE_LIGHT_COLOR_SET", 537528576, 2, "IAmbienceLight.SETTING_FUNC_AMBIENCE_LIGHT_COLOR_SET", "Выбор цвета атмосферной подсветки.", new Value[] {
         }));
@@ -1458,6 +1478,11 @@ final class CarFunctionCatalog {
         put(byId, byKey, new Entry("SETTING_FUNC_AMBIENCE_LIGHT_ICHARGING_REMIND", 705168128, 2, "IAmbienceLight.SETTING_FUNC_AMBIENCE_LIGHT_ICHARGING_REMIND", "Световое напоминание о зарядке.", new Value[] {
         }));
         put(byId, byKey, new Entry("SETTING_FUNC_AMBIENCE_LIGHT_INTENSITY_SET", 704708864, 2, "IAmbienceLight.SETTING_FUNC_AMBIENCE_LIGHT_INTENSITY_SET", "Яркость атмосферной подсветки.", new Value[] {
+                new Value("INTENSITY_10", 10),
+                new Value("INTENSITY_25", 25),
+                new Value("INTENSITY_50", 50),
+                new Value("INTENSITY_75", 75),
+                new Value("INTENSITY_100", 100),
         }));
         put(byId, byKey, new Entry("SETTING_FUNC_AMBIENCE_LIGHT_INTERACTIVE_EFFECT", 537528320, 2, "IAmbienceLight.SETTING_FUNC_AMBIENCE_LIGHT_INTERACTIVE_EFFECT", "Интерактивные эффекты подсветки.", new Value[] {
         }));
@@ -1479,10 +1504,16 @@ final class CarFunctionCatalog {
         put(byId, byKey, new Entry("SETTING_FUNC_AMBIENCE_LIGHT_MUSIC_SHOW_MODE", 704972800, 2, "IAmbienceLight.SETTING_FUNC_AMBIENCE_LIGHT_MUSIC_SHOW_MODE", "Режим показа подсветки под музыку.", new Value[] {
         }));
         put(byId, byKey, new Entry("SETTING_FUNC_AMBIENCE_LIGHT_PHONE_CALL_REMINDER", 704971776, 2, "IAmbienceLight.SETTING_FUNC_AMBIENCE_LIGHT_PHONE_CALL_REMINDER", "Световое напоминание о звонке.", new Value[] {
+                new Value("COMMON_OFF", 0),
+                new Value("COMMON_ON", 1),
         }));
         put(byId, byKey, new Entry("SETTING_FUNC_AMBIENCE_LIGHT_SLIDING_DOOR_REMINDER", 704973056, 2, "IAmbienceLight.SETTING_FUNC_AMBIENCE_LIGHT_SLIDING_DOOR_REMINDER", "", new Value[] {
         }));
         put(byId, byKey, new Entry("SETTING_FUNC_AMBIENCE_LIGHT_SOLID_COLOR_SET", 709885952, 2, "IAmbienceLight.SETTING_FUNC_AMBIENCE_LIGHT_SOLID_COLOR_SET", "Выбор фиксированного цвета подсветки.", new Value[] {
+                new Value("STOCK_SOLID_COLOR_BLUE", 15548159),
+                new Value("STOCK_SOLID_COLOR_RED", 16713216),
+                new Value("STOCK_SOLID_COLOR_ORANGE", 16724980),
+                new Value("STOCK_SOLID_COLOR_YELLOW", 16743680),
         }));
         put(byId, byKey, new Entry("SETTING_FUNC_AMBIENCE_LIGHT_THEME_COLOR", 704709120, 2, "IAmbienceLight.SETTING_FUNC_AMBIENCE_LIGHT_THEME_COLOR", "Выбор темы/цвета подсветки (предустановки).", new Value[] {
                 new Value("AMBIENCE_LIGHT_THEME_COLOR_APPLE_GREEN", 704709132),
@@ -1516,6 +1547,8 @@ final class CarFunctionCatalog {
         put(byId, byKey, new Entry("SETTING_FUNC_APPROACH_TAIL_UNLOCK", 738264320, 2, "ISafety.SETTING_FUNC_APPROACH_TAIL_UNLOCK", "Авторазблокировка багажника при приближении.", new Value[] {
         }));
         put(byId, byKey, new Entry("SETTING_FUNC_APPROACH_UNLOCK", 738263296, 2, "ISafety.SETTING_FUNC_APPROACH_UNLOCK", "Авторазблокировка при приближении ключа.", new Value[] {
+                new Value("COMMON_OFF", 0),
+                new Value("COMMON_ON", 1),
         }));
         put(byId, byKey, new Entry("SETTING_FUNC_ARTIFICIAL_SOUND_TYPE", 538575872, 2, "IVehicle.SETTING_FUNC_ARTIFICIAL_SOUND_TYPE", "Тип внешнего звука оповещения (AVAS).", new Value[] {
                 new Value("ARTIFICIAL_SOUND_TYPE_1", 538575873),
@@ -1529,6 +1562,8 @@ final class CarFunctionCatalog {
                 new Value("ARTIFICIAL_SOUND_TYPE_NONE", 0),
         }));
         put(byId, byKey, new Entry("SETTING_FUNC_AUDIBLE_LOCKING_FEEDBACK", 537920256, 2, "ISafety.SETTING_FUNC_AUDIBLE_LOCKING_FEEDBACK", "Звуковое подтверждение запирания.", new Value[] {
+                new Value("COMMON_OFF", 0),
+                new Value("COMMON_ON", 1),
         }));
         put(byId, byKey, new Entry("SETTING_FUNC_AUDIO_SEPARATED", 771948800, 2, "IAudio.SETTING_FUNC_AUDIO_SEPARATED", "Разделение аудио (водитель/пассажир).", new Value[] {
         }));
@@ -1822,6 +1857,8 @@ final class CarFunctionCatalog {
                 new Value("COMMON_ON", 1),
         }));
         put(byId, byKey, new Entry("SETTING_FUNC_LAMP_AUTOMATIC_COURTESY_LIGHT", 537134592, 2, "ILamp.SETTING_FUNC_LAMP_AUTOMATIC_COURTESY_LIGHT", "", new Value[] {
+                new Value("COMMON_OFF", 0),
+                new Value("COMMON_ON", 1),
         }));
         put(byId, byKey, new Entry("SETTING_FUNC_LAMP_BENDINGLIGHT", 537134336, 2, "IVehicle.SETTING_FUNC_LAMP_BENDINGLIGHT", "", new Value[] {
         }));
@@ -2154,6 +2191,9 @@ final class CarFunctionCatalog {
         put(byId, byKey, new Entry("SETTING_FUNC_SOUND_LOCKING_PROMPT_SWITCH", 738396416, 2, "ISafety.SETTING_FUNC_SOUND_LOCKING_PROMPT_SWITCH", "", new Value[] {
         }));
         put(byId, byKey, new Entry("SETTING_FUNC_SOUND_WARNING_VOLUME", 538771712, 2, "IAudio.SETTING_FUNC_SOUND_WARNING_VOLUME", "", new Value[] {
+                new Value("SOUND_WARNING_VOLUME_LOW", 538771713),
+                new Value("SOUND_WARNING_VOLUME_MEDIUM", 538771714),
+                new Value("SOUND_WARNING_VOLUME_HIGH", 538771715),
                 new Value("SOUND_WARNING_VOLUME_LEVEL_HIGH", 538771715),
                 new Value("SOUND_WARNING_VOLUME_LEVEL_LOW", 538771713),
                 new Value("SOUND_WARNING_VOLUME_LEVEL_MID", 538771714),
@@ -2238,10 +2278,18 @@ final class CarFunctionCatalog {
         put(byId, byKey, new Entry("SETTING_FUNC_TRAILER_MODE", 537268736, 2, "IVehicle.SETTING_FUNC_TRAILER_MODE", "", new Value[] {
         }));
         put(byId, byKey, new Entry("SETTING_FUNC_TRANSITION_END_COLOR", 705102592, 2, "IAmbienceLight.SETTING_FUNC_TRANSITION_END_COLOR", "", new Value[] {
+                new Value("STOCK_TRANSITION_END_BLUE", 24575),
+                new Value("STOCK_TRANSITION_END_CYAN", 65382),
+                new Value("STOCK_TRANSITION_END_DARK_BLUE", 1638190),
+                new Value("STOCK_TRANSITION_END_YELLOW", 16747776),
         }));
         put(byId, byKey, new Entry("SETTING_FUNC_TRANSITION_MODE", 705102080, 2, "IAmbienceLight.SETTING_FUNC_TRANSITION_MODE", "", new Value[] {
         }));
         put(byId, byKey, new Entry("SETTING_FUNC_TRANSITION_START_COLOR", 705102336, 2, "IAmbienceLight.SETTING_FUNC_TRANSITION_START_COLOR", "", new Value[] {
+                new Value("STOCK_TRANSITION_START_PURPLE", 9326079),
+                new Value("STOCK_TRANSITION_START_BLUE", 12077311),
+                new Value("STOCK_TRANSITION_START_CYAN", 12928767),
+                new Value("STOCK_TRANSITION_START_ORANGE", 16718848),
         }));
         put(byId, byKey, new Entry("SETTING_FUNC_TRUNK_OPENING_PERCENTAGE", 738395904, 2, "ISafety.SETTING_FUNC_TRUNK_OPENING_PERCENTAGE", "", new Value[] {
         }));
