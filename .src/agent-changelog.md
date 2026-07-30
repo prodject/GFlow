@@ -84,6 +84,70 @@ Transfer priority:
 5. sound/locks/car locator;
 6. passenger seat and memory.
 
+### Post-import UI Fixes
+
+Implemented after commit `87d8262 Import stock vehicle control contracts`:
+
+- fixed seat movement controls in `VehicleActivity`:
+  - seat movement buttons now behave like stock settings;
+  - `ACTION_DOWN` sends the movement value;
+  - `ACTION_UP` / `ACTION_CANCEL` sends `0`;
+  - this prevents the previous behavior where one tap could keep moving the seat until the mechanical limit;
+  - applied to driver and passenger length/height/backrest controls where available.
+
+- added a fluent-style stock HVAC block in `ClimateActivity`:
+  - new `Stock HVAC` section on the climate home screen;
+  - added `FluentFanDial` custom view as a glass/fluent fan selector;
+  - fan dial sends only stock-confirmed values:
+    - level 4 -> `0x10020100`, zone `0x8`, value `0x10020104`;
+    - level 5 -> `0x10020100`, zone `0x8`, value `0x10020105`;
+    - level 6 -> `0x10020100`, zone `0x8`, value `0x10020106`;
+  - auto fan sends stock-confirmed:
+    - silent `0x10020201`;
+    - normal `0x10020202`;
+    - zone `0x8`;
+  - blowing mode buttons now use stock-confirmed zone `0x8` and values:
+    - windshield `0x10070104`;
+    - face + windshield `0x10070105`;
+    - all zones `0x10070107`;
+  - temperature quick pills send stock-observed float values:
+    - `17.0`;
+    - `18.5`;
+    - `20.0`;
+    - zone `0x1`;
+  - recirculation quick pills send inner/outside values from stock logs;
+  - old fan slider and climate presets were adjusted away from unconfirmed levels `1/3` to stock-confirmed levels `4/5/6`.
+
+- expanded ambience-light UI in `MainActivity`:
+  - added a polished `Stock ambience` control panel;
+  - added brightness slider for `0x2a010100`, zone `0x8`, values `10..100`;
+  - added stock effect selector for `0x2a080100`:
+    - solid `0x2a080101`;
+    - gradient `0x2a080102`;
+    - breathe `0x2a080103`;
+  - added a candidate `More...` selector backed by catalog/runtime values for extra effects from the source catalog;
+  - added ambience toggles:
+    - atmosphere lamps `0x21051000`;
+    - climate sync `0x2a080200`;
+    - phone reminder `0x2a050400`;
+    - main color mode `0x200a0200`;
+  - added stock color palette:
+    - writes solid color `0x2a500000` with zone `0x200a0100`;
+    - writes breathe color `0x2a500100` with zone `0x200a0100`;
+    - writes transition start/end `0x2a070200/0x2a070300` with global zone `0x80000000`;
+  - corrected `EcarxVehicleAdapter` specs so ambience effect/toggles use global zone, while solid/breathe colors keep ambience zone `0x200a0100`.
+
+- added a dedicated roof/sunshade control UI in `VehicleActivity`:
+  - new `Roof control` card inside the Mirrors/Roof screen;
+  - sunroof open/close sends `0x21200200/0x21200300`, zone `0x4`, values `1`;
+  - sun curtain open/close sends `0x21200400/0x21200500`, zone `0x8`, values `1`;
+  - tilt/init controls send `0x21030400` and `0x21200000` with global zone;
+  - added stock position presets:
+    - sunroof `40%` via float `0x21030300`, zone `0x4`;
+    - sun curtain `33%` via float `0x21030300`, zone `0x8`;
+  - added separate stepped sliders for sunroof and sun curtain using `BCM_WINDOW_POS` float writes;
+  - roof sliders use 10% steps from `0%` to `100%`, because stock logs only captured sampled slider positions, not the full range.
+
 ## 2026-07-29 / 2026-07-30
 
 ### Logs 1.28 Regression and Stock Settings Import

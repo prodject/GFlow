@@ -1269,6 +1269,7 @@ final class EcarxVehicleAdapter {
                 || functionId == BCM_LIGHT_FRONT_FOG
                 || functionId == BCM_LIGHT_REAR_FOG
                 || functionId == BCM_LIGHT_GRILLE
+                || functionId == BCM_LIGHT_ATMOSPHERE
                 || functionId == BCM_ALL_READING_LIGHTS
                 || functionId == BCM_WIPER
                 || functionId == BCM_WASHER) {
@@ -1320,9 +1321,21 @@ final class EcarxVehicleAdapter {
             return new Spec(ZONE_ALL, Backend.ADAPT_API, true, false, false);
         }
         if (functionId == AMBIENCE_LIGHT_INTENSITY) return new Spec(ZONE_ROW_1_ALL, Backend.ADAPT_API_FLOAT, true, true, false);
-        if (functionId == AMBIENCE_LIGHT_TRANSITION_START_COLOR
-                || functionId == AMBIENCE_LIGHT_TRANSITION_END_COLOR
-                || functionId == AMBIENCE_LIGHT_SOLID_COLOR_SET
+        if (functionId == AMBIENCE_LIGHT_MAIN_COLOR
+                || functionId == AMBIENCE_LIGHT_THEME_COLOR
+                || functionId == AMBIENCE_LIGHT_EFFECT
+                || functionId == AMBIENCE_LIGHT_CLIMATE
+                || functionId == AMBIENCE_LIGHT_PHONE_CALL_REMINDER
+                || functionId == AMBIENCE_LIGHT_CONTROL_MODE
+                || functionId == AMBIENCE_LIGHT_MUSIC_SHOW_MODE
+                || functionId == AMBIENCE_LIGHT_WELCOME_SHOW
+                || functionId == AMBIENCE_LIGHT_WELCOME_SHOW_MODE
+                || functionId == AMBIENCE_LIGHT_VOICE
+                || functionId == AMBIENCE_LIGHT_TRANSITION_START_COLOR
+                || functionId == AMBIENCE_LIGHT_TRANSITION_END_COLOR) {
+            return new Spec(ZONE_ALL, Backend.ADAPT_API, true, false, false);
+        }
+        if (functionId == AMBIENCE_LIGHT_SOLID_COLOR_SET
                 || functionId == AMBIENCE_LIGHT_BREATHE_COLOR_SET) {
             return new Spec(AMBIENCE_LIGHT_ZONE_ALL, Backend.ADAPT_API, true, false, false);
         }

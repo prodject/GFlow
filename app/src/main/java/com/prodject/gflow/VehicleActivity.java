@@ -16,6 +16,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -24,6 +25,7 @@ import android.widget.Button;
 import android.widget.GridLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import java.util.Locale;
 
@@ -33,6 +35,7 @@ public class VehicleActivity extends Activity {
     static final String MODE_MIRRORS = "mirrors";
     static final String MODE_LIGHTS = "lights";
     static final String MODE_DRIVE = "drive";
+    private static final int ROOF_POSITION_STEP = 10;
     private static final String APP_SETTINGS = "app_settings";
     private static final String KEY_EXPERIMENTAL_FEATURES = "experimental_features";
 
@@ -263,22 +266,22 @@ public class VehicleActivity extends Activity {
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(2);
         addAdvancedCard(grid, "Сиденье водителя", "Длина, высота, спинка", new QuickItem[]{
-                new QuickItem("Вперед", () -> sendVehicle(EcarxVehicleAdapter.SEAT_LENGTH, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_FORWARD)),
-                new QuickItem("Назад", () -> sendVehicle(EcarxVehicleAdapter.SEAT_LENGTH, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_BACKWARD)),
-                new QuickItem("Выше", () -> sendVehicle(EcarxVehicleAdapter.SEAT_HEIGHT, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_HEIGHT_UP)),
-                new QuickItem("Ниже", () -> sendVehicle(EcarxVehicleAdapter.SEAT_HEIGHT, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_HEIGHT_DOWN))
+                QuickItem.hold("Вперед", EcarxVehicleAdapter.SEAT_LENGTH, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_FORWARD),
+                QuickItem.hold("Назад", EcarxVehicleAdapter.SEAT_LENGTH, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_BACKWARD),
+                QuickItem.hold("Выше", EcarxVehicleAdapter.SEAT_HEIGHT, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_HEIGHT_UP),
+                QuickItem.hold("Ниже", EcarxVehicleAdapter.SEAT_HEIGHT, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_HEIGHT_DOWN)
         });
         addAdvancedCard(grid, "Спинка / Память", "Спинка, сохранение и вызов", new QuickItem[]{
-                new QuickItem("Спинка +", () -> sendVehicle(EcarxVehicleAdapter.SEAT_BACKREST, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_BACKREST_FORWARD)),
-                new QuickItem("Спинка -", () -> sendVehicle(EcarxVehicleAdapter.SEAT_BACKREST, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_BACKREST_BACKWARD)),
+                QuickItem.hold("Спинка +", EcarxVehicleAdapter.SEAT_BACKREST, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_BACKREST_FORWARD),
+                QuickItem.hold("Спинка -", EcarxVehicleAdapter.SEAT_BACKREST, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_BACKREST_BACKWARD),
                 new QuickItem("Сохранить P2", () -> sendVehicle(EcarxVehicleAdapter.SEAT_POSITION_SAVE, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_STOCK_MEMORY_SAVE_2)),
                 new QuickItem("Вызвать P1", () -> sendVehicle(EcarxVehicleAdapter.SEAT_POSITION_SET, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_STOCK_MEMORY_SET_1))
         });
         addAdvancedCard(grid, "Сиденье пассажира", "Stock zone 0x4", new QuickItem[]{
-                new QuickItem("Вперед", () -> sendVehicle(EcarxVehicleAdapter.SEAT_LENGTH, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.SEAT_FORWARD)),
-                new QuickItem("Назад", () -> sendVehicle(EcarxVehicleAdapter.SEAT_LENGTH, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.SEAT_BACKWARD)),
-                new QuickItem("Спинка +", () -> sendVehicle(EcarxVehicleAdapter.SEAT_BACKREST, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.SEAT_BACKREST_FORWARD)),
-                new QuickItem("Спинка -", () -> sendVehicle(EcarxVehicleAdapter.SEAT_BACKREST, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.SEAT_BACKREST_BACKWARD))
+                QuickItem.hold("Вперед", EcarxVehicleAdapter.SEAT_LENGTH, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.SEAT_FORWARD),
+                QuickItem.hold("Назад", EcarxVehicleAdapter.SEAT_LENGTH, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.SEAT_BACKWARD),
+                QuickItem.hold("Спинка +", EcarxVehicleAdapter.SEAT_BACKREST, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.SEAT_BACKREST_FORWARD),
+                QuickItem.hold("Спинка -", EcarxVehicleAdapter.SEAT_BACKREST, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.SEAT_BACKREST_BACKWARD)
         });
         panel.addView(grid, lpMatchWrap(0, 12, 0, 12));
 
@@ -311,6 +314,7 @@ public class VehicleActivity extends Activity {
                 new QuickItem("Шторка закрыть", () -> sendVehicle(EcarxVehicleAdapter.BCM_SUNCURT_CLOSE, EcarxVehicleAdapter.ZONE_ROW_1_ALL, EcarxVehicleAdapter.COMMON_ON))
         });
         panel.addView(grid, lpMatchWrap(0, 12, 0, 12));
+        panel.addView(buildRoofControlPanel(), lpMatchWrap(0, 0, 0, 12));
 
         LinearLayout actions = Ui.row(this);
         addActionChip(actions, "Диалог зеркал", this::showMirrorDialogSheet);
@@ -321,6 +325,67 @@ public class VehicleActivity extends Activity {
         addActionChip(actions, "Назад", () -> openMode(Mode.HOME));
         panel.addView(actions, lpMatchWrap(0, 0, 0, 0));
         return panel;
+    }
+
+    private LinearLayout buildRoofControlPanel() {
+        LinearLayout panel = Ui.deepCard(this);
+        panel.addView(Ui.label(this, "Roof control"));
+        panel.addView(Ui.text(this, "Люк / шторка", 24, true));
+        panel.addView(Ui.muted(this, "Stock zones: люк 0x4, шторка 0x8, position float через 0x21030300."));
+
+        LinearLayout controls = Ui.row(this);
+        controls.setWeightSum(4f);
+        addRoofPill(controls, "Люк открыть", () -> sendVehicle(EcarxVehicleAdapter.BCM_SUNROOF_OPEN, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.COMMON_ON));
+        addRoofPill(controls, "Люк закрыть", () -> sendVehicle(EcarxVehicleAdapter.BCM_SUNROOF_CLOSE, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.COMMON_ON));
+        addRoofPill(controls, "Шторка открыть", () -> sendVehicle(EcarxVehicleAdapter.BCM_SUNCURT_OPEN, EcarxVehicleAdapter.ZONE_ROW_1_ALL, EcarxVehicleAdapter.COMMON_ON));
+        addRoofPill(controls, "Шторка закрыть", () -> sendVehicle(EcarxVehicleAdapter.BCM_SUNCURT_CLOSE, EcarxVehicleAdapter.ZONE_ROW_1_ALL, EcarxVehicleAdapter.COMMON_ON));
+        panel.addView(controls, lpMatchWrap(0, 12, 0, 12));
+
+        LinearLayout service = Ui.row(this);
+        service.setWeightSum(4f);
+        addRoofPill(service, "Tilt", () -> sendVehicle(EcarxVehicleAdapter.BCM_SUNROOF_TILT, EcarxVehicleAdapter.COMMON_ON));
+        addRoofPill(service, "Init", () -> sendVehicle(EcarxVehicleAdapter.BCM_SUNROOF_INIT, EcarxVehicleAdapter.COMMON_ON));
+        addRoofPill(service, "Люк 40%", () -> sendVehicleFloat(EcarxVehicleAdapter.BCM_WINDOW_POS, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, 40f));
+        addRoofPill(service, "Шторка 33%", () -> sendVehicleFloat(EcarxVehicleAdapter.BCM_WINDOW_POS, EcarxVehicleAdapter.ZONE_ROW_1_ALL, 33f));
+        panel.addView(service, lpMatchWrap(0, 0, 0, 12));
+
+        LinearLayout sliders = Ui.row(this);
+        sliders.addView(buildRoofPositionSlider("Позиция люка", EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        LinearLayout.LayoutParams shadeLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        shadeLp.leftMargin = Ui.dp(this, 12);
+        sliders.addView(buildRoofPositionSlider("Позиция шторки", EcarxVehicleAdapter.ZONE_ROW_1_ALL), shadeLp);
+        panel.addView(sliders);
+        return panel;
+    }
+
+    private LinearLayout buildRoofPositionSlider(String label, int zone) {
+        LinearLayout card = Ui.glassCard(this);
+        card.addView(Ui.label(this, label));
+        TextView value = Ui.text(this, "0%", 22, true);
+        card.addView(value);
+        SeekBar seek = new SeekBar(this);
+        seek.setMax(100 / ROOF_POSITION_STEP);
+        seek.setProgress(0);
+        seek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                int stop = Math.max(0, Math.min(100, progress * ROOF_POSITION_STEP));
+                value.setText(stop + "%");
+                if (fromUser) sendVehicleFloat(EcarxVehicleAdapter.BCM_WINDOW_POS, zone, stop);
+            }
+            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+        card.addView(seek);
+        LinearLayout marks = Ui.row(this);
+        int[] marksArray = {0, 20, 40, 60, 80, 100};
+        marks.setWeightSum(marksArray.length);
+        for (int stop : marksArray) {
+            TextView mark = Ui.muted(this, stop + "%");
+            mark.setGravity(Gravity.CENTER);
+            marks.addView(mark, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        }
+        card.addView(marks);
+        return card;
     }
 
     private LinearLayout buildLightsPanel() {
@@ -622,7 +687,23 @@ public class VehicleActivity extends Activity {
                     Ui.dark(this) ? Color.argb(56, 255, 255, 255) : Color.argb(238, 255, 255, 255),
                     Ui.dp(this, 16),
                     Ui.dark(this) ? Color.TRANSPARENT : Color.argb(88, 185, 198, 214)));
-            button.setOnClickListener(v -> item.action.run());
+            if (item.holdToMove) {
+                button.setOnTouchListener((v, event) -> {
+                    switch (event.getActionMasked()) {
+                        case MotionEvent.ACTION_DOWN:
+                            sendVehicle(item.functionId, item.zone, item.value);
+                            return true;
+                        case MotionEvent.ACTION_UP:
+                        case MotionEvent.ACTION_CANCEL:
+                            sendVehicleDirect(item.functionId, item.zone, EcarxVehicleAdapter.COMMON_OFF);
+                            return true;
+                        default:
+                            return true;
+                    }
+                });
+            } else {
+                button.setOnClickListener(v -> item.action.run());
+            }
             card.addView(button, lpMatchWrap(0, 8, 0, 0));
         }
         GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
@@ -643,6 +724,18 @@ public class VehicleActivity extends Activity {
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 58), 1f);
         lp.leftMargin = Ui.dp(this, 6);
         lp.rightMargin = Ui.dp(this, 6);
+        row.addView(b, lp);
+    }
+
+    private void addRoofPill(LinearLayout row, String label, Runnable action) {
+        Button b = Ui.button(this, label);
+        b.setTextSize(14);
+        b.setTextColor(Color.WHITE);
+        b.setBackground(Ui.cardBg(this, Color.argb(138, 77, 163, 255), Ui.dp(this, 22), Color.argb(128, 121, 190, 255)));
+        b.setOnClickListener(v -> action.run());
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 56), 1f);
+        lp.leftMargin = Ui.dp(this, 5);
+        lp.rightMargin = Ui.dp(this, 5);
         row.addView(b, lp);
     }
 
@@ -704,6 +797,24 @@ public class VehicleActivity extends Activity {
             return;
         }
         sendVehicleDirect(functionId, zone, value);
+    }
+
+    private void sendVehicleFloat(int functionId, int zone, float value) {
+        EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
+        if (!adapter.isWritable(functionId)) {
+            Ui.toast(this, "Функция переведена в diagnostics/readback-only");
+            refreshState();
+            return;
+        }
+        EcarxVehicleAdapter.Result support = adapter.support(functionId, zone);
+        if (support != null && !support.isSupported()) {
+            Ui.toast(this, "Функция недоступна в этой зоне");
+            refreshState();
+            return;
+        }
+        EcarxVehicleAdapter.Result result = adapter.setFloat(functionId, zone, value);
+        refreshState();
+        Ui.toast(this, result.success ? "Позиция обновлена" : result.message);
     }
 
     private void sendVehicleDirect(int functionId, int zone, int value) {
@@ -998,10 +1109,31 @@ public class VehicleActivity extends Activity {
     private static final class QuickItem {
         final String label;
         final Runnable action;
+        final boolean holdToMove;
+        final int functionId;
+        final int zone;
+        final int value;
 
         QuickItem(String label, Runnable action) {
             this.label = label;
             this.action = action;
+            this.holdToMove = false;
+            this.functionId = 0;
+            this.zone = 0;
+            this.value = 0;
+        }
+
+        private QuickItem(String label, int functionId, int zone, int value) {
+            this.label = label;
+            this.action = null;
+            this.holdToMove = true;
+            this.functionId = functionId;
+            this.zone = zone;
+            this.value = value;
+        }
+
+        static QuickItem hold(String label, int functionId, int zone, int value) {
+            return new QuickItem(label, functionId, zone, value);
         }
     }
 

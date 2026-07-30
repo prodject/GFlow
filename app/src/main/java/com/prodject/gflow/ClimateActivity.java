@@ -18,6 +18,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -109,6 +110,7 @@ public class ClimateActivity extends Activity {
         contentHost.removeAllViews();
         if (mode == Mode.HOME) {
             contentHost.addView(buildClimateComfortPanel(), lpMatchWrap(0, 0, 0, 16));
+            contentHost.addView(buildStockHvacFluentPanel(), lpMatchWrap(0, 0, 0, 16));
             contentHost.addView(buildClimateMainPanel(), lpMatchWrap(0, 0, 0, 16));
             contentHost.addView(buildClimateReadbackGrid(), lpMatchWrap(0, 0, 0, 0));
         } else if (mode == Mode.ADVANCED) {
@@ -291,13 +293,14 @@ public class ClimateActivity extends Activity {
         TextView fanLabel = Ui.text(this, "Вентилятор: 3", 18, true);
         center.addView(fanLabel);
         SeekBar fan = new SeekBar(this);
-        fan.setMax(8);
-        fan.setProgress(2);
+        fan.setMax(2);
+        fan.setProgress(1);
         fan.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                fanLabel.setText("Вентилятор: " + (progress + 1));
+                int level = progress + 4;
+                fanLabel.setText("Вентилятор: " + level);
                 if (fromUser) {
-                    command(EcarxVehicleAdapter.HVAC_FAN_SPEED, fanSpeedValue(progress + 1));
+                    command(EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.ZONE_ROW_1_ALL, fanSpeedValue(level));
                     animatePulse(flow);
                 }
             }
@@ -306,9 +309,9 @@ public class ClimateActivity extends Activity {
         });
         center.addView(fan);
         LinearLayout quickModes = Ui.row(this);
-        addClimateActionChip(quickModes, "Лицо", () -> command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_FACE));
-        addClimateActionChip(quickModes, "Ноги", () -> command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_LEG));
-        addClimateActionChip(quickModes, "Стекло", () -> command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_FRONT_WINDOW));
+        addClimateActionChip(quickModes, "Стекло", () -> command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.ZONE_ROW_1_ALL, EcarxVehicleAdapter.BLOWING_MODE_FRONT_WINDOW));
+        addClimateActionChip(quickModes, "Лицо+стекло", () -> command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.ZONE_ROW_1_ALL, EcarxVehicleAdapter.BLOWING_MODE_FACE_AND_FRONT_WINDOW));
+        addClimateActionChip(quickModes, "Все зоны", () -> command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.ZONE_ROW_1_ALL, EcarxVehicleAdapter.BLOWING_MODE_ALL));
         center.addView(quickModes, lpMatchWrap(0, 8, 0, 0));
         LinearLayout.LayoutParams centerLp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.2f);
         centerLp.leftMargin = Ui.dp(this, 12);
@@ -331,16 +334,63 @@ public class ClimateActivity extends Activity {
         addClimateActionChip(presets, "Тихий", () -> applyClimatePreset(
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_ON),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_AUTO, EcarxVehicleAdapter.COMMON_ON),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_FAN_SPEED, fanSpeedValue(1))));
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.ZONE_ROW_1_ALL, fanSpeedValue(4))));
         addClimateActionChip(presets, "Комфорт", () -> applyClimatePreset(
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_ON),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_AUTO, EcarxVehicleAdapter.COMMON_ON),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_FAN_SPEED, fanSpeedValue(3))));
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.ZONE_ROW_1_ALL, fanSpeedValue(5))));
         addClimateActionChip(presets, "Прогрев", () -> applyClimatePreset(
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_ON),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_FAN_SPEED, fanSpeedValue(5)),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_LEG_AND_FRONT_WINDOW)));
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.ZONE_ROW_1_ALL, fanSpeedValue(6)),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.ZONE_ROW_1_ALL, EcarxVehicleAdapter.BLOWING_MODE_ALL)));
         panel.addView(presets, lpMatchWrap(0, 12, 0, 0));
+        return panel;
+    }
+
+    private LinearLayout buildStockHvacFluentPanel() {
+        LinearLayout panel = Ui.glassCard(this);
+        panel.addView(Ui.label(this, "Stock HVAC"));
+        panel.addView(Ui.text(this, "Точные значения из stock settings", 22, true));
+        panel.addView(Ui.muted(this, "Вентилятор и обдув используют zone 0x8. Температура — float zone 0x1."));
+
+        LinearLayout row = Ui.row(this);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+
+        LinearLayout fanCard = Ui.deepCard(this);
+        fanCard.addView(Ui.label(this, "Вентилятор"));
+        TextView fanLabel = Ui.text(this, "Уровень 5", 26, true);
+        fanCard.addView(fanLabel);
+        FluentFanDial dial = new FluentFanDial(this);
+        dial.setLevel(5);
+        dial.setOnLevelChanged(level -> {
+            fanLabel.setText("Уровень " + level);
+            command(EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.ZONE_ROW_1_ALL, fanSpeedValue(level));
+        });
+        fanCard.addView(dial, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 190)));
+        LinearLayout fanLp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.05f);
+        row.addView(fanCard, fanLp);
+
+        LinearLayout controls = Ui.glassCard(this);
+        controls.addView(Ui.label(this, "Режимы"));
+        addStockSegment(controls, "Auto fan silent", () -> command(EcarxVehicleAdapter.HVAC_AUTO_FAN_SETTING, EcarxVehicleAdapter.ZONE_ROW_1_ALL, EcarxVehicleAdapter.AUTO_FAN_SETTING_SILENT));
+        addStockSegment(controls, "Auto fan normal", () -> command(EcarxVehicleAdapter.HVAC_AUTO_FAN_SETTING, EcarxVehicleAdapter.ZONE_ROW_1_ALL, EcarxVehicleAdapter.AUTO_FAN_SETTING_NORMAL));
+        addStockSegment(controls, "Обдув стекло", () -> command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.ZONE_ROW_1_ALL, EcarxVehicleAdapter.BLOWING_MODE_FRONT_WINDOW));
+        addStockSegment(controls, "Лицо + стекло", () -> command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.ZONE_ROW_1_ALL, EcarxVehicleAdapter.BLOWING_MODE_FACE_AND_FRONT_WINDOW));
+        addStockSegment(controls, "Все зоны", () -> command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.ZONE_ROW_1_ALL, EcarxVehicleAdapter.BLOWING_MODE_ALL));
+        LinearLayout controlsLp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        controlsLp.leftMargin = Ui.dp(this, 12);
+        row.addView(controls, controlsLp);
+
+        panel.addView(row, lpMatchWrap(0, 14, 0, 12));
+
+        LinearLayout bottom = Ui.row(this);
+        bottom.setWeightSum(5f);
+        addStockPill(bottom, "17.0°", () -> setStockDriverTemp(17.0f));
+        addStockPill(bottom, "18.5°", () -> setStockDriverTemp(18.5f));
+        addStockPill(bottom, "20.0°", () -> setStockDriverTemp(20.0f));
+        addStockPill(bottom, "Внутр.", () -> command(EcarxVehicleAdapter.HVAC_CIRCULATION, EcarxVehicleAdapter.CIRCULATION_INNER));
+        addStockPill(bottom, "Наруж.", () -> command(EcarxVehicleAdapter.HVAC_CIRCULATION, EcarxVehicleAdapter.CIRCULATION_OUTSIDE));
+        panel.addView(bottom);
         return panel;
     }
 
@@ -655,6 +705,36 @@ public class ClimateActivity extends Activity {
         row.addView(b, lp);
     }
 
+    private void addStockSegment(LinearLayout root, String label, Runnable action) {
+        Button b = Ui.button(this, label);
+        b.setTextColor(Ui.dark(this) ? Color.WHITE : Ui.primaryText(this));
+        b.setBackground(Ui.cardBg(this,
+                Ui.dark(this) ? Color.argb(72, 77, 163, 255) : Color.argb(232, 238, 246, 255),
+                Ui.dp(this, 18),
+                Ui.dark(this) ? Color.argb(72, 77, 163, 255) : Color.argb(96, 77, 163, 255)));
+        b.setOnClickListener(v -> action.run());
+        root.addView(b, lpMatchWrap(0, 8, 0, 0));
+    }
+
+    private void addStockPill(LinearLayout row, String label, Runnable action) {
+        Button b = Ui.button(this, label);
+        b.setTextSize(14);
+        b.setTextColor(Color.WHITE);
+        b.setBackground(Ui.cardBg(this, Color.argb(136, 77, 163, 255), Ui.dp(this, 22), Color.argb(128, 121, 190, 255)));
+        b.setOnClickListener(v -> action.run());
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 54), 1f);
+        lp.leftMargin = Ui.dp(this, 5);
+        lp.rightMargin = Ui.dp(this, 5);
+        row.addView(b, lp);
+    }
+
+    private void setStockDriverTemp(float value) {
+        EcarxVehicleAdapter.Result result = new EcarxVehicleAdapter(this)
+                .setFloat(EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, value);
+        refreshState();
+        Ui.toast(this, result.success ? "Температура " + value : result.message);
+    }
+
     private void addAdvancedCard(GridLayout grid, String title, String body, QuickItem[] items) {
         LinearLayout card = Ui.glassCard(this);
         card.addView(Ui.label(this, title));
@@ -838,7 +918,7 @@ public class ClimateActivity extends Activity {
                 new QuickItem("Стекло", () -> command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.ZONE_ROW_1_ALL, EcarxVehicleAdapter.BLOWING_MODE_FRONT_WINDOW)),
                 new QuickItem("Лицо + стекло", () -> command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.ZONE_ROW_1_ALL, EcarxVehicleAdapter.BLOWING_MODE_FACE_AND_FRONT_WINDOW)),
                 new QuickItem("Все зоны", () -> command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.ZONE_ROW_1_ALL, EcarxVehicleAdapter.BLOWING_MODE_ALL)),
-                new QuickItem("Лицо + ноги", () -> command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.ZONE_ROW_1_ALL, EcarxVehicleAdapter.BLOWING_MODE_FACE_AND_LEG))
+                new QuickItem("Auto fan silent", () -> command(EcarxVehicleAdapter.HVAC_AUTO_FAN_SETTING, EcarxVehicleAdapter.ZONE_ROW_1_ALL, EcarxVehicleAdapter.AUTO_FAN_SETTING_SILENT))
         });
     }
 
@@ -1183,6 +1263,106 @@ public class ClimateActivity extends Activity {
         QuickItem(String label, Runnable action) {
             this.label = label;
             this.action = action;
+        }
+    }
+
+    private static final class FluentFanDial extends View {
+        interface OnLevelChanged {
+            void onLevelChanged(int level);
+        }
+
+        private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private int level = 5;
+        private OnLevelChanged listener;
+
+        FluentFanDial(Context context) {
+            super(context);
+            setClickable(true);
+        }
+
+        void setLevel(int level) {
+            this.level = clampLevel(level);
+            invalidate();
+        }
+
+        void setOnLevelChanged(OnLevelChanged listener) {
+            this.listener = listener;
+        }
+
+        @Override protected void onDraw(Canvas canvas) {
+            super.onDraw(canvas);
+            float w = getWidth();
+            float h = getHeight();
+            float cx = w / 2f;
+            float cy = h / 2f;
+            float radius = Math.min(w, h) * 0.36f;
+
+            paint.setStyle(Paint.Style.FILL);
+            paint.setShader(new LinearGradient(0, 0, w, h,
+                    new int[]{Color.argb(180, 77, 163, 255), Color.argb(150, 53, 208, 127)},
+                    null,
+                    Shader.TileMode.CLAMP));
+            canvas.drawCircle(cx, cy, radius, paint);
+            paint.setShader(null);
+
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(Ui.dp(getContext(), 10));
+            paint.setStrokeCap(Paint.Cap.ROUND);
+            paint.setColor(Color.argb(64, 255, 255, 255));
+            RectF arc = new RectF(cx - radius - Ui.dp(getContext(), 18), cy - radius - Ui.dp(getContext(), 18),
+                    cx + radius + Ui.dp(getContext(), 18), cy + radius + Ui.dp(getContext(), 18));
+            canvas.drawArc(arc, 135, 270, false, paint);
+
+            paint.setColor(Color.WHITE);
+            canvas.drawArc(arc, 135, progressSweep(), false, paint);
+
+            paint.setStyle(Paint.Style.FILL);
+            paint.setTextAlign(Paint.Align.CENTER);
+            paint.setColor(Color.WHITE);
+            paint.setTextSize(Ui.dp(getContext(), 42));
+            paint.setFakeBoldText(true);
+            canvas.drawText(String.valueOf(level), cx, cy + Ui.dp(getContext(), 14), paint);
+            paint.setFakeBoldText(false);
+            paint.setTextSize(Ui.dp(getContext(), 12));
+            paint.setColor(Color.argb(210, 255, 255, 255));
+            canvas.drawText("FAN", cx, cy + Ui.dp(getContext(), 42), paint);
+        }
+
+        @Override public boolean onTouchEvent(MotionEvent event) {
+            if (event.getActionMasked() != MotionEvent.ACTION_DOWN
+                    && event.getActionMasked() != MotionEvent.ACTION_MOVE
+                    && event.getActionMasked() != MotionEvent.ACTION_UP) {
+                return true;
+            }
+            float dx = event.getX() - getWidth() / 2f;
+            float dy = event.getY() - getHeight() / 2f;
+            double angle = Math.toDegrees(Math.atan2(dy, dx));
+            double normalized = angle + 225.0;
+            while (normalized < 0) normalized += 360.0;
+            while (normalized > 360.0) normalized -= 360.0;
+            int next;
+            if (normalized < 90) next = 4;
+            else if (normalized < 190) next = 5;
+            else next = 6;
+            next = clampLevel(next);
+            if (next != level) {
+                level = next;
+                invalidate();
+                if (listener != null) listener.onLevelChanged(level);
+            } else if (event.getActionMasked() == MotionEvent.ACTION_UP && listener != null) {
+                listener.onLevelChanged(level);
+            }
+            return true;
+        }
+
+        private float progressSweep() {
+            if (level <= 4) return 90f;
+            if (level == 5) return 180f;
+            return 270f;
+        }
+
+        private static int clampLevel(int value) {
+            return Math.max(4, Math.min(6, value));
         }
     }
 

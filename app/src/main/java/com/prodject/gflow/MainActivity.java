@@ -1748,6 +1748,7 @@ public class MainActivity extends Activity {
                 EcarxVehicleAdapter.AMBIENCE_LIGHT_MAIN_ZONES,
                 EcarxVehicleAdapter.AMBIENCE_LIGHT_TOP_ZONES,
                 EcarxVehicleAdapter.AMBIENCE_LIGHT_BOT_ZONES);
+        addAmbienceFluentPanel(root);
         Ui.section(root, "Цвета и эффекты", "Выбор theme color, effect и режима управления подсветкой.");
         addCommandGroup(root, "Theme color", EcarxVehicleAdapter.AMBIENCE_LIGHT_THEME_COLOR,
                 new String[]{"Color red", "Color orange", "Color yellow", "Color green", "Color indigo", "Color blue", "Color violet", "Color white", "Color ice blue", "Color off"},
@@ -1795,6 +1796,111 @@ public class MainActivity extends Activity {
                 EcarxVehicleAdapter.AMBIENCE_LIGHT_BREATHE_COLOR_SET,
                 EcarxVehicleAdapter.AMBIENCE_LIGHT_ENDURANCE_MILE_REMINDER,
                 EcarxVehicleAdapter.AMBIENCE_LIGHT_ICHARGING_REMIND);
+    }
+
+    private void addAmbienceFluentPanel(LinearLayout root) {
+        LinearLayout panel = Ui.glassCard(this);
+        panel.addView(Ui.label(this, "Stock ambience"));
+        panel.addView(Ui.text(this, "Подсветка салона", 24, true));
+        panel.addView(Ui.muted(this, "Stock-контракты: яркость zone 0x8, палитра solid/breathe zone 0x200a0100, transition global."));
+
+        LinearLayout top = Ui.row(this);
+        LinearLayout intensity = Ui.deepCard(this);
+        intensity.addView(Ui.label(this, "Яркость"));
+        TextView intensityValue = Ui.text(this, "50%", 34, true);
+        intensity.addView(intensityValue);
+        SeekBar bar = new SeekBar(this);
+        bar.setMax(18);
+        bar.setProgress(8);
+        bar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                float value = 10f + progress * 5f;
+                intensityValue.setText(String.format(Locale.US, "%.0f%%", value));
+                if (fromUser) {
+                    EcarxVehicleAdapter.Result result = new EcarxVehicleAdapter(MainActivity.this)
+                            .setFloat(EcarxVehicleAdapter.AMBIENCE_LIGHT_INTENSITY, EcarxVehicleAdapter.ZONE_ROW_1_ALL, value);
+                    Ui.toast(MainActivity.this, result.success ? "Яркость обновлена" : result.message);
+                }
+            }
+            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+        intensity.addView(bar);
+        top.addView(intensity, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+        LinearLayout toggles = Ui.deepCard(this);
+        toggles.addView(Ui.label(this, "Переключатели"));
+        addAmbienceAction(toggles, "Atmosphere on", () -> sendAmbienceInt(EcarxVehicleAdapter.BCM_LIGHT_ATMOSPHERE, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON));
+        addAmbienceAction(toggles, "Climate sync", () -> sendAmbienceInt(EcarxVehicleAdapter.AMBIENCE_LIGHT_CLIMATE, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON));
+        addAmbienceAction(toggles, "Phone reminder", () -> sendAmbienceInt(EcarxVehicleAdapter.AMBIENCE_LIGHT_PHONE_CALL_REMINDER, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON));
+        addAmbienceAction(toggles, "Main color", () -> sendAmbienceInt(EcarxVehicleAdapter.AMBIENCE_LIGHT_MAIN_COLOR, EcarxVehicleAdapter.ZONE_ALL, 0x200a0203));
+        LinearLayout togglesLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        togglesLp.leftMargin = Ui.dp(this, 12);
+        top.addView(toggles, togglesLp);
+        panel.addView(top, lpMatchWrap(0, 14, 0, 14));
+
+        Ui.section(panel, "Эффект", "Три значения подтверждены stock. Доп. режимы из исходников оставлены как candidate selector.");
+        LinearLayout effects = Ui.row(this);
+        addAmbiencePill(effects, "Solid", () -> sendAmbienceInt(EcarxVehicleAdapter.AMBIENCE_LIGHT_EFFECT, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.AMBIENCE_LIGHT_EFFECT_SOLID));
+        addAmbiencePill(effects, "Gradient", () -> sendAmbienceInt(EcarxVehicleAdapter.AMBIENCE_LIGHT_EFFECT, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.AMBIENCE_LIGHT_EFFECT_GRADIENTS));
+        addAmbiencePill(effects, "Breathe", () -> sendAmbienceInt(EcarxVehicleAdapter.AMBIENCE_LIGHT_EFFECT, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.AMBIENCE_LIGHT_EFFECT_BREATHE));
+        addAmbiencePill(effects, "More…", () -> CarFunctionSelector.show(this, "Ambience effects", EcarxVehicleAdapter.AMBIENCE_LIGHT_EFFECT, EcarxVehicleAdapter.ZONE_ALL, this::sendAmbienceInt));
+        panel.addView(effects, lpMatchWrap(0, 8, 0, 14));
+
+        Ui.section(panel, "Палитра", "Цвет отправляется сразу в solid, breathe и transition start/end.");
+        LinearLayout palette = Ui.row(this);
+        addAmbienceColor(palette, Color.rgb(236, 64, 122), EcarxVehicleAdapter.AMBIENCE_COLOR_RED_STOCK);
+        addAmbienceColor(palette, Color.rgb(255, 138, 64), EcarxVehicleAdapter.AMBIENCE_COLOR_ORANGE_STOCK);
+        addAmbienceColor(palette, Color.rgb(77, 163, 255), EcarxVehicleAdapter.AMBIENCE_COLOR_BLUE_STOCK);
+        addAmbienceColor(palette, Color.rgb(35, 220, 190), EcarxVehicleAdapter.AMBIENCE_COLOR_CYAN_STOCK);
+        panel.addView(palette, lpMatchWrap(0, 8, 0, 0));
+
+        root.addView(panel, lpMatchWrap(0, 12, 0, 16));
+    }
+
+    private void addAmbienceAction(LinearLayout root, String label, Runnable action) {
+        Button b = Ui.button(this, label);
+        b.setTextColor(Ui.dark(this) ? Color.WHITE : Ui.primaryText(this));
+        b.setBackground(Ui.cardBg(this, Ui.dark(this) ? Color.argb(66, 255, 255, 255) : Color.argb(232, 246, 249, 255), Ui.dp(this, 18), Ui.glassLine(this)));
+        b.setOnClickListener(v -> action.run());
+        root.addView(b, lpMatchWrap(0, 8, 0, 0));
+    }
+
+    private void addAmbiencePill(LinearLayout row, String label, Runnable action) {
+        Button b = Ui.button(this, label);
+        b.setTextSize(14);
+        b.setTextColor(Color.WHITE);
+        b.setBackground(Ui.cardBg(this, Color.argb(136, 139, 92, 246), Ui.dp(this, 22), Color.argb(120, 177, 139, 255)));
+        b.setOnClickListener(v -> action.run());
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 54), 1f);
+        lp.leftMargin = Ui.dp(this, 5);
+        lp.rightMargin = Ui.dp(this, 5);
+        row.addView(b, lp);
+    }
+
+    private void addAmbienceColor(LinearLayout row, int displayColor, int value) {
+        Button b = Ui.button(this, "");
+        b.setText(" ");
+        b.setBackground(Ui.cardBg(this, displayColor, Ui.dp(this, 24), Color.argb(156, 255, 255, 255)));
+        b.setOnClickListener(v -> sendAmbienceColor(value));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 64), 1f);
+        lp.leftMargin = Ui.dp(this, 6);
+        lp.rightMargin = Ui.dp(this, 6);
+        row.addView(b, lp);
+    }
+
+    private void sendAmbienceColor(int value) {
+        EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
+        EcarxVehicleAdapter.Result solid = adapter.set(EcarxVehicleAdapter.AMBIENCE_LIGHT_SOLID_COLOR_SET, EcarxVehicleAdapter.AMBIENCE_LIGHT_ZONE_ALL, value);
+        EcarxVehicleAdapter.Result breathe = adapter.set(EcarxVehicleAdapter.AMBIENCE_LIGHT_BREATHE_COLOR_SET, EcarxVehicleAdapter.AMBIENCE_LIGHT_ZONE_ALL, value);
+        EcarxVehicleAdapter.Result start = adapter.set(EcarxVehicleAdapter.AMBIENCE_LIGHT_TRANSITION_START_COLOR, EcarxVehicleAdapter.ZONE_ALL, value);
+        EcarxVehicleAdapter.Result end = adapter.set(EcarxVehicleAdapter.AMBIENCE_LIGHT_TRANSITION_END_COLOR, EcarxVehicleAdapter.ZONE_ALL, value);
+        Ui.toast(this, solid.success || breathe.success || start.success || end.success ? "Цвет отправлен" : "Цвет не отправлен");
+    }
+
+    private void sendAmbienceInt(int functionId, int zone, int value) {
+        EcarxVehicleAdapter.Result result = new EcarxVehicleAdapter(this).set(functionId, zone, value);
+        Ui.toast(this, result.success ? "Подсветка обновлена" : result.message);
     }
 
     private void addAmbiencePreview(LinearLayout root) {
