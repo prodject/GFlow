@@ -87,6 +87,8 @@ public class AdasActivity extends Activity {
         root.addView(buildTopBar(), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 84)));
         root.addView(buildHeroPanel(), lpMatchWrap(0, 16, 0, 16));
         root.addView(buildSafetyControls(), lpMatchWrap(0, 0, 0, 16));
+        root.addView(buildStockAssistantsPanel(), lpMatchWrap(0, 0, 0, 16));
+        root.addView(buildHiddenAssistantsPanel(), lpMatchWrap(0, 0, 0, 16));
         root.addView(buildAccPanel(), lpMatchWrap(0, 0, 0, 16));
         root.addView(buildPdcPanel(), lpMatchWrap(0, 0, 0, 16));
         root.addView(buildModeSwitcher(), lpMatchWrap(0, 0, 0, 16));
@@ -194,6 +196,75 @@ public class AdasActivity extends Activity {
         addTile(grid, "TSR", Color.rgb(255, 171, 78), () -> sendVehicle("Traffic sign recognition", EcarxVehicleAdapter.ADAS_TRAFFIC_SIGN_RECOGNITION, EcarxVehicleAdapter.COMMON_ON));
         addTile(grid, "Оповещение", Color.rgb(255, 128, 112), () -> sendVehicle("Traffic sign alert", EcarxVehicleAdapter.ADAS_TRAFFIC_SIGN_ALERT, EcarxVehicleAdapter.COMMON_ON));
         addTile(grid, "Лимит", Color.rgb(177, 118, 255), () -> sendVehicle("Speed limit flashing", EcarxVehicleAdapter.ADAS_SPEED_LIMIT_WARNING_MODE, EcarxVehicleAdapter.SPEED_LIMIT_WARNING_MODE_FLASHING));
+        panel.addView(grid, lpMatchWrap(0, 12, 0, 0));
+        return panel;
+    }
+
+    private LinearLayout buildStockAssistantsPanel() {
+        LinearLayout panel = Ui.glassCard(this);
+        panel.addView(Ui.label(this, "Stock assistants"));
+        panel.addView(Ui.muted(this, "Подтвержденные из stock/main-шторка write-контракты. Остальные ADAS оставлены в experimental."));
+
+        LinearLayout lane = Ui.row(this);
+        addActionChip(lane, "LKA ON", () -> sendVehicle("LKA включить", EcarxVehicleAdapter.ADAS_LKA, EcarxVehicleAdapter.COMMON_ON));
+        addActionChip(lane, "LKA OFF", () -> sendVehicle("LKA выключить", EcarxVehicleAdapter.ADAS_LKA, EcarxVehicleAdapter.COMMON_OFF));
+        addActionChip(lane, "LKA warning", () -> selectVehicleValue("LKA warning", EcarxVehicleAdapter.VEHICLE_LANE_KEEPING_AID_WARNING));
+        addActionChip(lane, "RCTA", () -> sendVehicle("Rear cross traffic alert", EcarxVehicleAdapter.VEHICLE_REAR_CROSS_TRAFFIC_ALERT, EcarxVehicleAdapter.COMMON_ON));
+        panel.addView(lane, lpMatchWrap(0, 12, 0, 0));
+
+        LinearLayout warning = Ui.row(this);
+        addActionChip(warning, "RCW ON", () -> sendVehicle("Rear collision warning", EcarxVehicleAdapter.ADAS_RCW, EcarxVehicleAdapter.COMMON_ON));
+        addActionChip(warning, "RCW OFF", () -> sendVehicle("Rear collision warning off", EcarxVehicleAdapter.ADAS_RCW, EcarxVehicleAdapter.COMMON_OFF));
+        addActionChip(warning, "Speed warn", () -> selectVehicleValue("Speed limit warning", EcarxVehicleAdapter.ADAS_SPEED_LIMIT_WARNING_MODE));
+        addActionChip(warning, "Steering", () -> selectVehicleValue("Steering assistance", EcarxVehicleAdapter.VEHICLE_STEERING_ASSISTANCE_LEVEL));
+        panel.addView(warning, lpMatchWrap(0, 10, 0, 0));
+
+        LinearLayout presets = Ui.row(this);
+        addActionChip(presets, "Speed flash", () -> sendVehicle("Speed limit flashing", EcarxVehicleAdapter.ADAS_SPEED_LIMIT_WARNING_MODE, EcarxVehicleAdapter.SPEED_LIMIT_WARNING_MODE_FLASHING));
+        addActionChip(presets, "Speed sound", () -> sendVehicle("Speed limit sound", EcarxVehicleAdapter.ADAS_SPEED_LIMIT_WARNING_MODE, EcarxVehicleAdapter.SPEED_LIMIT_WARNING_MODE_SOUND));
+        addActionChip(presets, "Steer mid", () -> sendVehicle("Steering assistance medium", EcarxVehicleAdapter.VEHICLE_STEERING_ASSISTANCE_LEVEL, EcarxVehicleAdapter.STEERING_ASSISTANCE_MEDIUM));
+        addActionChip(presets, "Sync steer", () -> sendVehicle("Sync steering feel", EcarxVehicleAdapter.DRIVE_STEERING_FEEL_SYNC_DRIVE_MODE, EcarxVehicleAdapter.COMMON_ON));
+        panel.addView(presets, lpMatchWrap(0, 10, 0, 0));
+        return panel;
+    }
+
+    private LinearLayout buildHiddenAssistantsPanel() {
+        LinearLayout panel = Ui.glassCard(this);
+        panel.addView(Ui.label(this, "Hidden Assistants"));
+        panel.addView(Ui.muted(this, "Скрытые помощники с понятными values. Команды проходят через support check и selector там, где есть набор значений."));
+
+        GridLayout grid = new GridLayout(this);
+        grid.setColumnCount(2);
+        addHiddenAssistantCard(grid, "Speed Assist", "TSR, speed limit, warning, offset", new QuickItem[]{
+                new QuickItem("TSR ON", () -> sendVehicle("Traffic sign recognition", EcarxVehicleAdapter.ADAS_TRAFFIC_SIGN_RECOGNITION, EcarxVehicleAdapter.COMMON_ON)),
+                new QuickItem("Alert ON", () -> sendVehicle("Traffic sign alert", EcarxVehicleAdapter.ADAS_TRAFFIC_SIGN_ALERT, EcarxVehicleAdapter.COMMON_ON)),
+                new QuickItem("ACC + TSR", () -> sendVehicle("ACC with TSR", EcarxVehicleAdapter.ADAS_ACC_WITH_TSR, EcarxVehicleAdapter.COMMON_ON)),
+                new QuickItem("Limit mode", () -> selectVehicleValue("Speed limitation mode", EcarxVehicleAdapter.ADAS_SPEED_LIMITATION_MODE)),
+                new QuickItem("Warning", () -> selectVehicleValue("Speed warning mode", EcarxVehicleAdapter.ADAS_SPEED_LIMIT_WARNING_MODE)),
+                new QuickItem("Offset", () -> selectVehicleValue("Speed warning offset", EcarxVehicleAdapter.ADAS_SPEED_LIMIT_WARNING_OFFSET))
+        });
+        addHiddenAssistantCard(grid, "Lane Assist", "ELKA, LCA, paddle lane change", new QuickItem[]{
+                new QuickItem("ELKA ON", () -> sendVehicle("ELKA включить", EcarxVehicleAdapter.ADAS_ELKA, EcarxVehicleAdapter.COMMON_ON)),
+                new QuickItem("ELKA OFF", () -> sendVehicle("ELKA выключить", EcarxVehicleAdapter.ADAS_ELKA, EcarxVehicleAdapter.COMMON_OFF)),
+                new QuickItem("LCA ON", () -> sendVehicle("Lane change assist on", EcarxVehicleAdapter.ADAS_LANE_CHANGE_ASSIST, EcarxVehicleAdapter.PADDLE_LANE_CHANGE_ENABLE)),
+                new QuickItem("LCA OFF", () -> sendVehicle("Lane change assist off", EcarxVehicleAdapter.ADAS_LANE_CHANGE_ASSIST, EcarxVehicleAdapter.PADDLE_LANE_CHANGE_DISABLE)),
+                new QuickItem("Paddle ON", () -> sendVehicle("Paddle lane change on", EcarxVehicleAdapter.ADAS_PADDLE_LANE_CHANGE_ASSIST, EcarxVehicleAdapter.PADDLE_LANE_CHANGE_ENABLE)),
+                new QuickItem("Paddle OFF", () -> sendVehicle("Paddle lane change off", EcarxVehicleAdapter.ADAS_PADDLE_LANE_CHANGE_ASSIST, EcarxVehicleAdapter.PADDLE_LANE_CHANGE_DISABLE))
+        });
+        addHiddenAssistantCard(grid, "Collision Assist", "AEB / FCW / rear warning", new QuickItem[]{
+                new QuickItem("AEB ON", () -> sendVehicle("AEB включить", EcarxVehicleAdapter.ADAS_AEB, EcarxVehicleAdapter.COMMON_ON)),
+                new QuickItem("AEB OFF", () -> sendVehicle("AEB выключить", EcarxVehicleAdapter.ADAS_AEB, EcarxVehicleAdapter.COMMON_OFF)),
+                new QuickItem("FCW Low", () -> sendVehicle("FCW low", EcarxVehicleAdapter.ADAS_FCW, EcarxVehicleAdapter.FCW_SENSITIVITY_LOW)),
+                new QuickItem("FCW Normal", () -> sendVehicle("FCW normal", EcarxVehicleAdapter.ADAS_FCW, EcarxVehicleAdapter.FCW_SENSITIVITY_NORMAL)),
+                new QuickItem("FCW High", () -> sendVehicle("FCW high", EcarxVehicleAdapter.ADAS_FCW, EcarxVehicleAdapter.FCW_SENSITIVITY_HIGH)),
+                new QuickItem("FCW OFF", () -> sendVehicle("FCW off", EcarxVehicleAdapter.ADAS_FCW, EcarxVehicleAdapter.FCW_SENSITIVITY_OFF))
+        });
+        addHiddenAssistantCard(grid, "Traffic Light Assist", "Attention + sound", new QuickItem[]{
+                new QuickItem("Attention ON", () -> sendVehicle("Traffic light attention on", EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION, EcarxVehicleAdapter.COMMON_ON)),
+                new QuickItem("Attention OFF", () -> sendVehicle("Traffic light attention off", EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION, EcarxVehicleAdapter.COMMON_OFF)),
+                new QuickItem("Sound ON", () -> sendVehicle("Traffic light sound on", EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION_SOUND, EcarxVehicleAdapter.COMMON_ON)),
+                new QuickItem("Sound OFF", () -> sendVehicle("Traffic light sound off", EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION_SOUND, EcarxVehicleAdapter.COMMON_OFF))
+        });
         panel.addView(grid, lpMatchWrap(0, 12, 0, 0));
         return panel;
     }
@@ -450,6 +521,28 @@ public class AdasActivity extends Activity {
         return dock;
     }
 
+    private void addHiddenAssistantCard(GridLayout grid, String title, String body, QuickItem[] items) {
+        LinearLayout card = Ui.glassCard(this);
+        card.addView(Ui.label(this, title));
+        card.addView(Ui.text(this, body, 14, false));
+        for (QuickItem item : items) {
+            Button button = Ui.button(this, item.label);
+            button.setTextSize(13);
+            button.setTextColor(Ui.dark(this) ? Color.WHITE : Ui.primaryText(this));
+            button.setBackground(Ui.cardBg(this,
+                    Ui.dark(this) ? Color.argb(64, 255, 255, 255) : Color.argb(238, 255, 255, 255),
+                    Ui.dp(this, 16),
+                    Ui.dark(this) ? Color.TRANSPARENT : Color.argb(88, 185, 198, 214)));
+            button.setOnClickListener(v -> item.action.run());
+            card.addView(button, lpMatchWrap(0, 8, 0, 0));
+        }
+        GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
+        lp.width = 0;
+        lp.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
+        lp.setMargins(0, 0, Ui.dp(this, 16), Ui.dp(this, 16));
+        grid.addView(card, lp);
+    }
+
     private void addTile(GridLayout grid, String label, int color, Runnable action) {
         TextView tile = new TextView(this);
         tile.setText(label);
@@ -516,6 +609,17 @@ public class AdasActivity extends Activity {
         sendVehicleDirect(label, functionId, value);
     }
 
+    private void selectVehicleValue(String label, int functionId) {
+        EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
+        if (!adapter.isWritable(functionId)) {
+            rememberCommand(label, functionId, 0, false);
+            Ui.toast(this, "Это readback/status, а не управляющая команда");
+            return;
+        }
+        int zone = adapter.spec(functionId).defaultZone;
+        CarFunctionSelector.show(this, label, functionId, zone, (id, area, selected) -> sendVehicleDirect(label, id, selected));
+    }
+
     private void sendVehicleDirect(String label, int functionId, int value) {
         EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
         EcarxVehicleAdapter.Result support = adapter.support(functionId);
@@ -564,7 +668,18 @@ public class AdasActivity extends Activity {
 
             @Override public void onSupportedValuesChanged(int functionId, int[] values) {}
         }, EcarxVehicleAdapter.ADAS_AEB, EcarxVehicleAdapter.ADAS_FCW, EcarxVehicleAdapter.ADAS_LKA,
-                EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.ADAS_ACC_TIME_GAP);
+                EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.ADAS_ACC_TIME_GAP,
+                EcarxVehicleAdapter.ADAS_TRAFFIC_SIGN_RECOGNITION,
+                EcarxVehicleAdapter.ADAS_TRAFFIC_SIGN_ALERT,
+                EcarxVehicleAdapter.ADAS_ACC_WITH_TSR,
+                EcarxVehicleAdapter.ADAS_SPEED_LIMITATION_MODE,
+                EcarxVehicleAdapter.ADAS_SPEED_LIMIT_WARNING_MODE,
+                EcarxVehicleAdapter.ADAS_SPEED_LIMIT_WARNING_OFFSET,
+                EcarxVehicleAdapter.ADAS_ELKA,
+                EcarxVehicleAdapter.ADAS_LANE_CHANGE_ASSIST,
+                EcarxVehicleAdapter.ADAS_PADDLE_LANE_CHANGE_ASSIST,
+                EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION,
+                EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION_SOUND);
     }
 
     private void stopFunctionWatcher() {
@@ -776,6 +891,16 @@ public class AdasActivity extends Activity {
             canvas.drawLine(w * 0.12f, h * 0.60f, w * 0.24f, h * 0.60f, paint);
             canvas.drawLine(w * 0.76f, h * 0.60f, w * 0.88f, h * 0.60f, paint);
             canvas.drawLine(w * 0.50f, h * 0.86f, w * 0.50f, h * 0.98f, paint);
+        }
+    }
+
+    private static final class QuickItem {
+        final String label;
+        final Runnable action;
+
+        QuickItem(String label, Runnable action) {
+            this.label = label;
+            this.action = action;
         }
     }
 }

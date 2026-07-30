@@ -336,6 +336,7 @@ final class EcarxVehicleAdapter {
     static final int VEHICLE_SOFT_BUTTON_SOUND_TYPE = 0x2e020100;
     static final int ADAS_SPEED_LIMIT_WARN = 0x28060100;
     static final int ADAS_SPEED_LIMIT_WARNING_MODE = 0x28060200;
+    static final int ADAS_SPEED_LIMIT_WARNING_OFFSET = 0x28060400;
     static final int ADAS_ACC_WITH_TSR = 0x28060300;
     static final int ADAS_SPEED_LIMITATION_MODE = 0x20030500;
     static final int ADAS_SPEED_CONTROL_MODE = 0x20030600;
@@ -394,12 +395,21 @@ final class EcarxVehicleAdapter {
     static final int ACC_TIME_GAP_1 = 0x280a0d02;
     static final int ACC_TIME_GAP_2 = 0x280a0d03;
     static final int ACC_TIME_GAP_3 = 0x280a0d04;
+    static final int FCW_SENSITIVITY_OFF = 0x0;
+    static final int FCW_SENSITIVITY_LOW = 0x200e0201;
     static final int FCW_SENSITIVITY_NORMAL = 0x200e0202;
+    static final int FCW_SENSITIVITY_HIGH = 0x200e0203;
     static final int LKA_MODE_WARN_INTV = 0x20070201;
     static final int SPEED_LIMITATION_MODE_AVSL = 0x20030501;
+    static final int SPEED_LIMITATION_MODE_ASL = 0x20030502;
     static final int SPEED_LIMIT_WARNING_MODE_NO_WARNING = 0x28060201;
     static final int SPEED_LIMIT_WARNING_MODE_FLASHING = 0x28060202;
     static final int SPEED_LIMIT_WARNING_MODE_SOUND = 0x28060203;
+    static final int SPEED_LIMIT_WARNING_OFFSET_0KM = 0x28060401;
+    static final int SPEED_LIMIT_WARNING_OFFSET_5KM = 0x28060402;
+    static final int SPEED_LIMIT_WARNING_OFFSET_10KM = 0x28060403;
+    static final int SPEED_LIMIT_WARNING_OFFSET_MINUS_5KM = 0x28060404;
+    static final int SPEED_LIMIT_WARNING_OFFSET_MINUS_10KM = 0x28060405;
     static final int LKA_WARNING_SOUND = 0x20070501;
     static final int TLB_MODE_LOW = 0x28080c01;
     static final int TLB_MODE_MIDDLE = 0x28080c02;
@@ -1314,7 +1324,28 @@ final class EcarxVehicleAdapter {
                 || functionId == VEHICLE_SOFT_BUTTON_SOUND_TYPE
                 || functionId == WPC_WORK_MODE
                 || functionId == DAYMODE_BRIGHTNESS_DAYMODE
-                || functionId == ADAS_SPEED_LIMIT_WARNING_MODE) {
+                || functionId == ADAS_AEB
+                || functionId == ADAS_FCW
+                || functionId == ADAS_ELKA
+                || functionId == ADAS_LANE_CHANGE_ASSIST
+                || functionId == ADAS_TRAFFIC_SIGN_RECOGNITION
+                || functionId == ADAS_TRAFFIC_SIGN_ALERT
+                || functionId == ADAS_ACC_WITH_TSR
+                || functionId == ADAS_SPEED_LIMITATION_MODE
+                || functionId == ADAS_SPEED_LIMIT_WARNING_MODE
+                || functionId == ADAS_SPEED_LIMIT_WARNING_OFFSET
+                || functionId == ADAS_TRAFFIC_LIGHT_ATTENTION
+                || functionId == ADAS_TRAFFIC_LIGHT_ATTENTION_SOUND
+                || functionId == ADAS_AI_DRIVER_ASSIST
+                || functionId == ADAS_AI_ASSIST_DEFAULT_ON
+                || functionId == ADAS_AI_ASSIST_FUSION_NAVI
+                || functionId == ADAS_AI_ASSIST_OUT_OVERTAKING_LANE
+                || functionId == ADAS_AI_LANE_CHANGE_STRATEGY
+                || functionId == ADAS_AI_LANE_CHANGE_CONFIRM
+                || functionId == ADAS_AI_LANE_CHANGE_WARNING
+                || functionId == ADAS_TLB_SWITCH
+                || functionId == ADAS_TLB_MODE
+                || functionId == ADAS_PADDLE_LANE_CHANGE_ASSIST) {
             return new Spec(ZONE_ALL, Backend.ADAPT_API, true, false, false);
         }
         if (functionId == DRIVE_MODE_SELECT || functionId == DRIVE_STEERING_FEEL_SYNC_DRIVE_MODE) {

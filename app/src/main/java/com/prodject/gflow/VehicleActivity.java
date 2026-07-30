@@ -431,6 +431,7 @@ public class VehicleActivity extends Activity {
         panel.addView(Ui.text(this, experimentalFeaturesEnabled()
                 ? "Drive modes, steering feel, custom keys и расширенный experimental drive flow вынесены в новый экран."
                 : "Drive modes, steering feel, custom keys и переход в отдельные пользовательские профили.", 14, false));
+        panel.addView(buildStockDriveSteeringPanel(), lpMatchWrap(0, 12, 0, 12));
 
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(2);
@@ -490,6 +491,33 @@ public class VehicleActivity extends Activity {
         addActionChip(actions, "Lights", () -> openMode(Mode.LIGHTS));
         addActionChip(actions, "Home", () -> openMode(Mode.HOME));
         panel.addView(actions, lpMatchWrap(0, 0, 0, 0));
+        return panel;
+    }
+
+    private LinearLayout buildStockDriveSteeringPanel() {
+        LinearLayout panel = Ui.glassCard(this);
+        panel.addView(Ui.label(this, "Stock drive / steering"));
+        panel.addView(Ui.muted(this, "Основные кнопки — значения из stock-логов. «Все…» открывает каталог + runtime supported values."));
+
+        LinearLayout modes = Ui.row(this);
+        addDrivePill(modes, "Eco", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_ECO));
+        addDrivePill(modes, "Comfort", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_COMFORT));
+        addDrivePill(modes, "Dynamic", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_DYNAMIC));
+        addDrivePill(modes, "Adaptive", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_ADAPTIVE));
+        panel.addView(modes, lpMatchWrap(0, 12, 0, 0));
+
+        LinearLayout steering = Ui.row(this);
+        addDrivePill(steering, "Light", () -> sendVehicle(EcarxVehicleAdapter.VEHICLE_STEERING_ASSISTANCE_LEVEL, EcarxVehicleAdapter.STEERING_ASSISTANCE_HIGH));
+        addDrivePill(steering, "Medium", () -> sendVehicle(EcarxVehicleAdapter.VEHICLE_STEERING_ASSISTANCE_LEVEL, EcarxVehicleAdapter.STEERING_ASSISTANCE_MEDIUM));
+        addDrivePill(steering, "Heavy", () -> sendVehicle(EcarxVehicleAdapter.VEHICLE_STEERING_ASSISTANCE_LEVEL, EcarxVehicleAdapter.STEERING_ASSISTANCE_LOW));
+        addDrivePill(steering, "Sync ON", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_STEERING_FEEL_SYNC_DRIVE_MODE, EcarxVehicleAdapter.COMMON_ON));
+        panel.addView(steering, lpMatchWrap(0, 10, 0, 0));
+
+        LinearLayout selectors = Ui.row(this);
+        addDriveSelector(selectors, "Все режимы", EcarxVehicleAdapter.DRIVE_MODE_SELECT);
+        addDriveSelector(selectors, "Все уровни руля", EcarxVehicleAdapter.VEHICLE_STEERING_ASSISTANCE_LEVEL);
+        addDrivePill(selectors, "Sync OFF", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_STEERING_FEEL_SYNC_DRIVE_MODE, EcarxVehicleAdapter.COMMON_OFF));
+        panel.addView(selectors, lpMatchWrap(0, 10, 0, 0));
         return panel;
     }
 
@@ -737,6 +765,25 @@ public class VehicleActivity extends Activity {
         lp.leftMargin = Ui.dp(this, 5);
         lp.rightMargin = Ui.dp(this, 5);
         row.addView(b, lp);
+    }
+
+    private void addDrivePill(LinearLayout row, String label, Runnable action) {
+        Button b = Ui.button(this, label);
+        b.setTextSize(14);
+        b.setTextColor(Color.WHITE);
+        b.setBackground(Ui.cardBg(this, Color.argb(132, 88, 132, 255), Ui.dp(this, 22), Color.argb(120, 132, 182, 255)));
+        b.setOnClickListener(v -> action.run());
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 56), 1f);
+        lp.leftMargin = Ui.dp(this, 5);
+        lp.rightMargin = Ui.dp(this, 5);
+        row.addView(b, lp);
+    }
+
+    private void addDriveSelector(LinearLayout row, String label, int functionId) {
+        addDrivePill(row, label, () -> {
+            int zone = new EcarxVehicleAdapter(this).spec(functionId).defaultZone;
+            CarFunctionSelector.show(this, labelFor(functionId), functionId, zone, this::sendVehicleDirect);
+        });
     }
 
     private LinearLayout buildDriveActionRow(QuickItem[] items) {

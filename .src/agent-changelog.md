@@ -2,6 +2,40 @@
 
 ## 2026-07-30
 
+### Drive / Steering / Assistants UI
+
+- Added a stock `Drive / Steering` card in `VehicleActivity` for `0x22010100`, `0x20070800`, and `0x22040300`.
+- Drive mode UI now exposes stock-confirmed quick actions plus a full selector backed by catalog/runtime supported values.
+- Steering UI now uses `VEHICLE_STEERING_ASSISTANCE_LEVEL [0x20070800]` instead of relying only on legacy `DRIVE_STEERING_MODE`.
+- Added ADAS stock-assistants block for confirmed lane/speed/rear-warning contracts: LKA, LKA warning, RCTA, RCW, speed limit warning, steering assistance, and steering sync.
+- Unconfirmed PAS/experimental assistants remain behind existing experimental UI.
+
+### Hidden Assistants Plan / Import
+
+Plan:
+
+1. Add safe hidden groups to the main ADAS screen: `Speed Assist`, `Lane Assist`, `Collision Assist`, `Traffic Light Assist`.
+2. Use selectors for multi-value functions and runtime support checks for every write.
+3. Keep AI Pilot/TLB helpers under the existing experimental gate.
+4. Do not move PAS/parking flow commands into the main assistant UI until a stock flow log confirms write order and values.
+
+Imported into UI:
+
+- `0x200b0100` traffic sign recognition toggle.
+- `0x200b0200` traffic sign alert toggle.
+- `0x28060300` ACC with TSR toggle.
+- `0x20030500` speed limitation mode selector.
+- `0x28060200` speed warning mode selector.
+- `0x28060400` speed warning offset selector.
+- `0x200e0100` FCW sensitivity buttons: off/low/normal/high.
+- `0x20070e00` AEB toggle.
+- `0x20070600` ELKA toggle.
+- `0x20070700` lane change assist enable/disable.
+- `0x28081b00` paddle lane change enable/disable.
+- `0x20070d00` traffic light attention toggle.
+- `0x28010100` traffic light attention sound toggle.
+- AI Pilot/TLB remains experimental: `0x28080100`, `0x28080200`, `0x28080300`, `0x28080400`, `0x28080500`, `0x28080600`, `0x28080700`, `0x28080b00`, `0x28080c00`.
+
 ### Logs 1.30 and Full Stock Settings Import Plan
 
 `logs_1.30` showed that the 1.28 permission regression is fixed: the car API starts through `CarImpl`, and successful GFlow writes are present. Stock logs from `.src/logs_stock` produced 54 unique write contracts; GFlow 1.30 confirmed 13 of them.
