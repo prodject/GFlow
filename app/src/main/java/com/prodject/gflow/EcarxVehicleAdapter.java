@@ -1367,6 +1367,9 @@ final class EcarxVehicleAdapter {
                 || functionId == AMBIENCE_LIGHT_BREATHE_COLOR_SET) {
             return new Spec(AMBIENCE_LIGHT_ZONE_ALL, Backend.ADAPT_API, true, false, false);
         }
+        if (functionId == PAS_RADAR_WORK_MODE || functionId == PAS_PAC_ACTIVATION) {
+            return new Spec(ZONE_ALL, Backend.ADAPT_API, true, false, false);
+        }
         if (isUnsupportedWriteFunction(functionId)) return new Spec(ZONE_ALL, Backend.ADAPT_API, false, false, false);
         if (isPasDirectFunction(functionId)) return new Spec(ZONE_ALL, Backend.ADAPT_API, false, false, false);
         if (isHudDirectFunction(functionId)) return new Spec(ZONE_ALL, Backend.ADAPT_API, false, false, false);

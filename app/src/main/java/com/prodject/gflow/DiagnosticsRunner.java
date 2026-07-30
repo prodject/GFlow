@@ -200,7 +200,41 @@ final class DiagnosticsRunner {
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.BCM_ALL_READING_LIGHTS, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.SEAT_POSITION_SET, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_STOCK_MEMORY_SET_1),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.SEAT_ONE_KEY_COMFORT, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.PAS_RADAR_WORK_MODE, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.PAS_RADAR_WORK_MODE_FRONT_REAR_ACTIVE),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.PAS_RADAR_WORK_MODE, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.PAS_RADAR_WORK_MODE_FRONT_ACTIVE),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.PAS_RADAR_WORK_MODE, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.PAS_RADAR_WORK_MODE_REAR_ACTIVE),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.PAS_PAC_ACTIVATION, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.DRIVE_MODE_COMFORT),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.DRIVE_MODE_OFFROAD),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.DRIVE_MODE_MUD),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.DRIVE_MODE_ROCK),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.DRIVE_MODE_SAND),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.DRIVE_MODE_AWD),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.DRIVE_MODE_EAWD),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.DRIVE_MODE_ADAPTIVE),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.DRIVE_MODE_CUSTOM),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.DRIVE_MODE_ECO_PLUS),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.DRIVE_MODE_SPORT_PLUS),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.DRIVE_MODE_START_TYPE18),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.DRIVE_MODE_START_TYPE72),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.DRIVE_MODE_START_TYPE79),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.DRIVE_MODE_START_TYPE97),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_CUSTOM_PROPULSION, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.CUSTOM_PROPULSION_OFFROAD),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_CUSTOM_PROPULSION, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.CUSTOM_PROPULSION_SAND),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_CUSTOM_PROPULSION, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.CUSTOM_PROPULSION_AWD),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_CUSTOM_SUSPENSION, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.CUSTOM_SUSPENSION_OFFROAD),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_CUSTOM_STEERING_FEEL, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.CUSTOM_STEERING_HEAVY),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_CUSTOM_CLIMATE, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.CUSTOM_CLIMATE_ECO),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_CUSTOM_DRIVER_INFO, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.CUSTOM_DRIVER_INFO_OFFROAD),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_ENERGY_MODE, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.ENERGY_MODE_SPORT),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_LAUNCH_CONTROL, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_ESC_LEVEL, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.ESC_LEVEL_1),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_ESC_LEVEL, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.ESC_LEVEL_3),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_ESC_LEVEL, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.ESC_LEVEL_5),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_STARTRACK_MODE, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.STARTRACK_TYPE18),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_STARTRACK_MODE, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.STARTRACK_TYPE72),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_STARTRACK_MODE, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.STARTRACK_TYPE79),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_STARTRACK_MODE, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.STARTRACK_TYPE97),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.VEHICLE_STEERING_ASSISTANCE_LEVEL, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.STEERING_ASSISTANCE_MEDIUM),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_STEERING_FEEL_SYNC_DRIVE_MODE, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.ADAS_TRAFFIC_SIGN_RECOGNITION, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
@@ -351,6 +385,11 @@ final class DiagnosticsRunner {
                 "DRIVE_PERFORMANCE_SAVING", "DRIVE_POWER_TRAIN_STOP",
                 "VEHICLE_STEERING_ASSISTANCE_LEVEL", "DRIVE_STEERING_FEEL_SYNC_DRIVE_MODE"
         ));
+        groups.put("Experimental Drive Controls", resolveFunctionIds(
+                "DRIVE_MODE_SELECT", "DRIVE_CUSTOM_PROPULSION", "DRIVE_CUSTOM_SUSPENSION",
+                "DRIVE_CUSTOM_STEERING_FEEL", "DRIVE_CUSTOM_CLIMATE", "DRIVE_CUSTOM_DRIVER_INFO",
+                "DRIVE_ENERGY_MODE", "DRIVE_LAUNCH_CONTROL", "DRIVE_ESC_LEVEL", "DRIVE_STARTRACK_MODE"
+        ));
         groups.put("ADAS Core", resolveFunctionIds(
                 "ADAS_AEB", "ADAS_FCW", "ADAS_LKA", "ADAS_LDW", "ADAS_RCW", "ADAS_ELKA",
                 "ADAS_ACC_ICC_SWITCH", "ADAS_ACC_TIME_GAP", "ADAS_ACC_WITH_TSR", "ADAS_PDC",
@@ -363,6 +402,10 @@ final class DiagnosticsRunner {
                 "ADAS_EMERGENCY_STEERING_FAILURE", "ADAS_FORWARD_PRECOLLISION_FAULT",
                 "ADAS_FRONT_SIDE_ASSIST_FAILURE", "ADAS_LANE_KEEPING_ASSISTANCE_FAILURE",
                 "ADAS_REAR_COLLISION_WARNING_FAILURE", "ADAS_TRAFFIC_SIGN_INFORMATION_FAILURE"
+        ));
+        groups.put("PDC Write Candidates", resolveFunctionIds(
+                "ADAS_PDC", "PAS_RADAR_WORK_MODE", "PAS_RADAR_WORK_STATUS",
+                "PAS_PAC_ACTIVATION", "PAS_PAC_STATUS", "PAS_STATUS", "PAS_ACTIVATED"
         ));
         groups.put("Hidden Assistants", resolveFunctionIds(
                 "ADAS_TRAFFIC_SIGN_RECOGNITION", "ADAS_TRAFFIC_SIGN_ALERT", "ADAS_ACC_WITH_TSR",

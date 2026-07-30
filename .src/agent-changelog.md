@@ -192,6 +192,30 @@ Current fix pass:
   - added separate `AvmHalAdapter` for low-level HAL props from stock logs;
   - EVS open remains fallback.
 
+Experimental drive diagnostics pass:
+
+- committed previous vehicle-control fixes as `a485c2f`.
+- diagnostics write sweep now covers experimental drive values:
+  - `0x22010100` drive mode values: Offroad, Mud, Rock, Sand, AWD, eAWD, Adaptive, Custom, Eco+, Sport+, Start Type18/72/79/97;
+  - custom propulsion: Offroad, Sand, AWD;
+  - custom suspension: Offroad;
+  - custom steering: Heavy;
+  - custom climate: Eco;
+  - custom driver info: Offroad;
+  - energy mode: Sport;
+  - launch control: ON;
+  - ESC level: 1/3/5;
+  - StarTrack: Type18/72/79/97.
+- diagnostics read/support groups now include the experimental drive control function IDs separately from value constants, so values are validated through write sweep output, not misread as standalone function IDs.
+
+PDC candidate pass:
+
+- `0x20060300` remains readback/status-only because `logs_1.31` showed it unsupported.
+- Added write candidates to diagnostics sweep instead:
+  - `0x23021000 PAS_RADAR_WORK_MODE` with front+rear, front, rear active values;
+  - `0x23030100 PAS_PAC_ACTIVATION` with `1`.
+- These PAS candidates are writable only for diagnostics; unsupported PAS/PAC view controls remain readback-only.
+
 ### Logs 1.30 and Full Stock Settings Import Plan
 
 `logs_1.30` showed that the 1.28 permission regression is fixed: the car API starts through `CarImpl`, and successful GFlow writes are present. Stock logs from `.src/logs_stock` produced 54 unique write contracts; GFlow 1.30 confirmed 13 of them.
