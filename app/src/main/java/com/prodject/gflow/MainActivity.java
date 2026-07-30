@@ -1834,7 +1834,7 @@ public class MainActivity extends Activity {
         addAmbienceAction(toggles, "Climate sync", () -> sendAmbienceInt(EcarxVehicleAdapter.AMBIENCE_LIGHT_CLIMATE, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON));
         addAmbienceAction(toggles, "Phone reminder", () -> sendAmbienceInt(EcarxVehicleAdapter.AMBIENCE_LIGHT_PHONE_CALL_REMINDER, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON));
         addAmbienceAction(toggles, "Main color", () -> sendAmbienceInt(EcarxVehicleAdapter.AMBIENCE_LIGHT_MAIN_COLOR, EcarxVehicleAdapter.ZONE_ALL, 0x200a0203));
-        LinearLayout togglesLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        LinearLayout.LayoutParams togglesLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
         togglesLp.leftMargin = Ui.dp(this, 12);
         top.addView(toggles, togglesLp);
         panel.addView(top, lpMatchWrap(0, 14, 0, 14));

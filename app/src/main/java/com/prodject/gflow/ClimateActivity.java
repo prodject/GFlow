@@ -367,7 +367,7 @@ public class ClimateActivity extends Activity {
             command(EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.ZONE_ROW_1_ALL, fanSpeedValue(level));
         });
         fanCard.addView(dial, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 190)));
-        LinearLayout fanLp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.05f);
+        LinearLayout.LayoutParams fanLp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.05f);
         row.addView(fanCard, fanLp);
 
         LinearLayout controls = Ui.glassCard(this);
@@ -377,7 +377,7 @@ public class ClimateActivity extends Activity {
         addStockSegment(controls, "Обдув стекло", () -> command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.ZONE_ROW_1_ALL, EcarxVehicleAdapter.BLOWING_MODE_FRONT_WINDOW));
         addStockSegment(controls, "Лицо + стекло", () -> command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.ZONE_ROW_1_ALL, EcarxVehicleAdapter.BLOWING_MODE_FACE_AND_FRONT_WINDOW));
         addStockSegment(controls, "Все зоны", () -> command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.ZONE_ROW_1_ALL, EcarxVehicleAdapter.BLOWING_MODE_ALL));
-        LinearLayout controlsLp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        LinearLayout.LayoutParams controlsLp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
         controlsLp.leftMargin = Ui.dp(this, 12);
         row.addView(controls, controlsLp);
 
