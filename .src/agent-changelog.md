@@ -36,6 +36,15 @@ Imported into UI:
 - `0x28010100` traffic light attention sound toggle.
 - AI Pilot/TLB remains experimental: `0x28080100`, `0x28080200`, `0x28080300`, `0x28080400`, `0x28080500`, `0x28080600`, `0x28080700`, `0x28080b00`, `0x28080c00`.
 
+### Diagnostics Coverage Update
+
+- Auto diagnostics now writes the latest report to `/storage/emulated/0/gflow_data.log`.
+- Removable SD export is no longer the primary diagnostics path.
+- Diagnostics groups now include the full new drive/steering/hidden-assistants set.
+- Each function now logs a `SUMMARY` line with `OK`, `UNSUPPORTED`, `READ_FAIL`, or `SUPPORT_ERROR`, plus the recommended action.
+- Write sweep now logs `WRITE_SUMMARY` with `OK`, `WRITE_FAIL`, or `UNSUPPORTED`.
+- ADAS developer diagnostics now shows hidden speed/lane/collision/traffic-light assistants and AI Pilot experimental coverage.
+
 ### Logs 1.30 and Full Stock Settings Import Plan
 
 `logs_1.30` showed that the 1.28 permission regression is fixed: the car API starts through `CarImpl`, and successful GFlow writes are present. Stock logs from `.src/logs_stock` produced 54 unique write contracts; GFlow 1.30 confirmed 13 of them.

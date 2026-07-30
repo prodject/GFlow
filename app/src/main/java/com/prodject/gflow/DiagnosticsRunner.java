@@ -3,7 +3,6 @@ package com.prodject.gflow;
 import android.content.Context;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
-import android.os.Environment;
 import android.util.Log;
 import java.io.File;
 import java.io.FileInputStream;
@@ -25,6 +24,7 @@ final class DiagnosticsRunner {
     static final String EXTRA_INCLUDE_WRITES = "include_writes";
     static final String EXTRA_REASON = "reason";
     static final String LATEST_REPORT = "gflow-diagnostics-latest.txt";
+    static final String FIXED_PUBLIC_REPORT = "/storage/emulated/0/gflow_data.log";
 
     private DiagnosticsRunner() {}
 
@@ -48,14 +48,15 @@ final class DiagnosticsRunner {
                 for (int functionId : entry.getValue()) {
                     total++;
                     int zone = adapter.spec(functionId).defaultZone;
+                    EcarxVehicleAdapter.Result support = safeResult(() -> adapter.catalogSupport(functionId, zone));
+                    EcarxVehicleAdapter.Result read = safeResult(() -> adapter.catalogReadInt(functionId, zone));
                     log.append(safeBlock("catalog " + EcarxVehicleAdapter.hex(functionId),
                             () -> adapter.catalogSummary(functionId))).append("\n");
                     log.append(safeBlock("values " + EcarxVehicleAdapter.hex(functionId),
                             () -> adapter.valuesSummary(functionId, zone))).append("\n");
-                    log.append(safeBlock("support " + EcarxVehicleAdapter.hex(functionId),
-                            () -> adapter.catalogSupport(functionId, zone).message)).append("\n");
-                    log.append(safeBlock("get " + EcarxVehicleAdapter.hex(functionId),
-                            () -> adapter.catalogReadInt(functionId, zone).message)).append("\n\n");
+                    log.append("support ").append(EcarxVehicleAdapter.hex(functionId)).append(": ").append(support.message).append("\n");
+                    log.append("get ").append(EcarxVehicleAdapter.hex(functionId)).append(": ").append(read.message).append("\n");
+                    log.append(diagnosticSummary(adapter, functionId, zone, support, read)).append("\n\n");
                 }
             }
 
@@ -66,12 +67,12 @@ final class DiagnosticsRunner {
 
             File cacheFile = new File(context.getCacheDir(), LATEST_REPORT);
             writeText(cacheFile, log.toString());
-            File removableFile = saveToRemovableSd(context, log.toString());
+            File publicFile = saveToFixedPublicLog(log.toString());
             String message = "Лог готов: " + total + " function IDs"
                     + "\ncache=" + cacheFile.getAbsolutePath()
-                    + "\nremovableSd=" + (removableFile == null ? "unavailable" : removableFile.getAbsolutePath());
+                    + "\npublic=" + (publicFile == null ? "unavailable: " + FIXED_PUBLIC_REPORT : publicFile.getAbsolutePath());
             Log.i(TAG, message);
-            return new Result(true, message, cacheFile, removableFile);
+            return new Result(true, message, cacheFile, publicFile);
         } catch (Exception e) {
             String message = "Ошибка диагностики: " + e.getClass().getSimpleName() + ": " + e.getMessage();
             Log.e(TAG, message, e);
@@ -79,12 +80,11 @@ final class DiagnosticsRunner {
         }
     }
 
-    static File saveLatestToRemovableSd(Context context) {
+    static File saveLatestToFixedPublicLog(Context context) {
         File cacheFile = new File(context.getCacheDir(), LATEST_REPORT);
         if (!cacheFile.exists()) return null;
         try (FileInputStream in = new FileInputStream(cacheFile)) {
-            File target = resolveRemovableSdReportFile(context, false);
-            if (target == null) return null;
+            File target = fixedPublicLogFile();
             byte[] buf = new byte[8192];
             try (FileOutputStream out = new FileOutputStream(target)) {
                 for (int n; (n = in.read(buf)) > 0; ) out.write(buf, 0, n);
@@ -92,9 +92,13 @@ final class DiagnosticsRunner {
             }
             return target;
         } catch (Exception e) {
-            Log.e(TAG, "saveLatestToRemovableSd failed", e);
+            Log.e(TAG, "saveLatestToFixedPublicLog failed", e);
             return null;
         }
+    }
+
+    static File fixedPublicLogFile() {
+        return new File(FIXED_PUBLIC_REPORT);
     }
 
     private static void appendWriteSweep(Context context, StringBuilder log) {
@@ -110,9 +114,57 @@ final class DiagnosticsRunner {
                     .append(EcarxVehicleAdapter.hex(command.value))
                     .append(" :: ")
                     .append(result.message)
+                    .append(" :: WRITE_SUMMARY status=")
+                    .append(result.success ? "OK action=keep_ui_enabled" : result.isSupported() ? "WRITE_FAIL action=fix_value_or_zone" : "UNSUPPORTED action=disable_ui")
                     .append("\n");
         }
         log.append("\n");
+    }
+
+    private static String diagnosticSummary(EcarxVehicleAdapter adapter, int functionId, int zone,
+                                            EcarxVehicleAdapter.Result support,
+                                            EcarxVehicleAdapter.Result read) {
+        StringBuilder sb = new StringBuilder();
+        String key = "unknown";
+        CarFunctionCatalog.Entry entry = adapter.catalogEntry(functionId);
+        if (entry != null) key = entry.key;
+        boolean writable = adapter.isWritable(functionId);
+        sb.append("SUMMARY ")
+                .append(EcarxVehicleAdapter.hex(functionId))
+                .append(" ")
+                .append(key)
+                .append(" zone=")
+                .append(zone)
+                .append(" writable=")
+                .append(writable)
+                .append(" status=");
+        if (support == null || !support.success) {
+            sb.append("SUPPORT_ERROR action=fix_adapter_or_permissions");
+        } else if (!support.isSupported()) {
+            sb.append("UNSUPPORTED action=hide_or_disable_in_ui");
+        } else if (read == null || !read.success) {
+            sb.append("READ_FAIL action=keep_control_but_mark_readback_unknown");
+        } else {
+            sb.append("OK action=ui_enabled");
+        }
+        if (writable) {
+            CarFunctionCatalog.Value[] values = CarFunctionCatalog.staticValues(functionId);
+            sb.append(" writeContract=");
+            if (values != null && values.length > 0) sb.append(values.length).append("_static_values");
+            else sb.append("runtime_or_direct_value_required");
+        } else {
+            sb.append(" writeContract=readback_only");
+        }
+        return sb.toString();
+    }
+
+    private static EcarxVehicleAdapter.Result safeResult(ResultSupplier supplier) {
+        try {
+            EcarxVehicleAdapter.Result result = supplier.get();
+            return result == null ? EcarxVehicleAdapter.Result.external("no result", false, false) : result;
+        } catch (Throwable t) {
+            return EcarxVehicleAdapter.Result.external("error " + t.getClass().getSimpleName() + ": " + t.getMessage(), false, false);
+        }
     }
 
     private static EcarxVehicleAdapter.Command[] buildWriteSweep() {
@@ -148,7 +200,23 @@ final class DiagnosticsRunner {
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.BCM_ALL_READING_LIGHTS, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.SEAT_POSITION_SET, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.SEAT_POSITION_1),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.SEAT_ONE_KEY_COMFORT, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON)
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.DRIVE_MODE_COMFORT),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.VEHICLE_STEERING_ASSISTANCE_LEVEL, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.STEERING_ASSISTANCE_MEDIUM),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_STEERING_FEEL_SYNC_DRIVE_MODE, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.ADAS_TRAFFIC_SIGN_RECOGNITION, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.ADAS_TRAFFIC_SIGN_ALERT, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.ADAS_ACC_WITH_TSR, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.ADAS_SPEED_LIMITATION_MODE, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.SPEED_LIMITATION_MODE_AVSL),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.ADAS_SPEED_LIMIT_WARNING_MODE, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.SPEED_LIMIT_WARNING_MODE_FLASHING),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.ADAS_SPEED_LIMIT_WARNING_OFFSET, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.SPEED_LIMIT_WARNING_OFFSET_0KM),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.ADAS_AEB, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.ADAS_FCW, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.FCW_SENSITIVITY_NORMAL),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.ADAS_ELKA, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.ADAS_LANE_CHANGE_ASSIST, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.PADDLE_LANE_CHANGE_ENABLE),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.ADAS_PADDLE_LANE_CHANGE_ASSIST, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.PADDLE_LANE_CHANGE_ENABLE),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION_SOUND, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON)
         };
     }
 
@@ -286,9 +354,10 @@ final class DiagnosticsRunner {
                 "DRIVE_CUSTOM_STEERING_FEEL", "DRIVE_CUSTOM_CLIMATE", "DRIVE_DIM_THEME_SET",
                 "DRIVE_ENERGY_MODE", "DRIVE_CREEP_SET", "DRIVE_LAUNCH_CONTROL",
                 "DRIVE_NOISE_CONTROL", "DRIVE_ESC_LEVEL", "DRIVE_STARTRACK_MODE",
-                "DRIVE_PERFORMANCE_SAVING", "DRIVE_POWER_TRAIN_STOP"
+                "DRIVE_PERFORMANCE_SAVING", "DRIVE_POWER_TRAIN_STOP",
+                "VEHICLE_STEERING_ASSISTANCE_LEVEL", "DRIVE_STEERING_FEEL_SYNC_DRIVE_MODE"
         ));
-        groups.put("ADAS", resolveFunctionIds(
+        groups.put("ADAS Core", resolveFunctionIds(
                 "ADAS_AEB", "ADAS_FCW", "ADAS_LKA", "ADAS_LDW", "ADAS_RCW", "ADAS_ELKA",
                 "ADAS_ACC_ICC_SWITCH", "ADAS_ACC_TIME_GAP", "ADAS_ACC_WITH_TSR", "ADAS_PDC",
                 "ADAS_PDC_WARNING_VOLUME", "ADAS_DRIVE_PILOT", "ADAS_DRIVE_PILOT_STATUS",
@@ -300,6 +369,20 @@ final class DiagnosticsRunner {
                 "ADAS_EMERGENCY_STEERING_FAILURE", "ADAS_FORWARD_PRECOLLISION_FAULT",
                 "ADAS_FRONT_SIDE_ASSIST_FAILURE", "ADAS_LANE_KEEPING_ASSISTANCE_FAILURE",
                 "ADAS_REAR_COLLISION_WARNING_FAILURE", "ADAS_TRAFFIC_SIGN_INFORMATION_FAILURE"
+        ));
+        groups.put("Hidden Assistants", resolveFunctionIds(
+                "ADAS_TRAFFIC_SIGN_RECOGNITION", "ADAS_TRAFFIC_SIGN_ALERT", "ADAS_ACC_WITH_TSR",
+                "ADAS_SPEED_LIMITATION_MODE", "ADAS_SPEED_LIMIT_WARNING_MODE", "ADAS_SPEED_LIMIT_WARNING_OFFSET",
+                "ADAS_AEB", "ADAS_FCW", "ADAS_ELKA", "ADAS_LANE_CHANGE_ASSIST",
+                "ADAS_PADDLE_LANE_CHANGE_ASSIST", "ADAS_TRAFFIC_LIGHT_ATTENTION",
+                "ADAS_TRAFFIC_LIGHT_ATTENTION_SOUND", "VEHICLE_LANE_KEEPING_AID_WARNING",
+                "VEHICLE_REAR_CROSS_TRAFFIC_ALERT", "VEHICLE_STEERING_ASSISTANCE_LEVEL"
+        ));
+        groups.put("AI Pilot Experimental", resolveFunctionIds(
+                "ADAS_AI_DRIVER_ASSIST", "ADAS_AI_ASSIST_DEFAULT_ON", "ADAS_AI_ASSIST_FUSION_NAVI",
+                "ADAS_AI_ASSIST_OUT_OVERTAKING_LANE", "ADAS_AI_LANE_CHANGE_STRATEGY",
+                "ADAS_AI_LANE_CHANGE_CONFIRM", "ADAS_AI_LANE_CHANGE_WARNING",
+                "ADAS_TLB_SWITCH", "ADAS_TLB_MODE"
         ));
         groups.put("Parking / APA / AVM", resolveFunctionIds(
                 "PAS_ACTIVATED", "PAS_STATUS", "PAS_SHOW_GRAPHICS", "PAS_RADAR_FRONT_CENTER",
@@ -524,32 +607,15 @@ final class DiagnosticsRunner {
         return "other";
     }
 
-    private static File saveToRemovableSd(Context context, String text) {
+    private static File saveToFixedPublicLog(String text) {
         try {
-            File target = resolveRemovableSdReportFile(context, true);
-            if (target == null) return null;
+            File target = fixedPublicLogFile();
             writeText(target, text);
             return target;
         } catch (Exception e) {
-            Log.e(TAG, "Unable to save diagnostics to removable SD", e);
+            Log.e(TAG, "Unable to save diagnostics to " + FIXED_PUBLIC_REPORT, e);
             return null;
         }
-    }
-
-    private static File resolveRemovableSdReportFile(Context context, boolean timestamped) {
-        File[] dirs = context.getExternalFilesDirs(Environment.DIRECTORY_DOCUMENTS);
-        if (dirs == null) return null;
-        for (int i = 1; i < dirs.length; i++) {
-            File dir = dirs[i];
-            if (dir == null) continue;
-            File targetDir = new File(dir, "GFlow");
-            if (!targetDir.exists() && !targetDir.mkdirs()) continue;
-            String name = timestamped
-                    ? String.format(Locale.US, "gflow-diagnostics-%d.txt", System.currentTimeMillis())
-                    : LATEST_REPORT;
-            return new File(targetDir, name);
-        }
-        return null;
     }
 
     private static void writeText(File file, String text) throws Exception {
@@ -567,17 +633,21 @@ final class DiagnosticsRunner {
         String get() throws Exception;
     }
 
+    interface ResultSupplier {
+        EcarxVehicleAdapter.Result get() throws Exception;
+    }
+
     static final class Result {
         final boolean success;
         final String message;
         final File cacheFile;
-        final File removableSdFile;
+        final File publicLogFile;
 
-        Result(boolean success, String message, File cacheFile, File removableSdFile) {
+        Result(boolean success, String message, File cacheFile, File publicLogFile) {
             this.success = success;
             this.message = message;
             this.cacheFile = cacheFile;
-            this.removableSdFile = removableSdFile;
+            this.publicLogFile = publicLogFile;
         }
     }
 }

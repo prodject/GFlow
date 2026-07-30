@@ -19,6 +19,8 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import java.io.File;
+import java.io.FileOutputStream;
 
 public class AdasActivity extends Activity {
     private static final String APP_SETTINGS = "app_settings";
@@ -454,6 +456,21 @@ public class AdasActivity extends Activity {
                 EcarxVehicleAdapter.ADAS_DRIVE_NZP_STATUS,
                 EcarxVehicleAdapter.ADAS_DRIVE_PILOT_ALARM_INFO,
                 EcarxVehicleAdapter.ADAS_DRIVE_PILOT_ACC_LCC_SWITCH));
+        panel.addView(diagnosticCard("Hidden Speed Assist",
+                EcarxVehicleAdapter.ADAS_TRAFFIC_SIGN_RECOGNITION,
+                EcarxVehicleAdapter.ADAS_TRAFFIC_SIGN_ALERT,
+                EcarxVehicleAdapter.ADAS_ACC_WITH_TSR,
+                EcarxVehicleAdapter.ADAS_SPEED_LIMITATION_MODE,
+                EcarxVehicleAdapter.ADAS_SPEED_LIMIT_WARNING_MODE,
+                EcarxVehicleAdapter.ADAS_SPEED_LIMIT_WARNING_OFFSET));
+        panel.addView(diagnosticCard("Hidden Lane / Collision / Traffic Light",
+                EcarxVehicleAdapter.ADAS_AEB,
+                EcarxVehicleAdapter.ADAS_FCW,
+                EcarxVehicleAdapter.ADAS_ELKA,
+                EcarxVehicleAdapter.ADAS_LANE_CHANGE_ASSIST,
+                EcarxVehicleAdapter.ADAS_PADDLE_LANE_CHANGE_ASSIST,
+                EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION,
+                EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION_SOUND));
         if (experimentalFeaturesEnabled()) {
             panel.addView(diagnosticCard("Experimental fault/readback",
                     EcarxVehicleAdapter.ADAS_TRAFFIC_SIGN_INFORMATION_FAILURE,
@@ -464,6 +481,16 @@ public class AdasActivity extends Activity {
                     EcarxVehicleAdapter.ADAS_FRONT_SIDE_ASSIST_FAILURE,
                     EcarxVehicleAdapter.ADAS_ADAPTIVE_CRUISE_FAILURE,
                     EcarxVehicleAdapter.ADAS_REAR_COLLISION_WARNING_FAILURE));
+            panel.addView(diagnosticCard("AI Pilot Experimental writes",
+                    EcarxVehicleAdapter.ADAS_AI_DRIVER_ASSIST,
+                    EcarxVehicleAdapter.ADAS_AI_ASSIST_DEFAULT_ON,
+                    EcarxVehicleAdapter.ADAS_AI_ASSIST_FUSION_NAVI,
+                    EcarxVehicleAdapter.ADAS_AI_ASSIST_OUT_OVERTAKING_LANE,
+                    EcarxVehicleAdapter.ADAS_AI_LANE_CHANGE_STRATEGY,
+                    EcarxVehicleAdapter.ADAS_AI_LANE_CHANGE_CONFIRM,
+                    EcarxVehicleAdapter.ADAS_AI_LANE_CHANGE_WARNING,
+                    EcarxVehicleAdapter.ADAS_TLB_SWITCH,
+                    EcarxVehicleAdapter.ADAS_TLB_MODE));
         }
 
         TextView last = Ui.text(this, "Последняя команда: " + lastCommandLabel, 15, true);
@@ -729,9 +756,17 @@ public class AdasActivity extends Activity {
         StringBuilder raw = new StringBuilder();
         EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
         for (int functionId : functionIds) {
-            EcarxVehicleAdapter.Result result = adapter.support(functionId);
+            int zone = adapter.spec(functionId).defaultZone;
+            EcarxVehicleAdapter.Result result = adapter.support(functionId, zone);
+            EcarxVehicleAdapter.Result read = adapter.get(functionId, zone);
             if (support.length() > 0) support.append('\n');
-            support.append(result.message);
+            support.append(EcarxVehicleAdapter.hex(functionId))
+                    .append(" ")
+                    .append(result.isSupported() ? read.success ? "OK" : "READ_FAIL" : "UNSUPPORTED")
+                    .append(" · ")
+                    .append(adapter.isWritable(functionId) ? "write" : "read")
+                    .append(" · ")
+                    .append(result.message);
             if (raw.length() > 0) raw.append(", ");
             raw.append(EcarxVehicleAdapter.hex(functionId));
         }
@@ -743,11 +778,16 @@ public class AdasActivity extends Activity {
     }
 
     private void exportDiagnostics(CharSequence body) {
-        Intent share = new Intent(Intent.ACTION_SEND);
-        share.setType("text/plain");
-        share.putExtra(Intent.EXTRA_SUBJECT, "GFlow ADAS diagnostics");
-        share.putExtra(Intent.EXTRA_TEXT, body.toString());
-        startActivity(Intent.createChooser(share, "Экспорт diagnostics"));
+        try {
+            File target = DiagnosticsRunner.fixedPublicLogFile();
+            try (FileOutputStream out = new FileOutputStream(target)) {
+                out.write(body.toString().getBytes("UTF-8"));
+                out.flush();
+            }
+            Ui.toast(this, "Лог сохранен: " + target.getAbsolutePath());
+        } catch (Exception e) {
+            Ui.toast(this, "Не удалось записать /storage/emulated/0/gflow_data.log");
+        }
     }
 
     private void openParkingActivity() {

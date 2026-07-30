@@ -262,12 +262,12 @@ public class SettingsActivity extends Activity {
     private LinearLayout buildDiagnosticsPanel() {
         LinearLayout panel = Ui.glassCard(this);
         panel.addView(Ui.label(this, "Автодиагностика"));
-        panel.addView(Ui.text(this, "Проверка availability и support/readback по всем основным функциям, уже добавленным в новый UI: HVAC, кузов, drive, ADAS, parking, HUD, ambience, daymode, AVAS, digital key и seat.", 14, false));
+        panel.addView(Ui.text(this, "Проверка availability, support/readback, hidden assistants и write sweep. Итоговый файл пишется в /storage/emulated/0/gflow_data.log.", 14, false));
         panel.addView(Ui.muted(this, diagnosticsState), lpMatchWrap(0, 8, 0, 0));
 
         LinearLayout row = Ui.row(this);
         addActionChip(row, "Запустить", this::runAutoDiagnostics);
-        addActionChip(row, "Share log", this::shareDiagnosticsIfExists);
+        addActionChip(row, "Share gflow_data.log", this::shareDiagnosticsIfExists);
         panel.addView(row, lpMatchWrap(0, 12, 0, 0));
         return panel;
     }
@@ -352,10 +352,10 @@ public class SettingsActivity extends Activity {
             DiagnosticsRunner.Result result = DiagnosticsRunner.run(this, true, "settings-ui");
             runOnUiThread(() -> {
                 if (!result.success) diagnosticsState = result.message;
-                else if (result.removableSdFile != null) {
-                    diagnosticsState = "Лог сохранен на removable SD: " + result.removableSdFile.getAbsolutePath();
+                else if (result.publicLogFile != null) {
+                    diagnosticsState = "Лог сохранен: " + result.publicLogFile.getAbsolutePath();
                 } else {
-                    diagnosticsState = "Диагностика завершена, но removable SD не найдена. Во внутреннее хранилище экспорт не выполнялся.";
+                    diagnosticsState = "Диагностика завершена, но запись в /storage/emulated/0/gflow_data.log не удалась.";
                 }
                 renderContent();
             });
@@ -363,9 +363,9 @@ public class SettingsActivity extends Activity {
     }
 
     private void shareDiagnosticsIfExists() {
-        File file = DiagnosticsRunner.saveLatestToRemovableSd(this);
+        File file = DiagnosticsRunner.saveLatestToFixedPublicLog(this);
         if (file == null || !file.exists()) {
-            Ui.toast(this, "Removable SD не найдена или лог еще не готов");
+            Ui.toast(this, "Лог еще не готов или нет доступа к /storage/emulated/0");
             return;
         }
         try {
@@ -375,7 +375,7 @@ public class SettingsActivity extends Activity {
             intent.putExtra(Intent.EXTRA_STREAM, uri);
             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             startActivity(Intent.createChooser(intent, "Share diagnostics"));
-            diagnosticsState = "Лог подготовлен на removable SD: " + file.getAbsolutePath();
+            diagnosticsState = "Лог подготовлен: " + file.getAbsolutePath();
             renderContent();
         } catch (Exception e) {
             diagnosticsState = "Ошибка шаринга: " + e.getMessage();
