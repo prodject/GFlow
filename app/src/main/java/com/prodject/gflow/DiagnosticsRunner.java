@@ -64,6 +64,7 @@ final class DiagnosticsRunner {
             appendAdvancedDiagnostics(context, log);
             appendSection(log, "Logcat Snapshot", safeBlock("Logcat Snapshot", DiagnosticsRunner::collectLogcatSnapshot));
             if (includeWrites) appendWriteSweep(context, log);
+            appendCatalogSweep(adapter, log, includeWrites);
 
             File cacheFile = new File(context.getCacheDir(), LATEST_REPORT);
             writeText(cacheFile, log.toString());
@@ -119,6 +120,105 @@ final class DiagnosticsRunner {
                     .append("\n");
         }
         log.append("\n");
+    }
+
+    private static void appendCatalogSweep(EcarxVehicleAdapter adapter, StringBuilder log, boolean includeWrites) {
+        log.append("== Catalog Sweep ==\n");
+        int total = 0;
+        int supportedReadOk = 0;
+        int supportedWriteOk = 0;
+        int writeFail = 0;
+        int unsupported = 0;
+        int readOnly = 0;
+        int noValues = 0;
+        for (CarFunctionCatalog.Entry entry : CarFunctionCatalog.BY_ID.values()) {
+            if (entry.type != CarFunctionCatalog.TYPE_FUNCTION) continue;
+            total++;
+            int functionId = entry.id;
+            EcarxVehicleAdapter.Spec spec = adapter.spec(functionId);
+            int zone = spec.defaultZone;
+            EcarxVehicleAdapter.Result support = safeResult(() -> adapter.catalogSupport(functionId, zone));
+            EcarxVehicleAdapter.Result read = safeResult(() -> adapter.catalogReadInt(functionId, zone));
+            CarFunctionCatalog.Value[] values = CarFunctionCatalog.staticValues(functionId);
+            String status;
+            String writeStatus = "";
+
+            if (support == null || !support.success || !support.isSupported()) {
+                status = "UNSUPPORTED";
+                unsupported++;
+            } else if (!spec.writable) {
+                status = "READ_ONLY";
+                readOnly++;
+            } else if (read != null && read.success) {
+                status = "SUPPORTED_READ_OK";
+                supportedReadOk++;
+            } else {
+                status = "SUPPORTED_READ_OK";
+                supportedReadOk++;
+            }
+
+            if (includeWrites && support != null && support.success && support.isSupported() && spec.writable) {
+                if (values == null || values.length == 0) {
+                    writeStatus = " write=NO_VALUES";
+                    noValues++;
+                } else {
+                    WriteProbeResult probe = probeCatalogWrite(adapter, functionId, zone, values);
+                    writeStatus = " write=" + probe.status + " value=" + EcarxVehicleAdapter.hex(probe.value)
+                            + " message=" + compactLine(probe.message);
+                    if ("SUPPORTED_WRITE_OK".equals(probe.status)) supportedWriteOk++;
+                    else writeFail++;
+                }
+            } else if (includeWrites && spec.writable && (values == null || values.length == 0)) {
+                writeStatus = " write=NO_VALUES";
+                noValues++;
+            }
+
+            log.append("CATALOG_SWEEP ")
+                    .append(status)
+                    .append(" id=")
+                    .append(EcarxVehicleAdapter.hex(functionId))
+                    .append(" zone=")
+                    .append(zone)
+                    .append(" key=")
+                    .append(entry.key)
+                    .append(" writable=")
+                    .append(spec.writable)
+                    .append(" values=")
+                    .append(values == null ? 0 : values.length)
+                    .append(" support=")
+                    .append(compactLine(support == null ? "null" : support.message))
+                    .append(" read=")
+                    .append(compactLine(read == null ? "null" : read.message))
+                    .append(writeStatus)
+                    .append("\n");
+        }
+        log.append("CATALOG_SWEEP_SUMMARY total=").append(total)
+                .append(" SUPPORTED_READ_OK=").append(supportedReadOk)
+                .append(" SUPPORTED_WRITE_OK=").append(supportedWriteOk)
+                .append(" WRITE_FAIL=").append(writeFail)
+                .append(" UNSUPPORTED=").append(unsupported)
+                .append(" READ_ONLY=").append(readOnly)
+                .append(" NO_VALUES=").append(noValues)
+                .append("\n\n");
+    }
+
+    private static WriteProbeResult probeCatalogWrite(EcarxVehicleAdapter adapter, int functionId, int zone, CarFunctionCatalog.Value[] values) {
+        int attempts = Math.min(values.length, 2);
+        EcarxVehicleAdapter.Result last = null;
+        int lastValue = 0;
+        for (int i = 0; i < attempts; i++) {
+            final int value = values[i].value;
+            lastValue = value;
+            last = safeResult(() -> adapter.set(functionId, zone, value));
+            if (last.success) return new WriteProbeResult("SUPPORTED_WRITE_OK", value, last.message);
+        }
+        return new WriteProbeResult("WRITE_FAIL", lastValue, last == null ? "no write attempted" : last.message);
+    }
+
+    private static String compactLine(String message) {
+        if (message == null) return "";
+        String out = message.replace('\n', ' ').replace('\r', ' ').trim();
+        return out.length() > 220 ? out.substring(0, 220) : out;
     }
 
     private static String diagnosticSummary(EcarxVehicleAdapter adapter, int functionId, int zone,
@@ -673,6 +773,18 @@ final class DiagnosticsRunner {
 
     interface ResultSupplier {
         EcarxVehicleAdapter.Result get() throws Exception;
+    }
+
+    static final class WriteProbeResult {
+        final String status;
+        final int value;
+        final String message;
+
+        WriteProbeResult(String status, int value, String message) {
+            this.status = status;
+            this.value = value;
+            this.message = message;
+        }
     }
 
     static final class Result {

@@ -216,6 +216,29 @@ PDC candidate pass:
   - `0x23030100 PAS_PAC_ACTIVATION` with `1`.
 - These PAS candidates are writable only for diagnostics; unsupported PAS/PAC view controls remain readback-only.
 
+Catalog sweep diagnostics pass:
+
+- Added full catalog sweep over every `CarFunctionCatalog.TYPE_FUNCTION` entry.
+- For each functionId diagnostics now logs:
+  - support;
+  - default zone;
+  - static value count;
+  - readback;
+  - writable flag;
+  - final status.
+- Status labels are explicit:
+  - `SUPPORTED_READ_OK`;
+  - `SUPPORTED_WRITE_OK`;
+  - `WRITE_FAIL`;
+  - `UNSUPPORTED`;
+  - `READ_ONLY`;
+  - `NO_VALUES`.
+- Write probing is conservative:
+  - only when diagnostics is launched with `includeWrites=true`;
+  - only for writable functions;
+  - only if static catalog values exist;
+  - maximum first 2 static values per functionId to avoid sending the entire huge catalog blindly.
+
 ### Logs 1.30 and Full Stock Settings Import Plan
 
 `logs_1.30` showed that the 1.28 permission regression is fixed: the car API starts through `CarImpl`, and successful GFlow writes are present. Stock logs from `.src/logs_stock` produced 54 unique write contracts; GFlow 1.30 confirmed 13 of them.
