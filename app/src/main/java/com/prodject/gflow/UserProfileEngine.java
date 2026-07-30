@@ -196,7 +196,7 @@ final class UserProfileEngine {
         try {
             if ("seatMemory".equals(p[0])) {
                 int zone = zone(p.length > 1 ? p[1] : "driver");
-                int memory = "2".equals(p.length > 2 ? p[2] : "1") ? EcarxVehicleAdapter.SEAT_POSITION_2 : EcarxVehicleAdapter.SEAT_POSITION_1;
+                int memory = "2".equals(p.length > 2 ? p[2] : "1") ? EcarxVehicleAdapter.SEAT_MEMORY_2 : EcarxVehicleAdapter.SEAT_MEMORY_1;
                 return adapter.set(EcarxVehicleAdapter.SEAT_POSITION_SET, zone, memory).message;
             }
             if ("seatLength".equals(p[0])) return seatMove(adapter, EcarxVehicleAdapter.SEAT_LENGTH, p);
@@ -377,8 +377,12 @@ final class UserProfileEngine {
 
     private static String adas(EcarxVehicleAdapter adapter, String[] p) {
         String key = value(p, 1);
-        int functionId = "fcw".equals(key) ? EcarxVehicleAdapter.ADAS_FCW : EcarxVehicleAdapter.ADAS_AEB;
-        return adapter.set(functionId, "off".equals(value(p, 2)) ? EcarxVehicleAdapter.COMMON_OFF : EcarxVehicleAdapter.COMMON_ON).message;
+        boolean off = "off".equals(value(p, 2));
+        if ("fcw".equals(key)) {
+            return adapter.set(EcarxVehicleAdapter.ADAS_FCW_SENSITIVITY,
+                    off ? EcarxVehicleAdapter.FCW_SENSITIVITY_OFF : EcarxVehicleAdapter.FCW_SENSITIVITY_NORMAL).message;
+        }
+        return adapter.set(EcarxVehicleAdapter.ADAS_AEB, off ? EcarxVehicleAdapter.COMMON_OFF : EcarxVehicleAdapter.COMMON_ON).message;
     }
 
     private static String value(String[] p, int index) {

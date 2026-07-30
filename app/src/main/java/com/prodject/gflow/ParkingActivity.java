@@ -133,7 +133,7 @@ public class ParkingActivity extends Activity {
         LinearLayout quick = Ui.row(this);
         addActionChip(quick, "Auto Park", this::openAutoParkUi);
         addActionChip(quick, "360", this::openAvmCamera);
-        addActionChip(quick, "PDC", () -> sendVehicle(EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.COMMON_ON));
+        addActionChip(quick, "PDC status", this::showPdcStatus);
         addActionChip(quick, "Advanced", this::toggleAdvancedParking);
         hero.addView(quick, lpMatchWrap(0, 16, 0, 0));
         return hero;
@@ -162,8 +162,7 @@ public class ParkingActivity extends Activity {
         grid.setColumnCount(3);
         addTile(grid, "Открыть Auto Park", Ui.CYAN, this::openAutoParkUi);
         addTile(grid, "Открыть 360", Color.rgb(72, 153, 255), this::openAvmCamera);
-        addTile(grid, "PDC Вкл", Ui.SUCCESS, () -> sendVehicle(EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.COMMON_ON));
-        addTile(grid, "PDC Выкл", Ui.ERROR, () -> sendVehicle(EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.COMMON_OFF));
+        addTile(grid, "PDC status", Ui.SUCCESS, this::showPdcStatus);
         addTile(grid, "RCTA Вкл", Ui.WARNING, () -> sendVehicle(EcarxVehicleAdapter.PAS_RCTA_ACTIVATION, EcarxVehicleAdapter.COMMON_ON));
         addTile(grid, "RCTA Выкл", Color.rgb(128, 140, 156), () -> sendVehicle(EcarxVehicleAdapter.PAS_RCTA_ACTIVATION, EcarxVehicleAdapter.COMMON_OFF));
         panel.addView(grid, lpMatchWrap(0, 12, 0, 0));
@@ -409,7 +408,7 @@ public class ParkingActivity extends Activity {
         dock.setPadding(Ui.dp(this, 18), Ui.dp(this, 14), Ui.dp(this, 18), Ui.dp(this, 14));
         addDockButton(dock, "Auto Park", this::openAutoParkUi, true);
         addDockButton(dock, "360", this::openAvmCamera, false);
-        addDockButton(dock, "PDC", () -> sendVehicle(EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.COMMON_ON), false);
+        addDockButton(dock, "PDC", this::showPdcStatus, false);
         addDockButton(dock, "RCTA", () -> sendVehicle(EcarxVehicleAdapter.PAS_RCTA_ACTIVATION, EcarxVehicleAdapter.COMMON_ON), false);
         addDockButton(dock, "EXP", this::scrollAdvancedIntoView, false);
         return dock;
@@ -541,9 +540,22 @@ public class ParkingActivity extends Activity {
     }
 
     private void openAvmCamera() {
+        AvmHalAdapter.Result hal = new AvmHalAdapter(this).open360();
+        if (hal.success) {
+            Ui.toast(this, "AVM 360 открыт через HAL");
+            refreshStatusCards();
+            return;
+        }
         EcarxDvrAdapter.Result result = new EcarxDvrAdapter(this).openEvs(EcarxDvrAdapter.EVS_CAMERA_AVM);
-        Ui.toast(this, result.success ? "AVM 360 открыт" : result.message);
+        Ui.toast(this, result.success ? "AVM 360 открыт через EVS fallback" : hal.message + "\n" + result.message);
         refreshStatusCards();
+    }
+
+    private void showPdcStatus() {
+        EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
+        EcarxVehicleAdapter.Result support = adapter.support(EcarxVehicleAdapter.ADAS_PDC);
+        EcarxVehicleAdapter.Result value = adapter.get(EcarxVehicleAdapter.ADAS_PDC);
+        Ui.dialog(this, "PDC switch", "write: disabled by logs_1.31\nsupport: " + support.message + "\nreadback: " + value.message);
     }
 
     private void sendSignalParkMode(int mode) {

@@ -173,7 +173,7 @@ final class DiagnosticsRunner {
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_AUTO, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_AC, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.ZONE_ROW_1_ALL, EcarxVehicleAdapter.FAN_SPEED_3),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.BLOWING_MODE_FACE),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.ZONE_ROW_1_ALL, EcarxVehicleAdapter.BLOWING_MODE_FACE),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_DEFROST_FRONT, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_DEFROST_REAR, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.HVAC_SEAT_HEATING_LEVEL_1),
@@ -198,25 +198,19 @@ final class DiagnosticsRunner {
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.BCM_LIGHT_FRONT_FOG, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.BCM_LIGHT_REAR_FOG, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.BCM_ALL_READING_LIGHTS, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.SEAT_POSITION_SET, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.SEAT_POSITION_1),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.SEAT_POSITION_SET, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_STOCK_MEMORY_SET_1),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.SEAT_ONE_KEY_COMFORT, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.DRIVE_MODE_COMFORT),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.VEHICLE_STEERING_ASSISTANCE_LEVEL, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.STEERING_ASSISTANCE_MEDIUM),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_STEERING_FEEL_SYNC_DRIVE_MODE, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.ADAS_TRAFFIC_SIGN_RECOGNITION, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.ADAS_TRAFFIC_SIGN_ALERT, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.ADAS_ACC_WITH_TSR, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.ADAS_SPEED_LIMITATION_MODE, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.SPEED_LIMITATION_MODE_AVSL),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.ADAS_SPEED_LIMIT_WARNING_MODE, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.SPEED_LIMIT_WARNING_MODE_FLASHING),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.ADAS_SPEED_LIMIT_WARNING_OFFSET, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.SPEED_LIMIT_WARNING_OFFSET_0KM),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.ADAS_NOP_SPEED_LIMIT_WARNING_OFFSET, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.SPEED_LIMIT_WARNING_OFFSET_0KM),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.ADAS_AEB, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.ADAS_FCW, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.FCW_SENSITIVITY_NORMAL),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.ADAS_FCW_SENSITIVITY, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.FCW_SENSITIVITY_NORMAL),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.ADAS_ELKA, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.ADAS_LANE_CHANGE_ASSIST, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.PADDLE_LANE_CHANGE_ENABLE),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.ADAS_PADDLE_LANE_CHANGE_ASSIST, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.PADDLE_LANE_CHANGE_ENABLE),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION_SOUND, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON)
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.ADAS_LANE_CHANGE_ASSIST, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON)
         };
     }
 
@@ -373,7 +367,7 @@ final class DiagnosticsRunner {
         groups.put("Hidden Assistants", resolveFunctionIds(
                 "ADAS_TRAFFIC_SIGN_RECOGNITION", "ADAS_TRAFFIC_SIGN_ALERT", "ADAS_ACC_WITH_TSR",
                 "ADAS_SPEED_LIMITATION_MODE", "ADAS_SPEED_LIMIT_WARNING_MODE", "ADAS_SPEED_LIMIT_WARNING_OFFSET",
-                "ADAS_AEB", "ADAS_FCW", "ADAS_ELKA", "ADAS_LANE_CHANGE_ASSIST",
+                "ADAS_NOP_SPEED_LIMIT_WARNING_OFFSET", "ADAS_AEB", "ADAS_FCW", "ADAS_FCW_SENSITIVITY", "ADAS_ELKA", "ADAS_LANE_CHANGE_ASSIST",
                 "ADAS_PADDLE_LANE_CHANGE_ASSIST", "ADAS_TRAFFIC_LIGHT_ATTENTION",
                 "ADAS_TRAFFIC_LIGHT_ATTENTION_SOUND", "VEHICLE_LANE_KEEPING_AID_WARNING",
                 "VEHICLE_REAR_CROSS_TRAFFIC_ALERT", "VEHICLE_STEERING_ASSISTANCE_LEVEL"
@@ -517,6 +511,7 @@ final class DiagnosticsRunner {
 
     private static String collectDvrDiagnostics(Context context) {
         StringBuilder sb = new StringBuilder();
+        sb.append("AVM HAL\n").append(new AvmHalAdapter(context).diagnostics()).append("\n");
         EcarxDvrAdapter adapter = new EcarxDvrAdapter(context);
         sb.append(adapter.availability()).append("\n");
         sb.append(adapter.isEvsOpened(EcarxDvrAdapter.EVS_CAMERA_REAR).message).append("\n");

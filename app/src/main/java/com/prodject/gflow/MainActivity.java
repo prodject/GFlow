@@ -1278,9 +1278,9 @@ public class MainActivity extends Activity {
         card.addView(Ui.muted(this, "Основные переключатели вынесены наверх. Подробные firmware-команды и диагностика находятся ниже."));
         LinearLayout safety = Ui.row(this);
         addToggleAction(safety, "AEB", () -> sendVehicleChecked(EcarxVehicleAdapter.ADAS_AEB, EcarxVehicleAdapter.COMMON_ON));
-        addToggleAction(safety, "FCW", () -> sendVehicleChecked(EcarxVehicleAdapter.ADAS_FCW, EcarxVehicleAdapter.COMMON_ON));
+        addToggleAction(safety, "FCW", () -> sendVehicleChecked(EcarxVehicleAdapter.ADAS_FCW_SENSITIVITY, EcarxVehicleAdapter.FCW_SENSITIVITY_NORMAL));
         addToggleAction(safety, "LKA", () -> sendVehicleChecked(EcarxVehicleAdapter.ADAS_LKA, EcarxVehicleAdapter.COMMON_ON));
-        addToggleAction(safety, "PDC", () -> sendVehicleChecked(EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.COMMON_ON));
+        addToggleAction(safety, "PDC", () -> EcarxVehicleAdapter.Result.external(new EcarxVehicleAdapter(this).get(EcarxVehicleAdapter.ADAS_PDC).message, false, true));
         card.addView(safety);
         SeekBar gap = new SeekBar(this);
         gap.setMax(4);

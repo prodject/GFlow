@@ -45,6 +45,153 @@ Imported into UI:
 - Write sweep now logs `WRITE_SUMMARY` with `OK`, `WRITE_FAIL`, or `UNSUPPORTED`.
 - ADAS developer diagnostics now shows hidden speed/lane/collision/traffic-light assistants and AI Pilot experimental coverage.
 
+### Logs 1.31 Analysis
+
+`gflow_data.log`
+
+What really works:
+
+- Base AdaptAPI access is available.
+- Climate:
+  - power/auto/ac/fan/temp/defrost/seat heat/wheel heat — OK.
+  - `0x10020100` fan, zone `0x8` — OK.
+  - `0x10060100` temperature float, zone `0x1` — OK.
+- Drive / steering:
+  - `0x22010100` drive mode — OK.
+  - `0x20070800` steering assistance — OK.
+  - `0x22040300` steering sync — OK.
+- ADAS / assistants:
+  - `0x20070e00` AEB — OK.
+  - `0x20070600` ELKA — OK.
+  - `0x20070d00` traffic light attention — OK.
+  - `0x200b0100` traffic sign recognition — OK.
+  - `0x28060200` speed warning mode — OK.
+- Seats:
+  - `0x2d020100` seat length — OK.
+  - `0x2d020200` seat height — OK.
+  - `0x2d030200` seat backrest — OK.
+  - `0x2d400100` memory save — OK.
+  - `0x2d400200` memory set/readback — OK, but write sweep sent the wrong value and got unsupported.
+
+What must be disabled/hidden:
+
+- `0x10050100` seat ventilation — unsupported.
+- `0x10070100` blowing mode failed in write sweep because sweep used wrong global zone; it needs zone `0x8`.
+- `0x20060300` PDC switch — unsupported through the current path.
+- `0x200b0200` traffic sign alert — unsupported.
+- `0x28060300` ACC with TSR — unsupported.
+- `0x20030500` speed limitation mode — unsupported.
+- `0x28060400` speed offset — read OK, write false.
+- `0x200e0100` FCW read/support OK, but write false; needs another function/value or readback-only treatment.
+- `0x20070700` lane change assist read/support OK, but write false with `0x100d01`; value is wrong for this ID.
+- `0x28081b00` paddle lane change — unsupported.
+- `0x28010100` traffic light sound — unsupported.
+
+Camera 360 / stock logs:
+
+Stock does not show a normal `PAS_* setFunctionValue` contract for 360. It shows:
+
+- `0x2141f000`
+  - `funcId 30`
+  - `commandId 45/46`
+  - `dataLen 2`
+  - `int32value 3`
+- `0x21417523`
+  - raw bytes: `0c 1b 02 03 00`
+- `0x214085e6`
+  - value `01`
+- related read/update properties:
+  - `0x2141f004`
+  - `0x21415116`
+  - `0x2160728c`
+- observed error:
+  - `AvmServiceManager get avm_service fail from ServiceManager`
+
+Conclusion: stock 360 control goes through low-level vehicle HAL props / SVP, not through the current `PAS_PAC_*` AdaptAPI functions. Therefore current `PAS_PAC_VIEW_SELECTION`, `PAS_PAC_3DVIEW_POSITION`, overlays, and similar GFlow controls are expected to be mostly unsupported.
+
+Next 360 step:
+
+- Add a separate `AvmHalAdapter` for these props:
+  - write `0x2141f000` with `commandId 45/46`;
+  - write `0x21417523` bytes;
+  - write `0x214085e6 = 1`;
+  - read/watch `0x2141f004`, `0x21415116`, `0x2160728c`.
+- Keep current `EcarxDvrAdapter.openEvs()` as fallback.
+
+Steering wheel buttons:
+
+- Stock logs contain many repeats of `0x2141f000 funcId 30 commandId 45/46`.
+- This looks like a shared input/command bridge.
+- These logs are not enough to map each steering wheel button to a value because filtered log has no explicit button label/name.
+- Need either raw full log with exact press timestamps, or GFlow timestamp markers before each manual press.
+
+Seats:
+
+- The UI exists in code:
+  - `VehicleActivity -> buildSeatsPanel()`;
+  - opened through `Mode.SEATS`.
+- Driver controls:
+  - forward/back;
+  - up/down;
+  - backrest +/-.
+- Passenger controls:
+  - forward/back;
+  - backrest +/-.
+
+Current problem:
+
+- The seat UI is not obvious as a separate polished joystick UI.
+- Access is hidden inside the Vehicle screen mode.
+- Passenger block has no height because stock confirmed passenger length/backrest, but not height.
+- There is no explicit `Driver / Passenger joystick` interface.
+
+Required seat UI fix:
+
+- Add a large `Seat Control` card.
+- Two sections:
+  - Driver;
+  - Passenger.
+- Driver:
+  - joystick: forward/back/up/down;
+  - backrest +/-;
+  - memory save/set.
+- Passenger:
+  - joystick forward/back;
+  - backrest +/-;
+  - hide height until support is confirmed.
+- Keep hold-to-move behavior:
+  - down = direction;
+  - up/cancel = `0`.
+
+Nearest fix candidates:
+
+- Fix diagnostics write sweep:
+  - blowing mode zone must be `0x8`;
+  - seat memory set value must be `0x2d400201` or stock value `1`, not `0x2d400101`.
+- Hide/disable unsupported hidden assistants based on `gflow_data.log`.
+- Add normal seat joystick UI.
+- For 360, add a separate HAL adapter instead of trying to solve it through `PAS_*`.
+
+Current fix pass:
+
+- Diagnostics write sweep:
+  - `0x10070100` blowing mode now uses `zone 0x8`;
+  - `0x2d400200` seat memory set now uses driver zone `0x1` and stock value `1`;
+  - confirmed unsupported writes were removed from sweep: `0x20060300`, `0x200b0200`, `0x28060300`, `0x20030500`, `0x28081b00`, `0x28010100`.
+- Hidden Assistants UI:
+  - FCW write moved to sensitivity function `0x200e0200`; `0x200e0100` stays status/readback;
+  - LCA `0x20070700` now tries normal `0/1`, not `0x100d01/0x100d00`;
+  - speed offset write moved to fallback `0x28062100`; `0x28060400` stays diagnostics/readback;
+  - unsupported controls are status/readback buttons, not action buttons.
+- Seats:
+  - added Driver/Passenger joystick UI;
+  - hold-to-move sends direction on down and `0` on up/cancel;
+  - passenger height remains hidden until support is confirmed.
+  - automation/profile seat recall also uses stock memory values `1/2/3`, not old encoded `0x2d40010x`.
+- 360:
+  - added separate `AvmHalAdapter` for low-level HAL props from stock logs;
+  - EVS open remains fallback.
+
 ### Logs 1.30 and Full Stock Settings Import Plan
 
 `logs_1.30` showed that the 1.28 permission regression is fixed: the car API starts through `CarImpl`, and successful GFlow writes are present. Stock logs from `.src/logs_stock` produced 54 unique write contracts; GFlow 1.30 confirmed 13 of them.

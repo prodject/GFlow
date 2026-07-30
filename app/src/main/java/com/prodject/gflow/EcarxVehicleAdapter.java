@@ -306,6 +306,7 @@ final class EcarxVehicleAdapter {
 
     static final int ADAS_AEB = 0x20070e00;
     static final int ADAS_FCW = 0x200e0100;
+    static final int ADAS_FCW_SENSITIVITY = 0x200e0200;
     static final int ADAS_LKA = 0x20070100;
     static final int ADAS_LDW = 0x28030100;
     static final int ADAS_RCW = 0x20071000;
@@ -337,6 +338,7 @@ final class EcarxVehicleAdapter {
     static final int ADAS_SPEED_LIMIT_WARN = 0x28060100;
     static final int ADAS_SPEED_LIMIT_WARNING_MODE = 0x28060200;
     static final int ADAS_SPEED_LIMIT_WARNING_OFFSET = 0x28060400;
+    static final int ADAS_NOP_SPEED_LIMIT_WARNING_OFFSET = 0x28062100;
     static final int ADAS_ACC_WITH_TSR = 0x28060300;
     static final int ADAS_SPEED_LIMITATION_MODE = 0x20030500;
     static final int ADAS_SPEED_CONTROL_MODE = 0x20030600;
@@ -1325,17 +1327,13 @@ final class EcarxVehicleAdapter {
                 || functionId == WPC_WORK_MODE
                 || functionId == DAYMODE_BRIGHTNESS_DAYMODE
                 || functionId == ADAS_AEB
-                || functionId == ADAS_FCW
+                || functionId == ADAS_FCW_SENSITIVITY
                 || functionId == ADAS_ELKA
                 || functionId == ADAS_LANE_CHANGE_ASSIST
                 || functionId == ADAS_TRAFFIC_SIGN_RECOGNITION
-                || functionId == ADAS_TRAFFIC_SIGN_ALERT
-                || functionId == ADAS_ACC_WITH_TSR
-                || functionId == ADAS_SPEED_LIMITATION_MODE
                 || functionId == ADAS_SPEED_LIMIT_WARNING_MODE
-                || functionId == ADAS_SPEED_LIMIT_WARNING_OFFSET
+                || functionId == ADAS_NOP_SPEED_LIMIT_WARNING_OFFSET
                 || functionId == ADAS_TRAFFIC_LIGHT_ATTENTION
-                || functionId == ADAS_TRAFFIC_LIGHT_ATTENTION_SOUND
                 || functionId == ADAS_AI_DRIVER_ASSIST
                 || functionId == ADAS_AI_ASSIST_DEFAULT_ON
                 || functionId == ADAS_AI_ASSIST_FUSION_NAVI
@@ -1344,8 +1342,7 @@ final class EcarxVehicleAdapter {
                 || functionId == ADAS_AI_LANE_CHANGE_CONFIRM
                 || functionId == ADAS_AI_LANE_CHANGE_WARNING
                 || functionId == ADAS_TLB_SWITCH
-                || functionId == ADAS_TLB_MODE
-                || functionId == ADAS_PADDLE_LANE_CHANGE_ASSIST) {
+                || functionId == ADAS_TLB_MODE) {
             return new Spec(ZONE_ALL, Backend.ADAPT_API, true, false, false);
         }
         if (functionId == DRIVE_MODE_SELECT || functionId == DRIVE_STEERING_FEEL_SYNC_DRIVE_MODE) {
@@ -1370,10 +1367,27 @@ final class EcarxVehicleAdapter {
                 || functionId == AMBIENCE_LIGHT_BREATHE_COLOR_SET) {
             return new Spec(AMBIENCE_LIGHT_ZONE_ALL, Backend.ADAPT_API, true, false, false);
         }
+        if (isUnsupportedWriteFunction(functionId)) return new Spec(ZONE_ALL, Backend.ADAPT_API, false, false, false);
         if (isPasDirectFunction(functionId)) return new Spec(ZONE_ALL, Backend.ADAPT_API, false, false, false);
         if (isHudDirectFunction(functionId)) return new Spec(ZONE_ALL, Backend.ADAPT_API, false, false, false);
         if (isReadOnlyAdasFunction(functionId)) return new Spec(0, Backend.ADAPT_API, false, false, false);
         return SPEC_DEFAULT;
+    }
+
+    private static boolean isUnsupportedWriteFunction(int functionId) {
+        switch (functionId) {
+            case ADAS_FCW:
+            case ADAS_PDC:
+            case ADAS_TRAFFIC_SIGN_ALERT:
+            case ADAS_ACC_WITH_TSR:
+            case ADAS_SPEED_LIMITATION_MODE:
+            case ADAS_SPEED_LIMIT_WARNING_OFFSET:
+            case ADAS_TRAFFIC_LIGHT_ATTENTION_SOUND:
+            case ADAS_PADDLE_LANE_CHANGE_ASSIST:
+                return true;
+            default:
+                return false;
+        }
     }
 
     private static boolean isGlobalHvac(int functionId) {

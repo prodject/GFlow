@@ -260,30 +260,10 @@ public class VehicleActivity extends Activity {
 
     private LinearLayout buildSeatsPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Сиденья / Память"));
-        panel.addView(Ui.text(this, "Регулировка длины, высоты, спинки, memory positions и переход в полноценные профили.", 14, false));
-
-        GridLayout grid = new GridLayout(this);
-        grid.setColumnCount(2);
-        addAdvancedCard(grid, "Сиденье водителя", "Длина, высота, спинка", new QuickItem[]{
-                QuickItem.hold("Вперед", EcarxVehicleAdapter.SEAT_LENGTH, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_FORWARD),
-                QuickItem.hold("Назад", EcarxVehicleAdapter.SEAT_LENGTH, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_BACKWARD),
-                QuickItem.hold("Выше", EcarxVehicleAdapter.SEAT_HEIGHT, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_HEIGHT_UP),
-                QuickItem.hold("Ниже", EcarxVehicleAdapter.SEAT_HEIGHT, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_HEIGHT_DOWN)
-        });
-        addAdvancedCard(grid, "Спинка / Память", "Спинка, сохранение и вызов", new QuickItem[]{
-                QuickItem.hold("Спинка +", EcarxVehicleAdapter.SEAT_BACKREST, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_BACKREST_FORWARD),
-                QuickItem.hold("Спинка -", EcarxVehicleAdapter.SEAT_BACKREST, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_BACKREST_BACKWARD),
-                new QuickItem("Сохранить P2", () -> sendVehicle(EcarxVehicleAdapter.SEAT_POSITION_SAVE, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_STOCK_MEMORY_SAVE_2)),
-                new QuickItem("Вызвать P1", () -> sendVehicle(EcarxVehicleAdapter.SEAT_POSITION_SET, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_STOCK_MEMORY_SET_1))
-        });
-        addAdvancedCard(grid, "Сиденье пассажира", "Stock zone 0x4", new QuickItem[]{
-                QuickItem.hold("Вперед", EcarxVehicleAdapter.SEAT_LENGTH, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.SEAT_FORWARD),
-                QuickItem.hold("Назад", EcarxVehicleAdapter.SEAT_LENGTH, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.SEAT_BACKWARD),
-                QuickItem.hold("Спинка +", EcarxVehicleAdapter.SEAT_BACKREST, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.SEAT_BACKREST_FORWARD),
-                QuickItem.hold("Спинка -", EcarxVehicleAdapter.SEAT_BACKREST, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.SEAT_BACKREST_BACKWARD)
-        });
-        panel.addView(grid, lpMatchWrap(0, 12, 0, 12));
+        panel.addView(Ui.label(this, "Seat Control"));
+        panel.addView(Ui.text(this, "Удержание = движение, отпускание = stop. Пассажирская высота скрыта: stock подтвердил только length/backrest.", 14, false));
+        panel.addView(buildSeatControlCard("Driver", EcarxVehicleAdapter.ZONE_DRIVER_LEFT, true), lpMatchWrap(0, 12, 0, 12));
+        panel.addView(buildSeatControlCard("Passenger", EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, false), lpMatchWrap(0, 0, 0, 12));
 
         LinearLayout memory = Ui.row(this);
         addActionChip(memory, "Сохранить stock", () -> sendVehicle(EcarxVehicleAdapter.SEAT_POSITION_SAVE, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_STOCK_MEMORY_SAVE_2));
@@ -292,6 +272,85 @@ public class VehicleActivity extends Activity {
         addActionChip(memory, "Профили", () -> startActivity(new Intent(this, ProfileActivity.class)));
         panel.addView(memory, lpMatchWrap(0, 0, 0, 0));
         return panel;
+    }
+
+    private LinearLayout buildSeatControlCard(String title, int zone, boolean includeHeight) {
+        LinearLayout card = Ui.glassCard(this);
+        card.addView(Ui.label(this, title));
+
+        LinearLayout up = Ui.row(this);
+        if (includeHeight) {
+            addSeatHoldButton(up, "↑", EcarxVehicleAdapter.SEAT_HEIGHT, zone, EcarxVehicleAdapter.SEAT_HEIGHT_UP);
+        } else {
+            addSeatSpacer(up);
+        }
+        card.addView(up, lpMatchWrap(0, 10, 0, 0));
+
+        LinearLayout move = Ui.row(this);
+        addSeatHoldButton(move, "←", EcarxVehicleAdapter.SEAT_LENGTH, zone, EcarxVehicleAdapter.SEAT_BACKWARD);
+        addSeatCenter(move);
+        addSeatHoldButton(move, "→", EcarxVehicleAdapter.SEAT_LENGTH, zone, EcarxVehicleAdapter.SEAT_FORWARD);
+        card.addView(move, lpMatchWrap(0, 8, 0, 0));
+
+        LinearLayout down = Ui.row(this);
+        if (includeHeight) {
+            addSeatHoldButton(down, "↓", EcarxVehicleAdapter.SEAT_HEIGHT, zone, EcarxVehicleAdapter.SEAT_HEIGHT_DOWN);
+        } else {
+            addSeatSpacer(down);
+        }
+        card.addView(down, lpMatchWrap(0, 8, 0, 0));
+
+        LinearLayout backrest = Ui.row(this);
+        addSeatHoldButton(backrest, "Спинка +", EcarxVehicleAdapter.SEAT_BACKREST, zone, EcarxVehicleAdapter.SEAT_BACKREST_FORWARD);
+        addSeatHoldButton(backrest, "Спинка -", EcarxVehicleAdapter.SEAT_BACKREST, zone, EcarxVehicleAdapter.SEAT_BACKREST_BACKWARD);
+        card.addView(backrest, lpMatchWrap(0, 12, 0, 0));
+        return card;
+    }
+
+    private void addSeatHoldButton(LinearLayout row, String label, int functionId, int zone, int value) {
+        Button b = Ui.button(this, label);
+        b.setTextSize(label.length() == 1 ? 28 : 15);
+        b.setTextColor(Ui.dark(this) ? Color.WHITE : Ui.primaryText(this));
+        b.setBackground(Ui.cardBg(this,
+                Ui.dark(this) ? Color.argb(76, 255, 255, 255) : Color.argb(245, 255, 255, 255),
+                Ui.dp(this, 22),
+                Color.argb(120, 77, 163, 255)));
+        b.setOnTouchListener((v, event) -> {
+            switch (event.getActionMasked()) {
+                case MotionEvent.ACTION_DOWN:
+                    sendVehicleDirect(functionId, zone, value);
+                    return true;
+                case MotionEvent.ACTION_UP:
+                case MotionEvent.ACTION_CANCEL:
+                    sendVehicleDirect(functionId, zone, EcarxVehicleAdapter.COMMON_OFF);
+                    return true;
+                default:
+                    return true;
+            }
+        });
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 64), 1f);
+        lp.leftMargin = Ui.dp(this, 6);
+        lp.rightMargin = Ui.dp(this, 6);
+        row.addView(b, lp);
+    }
+
+    private void addSeatCenter(LinearLayout row) {
+        TextView center = Ui.text(this, "hold", 14, true);
+        center.setGravity(Gravity.CENTER);
+        center.setBackground(Ui.cardBg(this, Color.argb(80, 77, 163, 255), Ui.dp(this, 22), Color.TRANSPARENT));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 64), 1f);
+        lp.leftMargin = Ui.dp(this, 6);
+        lp.rightMargin = Ui.dp(this, 6);
+        row.addView(center, lp);
+    }
+
+    private void addSeatSpacer(LinearLayout row) {
+        TextView spacer = Ui.muted(this, "height not supported");
+        spacer.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 48), 1f);
+        lp.leftMargin = Ui.dp(this, 6);
+        lp.rightMargin = Ui.dp(this, 6);
+        row.addView(spacer, lp);
     }
 
     private LinearLayout buildMirrorsPanel() {
@@ -883,8 +942,13 @@ public class VehicleActivity extends Activity {
     }
 
     private void openAvmCamera() {
-        EcarxDvrAdapter.Result result = new EcarxDvrAdapter(this).openEvs(EcarxDvrAdapter.EVS_CAMERA_AVM);
-        Ui.toast(this, result.success ? "360 открыт через EVS" : "360 не открыт: " + result.message);
+        AvmHalAdapter.Result hal = new AvmHalAdapter(this).open360();
+        if (hal.success) {
+            Ui.toast(this, "360 открыт через HAL");
+            return;
+        }
+        EcarxDvrAdapter.Result evs = new EcarxDvrAdapter(this).openEvs(EcarxDvrAdapter.EVS_CAMERA_AVM);
+        Ui.toast(this, evs.success ? "360 открыт через EVS fallback" : "360 не открыт: " + hal.message + "\n" + evs.message);
     }
 
     private void openTrunkOemEntry() {

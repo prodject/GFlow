@@ -234,7 +234,7 @@ final class AutomationEngine {
         String[] parts = raw.split("\\|", -1);
         if (parts.length < 4) return "Профиль не найден: " + name;
         int zone = parseInt(parts[1], EcarxVehicleAdapter.ZONE_DRIVER_LEFT);
-        int memory = parseInt(parts[2], EcarxVehicleAdapter.SEAT_POSITION_1);
+        int memory = parseInt(parts[2], EcarxVehicleAdapter.SEAT_MEMORY_1);
         String preset = parts[3];
         EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(context);
         StringBuilder sb = new StringBuilder("Профиль: ").append(name).append("\n");
@@ -258,6 +258,7 @@ final class AutomationEngine {
     }
 
     private static int seatRestoreValue(int savedValue) {
+        if (savedValue >= EcarxVehicleAdapter.SEAT_MEMORY_1 && savedValue <= EcarxVehicleAdapter.SEAT_MEMORY_3) return savedValue;
         if (savedValue == EcarxVehicleAdapter.SEAT_POSITION_1) return EcarxVehicleAdapter.SEAT_MEMORY_1;
         if (savedValue == EcarxVehicleAdapter.SEAT_POSITION_2) return EcarxVehicleAdapter.SEAT_MEMORY_2;
         if (savedValue == 0x2d400103) return EcarxVehicleAdapter.SEAT_MEMORY_3;
