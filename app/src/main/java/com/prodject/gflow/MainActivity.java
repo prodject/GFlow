@@ -1280,10 +1280,7 @@ public class MainActivity extends Activity {
         addToggleAction(safety, "AEB", () -> sendVehicleChecked(EcarxVehicleAdapter.ADAS_AEB, EcarxVehicleAdapter.COMMON_ON));
         addToggleAction(safety, "FCW", () -> sendVehicleChecked(EcarxVehicleAdapter.ADAS_FCW_SENSITIVITY, EcarxVehicleAdapter.FCW_SENSITIVITY_NORMAL));
         addToggleAction(safety, "LKA", () -> sendVehicleChecked(EcarxVehicleAdapter.ADAS_LKA, EcarxVehicleAdapter.COMMON_ON));
-        addToggleAction(safety, "PDC", () -> {
-            showParking();
-            return EcarxVehicleAdapter.Result.external("Открыт Parking: PDC/PAC через 0x23030100", true, true);
-        });
+        addToggleAction(safety, "PDC", this::openParkingScreen);
         card.addView(safety);
         SeekBar gap = new SeekBar(this);
         gap.setMax(4);
