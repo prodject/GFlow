@@ -35,6 +35,8 @@ import java.util.ArrayList;
 import java.util.Locale;
 
 public class ClimateActivity extends Activity {
+    private static final String APP_SETTINGS = "app_settings";
+    private static final String KEY_DEVELOPER_MODE = "developer_mode";
     private static final String CLIMATE_PRESETS = "climate_presets";
     private static final String CLIMATE_PRESET_ORDER = "order";
     static final String EXTRA_MODE = "climate_mode";
@@ -324,7 +326,9 @@ public class ClimateActivity extends Activity {
         LinearLayout seats = Ui.row(this);
         seats.setWeightSum(4f);
         addClimateActionChip(seats, "Подогрев сид.", () -> cycleSeatClimate(EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.ZONE_DRIVER_LEFT));
-        addClimateActionChip(seats, "Вентиляция", () -> cycleSeatClimate(EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, EcarxVehicleAdapter.ZONE_DRIVER_LEFT));
+        if (developerModeEnabled()) {
+            addClimateActionChip(seats, "Вентиляция DEV", () -> cycleSeatClimate(EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, EcarxVehicleAdapter.ZONE_DRIVER_LEFT));
+        }
         addClimateActionChip(seats, "Руль", this::cycleWheelHeat);
         addClimateActionChip(seats, "Обдув стекла", this::showDefrostSheet);
         panel.addView(seats, lpMatchWrap(0, 16, 0, 0));
@@ -616,9 +620,14 @@ public class ClimateActivity extends Activity {
                 floatReadback(EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT),
                 singleReadback(EcarxVehicleAdapter.HVAC_TEMP_UNIT),
                 singleReadback(EcarxVehicleAdapter.HVAC_CLIMATE_ZONE)));
-        addReadbackCard(grid, "Сиденья / Руль", readback(
+        addReadbackCard(grid, "Сиденья / Руль", developerModeEnabled()
+                ? readback(
                 zonedReadback(EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.ZONE_DRIVER_LEFT),
                 zonedReadback(EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, EcarxVehicleAdapter.ZONE_DRIVER_LEFT),
+                zonedReadback(EcarxVehicleAdapter.HVAC_SEAT_MASSAGE, EcarxVehicleAdapter.ZONE_DRIVER_LEFT),
+                singleReadback(EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT))
+                : readback(
+                zonedReadback(EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.ZONE_DRIVER_LEFT),
                 zonedReadback(EcarxVehicleAdapter.HVAC_SEAT_MASSAGE, EcarxVehicleAdapter.ZONE_DRIVER_LEFT),
                 singleReadback(EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT)));
         addReadbackCard(grid, "Качество воздуха", readback(
@@ -1264,6 +1273,10 @@ public class ClimateActivity extends Activity {
             this.label = label;
             this.action = action;
         }
+    }
+
+    private boolean developerModeEnabled() {
+        return getSharedPreferences(APP_SETTINGS, MODE_PRIVATE).getBoolean(KEY_DEVELOPER_MODE, false);
     }
 
     private static final class FluentFanDial extends View {

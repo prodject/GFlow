@@ -321,7 +321,7 @@ public class AdasActivity extends Activity {
         panel.addView(Ui.muted(this, "PDC остается частью ADAS, а полный сценарий 360 / APA открыт как отдельный экран парковки."));
 
         LinearLayout controls = Ui.row(this);
-        addActionChip(controls, "PDC status", () -> showStatusSheet("PDC switch", EcarxVehicleAdapter.ADAS_PDC));
+        addActionChip(controls, "PDC / PAC", this::openParkingActivity);
         addActionChip(controls, "Громкость сред.", () -> sendVehicle("PDC volume mid", EcarxVehicleAdapter.ADAS_PDC_WARNING_VOLUME, EcarxVehicleAdapter.PDC_VOLUME_MID));
         addActionChip(controls, "Парковка", this::openParkingActivity);
         panel.addView(controls, lpMatchWrap(0, 12, 0, 0));
@@ -540,7 +540,7 @@ public class AdasActivity extends Activity {
         addDockButton(dock, "LKA", () -> sendVehicle("LKA warn+intervention", EcarxVehicleAdapter.ADAS_LKA, EcarxVehicleAdapter.LKA_MODE_WARN_INTV), false);
         addDockButton(dock, "ACC", () -> sendVehicle("ACC режим", EcarxVehicleAdapter.ADAS_ACC_ICC_SWITCH, EcarxVehicleAdapter.ACC_ICC_ACC), false);
         addDockButton(dock, "ICC", () -> sendVehicle("ICC режим", EcarxVehicleAdapter.ADAS_ACC_ICC_SWITCH, EcarxVehicleAdapter.ACC_ICC_ICC), false);
-        addDockButton(dock, "PDC", () -> showStatusSheet("PDC switch", EcarxVehicleAdapter.ADAS_PDC), false);
+        addDockButton(dock, "PDC", this::openParkingActivity, false);
         addDockButton(dock, "APA", this::openParkingActivity, false);
         return dock;
     }

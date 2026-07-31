@@ -1686,7 +1686,9 @@ final class CarFunctionCatalog {
                 new Value("CAR_LOCATOR_REMINDER_MODE_OFF", 0),
                 new Value("CAR_LOCATOR_REMINDER_MODE_SOUND", 538313729),
         }));
-        put(byId, byKey, new Entry("SETTING_FUNC_CENTRAL_LOCK", 537921792, 2, "ISafety.SETTING_FUNC_CENTRAL_LOCK", "", new Value[] {
+        put(byId, byKey, new Entry("SETTING_FUNC_CENTRAL_LOCK", 537921792, 2, "ISafety.SETTING_FUNC_CENTRAL_LOCK", "Центральный замок: закрыть/открыть.", new Value[] {
+                new Value("CENTRAL_LOCK_UNLOCK", 0),
+                new Value("CENTRAL_LOCK_LOCK", 1),
         }));
         put(byId, byKey, new Entry("SETTING_FUNC_CHILD_RISKY_BEHAVIOR_MONITOR", 738395392, 2, "ISafety.SETTING_FUNC_CHILD_RISKY_BEHAVIOR_MONITOR", "", new Value[] {
         }));

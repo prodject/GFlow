@@ -329,6 +329,7 @@ final class EcarxVehicleAdapter {
     static final int VEHICLE_REAR_CROSS_TRAFFIC_ALERT = 0x20070a00;
     static final int VEHICLE_AUTO_CLOSE_WINDOW = 0x20080400;
     static final int VEHICLE_AUDIBLE_LOCKING_FEEDBACK = 0x20100300;
+    static final int VEHICLE_CENTRAL_LOCK = 0x20100900;
     static final int VEHICLE_CAR_LOCATOR_REMINDER_MODE = 0x20160400;
     static final int VEHICLE_EASY_INGRESS_EGRESS = 0x20170100;
     static final int VEHICLE_SOUND_WARNING_VOLUME = 0x201d0100;
@@ -1301,6 +1302,7 @@ final class EcarxVehicleAdapter {
         }
         if (functionId == BCM_CUSTOM_KEY) return new Spec(ZONE_ALL, Backend.ADAPT_API, true, false, false);
         if (functionId == VEHICLE_EASY_INGRESS_EGRESS) return new Spec(ZONE_DRIVER_LEFT, Backend.ADAPT_API, true, false, false);
+        if (functionId == VEHICLE_CENTRAL_LOCK) return new Spec(ZONE_ALL, Backend.ADAPT_API, true, false, false);
         if (functionId == DAYMODE_BRIGHTNESS_SCREEN) return new Spec(ZONE_ALL, Backend.ADAPT_API, true, true, false);
         if (functionId == DAYMODE_BRIGHTNESS_MAX || functionId == DAYMODE_PSD_BRIGHTNESS_SCREEN) {
             return new Spec(ZONE_ALL, Backend.ADAPT_API, false, true, false);
@@ -1679,14 +1681,20 @@ final class EcarxVehicleAdapter {
         final int functionId;
         final int zone;
         final int value;
+        final float floatData;
         final boolean success;
         final boolean supported;
         final String message;
 
         private Result(int functionId, int zone, int value, boolean success, boolean supported, String message) {
+            this(functionId, zone, value, Float.NaN, success, supported, message);
+        }
+
+        private Result(int functionId, int zone, int value, float floatData, boolean success, boolean supported, String message) {
             this.functionId = functionId;
             this.zone = zone;
             this.value = value;
+            this.floatData = floatData;
             this.success = success;
             this.supported = supported;
             this.message = message;
@@ -1710,12 +1718,12 @@ final class EcarxVehicleAdapter {
         }
 
         static Result floatValue(int functionId, int zone, float value, boolean apiResult, String path) {
-            return new Result(functionId, zone, 0, apiResult, apiResult,
+            return new Result(functionId, zone, 0, value, apiResult, apiResult,
                     String.format(Locale.US, "%s -> %s %s/%d=%.1f", path, apiResult, hex(functionId), zone, value));
         }
 
         static Result floatStatus(int functionId, int zone, float value) {
-            return new Result(functionId, zone, 0, true, true,
+            return new Result(functionId, zone, 0, value, true, true,
                     String.format(Locale.US, "getCustomizeFunctionValue %s/%d = %.1f", hex(functionId), zone, value));
         }
 
@@ -1725,7 +1733,7 @@ final class EcarxVehicleAdapter {
         }
 
         static Result floatError(int functionId, int zone, float value, Exception e) {
-            return new Result(functionId, zone, 0, false, false,
+            return new Result(functionId, zone, 0, value, false, false,
                     String.format(Locale.US, "Ошибка AdaptAPI %s/%d=%.1f: %s", hex(functionId), zone, value, compact(e)));
         }
 

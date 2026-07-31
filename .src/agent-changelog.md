@@ -1564,3 +1564,271 @@ EVCam service-stack transfer update on Sunday, July 26, 2026:
 - still open after this step:
   - if `GControl` later needs true multi-camera simultaneous recording rather than the current mixed `Camera2` / EVS-screenrecord approach, that should be a separate deliberate migration from `EVCam`'s `MultiCameraManager`;
   - background whitelist/start-list scripts from `EVCam` were intentionally not transplanted automatically, because those touch system files and should stay explicit and reversible.
+
+GFlow `log_1.32` analysis on Friday, July 31, 2026:
+
+- catalog sweep сработал и теперь даёт рабочую карту поддержки по каталогу:
+  - `total=802`;
+  - `SUPPORTED_READ_OK=107`;
+  - `SUPPORTED_WRITE_OK=60`;
+  - `WRITE_FAIL=9`;
+  - `UNSUPPORTED=686`;
+  - `READ_ONLY=9`;
+  - `NO_VALUES=524`.
+- write sweep:
+  - `OK=51`;
+  - `UNSUPPORTED=25`.
+- климат:
+  - `0x10070100` blowing mode с `zone=0x8` теперь `OK`;
+  - `0x10050100` seat ventilation всё ещё `unsupported`.
+- drive:
+  - `0x22010100` принимает много experimental values:
+    - Offroad `0x22010113`;
+    - Mud `0x2201010a`;
+    - Rock `0x2201010b`;
+    - Sand `0x2201010d`;
+    - AWD `0x2201010e`;
+    - eAWD `0x22010112`;
+    - Adaptive `0x22010116`;
+    - Custom `0x22010140`;
+    - Eco+ `0x22010114`;
+    - Sport+ `0x22010115`;
+    - Start Type18 / Type72 / Type79 / Type97.
+  - эти режимы можно переносить из диагностики в UI как кандидаты с readback.
+- drive values that did not confirm:
+  - `0x22040500` energy mode — `unsupported`;
+  - `0x22040700` launch control — `unsupported`;
+  - `0x22040d00` ESC level — `unsupported`;
+  - `0x22040e00` StarTrack — `unsupported`;
+  - `0x22030c00` custom driver info — `unsupported`;
+  - `0x22030100` custom propulsion частично: Offroad/Sand `OK`, AWD `unsupported`.
+- ADAS:
+  - `0x20070700` LCA с value `1` теперь `OK`;
+  - `0x200e0200` FCW sensitivity `OK`;
+  - `0x28062100` speed offset fallback `OK`;
+  - `0x20070e00`, `0x20070600`, `0x20070d00`, `0x200b0100`, `0x28060200` — `OK`.
+- PDC:
+  - `0x23030100` `PAS_PAC_ACTIVATION = 1` — `OK`;
+  - `0x23021000` `PAS_RADAR_WORK_MODE` — `unsupported`;
+  - рабочий PDC-кандидат для UI: `PAS_PAC_ACTIVATION`, не `0x20060300` и не radar work mode.
+- дверь водителя:
+  - `0x21020100` `BCM_FUNC_DOOR` по всем зонам `unsupported`;
+  - в логе есть активный `0x21021000` `BCM_FUNC_DOOR_CONTROL` readback/support;
+  - это новый кандидат вместо `0x21020100`.
+- руль:
+  - лог показывает низкоуровневый bridge через `0x2141f000`, `funcId=18`;
+  - частые циклические команды:
+    - `commandId=50 value=126/79`;
+    - `commandId=0 value=1/0`;
+    - `commandId=13 value=0/1`;
+    - `commandId=2 value=7/2`;
+    - `commandId=15 value=10/6`;
+    - `commandId=17 value=0/255`.
+  - редкие события, похожие на реальные нажатия:
+    - `commandId=33 value=1`;
+    - `commandId=34 value=2`;
+    - `commandId=33 value=2`;
+    - `commandId=34 value=1`;
+    - `commandId=33 value=4`;
+    - `commandId=33 value=0`.
+  - точного соответствия “какая кнопка = какое значение” пока нет;
+  - нужен лог с маркерами: нажал кнопку X, подождал 2 сек, нажал кнопку Y.
+- next fixes:
+  - в UI/diagnostics для PDC добавить action-кандидат `0x23030100 = 1`;
+  - для двери водителя добавить diagnostics/write candidate `0x21021000 BCM_FUNC_DOOR_CONTROL`;
+  - Drive UI расширить confirmed experimental modes из `0x22010100`;
+  - спрятать/disable:
+    - launch control;
+    - ESC level;
+    - StarTrack;
+    - energy mode;
+    - radar work mode.
+  - для руля добавить raw logger / marker screen, иначе соответствие кнопок будет гаданием.
+
+GFlow UI cleanup after `log_1.32` on Friday, July 31, 2026:
+
+- moved confirmed `0x22010100` experimental drive values into UI candidates:
+  - Offroad `0x22010113`;
+  - Mud `0x2201010a`;
+  - Rock `0x2201010b`;
+  - Sand `0x2201010d`;
+  - AWD `0x2201010e`;
+  - eAWD `0x22010112`;
+  - Adaptive `0x22010116`;
+  - Custom `0x22010140`;
+  - Eco+ `0x22010114`;
+  - Sport+ `0x22010115`;
+  - Start Type18 / Type72 / Type79 / Type97.
+- custom propulsion `0x22030100` left only with confirmed candidates:
+  - Offroad;
+  - Sand.
+- removed / hidden from normal UI because `log_1.32` confirmed unsupported:
+  - `0x10050100` seat ventilation;
+  - `0x21020100` direct BCM door open path;
+  - `0x2d411100` seat one-key comfort;
+  - `0x23021000` PAS radar work mode write actions;
+  - custom propulsion AWD;
+  - `0x22040500` energy mode;
+  - `0x22040700` launch control;
+  - `0x22040d00` ESC level;
+  - `0x22040e00` StarTrack;
+  - `0x22030c00` custom driver info.
+- PDC user action changed to confirmed candidate:
+  - use `0x23030100 PAS_PAC_ACTIVATION = 1`;
+  - do not expose `0x20060300 ADAS_PDC` or `0x23021000 PAS_RADAR_WORK_MODE` as user write controls.
+- 360 camera note:
+  - `log_1.32` confirms the current camera path is useful;
+  - UI should treat AVM 360 as HAL/EVS open path, not as unsupported `PAS_*` view-selection writes.
+
+GFlow `log_1.32/alls` analysis on Friday, July 31, 2026:
+
+- sessions with user comments were found under `.src/log_1.32/alls`.
+- steering wheel buttons:
+  - high-level InputService keycodes are present and are better for remapping than raw HAL guessing:
+    - assistants button: keyCode `6`;
+    - lane keeping button: keyCode `300050`;
+    - 360 button: keyCode `119`;
+    - assistant speed button: keyCode `5`;
+    - assistant change 1: keyCode `3`;
+    - assistant change 2: keyCode `4`;
+    - voice assistant: keyCode `200231`;
+    - mute: keyCode `200164`;
+    - music button: keyCode `17`;
+    - music mode switch: keyCode `200110`;
+    - music previous: keyCode `200088`;
+    - music next: keyCode `200087`;
+    - volume: keyCode `300031` / `300030`, plus keyCode `20` / `19` events.
+  - raw HAL bridge is also visible on `0x2141f000`:
+    - music previous: `funcId=30 commandId=181 value=1`, then `value=0`;
+    - music next: `funcId=30 commandId=182 value=1`, then `value=0`;
+    - volume: `funcId=30 commandId=183/184/185`, values `0/1/2`.
+  - practical conclusion:
+    - use InputService/keyCode path for steering button remap UI;
+    - keep `0x2141f000` funcId 30 command IDs as diagnostics/raw fallback only.
+- driver door buttons / window buttons:
+  - physical window events are visible through `0x2141f000 funcId=30`:
+    - commandId `38` = driver window position status;
+    - commandId `39` = passenger front window position status;
+    - commandId `40` = rear-left window position status;
+    - commandId `41` = rear-right window position status.
+  - related AdaptAPI callback:
+    - `IBcm.BCM_FUNC_WINDOW_POS [0x21030300]`;
+    - zones:
+      - driver/front-left `0x10`;
+      - passenger/front-right `0x20`;
+      - rear-left/rear-right follow the same window zone model.
+    - supported values shown by stock: `0, 12, 16, 20, ... 100`;
+    - observed values include `0.0`, `4.0`, `8.0`, `12.0`.
+  - `SETTING_FUNC_WINDOW_VENTILATE [0x20080600]` appears as read/status related to the same physical window events.
+  - central lock:
+    - `0x2141f000 funcId=30 commandId=57`;
+    - `value=3` maps to central lock ON / locked callback;
+    - `value=1` maps to central lock OFF / unlocked callback;
+    - AdaptAPI callback: `IVehicle.SETTING_FUNC_CENTRAL_LOCK [0x20100900]`, values `1/0`.
+  - practical conclusion:
+    - direct `BCM_DOOR [0x21020100]` remains wrong for door open/write;
+    - for lock/unlock UI use `SETTING_FUNC_CENTRAL_LOCK [0x20100900]`;
+    - for window UI/readback prefer `BCM_FUNC_WINDOW_POS [0x21030300]` by zone and percent.
+- 360 steering button:
+  - the 360 button session again shows the useful path:
+    - keyCode `119`;
+    - `PAS_PAC_ACTIVATION [0x23030100]`;
+    - low-level AVM HAL props around `0x214085e6`, `0x2141f000`, `0x21417523`.
+  - practical conclusion:
+    - 360 UI should keep the current AVM HAL / EVS open path;
+    - steering-button remap can listen for keyCode `119`.
+- parking / hazard buttons:
+  - session shows `0x2141f000 funcId=17 commandId=46 value=0/15`;
+  - this is a candidate for physical parking/hazard state, but mapping is not yet strong enough to write UI control from it.
+  - practical conclusion:
+    - add to diagnostics/raw logger;
+    - do not expose as a normal write action yet.
+
+GFlow implementation from `log_1.32/alls` on Friday, July 31, 2026:
+
+- steering remap UI examples now use confirmed keyCodes:
+  - 360: `119`;
+  - voice assistant: `200231`;
+  - mute: `200164`;
+  - media previous: `200088`;
+  - media next: `200087`.
+- central lock was added as a real writable AdaptAPI function:
+  - `SETTING_FUNC_CENTRAL_LOCK [0x20100900]`;
+  - values: `1` lock, `0` unlock;
+  - visible lock UI and voice lock command now use this path instead of `BCM_DOOR_LOCK`.
+- window UI was changed to hold-to-move levers:
+  - press/hold sends `BCM_WINDOW [0x21030100]` open/close by zone;
+  - release/cancel sends `WINDOW_OPEN_PAUSE` / `WINDOW_CLOSE_PAUSE`;
+  - `BCM_FUNC_WINDOW_POS [0x21030300]` stays for readback/diagnostics by zone and percent, not fixed 12/50 user buttons.
+- direct door-open UI remains developer-gated:
+  - `BCM_DOOR [0x21020100]` is still not a confirmed user write path.
+- diagnostics now include:
+  - `SETTING_FUNC_CENTRAL_LOCK`;
+  - `BCM_FUNC_WINDOW_POS`;
+  - raw `0x2141f000` candidates from `alls` for parking/hazard, window physical status, and central-lock physical status.
+
+GFlow diagnostics restore update on Friday, July 31, 2026:
+
+- write diagnostics now take an int snapshot before probing a function and restore the previous value after the probe.
+- restore result is logged per write:
+  - `snapshot=OK`;
+  - `restore=OK`;
+  - `restore=FAILED`;
+  - `restore=SKIPPED_NO_SNAPSHOT`;
+  - `snapshot=SKIPPED_FLOAT`.
+- catalog sweep write probes now also restore the previous value after successful or failed attempts.
+- physically moving functions are skipped for catalog writes and stay read/support diagnostics only:
+  - windows;
+  - window position;
+  - sunroof;
+  - curtain;
+  - seat axes;
+  - seat memory save/restore.
+- regular write sweep no longer sends window open/close commands.
+- practical effect:
+  - auto-diagnostics should not leave toggles/functions changed after completion when readback is available;
+  - if a function has no reliable readback snapshot, the log marks restore as skipped instead of guessing.
+
+GFlow roof command fix on Friday, July 31, 2026:
+
+- `log_1.32` showed roof/sun-curtain functions as supported, but catalog write only proved value `0`, not a real movement command.
+- root cause candidate:
+  - sunroof / curtain functions are button contracts with values `[1, 0]`;
+  - previous UI sent only `1`;
+  - stock-style behavior should be a pulse: press `1`, then release `0`.
+- changed roof UI commands to pulse:
+  - `0x21200200` sunroof open, zone `0x4`;
+  - `0x21200300` sunroof close, zone `0x4`;
+  - `0x21200400` curtain open, zone `0x8`;
+  - `0x21200500` curtain close, zone `0x8`;
+  - `0x21030400` tilt;
+  - `0x21200000` init.
+- pulse timing:
+  - send `COMMON_ON`;
+  - after `180 ms`, send `COMMON_OFF`.
+
+GFlow steering assistant button import on Friday, July 31, 2026:
+
+- added Steering UI automation templates for assistant buttons from `log_1.32/alls` user labels:
+  - assistant/ICA enable button: keyCode `6`;
+  - lane tracking start button: keyCode `300050`;
+  - ICA speed lever: keyCode `5`;
+  - cruise / intelligent cruise previous: keyCode `3`;
+  - cruise / intelligent cruise next: keyCode `4`.
+- these are added as remap/scenario templates, not direct vehicle writes.
+- purpose:
+  - allow binding and later automating assistant activation flows;
+  - keep raw `0x2141f000` bridge as diagnostics fallback only until exact low-level contracts are proven.
+
+GFlow roof diagnostics fix on Friday, July 31, 2026:
+
+- root cause:
+  - catalog sweep checked `BCM_FUNC_WINDOW_POS [0x21030300]` only through the adapter default zone;
+  - previous default/check path did not separately probe roof zones `0x4` and `0x8`;
+  - catalog sweep also treats `0x21030300` as unsafe for generic writes, so percent/float roof positions were not validated.
+- added dedicated `Roof Position Sweep` diagnostics:
+  - sunroof position: `0x21030300`, zone `0x4`;
+  - sun curtain position: `0x21030300`, zone `0x8`;
+  - support/read are always logged;
+  - float writes are attempted only in write-enabled diagnostics;
+  - float readback snapshot is restored after the write probe.

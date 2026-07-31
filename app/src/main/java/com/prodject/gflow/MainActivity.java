@@ -1280,7 +1280,10 @@ public class MainActivity extends Activity {
         addToggleAction(safety, "AEB", () -> sendVehicleChecked(EcarxVehicleAdapter.ADAS_AEB, EcarxVehicleAdapter.COMMON_ON));
         addToggleAction(safety, "FCW", () -> sendVehicleChecked(EcarxVehicleAdapter.ADAS_FCW_SENSITIVITY, EcarxVehicleAdapter.FCW_SENSITIVITY_NORMAL));
         addToggleAction(safety, "LKA", () -> sendVehicleChecked(EcarxVehicleAdapter.ADAS_LKA, EcarxVehicleAdapter.COMMON_ON));
-        addToggleAction(safety, "PDC", () -> EcarxVehicleAdapter.Result.external(new EcarxVehicleAdapter(this).get(EcarxVehicleAdapter.ADAS_PDC).message, false, true));
+        addToggleAction(safety, "PDC", () -> {
+            showParking();
+            return EcarxVehicleAdapter.Result.external("Открыт Parking: PDC/PAC через 0x23030100", true, true);
+        });
         card.addView(safety);
         SeekBar gap = new SeekBar(this);
         gap.setMax(4);
@@ -1992,7 +1995,7 @@ public class MainActivity extends Activity {
     }
 
     private void addExperimentalDriveFeatures(LinearLayout root) {
-        root.addView(Ui.text(this, "Experimental drive features: функции из IDriveMode.smali. Перед использованием смотри диагностику support/readback.", 14, false));
+        root.addView(Ui.text(this, "Experimental drive features: только подтвержденные log_1.32 write-кандидаты. Energy, launch, ESC и StarTrack скрыты как unsupported.", 14, false));
         addDiagnostic(root, "Experimental drive modes",
                 EcarxVehicleAdapter.DRIVE_MODE_SELECT,
                 EcarxVehicleAdapter.DRIVE_CUSTOM_PROPULSION,
@@ -2000,24 +2003,20 @@ public class MainActivity extends Activity {
                 EcarxVehicleAdapter.DRIVE_CUSTOM_STEERING_FEEL,
                 EcarxVehicleAdapter.DRIVE_CUSTOM_CLIMATE,
                 EcarxVehicleAdapter.DRIVE_DIM_THEME_SET,
-                EcarxVehicleAdapter.DRIVE_ENERGY_MODE,
                 EcarxVehicleAdapter.DRIVE_CREEP_SET,
-                EcarxVehicleAdapter.DRIVE_LAUNCH_CONTROL,
                 EcarxVehicleAdapter.DRIVE_NOISE_CONTROL,
                 EcarxVehicleAdapter.DRIVE_SPEED_LIMIT_RANGE_VALUE,
                 EcarxVehicleAdapter.DRIVE_SPEED_LIMIT_RANGE_MIN,
                 EcarxVehicleAdapter.DRIVE_SPEED_LIMIT_RANGE_MAX,
                 EcarxVehicleAdapter.DRIVE_SPEED_LIMIT_RANGE_STEP,
-                EcarxVehicleAdapter.DRIVE_ESC_LEVEL,
-                EcarxVehicleAdapter.DRIVE_STARTRACK_MODE,
                 EcarxVehicleAdapter.DRIVE_PERFORMANCE_SAVING,
                 EcarxVehicleAdapter.DRIVE_POWER_TRAIN_STOP);
         addCommandGroup(root, "Experimental: расширенные режимы движения", EcarxVehicleAdapter.DRIVE_MODE_SELECT,
-                new String[]{"Drive HDC", "Drive Mud", "Drive Rock", "Drive Sand", "Drive AWD", "Drive eAWD", "Drive Save", "Drive Pure", "Drive Hybrid", "Drive PHEV", "Drive Power", "Drive Normal", "Drive Eco HEV/PHEV", "Drive Eco Plus", "Drive Sport Plus", "Drive Adaptive", "Drive Custom", "Drive Start type 18", "Drive Start type 72", "Drive Start type 79", "Drive Start type 97"},
-                new int[]{EcarxVehicleAdapter.DRIVE_MODE_HDC, EcarxVehicleAdapter.DRIVE_MODE_MUD, EcarxVehicleAdapter.DRIVE_MODE_ROCK, EcarxVehicleAdapter.DRIVE_MODE_SAND, EcarxVehicleAdapter.DRIVE_MODE_AWD, EcarxVehicleAdapter.DRIVE_MODE_EAWD, EcarxVehicleAdapter.DRIVE_MODE_SAVE, EcarxVehicleAdapter.DRIVE_MODE_PURE, EcarxVehicleAdapter.DRIVE_MODE_HYBRID, EcarxVehicleAdapter.DRIVE_MODE_PHEV, EcarxVehicleAdapter.DRIVE_MODE_POWER, EcarxVehicleAdapter.DRIVE_MODE_NORMAL, EcarxVehicleAdapter.DRIVE_MODE_ECO_HEV_PHEV, EcarxVehicleAdapter.DRIVE_MODE_ECO_PLUS, EcarxVehicleAdapter.DRIVE_MODE_SPORT_PLUS, EcarxVehicleAdapter.DRIVE_MODE_ADAPTIVE, EcarxVehicleAdapter.DRIVE_MODE_CUSTOM, EcarxVehicleAdapter.DRIVE_MODE_START_TYPE18, EcarxVehicleAdapter.DRIVE_MODE_START_TYPE72, EcarxVehicleAdapter.DRIVE_MODE_START_TYPE79, EcarxVehicleAdapter.DRIVE_MODE_START_TYPE97});
+                new String[]{"Offroad", "Mud", "Rock", "Sand", "AWD", "eAWD", "Adaptive", "Custom", "Eco Plus", "Sport Plus", "Start type 18", "Start type 72", "Start type 79", "Start type 97"},
+                new int[]{EcarxVehicleAdapter.DRIVE_MODE_OFFROAD, EcarxVehicleAdapter.DRIVE_MODE_MUD, EcarxVehicleAdapter.DRIVE_MODE_ROCK, EcarxVehicleAdapter.DRIVE_MODE_SAND, EcarxVehicleAdapter.DRIVE_MODE_AWD, EcarxVehicleAdapter.DRIVE_MODE_EAWD, EcarxVehicleAdapter.DRIVE_MODE_ADAPTIVE, EcarxVehicleAdapter.DRIVE_MODE_CUSTOM, EcarxVehicleAdapter.DRIVE_MODE_ECO_PLUS, EcarxVehicleAdapter.DRIVE_MODE_SPORT_PLUS, EcarxVehicleAdapter.DRIVE_MODE_START_TYPE18, EcarxVehicleAdapter.DRIVE_MODE_START_TYPE72, EcarxVehicleAdapter.DRIVE_MODE_START_TYPE79, EcarxVehicleAdapter.DRIVE_MODE_START_TYPE97});
         addCommandGroup(root, "Experimental: custom propulsion", EcarxVehicleAdapter.DRIVE_CUSTOM_PROPULSION,
-                new String[]{"Propulsion Eco", "Propulsion Comfort", "Propulsion Sport", "Propulsion Offroad", "Propulsion Snow", "Propulsion Sand", "Propulsion Hybrid", "Propulsion Pure", "Propulsion Power", "Propulsion AWD", "Propulsion off"},
-                new int[]{EcarxVehicleAdapter.CUSTOM_PROPULSION_ECO, EcarxVehicleAdapter.CUSTOM_PROPULSION_COMFORT, EcarxVehicleAdapter.CUSTOM_PROPULSION_SPORT, EcarxVehicleAdapter.CUSTOM_PROPULSION_OFFROAD, EcarxVehicleAdapter.CUSTOM_PROPULSION_SNOW, EcarxVehicleAdapter.CUSTOM_PROPULSION_SAND, EcarxVehicleAdapter.CUSTOM_PROPULSION_HYBRID, EcarxVehicleAdapter.CUSTOM_PROPULSION_PURE, EcarxVehicleAdapter.CUSTOM_PROPULSION_POWER, EcarxVehicleAdapter.CUSTOM_PROPULSION_AWD, EcarxVehicleAdapter.COMMON_OFF});
+                new String[]{"Propulsion Offroad", "Propulsion Sand"},
+                new int[]{EcarxVehicleAdapter.CUSTOM_PROPULSION_OFFROAD, EcarxVehicleAdapter.CUSTOM_PROPULSION_SAND});
         addCommandGroup(root, "Experimental: custom suspension", EcarxVehicleAdapter.DRIVE_CUSTOM_SUSPENSION,
                 new String[]{"Suspension Standard", "Suspension Comfort", "Suspension Sport", "Suspension Offroad", "Suspension Snow", "Suspension Automatic", "Suspension off"},
                 new int[]{EcarxVehicleAdapter.CUSTOM_SUSPENSION_STANDARD, EcarxVehicleAdapter.CUSTOM_SUSPENSION_COMFORT, EcarxVehicleAdapter.CUSTOM_SUSPENSION_SPORT, EcarxVehicleAdapter.CUSTOM_SUSPENSION_OFFROAD, EcarxVehicleAdapter.CUSTOM_SUSPENSION_SNOW, EcarxVehicleAdapter.CUSTOM_SUSPENSION_AUTOMATIC, EcarxVehicleAdapter.COMMON_OFF});
@@ -2030,20 +2029,9 @@ public class MainActivity extends Activity {
         addCommandGroup(root, "Experimental: DIM theme", EcarxVehicleAdapter.DRIVE_DIM_THEME_SET,
                 new String[]{"DIM theme Red", "DIM theme Gold", "DIM theme Blue", "DIM theme off"},
                 new int[]{EcarxVehicleAdapter.DIM_THEME_RED, EcarxVehicleAdapter.DIM_THEME_GOLD, EcarxVehicleAdapter.DIM_THEME_BLUE, EcarxVehicleAdapter.COMMON_OFF});
-        addCommandGroup(root, "Experimental: energy drive mode", EcarxVehicleAdapter.DRIVE_ENERGY_MODE,
-                new String[]{"Energy Range", "Energy Tour", "Energy Sport", "Energy off"},
-                new int[]{EcarxVehicleAdapter.ENERGY_MODE_RANGE, EcarxVehicleAdapter.ENERGY_MODE_TOUR, EcarxVehicleAdapter.ENERGY_MODE_SPORT, EcarxVehicleAdapter.COMMON_OFF});
-        addCommandGroup(root, "Experimental: ESC level", EcarxVehicleAdapter.DRIVE_ESC_LEVEL,
-                new String[]{"ESC level 1", "ESC level 2", "ESC level 3", "ESC level 4", "ESC level 5", "ESC off"},
-                new int[]{EcarxVehicleAdapter.ESC_LEVEL_1, EcarxVehicleAdapter.ESC_LEVEL_2, EcarxVehicleAdapter.ESC_LEVEL_3, EcarxVehicleAdapter.ESC_LEVEL_4, EcarxVehicleAdapter.ESC_LEVEL_5, EcarxVehicleAdapter.COMMON_OFF});
-        addCommandGroup(root, "Experimental: Startrack / champion", EcarxVehicleAdapter.DRIVE_STARTRACK_MODE,
-                new String[]{"Startrack type 18", "Startrack type 72", "Startrack type 79", "Startrack type 97", "Startrack off"},
-                new int[]{EcarxVehicleAdapter.STARTRACK_TYPE18, EcarxVehicleAdapter.STARTRACK_TYPE72, EcarxVehicleAdapter.STARTRACK_TYPE79, EcarxVehicleAdapter.STARTRACK_TYPE97, EcarxVehicleAdapter.COMMON_OFF});
         addCommandGroup(root, "Experimental: risky toggles", EcarxVehicleAdapter.DRIVE_CREEP_SET,
                 new String[]{"Creep on", "Creep off"},
                 new int[]{EcarxVehicleAdapter.COMMON_ON, EcarxVehicleAdapter.COMMON_OFF});
-        addCommand(root, "Launch control on", EcarxVehicleAdapter.DRIVE_LAUNCH_CONTROL, EcarxVehicleAdapter.COMMON_ON);
-        addCommand(root, "Launch control off", EcarxVehicleAdapter.DRIVE_LAUNCH_CONTROL, EcarxVehicleAdapter.COMMON_OFF);
         addCommand(root, "Noise control on", EcarxVehicleAdapter.DRIVE_NOISE_CONTROL, EcarxVehicleAdapter.COMMON_ON);
         addCommand(root, "Noise control off", EcarxVehicleAdapter.DRIVE_NOISE_CONTROL, EcarxVehicleAdapter.COMMON_OFF);
         addCommand(root, "Performance saving on", EcarxVehicleAdapter.DRIVE_PERFORMANCE_SAVING, EcarxVehicleAdapter.COMMON_ON);

@@ -197,7 +197,7 @@ public class ParkingActivity extends Activity {
 
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(2);
-        addShortcutButton(grid, "Радары standby", () -> sendVehicle(EcarxVehicleAdapter.PAS_RADAR_WORK_MODE, EcarxVehicleAdapter.PAS_RADAR_WORK_MODE_STANDBY));
+        addShortcutButton(grid, "PDC / PAC старт", () -> sendVehicle(EcarxVehicleAdapter.PAS_PAC_ACTIVATION, EcarxVehicleAdapter.COMMON_ON));
         addShortcutButton(grid, "Направляющие", () -> sendVehicle(EcarxVehicleAdapter.PAS_PAC_OVERLAY_STEERPATH, EcarxVehicleAdapter.COMMON_ON));
         addShortcutButton(grid, "Top View", this::openAvmCamera);
         addShortcutButton(grid, "APA Confirm", () -> {
@@ -216,8 +216,9 @@ public class ParkingActivity extends Activity {
     private LinearLayout buildRadarAndVisualPanel() {
         LinearLayout panel = Ui.glassCard(this);
         panel.addView(Ui.label(this, "Радары / Визуальная помощь"));
-        panel.addView(Ui.muted(this, "Direct PAS write-path отключен: в логах 2026-07-25 для radar/RCTA/overlay/top-view есть setFunctionValue result:false, а для остальных PAS visual controls нет подтвержденной успешной записи. Здесь оставлены только readback и EVS/OEM entry."));
-        addActionButton(panel, "Открыть AVM 360 через EVS", this::openAvmCamera);
+        panel.addView(Ui.muted(this, "log_1.32 подтвердил AVM через HAL/EVS и PDC-кандидат PAS_PAC_ACTIVATION. Radar work mode оставлен только как readback."));
+        addActionButton(panel, "Открыть AVM 360", this::openAvmCamera);
+        addActionButton(panel, "Активировать PDC/PAC", () -> sendVehicle(EcarxVehicleAdapter.PAS_PAC_ACTIVATION, EcarxVehicleAdapter.COMMON_ON));
         addDiagnostic(panel, "Статус радаров и оверлеев",
                 EcarxVehicleAdapter.PAS_STATUS,
                 EcarxVehicleAdapter.PAS_RADAR_WORK_MODE,
@@ -553,9 +554,11 @@ public class ParkingActivity extends Activity {
 
     private void showPdcStatus() {
         EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
-        EcarxVehicleAdapter.Result support = adapter.support(EcarxVehicleAdapter.ADAS_PDC);
-        EcarxVehicleAdapter.Result value = adapter.get(EcarxVehicleAdapter.ADAS_PDC);
-        Ui.dialog(this, "PDC switch", "write: disabled by logs_1.31\nsupport: " + support.message + "\nreadback: " + value.message);
+        EcarxVehicleAdapter.Result pdcSupport = adapter.support(EcarxVehicleAdapter.ADAS_PDC);
+        EcarxVehicleAdapter.Result pdcValue = adapter.get(EcarxVehicleAdapter.ADAS_PDC);
+        EcarxVehicleAdapter.Result pacSupport = adapter.support(EcarxVehicleAdapter.PAS_PAC_ACTIVATION);
+        EcarxVehicleAdapter.Result pacValue = adapter.get(EcarxVehicleAdapter.PAS_PAC_ACTIVATION);
+        Ui.dialog(this, "PDC / PAC", "write candidate: PAS_PAC_ACTIVATION = 1\nADAS_PDC support: " + pdcSupport.message + "\nADAS_PDC readback: " + pdcValue.message + "\nPAC support: " + pacSupport.message + "\nPAC readback: " + pacValue.message);
     }
 
     private void sendSignalParkMode(int mode) {
@@ -739,8 +742,8 @@ public class ParkingActivity extends Activity {
     private String pdcStatusSummary() {
         EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
         String pdc = compact(adapter.get(EcarxVehicleAdapter.ADAS_PDC).message);
-        String radar = compact(adapter.get(EcarxVehicleAdapter.PAS_RADAR_WORK_MODE).message);
-        return pdc + " · " + radar;
+        String pac = compact(adapter.get(EcarxVehicleAdapter.PAS_PAC_ACTIVATION).message);
+        return pdc + " · " + pac;
     }
 
     private String rctaStatusSummary() {

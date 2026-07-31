@@ -422,8 +422,9 @@ public class SettingsActivity extends Activity {
                 "HVAC_AIR_FRAGRANCE"
         ));
         groups.put("Vehicle Body", resolveFunctionIds(
-                "BCM_WINDOW", "BCM_DOOR", "BCM_DOOR_LOCK", "BCM_DOOR_STATUS",
-                "BCM_WINDOW_POS", "BCM_SUNROOF_OPEN", "BCM_SUNROOF_CLOSE", "BCM_SUNCURT_OPEN",
+                "BCM_WINDOW", "BCM_WINDOW_POS", "BCM_DOOR", "BCM_DOOR_LOCK", "BCM_DOOR_STATUS",
+                "SETTING_FUNC_CENTRAL_LOCK",
+                "BCM_SUNROOF_OPEN", "BCM_SUNROOF_CLOSE", "BCM_SUNCURT_OPEN",
                 "BCM_SUNCURT_CLOSE", "BCM_SUNROOF_TILT", "BCM_SUNROOF_INIT",
                 "BCM_MIRROR_FOLD", "BCM_MIRROR_DEFROST", "BCM_LIGHT_DIPPED_BEAM", "BCM_LIGHT_GRILLE"
         ));

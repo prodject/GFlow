@@ -752,7 +752,7 @@ public class VoiceActivity extends Activity {
             return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_DOOR, zone, EcarxVehicleAdapter.DOOR_CLOSE);
         }
         if (has(cmd, "зам") && has(cmd, "двер")) {
-            return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_DOOR_LOCK, off(cmd) ? EcarxVehicleAdapter.COMMON_OFF : EcarxVehicleAdapter.COMMON_ON);
+            return CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.VEHICLE_CENTRAL_LOCK, off(cmd) ? EcarxVehicleAdapter.COMMON_OFF : EcarxVehicleAdapter.COMMON_ON);
         }
         if (has(cmd, "дет") && (has(cmd, "зам") || has(cmd, "lock"))) {
             return setRearChildLock(off(cmd) ? EcarxVehicleAdapter.COMMON_OFF : EcarxVehicleAdapter.COMMON_ON);

@@ -33,6 +33,10 @@ final class AvmHalAdapter {
 
     String diagnostics() {
         StringBuilder sb = new StringBuilder();
+        sb.append("raw candidates from log_1.32/alls:\n");
+        sb.append("0x2141f000 funcId=17 commandId=46 value=0/15 -> parking/hazard physical candidate\n");
+        sb.append("0x2141f000 funcId=30 commandId=38/39/40/41 -> window physical status\n");
+        sb.append("0x2141f000 funcId=30 commandId=57 value=3/1 -> central lock physical status\n");
         append(sb, read(PROP_AVM_STATUS));
         append(sb, read(PROP_AVM_VIEW));
         append(sb, read(PROP_AVM_STATE));

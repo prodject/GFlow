@@ -64,6 +64,7 @@ final class DiagnosticsRunner {
             appendAdvancedDiagnostics(context, log);
             appendSection(log, "Logcat Snapshot", safeBlock("Logcat Snapshot", DiagnosticsRunner::collectLogcatSnapshot));
             if (includeWrites) appendWriteSweep(context, log);
+            appendRoofPositionSweep(adapter, log, includeWrites);
             appendCatalogSweep(adapter, log, includeWrites);
 
             File cacheFile = new File(context.getCacheDir(), LATEST_REPORT);
@@ -106,7 +107,9 @@ final class DiagnosticsRunner {
         log.append("== Write Sweep ==\n");
         EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(context);
         for (EcarxVehicleAdapter.Command command : buildWriteSweep()) {
-            EcarxVehicleAdapter.Result result = adapter.set(command.functionId, command.zone, command.value);
+            Snapshot snapshot = snapshotInt(adapter, command.functionId, command.zone);
+            EcarxVehicleAdapter.Result result = safeResult(() -> adapter.set(command.functionId, command.zone, command.value));
+            RestoreResult restore = restoreInt(adapter, snapshot);
             log.append("set ")
                     .append(EcarxVehicleAdapter.hex(command.functionId))
                     .append("/")
@@ -117,6 +120,12 @@ final class DiagnosticsRunner {
                     .append(result.message)
                     .append(" :: WRITE_SUMMARY status=")
                     .append(result.success ? "OK action=keep_ui_enabled" : result.isSupported() ? "WRITE_FAIL action=fix_value_or_zone" : "UNSUPPORTED action=disable_ui")
+                    .append(" snapshot=")
+                    .append(snapshot.status)
+                    .append(" restore=")
+                    .append(restore.status)
+                    .append(" restoreMessage=")
+                    .append(compactLine(restore.message))
                     .append("\n");
         }
         log.append("\n");
@@ -158,13 +167,18 @@ final class DiagnosticsRunner {
             }
 
             if (includeWrites && support != null && support.success && support.isSupported() && spec.writable) {
-                if (values == null || values.length == 0) {
+                if (isUnsafeCatalogWrite(functionId)) {
+                    writeStatus = " write=SKIPPED_UNSAFE";
+                } else if (values == null || values.length == 0) {
                     writeStatus = " write=NO_VALUES";
                     noValues++;
                 } else {
                     WriteProbeResult probe = probeCatalogWrite(adapter, functionId, zone, values);
                     writeStatus = " write=" + probe.status + " value=" + EcarxVehicleAdapter.hex(probe.value)
-                            + " message=" + compactLine(probe.message);
+                            + " message=" + compactLine(probe.message)
+                            + " snapshot=" + probe.snapshotStatus
+                            + " restore=" + probe.restoreStatus
+                            + " restoreMessage=" + compactLine(probe.restoreMessage);
                     if ("SUPPORTED_WRITE_OK".equals(probe.status)) supportedWriteOk++;
                     else writeFail++;
                 }
@@ -206,13 +220,137 @@ final class DiagnosticsRunner {
         int attempts = Math.min(values.length, 2);
         EcarxVehicleAdapter.Result last = null;
         int lastValue = 0;
+        Snapshot snapshot = snapshotInt(adapter, functionId, zone);
         for (int i = 0; i < attempts; i++) {
             final int value = values[i].value;
             lastValue = value;
             last = safeResult(() -> adapter.set(functionId, zone, value));
-            if (last.success) return new WriteProbeResult("SUPPORTED_WRITE_OK", value, last.message);
+            if (last.success) {
+                RestoreResult restore = restoreInt(adapter, snapshot);
+                return new WriteProbeResult("SUPPORTED_WRITE_OK", value, last.message, snapshot.status, restore.status, restore.message);
+            }
         }
-        return new WriteProbeResult("WRITE_FAIL", lastValue, last == null ? "no write attempted" : last.message);
+        RestoreResult restore = restoreInt(adapter, snapshot);
+        return new WriteProbeResult("WRITE_FAIL", lastValue, last == null ? "no write attempted" : last.message, snapshot.status, restore.status, restore.message);
+    }
+
+    private static void appendRoofPositionSweep(EcarxVehicleAdapter adapter, StringBuilder log, boolean includeWrites) {
+        log.append("== Roof Position Sweep ==\n");
+        appendRoofPositionZone(adapter, log, "sunroof", EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, includeWrites);
+        appendRoofPositionZone(adapter, log, "sun curtain", EcarxVehicleAdapter.ZONE_ROW_1_ALL, includeWrites);
+        log.append("\n");
+    }
+
+    private static void appendRoofPositionZone(EcarxVehicleAdapter adapter, StringBuilder log, String label, int zone, boolean includeWrites) {
+        int functionId = EcarxVehicleAdapter.BCM_WINDOW_POS;
+        EcarxVehicleAdapter.Result support = safeResult(() -> adapter.catalogSupport(functionId, zone));
+        EcarxVehicleAdapter.Result read = safeResult(() -> adapter.getFloat(functionId, zone));
+        log.append("ROOF_POSITION ")
+                .append(label)
+                .append(" id=")
+                .append(EcarxVehicleAdapter.hex(functionId))
+                .append(" zone=")
+                .append(EcarxVehicleAdapter.hex(zone))
+                .append(" support=")
+                .append(compactLine(support == null ? "null" : support.message))
+                .append(" read=")
+                .append(compactLine(read == null ? "null" : read.message));
+        if (!includeWrites) {
+            log.append(" write=SKIPPED_READ_ONLY_RUN\n");
+            return;
+        }
+        if (support == null || !support.success || !support.isSupported()) {
+            log.append(" write=UNSUPPORTED\n");
+            return;
+        }
+        FloatSnapshot snapshot = snapshotFloat(adapter, functionId, zone);
+        float[] candidates = {12f, 40f};
+        EcarxVehicleAdapter.Result last = null;
+        float lastValue = 0f;
+        for (float candidate : candidates) {
+            if (snapshot.available() && Math.abs(snapshot.value - candidate) < 0.01f) continue;
+            lastValue = candidate;
+            last = safeResult(() -> adapter.setFloat(functionId, zone, candidate));
+            if (last != null && last.success) break;
+        }
+        FloatRestoreResult restore = restoreFloat(adapter, snapshot);
+        String status = last != null && last.success ? "SUPPORTED_FLOAT_WRITE_OK" : "FLOAT_WRITE_FAIL";
+        log.append(" write=")
+                .append(status)
+                .append(" value=")
+                .append(String.format(Locale.US, "%.1f", lastValue))
+                .append(" message=")
+                .append(compactLine(last == null ? "no write attempted" : last.message))
+                .append(" snapshot=")
+                .append(snapshot.status)
+                .append(" restore=")
+                .append(restore.status)
+                .append(" restoreMessage=")
+                .append(compactLine(restore.message))
+                .append("\n");
+    }
+
+    private static boolean isUnsafeCatalogWrite(int functionId) {
+        switch (functionId) {
+            case EcarxVehicleAdapter.BCM_WINDOW:
+            case EcarxVehicleAdapter.BCM_WINDOW_POS:
+            case EcarxVehicleAdapter.BCM_WINDOW_LOCK:
+            case EcarxVehicleAdapter.BCM_SUNROOF_OPEN:
+            case EcarxVehicleAdapter.BCM_SUNROOF_CLOSE:
+            case EcarxVehicleAdapter.BCM_SUNCURT_OPEN:
+            case EcarxVehicleAdapter.BCM_SUNCURT_CLOSE:
+            case EcarxVehicleAdapter.BCM_SUNROOF_TILT:
+            case EcarxVehicleAdapter.SEAT_LENGTH:
+            case EcarxVehicleAdapter.SEAT_HEIGHT:
+            case EcarxVehicleAdapter.SEAT_BACKREST:
+            case EcarxVehicleAdapter.SEAT_POSITION_SET:
+            case EcarxVehicleAdapter.SEAT_POSITION_SAVE:
+            case EcarxVehicleAdapter.SEAT_RESTORE:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private static Snapshot snapshotInt(EcarxVehicleAdapter adapter, int functionId, int zone) {
+        if (adapter.spec(functionId).floatValue) {
+            return new Snapshot(functionId, zone, 0, "SKIPPED_FLOAT", "float readback is not restored by int snapshot");
+        }
+        EcarxVehicleAdapter.Result read = safeResult(() -> adapter.catalogReadInt(functionId, zone));
+        if (read != null && read.success && read.isSupported()) {
+            return new Snapshot(functionId, zone, read.value, "OK", read.message);
+        }
+        return new Snapshot(functionId, zone, 0, "SKIPPED_NO_READBACK", read == null ? "null" : read.message);
+    }
+
+    private static RestoreResult restoreInt(EcarxVehicleAdapter adapter, Snapshot snapshot) {
+        if (!snapshot.available()) {
+            return new RestoreResult("SKIPPED_NO_SNAPSHOT", snapshot.message);
+        }
+        EcarxVehicleAdapter.Result restore = safeResult(() -> adapter.set(snapshot.functionId, snapshot.zone, snapshot.value));
+        if (restore != null && restore.success) {
+            return new RestoreResult("OK", restore.message);
+        }
+        return new RestoreResult("FAILED", restore == null ? "null" : restore.message);
+    }
+
+    private static FloatSnapshot snapshotFloat(EcarxVehicleAdapter adapter, int functionId, int zone) {
+        EcarxVehicleAdapter.Result read = safeResult(() -> adapter.getFloat(functionId, zone));
+        if (read != null && read.success && read.isSupported() && !Float.isNaN(read.floatData)) {
+            return new FloatSnapshot(functionId, zone, read.floatData, "OK", read.message);
+        }
+        return new FloatSnapshot(functionId, zone, 0f, "SKIPPED_NO_FLOAT_READBACK", read == null ? "null" : read.message);
+    }
+
+    private static FloatRestoreResult restoreFloat(EcarxVehicleAdapter adapter, FloatSnapshot snapshot) {
+        if (!snapshot.available()) {
+            return new FloatRestoreResult("SKIPPED_NO_SNAPSHOT", snapshot.message);
+        }
+        EcarxVehicleAdapter.Result restore = safeResult(() -> adapter.setFloat(snapshot.functionId, snapshot.zone, snapshot.value));
+        if (restore != null && restore.success) {
+            return new FloatRestoreResult("OK", restore.message);
+        }
+        return new FloatRestoreResult("FAILED", restore == null ? "null" : restore.message);
     }
 
     private static String compactLine(String message) {
@@ -277,15 +415,9 @@ final class DiagnosticsRunner {
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_DEFROST_FRONT, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_DEFROST_REAR, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.HVAC_SEAT_HEATING_LEVEL_1),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, EcarxVehicleAdapter.HVAC_SEAT_VENTILATION_LEVEL_1),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.WHEEL_HEAT_LOW),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.BCM_WINDOW, EcarxVehicleAdapter.BCM_WINDOW_ROW_1_LEFT, EcarxVehicleAdapter.WINDOW_OPEN),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.BCM_WINDOW, EcarxVehicleAdapter.BCM_WINDOW_ROW_1_RIGHT, EcarxVehicleAdapter.WINDOW_CLOSE),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.BCM_DOOR, EcarxVehicleAdapter.BCM_DOOR_ROW_1_LEFT, EcarxVehicleAdapter.DOOR_OPEN),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.BCM_DOOR, EcarxVehicleAdapter.BCM_DOOR_ROW_1_RIGHT, EcarxVehicleAdapter.DOOR_OPEN),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.BCM_DOOR, EcarxVehicleAdapter.BCM_DOOR_ROW_2_LEFT, EcarxVehicleAdapter.DOOR_OPEN),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.BCM_DOOR, EcarxVehicleAdapter.BCM_DOOR_ROW_2_RIGHT, EcarxVehicleAdapter.DOOR_OPEN),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.BCM_DOOR, EcarxVehicleAdapter.BCM_DOOR_HOOD, EcarxVehicleAdapter.DOOR_OPEN),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.VEHICLE_CENTRAL_LOCK, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
+                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.VEHICLE_CENTRAL_LOCK, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_OFF),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.BCM_CHILD_SAFETY_LOCK, EcarxVehicleAdapter.BCM_DOOR_ROW_2_LEFT, EcarxVehicleAdapter.COMMON_ON),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.BCM_CHILD_SAFETY_LOCK, EcarxVehicleAdapter.BCM_DOOR_ROW_2_RIGHT, EcarxVehicleAdapter.COMMON_ON),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.BCM_MIRROR_FOLD, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
@@ -299,10 +431,6 @@ final class DiagnosticsRunner {
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.BCM_LIGHT_REAR_FOG, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.BCM_ALL_READING_LIGHTS, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.SEAT_POSITION_SET, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_STOCK_MEMORY_SET_1),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.SEAT_ONE_KEY_COMFORT, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.PAS_RADAR_WORK_MODE, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.PAS_RADAR_WORK_MODE_FRONT_REAR_ACTIVE),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.PAS_RADAR_WORK_MODE, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.PAS_RADAR_WORK_MODE_FRONT_ACTIVE),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.PAS_RADAR_WORK_MODE, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.PAS_RADAR_WORK_MODE_REAR_ACTIVE),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.PAS_PAC_ACTIVATION, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.DRIVE_MODE_COMFORT),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.DRIVE_MODE_OFFROAD),
@@ -321,20 +449,9 @@ final class DiagnosticsRunner {
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.DRIVE_MODE_START_TYPE97),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_CUSTOM_PROPULSION, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.CUSTOM_PROPULSION_OFFROAD),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_CUSTOM_PROPULSION, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.CUSTOM_PROPULSION_SAND),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_CUSTOM_PROPULSION, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.CUSTOM_PROPULSION_AWD),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_CUSTOM_SUSPENSION, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.CUSTOM_SUSPENSION_OFFROAD),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_CUSTOM_STEERING_FEEL, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.CUSTOM_STEERING_HEAVY),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_CUSTOM_CLIMATE, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.CUSTOM_CLIMATE_ECO),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_CUSTOM_DRIVER_INFO, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.CUSTOM_DRIVER_INFO_OFFROAD),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_ENERGY_MODE, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.ENERGY_MODE_SPORT),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_LAUNCH_CONTROL, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_ESC_LEVEL, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.ESC_LEVEL_1),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_ESC_LEVEL, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.ESC_LEVEL_3),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_ESC_LEVEL, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.ESC_LEVEL_5),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_STARTRACK_MODE, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.STARTRACK_TYPE18),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_STARTRACK_MODE, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.STARTRACK_TYPE72),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_STARTRACK_MODE, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.STARTRACK_TYPE79),
-                new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_STARTRACK_MODE, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.STARTRACK_TYPE97),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.VEHICLE_STEERING_ASSISTANCE_LEVEL, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.STEERING_ASSISTANCE_MEDIUM),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.DRIVE_STEERING_FEEL_SYNC_DRIVE_MODE, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
                 new EcarxVehicleAdapter.Command(EcarxVehicleAdapter.ADAS_TRAFFIC_SIGN_RECOGNITION, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.COMMON_ON),
@@ -475,6 +592,7 @@ final class DiagnosticsRunner {
         ));
         groups.put("Vehicle Body", resolveFunctionIds(
                 "BCM_WINDOW", "BCM_DOOR", "BCM_DOOR_LOCK", "BCM_DOOR_STATUS",
+                "BCM_WINDOW_POS", "SETTING_FUNC_CENTRAL_LOCK",
                 "BCM_SUNROOF_OPEN", "BCM_MIRROR_FOLD", "BCM_LIGHT_DIPPED_BEAM", "BCM_LIGHT_GRILLE"
         ));
         groups.put("Drive / Cluster", resolveFunctionIds(
@@ -779,10 +897,77 @@ final class DiagnosticsRunner {
         final String status;
         final int value;
         final String message;
+        final String snapshotStatus;
+        final String restoreStatus;
+        final String restoreMessage;
 
-        WriteProbeResult(String status, int value, String message) {
+        WriteProbeResult(String status, int value, String message,
+                         String snapshotStatus, String restoreStatus, String restoreMessage) {
             this.status = status;
             this.value = value;
+            this.message = message;
+            this.snapshotStatus = snapshotStatus;
+            this.restoreStatus = restoreStatus;
+            this.restoreMessage = restoreMessage;
+        }
+    }
+
+    static final class Snapshot {
+        final int functionId;
+        final int zone;
+        final int value;
+        final String status;
+        final String message;
+
+        Snapshot(int functionId, int zone, int value, String status, String message) {
+            this.functionId = functionId;
+            this.zone = zone;
+            this.value = value;
+            this.status = status;
+            this.message = message;
+        }
+
+        boolean available() {
+            return "OK".equals(status);
+        }
+    }
+
+    static final class RestoreResult {
+        final String status;
+        final String message;
+
+        RestoreResult(String status, String message) {
+            this.status = status;
+            this.message = message;
+        }
+    }
+
+    static final class FloatSnapshot {
+        final int functionId;
+        final int zone;
+        final float value;
+        final String status;
+        final String message;
+
+        FloatSnapshot(int functionId, int zone, float value, String status, String message) {
+            this.functionId = functionId;
+            this.zone = zone;
+            this.value = value;
+            this.status = status;
+            this.message = message;
+        }
+
+        boolean available() {
+            return "OK".equals(status);
+        }
+    }
+
+    static final class FloatRestoreResult {
+        final String status;
+        final String message;
+
+        FloatRestoreResult(String status, String message) {
+            this.status = status;
             this.message = message;
         }
     }

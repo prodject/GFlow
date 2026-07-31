@@ -134,8 +134,8 @@ public class SteeringActivity extends Activity {
         hero.addView(row);
 
         LinearLayout quick = Ui.row(this);
-        addActionChip(quick, "New Hold", () -> openEditor("", "77", "hold", "", "always", "replace", "preset", AutomationStore.firstPreset(this)));
-        addActionChip(quick, "New Double", () -> openEditor("", "77", "double", "", "always", "replace", "preset", AutomationStore.firstPreset(this)));
+        addActionChip(quick, "New Hold", () -> openEditor("", "119", "hold", "", "always", "replace", "preset", AutomationStore.firstPreset(this)));
+        addActionChip(quick, "New Double", () -> openEditor("", "200087", "double", "", "always", "replace", "preset", AutomationStore.firstPreset(this)));
         addActionChip(quick, "Examples", () -> {
             installExamples();
             renderContent();
@@ -161,10 +161,10 @@ public class SteeringActivity extends Activity {
         panel.addView(Ui.text(this, "Полный steering flow: visual wheel, conditions, behavior и target types в новом экране.", 14, false));
 
         LinearLayout actions = Ui.row(this);
-        addActionChip(actions, "Hold", () -> openEditor("", "77", "hold", "", "always", "replace", "preset", AutomationStore.firstPreset(this)));
-        addActionChip(actions, "Double", () -> openEditor("", "77", "double", "", "always", "replace", "preset", AutomationStore.firstPreset(this)));
-        addActionChip(actions, "Triple", () -> openEditor("", "77", "triple", "", "always", "replace", "command", "0x21110100/0=0x1"));
-        addActionChip(actions, "Press", () -> openEditor("", "77", "press", "", "always", "replace", "preset", AutomationStore.firstPreset(this)));
+        addActionChip(actions, "Hold", () -> openEditor("", "119", "hold", "", "always", "replace", "preset", AutomationStore.firstPreset(this)));
+        addActionChip(actions, "Double", () -> openEditor("", "200087", "double", "", "always", "replace", "preset", AutomationStore.firstPreset(this)));
+        addActionChip(actions, "Triple", () -> openEditor("", "200088", "triple", "", "always", "replace", "command", "0x21110100/0=0x1"));
+        addActionChip(actions, "Press", () -> openEditor("", "200231", "press", "", "always", "replace", "launch", "com.prodject.gflow"));
         panel.addView(actions, lpMatchWrap(0, 12, 0, 12));
 
         List<String> names = AutomationEngine.names(automationPrefs, AutomationEngine.KEY_BUTTON_ORDER);
@@ -208,16 +208,21 @@ public class SteeringActivity extends Activity {
     private LinearLayout buildExamplesPanel() {
         LinearLayout panel = Ui.glassCard(this);
         panel.addView(Ui.label(this, "Examples"));
-        panel.addView(Ui.text(this, "Примеры из `Design.txt`: hold 360, double cooling, voice hold, mute media, eco comfort toggle, stationary trunk.", 14, false));
+        panel.addView(Ui.text(this, "Примеры обновлены по log_1.32/alls: 360=119, voice=200231, mute=200164, prev=200088, next=200087, ICA=6/300050/5/3/4.", 14, false));
 
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(3);
-        addExampleTile(grid, "Hold 360", Ui.CYAN, () -> openEditor("M hold 360", "77", "hold", "", "always", "replace", "command", "0x21110100/0=0x1"));
-        addExampleTile(grid, "Double Cooling", Ui.SUCCESS, () -> openEditor("M double cooling", "77", "double", "", "always", "replace", "preset", "Летнее охлаждение"));
-        addExampleTile(grid, "Voice Hold", Ui.WARNING, () -> openEditor("Voice hold Monji", "231", "hold", "", "always", "replace", "launch", "com.prodject.gflow"));
-        addExampleTile(grid, "Mute Media", Color.rgb(129, 149, 255), () -> openEditor("Volume down double mute", "25", "double", "", "always", "together", "voice", "mute media"));
-        addExampleTile(grid, "Eco Comfort", Color.rgb(88, 190, 172), () -> openEditor("Next hold eco comfort", "87", "hold", "", "always", "replace", "scenario", "Eco Comfort toggle"));
-        addExampleTile(grid, "Stationary Trunk", Color.rgb(255, 158, 91), () -> openEditor("M stationary trunk", "77", "press", "", "stationary", "stationary-only", "command", "0x21110100/0=0x64"));
+        addExampleTile(grid, "Hold 360", Ui.CYAN, () -> openEditor("360 hold", "119", "hold", "", "always", "replace", "command", "0x23030100/0=0x1"));
+        addExampleTile(grid, "Double Cooling", Ui.SUCCESS, () -> openEditor("Next double cooling", "200087", "double", "", "always", "replace", "preset", "Летнее охлаждение"));
+        addExampleTile(grid, "Voice Hold", Ui.WARNING, () -> openEditor("Voice hold", "200231", "hold", "", "always", "replace", "launch", "com.prodject.gflow"));
+        addExampleTile(grid, "Mute Media", Color.rgb(129, 149, 255), () -> openEditor("Mute press", "200164", "press", "", "always", "together", "voice", "mute media"));
+        addExampleTile(grid, "Eco Comfort", Color.rgb(88, 190, 172), () -> openEditor("Next hold eco comfort", "200087", "hold", "", "always", "replace", "scenario", "Eco Comfort toggle"));
+        addExampleTile(grid, "Stationary Trunk", Color.rgb(255, 158, 91), () -> openEditor("Prev stationary trunk", "200088", "press", "", "stationary", "stationary-only", "command", "0x21110100/0=0x64"));
+        addExampleTile(grid, "ICA Assist", Color.rgb(95, 185, 255), () -> openEditor("ICA assist press", "6", "press", "", "always", "together", "scenario", "ICA Assist"));
+        addExampleTile(grid, "Lane Track", Color.rgb(112, 214, 156), () -> openEditor("Lane tracking press", "300050", "press", "", "always", "together", "scenario", "Lane Tracking"));
+        addExampleTile(grid, "ICA Speed", Color.rgb(255, 205, 105), () -> openEditor("ICA speed lever", "5", "press", "", "always", "together", "scenario", "ICA Speed Lever"));
+        addExampleTile(grid, "Cruise Left", Color.rgb(178, 136, 255), () -> openEditor("Cruise mode previous", "3", "press", "", "always", "together", "scenario", "Cruise Mode Previous"));
+        addExampleTile(grid, "Cruise Right", Color.rgb(178, 136, 255), () -> openEditor("Cruise mode next", "4", "press", "", "always", "together", "scenario", "Cruise Mode Next"));
         panel.addView(grid, lpMatchWrap(0, 12, 0, 0));
 
         LinearLayout row = Ui.row(this);
@@ -334,12 +339,17 @@ public class SteeringActivity extends Activity {
     }
 
     private void installExamples() {
-        AutomationStore.saveNamed(this, AutomationEngine.KEY_BUTTON_ORDER, "button2:", "", "M hold 360", "M hold 360|77|hold||always|replace|command|0x21110100/0=0x1");
-        AutomationStore.saveNamed(this, AutomationEngine.KEY_BUTTON_ORDER, "button2:", "", "M double cooling", "M double cooling|77|double||always|replace|preset|Летнее охлаждение");
-        AutomationStore.saveNamed(this, AutomationEngine.KEY_BUTTON_ORDER, "button2:", "", "Voice hold Monji", "Voice hold Monji|231|hold||always|replace|launch|com.prodject.gflow");
-        AutomationStore.saveNamed(this, AutomationEngine.KEY_BUTTON_ORDER, "button2:", "", "Volume down double mute", "Volume down double mute|25|double||always|together|voice|mute media");
-        AutomationStore.saveNamed(this, AutomationEngine.KEY_BUTTON_ORDER, "button2:", "", "Next hold eco comfort", "Next hold eco comfort|87|hold||always|replace|scenario|Eco Comfort toggle");
-        AutomationStore.saveNamed(this, AutomationEngine.KEY_BUTTON_ORDER, "button2:", "", "M stationary trunk", "M stationary trunk|77|press||stationary|stationary-only|command|0x21110100/0=0x64");
+        AutomationStore.saveNamed(this, AutomationEngine.KEY_BUTTON_ORDER, "button2:", "", "360 hold", "360 hold|119|hold||always|replace|command|0x23030100/0=0x1");
+        AutomationStore.saveNamed(this, AutomationEngine.KEY_BUTTON_ORDER, "button2:", "", "Next double cooling", "Next double cooling|200087|double||always|replace|preset|Летнее охлаждение");
+        AutomationStore.saveNamed(this, AutomationEngine.KEY_BUTTON_ORDER, "button2:", "", "Voice hold", "Voice hold|200231|hold||always|replace|launch|com.prodject.gflow");
+        AutomationStore.saveNamed(this, AutomationEngine.KEY_BUTTON_ORDER, "button2:", "", "Mute press", "Mute press|200164|press||always|together|voice|mute media");
+        AutomationStore.saveNamed(this, AutomationEngine.KEY_BUTTON_ORDER, "button2:", "", "Next hold eco comfort", "Next hold eco comfort|200087|hold||always|replace|scenario|Eco Comfort toggle");
+        AutomationStore.saveNamed(this, AutomationEngine.KEY_BUTTON_ORDER, "button2:", "", "Prev stationary trunk", "Prev stationary trunk|200088|press||stationary|stationary-only|command|0x21110100/0=0x64");
+        AutomationStore.saveNamed(this, AutomationEngine.KEY_BUTTON_ORDER, "button2:", "", "ICA assist press", "ICA assist press|6|press||always|together|scenario|ICA Assist");
+        AutomationStore.saveNamed(this, AutomationEngine.KEY_BUTTON_ORDER, "button2:", "", "Lane tracking press", "Lane tracking press|300050|press||always|together|scenario|Lane Tracking");
+        AutomationStore.saveNamed(this, AutomationEngine.KEY_BUTTON_ORDER, "button2:", "", "ICA speed lever", "ICA speed lever|5|press||always|together|scenario|ICA Speed Lever");
+        AutomationStore.saveNamed(this, AutomationEngine.KEY_BUTTON_ORDER, "button2:", "", "Cruise mode previous", "Cruise mode previous|3|press||always|together|scenario|Cruise Mode Previous");
+        AutomationStore.saveNamed(this, AutomationEngine.KEY_BUTTON_ORDER, "button2:", "", "Cruise mode next", "Cruise mode next|4|press||always|together|scenario|Cruise Mode Next");
         Ui.toast(this, "Примеры кнопок руля добавлены");
     }
 
@@ -382,11 +392,11 @@ public class SteeringActivity extends Activity {
     private BindingDraft draft(String seed) {
         if (editorSeed != null) return editorSeed;
         if (seed == null || seed.trim().isEmpty()) {
-            return new BindingDraft("", "", "77", "hold", "", "always", "replace", "preset", AutomationStore.firstPreset(this));
+            return new BindingDraft("", "", "119", "hold", "", "always", "replace", "preset", AutomationStore.firstPreset(this));
         }
         String raw = automationPrefs.getString("button2:" + seed, automationPrefs.getString("button:" + seed, ""));
         if (raw == null || raw.trim().isEmpty() || raw.startsWith("draft|")) {
-            return new BindingDraft("", "", "77", "hold", "", "always", "replace", "preset", AutomationStore.firstPreset(this));
+            return new BindingDraft("", "", "119", "hold", "", "always", "replace", "preset", AutomationStore.firstPreset(this));
         }
         AutomationEngine.ButtonBinding binding = AutomationEngine.ButtonBinding.parse(raw);
         return new BindingDraft(seed, seed, String.valueOf(binding.keyCode), binding.gesture, binding.modifier, binding.condition, binding.behavior, binding.targetType, binding.target);
@@ -463,8 +473,8 @@ public class SteeringActivity extends Activity {
         dock.setOrientation(LinearLayout.HORIZONTAL);
         dock.setGravity(Gravity.CENTER_VERTICAL);
         dock.setPadding(Ui.dp(this, 18), Ui.dp(this, 14), Ui.dp(this, 18), Ui.dp(this, 14));
-        addDockButton(dock, "Hold", () -> openEditor("", "77", "hold", "", "always", "replace", "preset", AutomationStore.firstPreset(this)), false);
-        addDockButton(dock, "Double", () -> openEditor("", "77", "double", "", "always", "replace", "preset", AutomationStore.firstPreset(this)), false);
+        addDockButton(dock, "Hold", () -> openEditor("", "119", "hold", "", "always", "replace", "preset", AutomationStore.firstPreset(this)), false);
+        addDockButton(dock, "Double", () -> openEditor("", "200087", "double", "", "always", "replace", "preset", AutomationStore.firstPreset(this)), false);
         addDockButton(dock, "Examples", () -> {
             installExamples();
             renderContent();
