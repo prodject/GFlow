@@ -215,7 +215,6 @@ final class UserProfileEngine {
             if ("driveClimate".equals(p[0])) return adapter.set(EcarxVehicleAdapter.DRIVE_CUSTOM_CLIMATE, climateValue(value(p, 1))).message;
             if ("driveEnergy".equals(p[0])) return adapter.set(EcarxVehicleAdapter.DRIVE_ENERGY_MODE, energyValue(value(p, 1))).message;
             if ("driveDimTheme".equals(p[0])) return adapter.set(EcarxVehicleAdapter.DRIVE_DIM_THEME_SET, dimThemeValue(value(p, 1))).message;
-            if ("hud".equals(p[0])) return adapter.set(EcarxVehicleAdapter.HUD_ACTIVE, "off".equals(value(p, 1)) ? EcarxVehicleAdapter.COMMON_OFF : EcarxVehicleAdapter.COMMON_ON).message;
             if ("brightness".equals(p[0])) return adapter.set(EcarxVehicleAdapter.DAYMODE_SETTING, "day".equals(value(p, 1)) ? EcarxVehicleAdapter.DAYMODE_VALUE_DAY : EcarxVehicleAdapter.DAYMODE_VALUE_NIGHT).message;
             if ("ambience".equals(p[0])) return adapter.set(EcarxVehicleAdapter.AMBIENCE_LIGHT_THEME_COLOR, ambienceValue(value(p, 1))).message;
             if ("volume".equals(p[0])) return setVolume(context, AutomationEngine.parseInt(value(p, 1), 8));

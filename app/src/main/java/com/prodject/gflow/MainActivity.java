@@ -296,7 +296,7 @@ public class MainActivity extends Activity {
                 new QuickAction("Открыть климат", this::showClimateMenu),
                 new QuickAction("Открыть автомобиль", this::showVehicleMenu),
                 new QuickAction("Открыть ADAS", this::showAdasMenu),
-                new QuickAction("Открыть парковку", this::openParkingScreen)
+                new QuickAction("Открыть камеры", () -> startActivity(new Intent(this, CameraActivity.class)))
         }));
         summary.addView(Ui.label(this, "Автомобиль"));
         heroCarSummary = buildMetricLine("Климат", dashboardCarSummary());
@@ -324,7 +324,7 @@ public class MainActivity extends Activity {
         addHeroButton(row, "Климат", this::showClimateMenu);
         addHeroButton(row, "Кузов", this::showVehicleMenu);
         addHeroButton(row, "ADAS", this::showAdasMenu);
-        addHeroButton(row, "360 / APA", this::openParkingScreen);
+        addHeroButton(row, "DVR / Cameras", () -> startActivity(new Intent(this, CameraActivity.class)));
         return row;
     }
 
@@ -333,7 +333,7 @@ public class MainActivity extends Activity {
         grid.setColumnCount(2);
         addDashboardWidget(grid, "Климат", climateDashboardDetails(), Ui.CYAN, this::showComfortClimate);
         addDashboardWidget(grid, "Готовность авто", vehicleDashboardDetails(), Ui.SUCCESS, this::showVehicleMenu);
-        addDashboardWidget(grid, "360 / Parking", parkingDashboardDetails(), Color.rgb(72, 153, 255), this::openParkingScreen);
+        addDashboardWidget(grid, "DVR / Cameras", dvrDashboardDetails(), Color.rgb(72, 153, 255), () -> startActivity(new Intent(this, CameraActivity.class)));
         addDashboardWidget(grid, "Голос", "Быстрый запуск команд, навигации и сценариев", Color.rgb(101, 208, 168), () -> startActivity(new Intent(this, VoiceActivity.class)));
         return grid;
     }
@@ -376,19 +376,13 @@ public class MainActivity extends Activity {
                 new QuickAction("Умный климат", this::showClimateSmart),
                 new QuickAction("Пресеты климата", this::showClimatePresets)
         });
-        addDockButton(dock, "Parking", this::openParkingScreen, false, new QuickAction[]{
-                new QuickAction("Парковка", this::openParkingScreen),
-                new QuickAction("Камеры", () -> startActivity(new Intent(this, CameraActivity.class))),
-                new QuickAction("ADAS", this::showAdasMenu)
-        });
         addDockButton(dock, "DVR", () -> startActivity(new Intent(this, CameraActivity.class)), false, new QuickAction[]{
                 new QuickAction("Открыть DVR", () -> startActivity(new Intent(this, CameraActivity.class))),
-                new QuickAction("Парковка", this::openParkingScreen),
+                new QuickAction("ADAS", this::showAdasMenu),
                 new QuickAction("Автоматизация", this::showAutomation)
         });
         addDockButton(dock, "Vehicle", this::showVehicleMenu, false, new QuickAction[]{
                 new QuickAction("Открыть кузов", this::showVehicleMenu),
-                new QuickAction("HUD", this::showHudMenu),
                 new QuickAction("Подсветка", this::showAmbienceLight),
                 new QuickAction("Профиль", this::showProfilesMenu)
         });
@@ -588,8 +582,6 @@ public class MainActivity extends Activity {
         addDrawerAction(drawer, "Автомобиль", this::showVehicleMenu);
         addDrawerAction(drawer, "ADAS", this::showAdasMenu);
         addDrawerAction(drawer, "Камеры / DVR", () -> startActivity(new Intent(this, CameraActivity.class)));
-        addDrawerAction(drawer, "Парковка / APA", this::openParkingScreen);
-        addDrawerAction(drawer, "HUD / Cluster", this::showHudMenu);
         addDrawerAction(drawer, "Split Apps", this::openSplitLauncher);
         addDrawerAction(drawer, "Подсветка", this::showAmbienceLight);
         addDrawerAction(drawer, "Автоматизация", this::showAutomation);
@@ -873,7 +865,7 @@ public class MainActivity extends Activity {
             if (y < 0.40f) transition(MainActivity.this::showClimateMenu);
             else if (y < 0.68f) transition(MainActivity.this::showVehicleMenu);
             else if (x < 0.50f) transition(MainActivity.this::showAdasMenu);
-            else transition(MainActivity.this::openParkingScreen);
+            else transition(() -> startActivity(new Intent(MainActivity.this, CameraActivity.class)));
             return true;
         }
 
@@ -1067,14 +1059,6 @@ public class MainActivity extends Activity {
         startActivity(new Intent(this, AdasActivity.class));
     }
 
-    private void openParkingScreen() {
-        startActivity(new Intent(this, ParkingActivity.class));
-    }
-
-    private void showHudMenu() {
-        startActivity(new Intent(this, HudActivity.class));
-    }
-
     private void showSettings() {
         startActivity(new Intent(this, SettingsActivity.class));
     }
@@ -1153,7 +1137,6 @@ public class MainActivity extends Activity {
         addRailButton(rail, "Климат", this::showClimateMenu);
         addRailButton(rail, "Автомобиль", this::showVehicleMenu);
         addRailButton(rail, "ADAS", this::showAdasMenu);
-        addRailButton(rail, "HUD", this::showHudMenu);
         addRailButton(rail, "Автоматизация", this::showAutomation);
         addRailButton(rail, "Профили", this::showProfilesMenu);
         addRailButton(rail, "Руль", this::showSteeringMenu);
@@ -1280,7 +1263,7 @@ public class MainActivity extends Activity {
         addToggleAction(safety, "AEB", () -> sendVehicleChecked(EcarxVehicleAdapter.ADAS_AEB, EcarxVehicleAdapter.COMMON_ON));
         addToggleAction(safety, "FCW", () -> sendVehicleChecked(EcarxVehicleAdapter.ADAS_FCW_SENSITIVITY, EcarxVehicleAdapter.FCW_SENSITIVITY_NORMAL));
         addToggleAction(safety, "LKA", () -> sendVehicleChecked(EcarxVehicleAdapter.ADAS_LKA, EcarxVehicleAdapter.COMMON_ON));
-        addToggleAction(safety, "PDC", this::openParkingScreen);
+        addToggleAction(safety, "PDC", this::showAdasMenu);
         card.addView(safety);
         SeekBar gap = new SeekBar(this);
         gap.setMax(4);

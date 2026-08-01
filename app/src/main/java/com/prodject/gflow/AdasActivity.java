@@ -167,9 +167,6 @@ public class AdasActivity extends Activity {
         row.addView(visual, visualLp);
         hero.addView(row);
 
-        LinearLayout quick = Ui.row(this);
-        addActionChip(quick, "Парковка", this::openParkingActivity);
-        hero.addView(quick, lpMatchWrap(0, 14, 0, 0));
         return hero;
     }
 
@@ -318,12 +315,10 @@ public class AdasActivity extends Activity {
     private LinearLayout buildPdcPanel() {
         LinearLayout panel = Ui.glassCard(this);
         panel.addView(Ui.label(this, "PDC / Парковка"));
-        panel.addView(Ui.muted(this, "PDC остается частью ADAS, а полный сценарий 360 / APA открыт как отдельный экран парковки."));
+        panel.addView(Ui.muted(this, "PDC остается частью ADAS. Отдельный раздел Parking / APA убран как неподтвержденный."));
 
         LinearLayout controls = Ui.row(this);
-        addActionChip(controls, "PDC / PAC", this::openParkingActivity);
         addActionChip(controls, "Громкость сред.", () -> sendVehicle("PDC volume mid", EcarxVehicleAdapter.ADAS_PDC_WARNING_VOLUME, EcarxVehicleAdapter.PDC_VOLUME_MID));
-        addActionChip(controls, "Парковка", this::openParkingActivity);
         panel.addView(controls, lpMatchWrap(0, 12, 0, 0));
 
         GridLayout grid = new GridLayout(this);
@@ -498,7 +493,6 @@ public class AdasActivity extends Activity {
 
         LinearLayout actions = Ui.row(this);
         addActionChip(actions, "Экспорт", () -> exportDiagnostics(last.getText() + "\n" + raw.getText()));
-        addActionChip(actions, "Парковка", this::openParkingActivity);
         panel.addView(actions, lpMatchWrap(0, 12, 0, 0));
         return panel;
     }
@@ -508,7 +502,7 @@ public class AdasActivity extends Activity {
         grid.setColumnCount(2);
         addStatusCard(grid, "Ассистенты", experimentalFeaturesEnabled() ? "AEB · FCW · LKA · AI" : "AEB · FCW · LKA · LDW", Ui.SUCCESS);
         addStatusCard(grid, "Круиз", "ACC / ICC / TSR", Ui.CYAN);
-        addStatusCard(grid, "Парковка", "PDC здесь · AVM и APA в Parking", Ui.WARNING);
+        addStatusCard(grid, "Парковка", "PDC diagnostics", Ui.WARNING);
         addStatusCard(grid, "Полоса", developerModeEnabled() ? "Lane keep · readback · diagnostics" : "Lane keep / lane warning", Color.rgb(129, 149, 255));
         return grid;
     }
@@ -540,8 +534,8 @@ public class AdasActivity extends Activity {
         addDockButton(dock, "LKA", () -> sendVehicle("LKA warn+intervention", EcarxVehicleAdapter.ADAS_LKA, EcarxVehicleAdapter.LKA_MODE_WARN_INTV), false);
         addDockButton(dock, "ACC", () -> sendVehicle("ACC режим", EcarxVehicleAdapter.ADAS_ACC_ICC_SWITCH, EcarxVehicleAdapter.ACC_ICC_ACC), false);
         addDockButton(dock, "ICC", () -> sendVehicle("ICC режим", EcarxVehicleAdapter.ADAS_ACC_ICC_SWITCH, EcarxVehicleAdapter.ACC_ICC_ICC), false);
-        addDockButton(dock, "PDC", this::openParkingActivity, false);
-        addDockButton(dock, "APA", this::openParkingActivity, false);
+        addDockButton(dock, "PDC", () -> sendVehicle("PDC volume mid", EcarxVehicleAdapter.ADAS_PDC_WARNING_VOLUME, EcarxVehicleAdapter.PDC_VOLUME_MID), false);
+        addDockButton(dock, "APA", this::showLastCommandPanel, false);
         return dock;
     }
 
@@ -798,10 +792,6 @@ public class AdasActivity extends Activity {
         } catch (Exception e) {
             Ui.toast(this, "Не удалось записать /storage/emulated/0/gflow_data.log");
         }
-    }
-
-    private void openParkingActivity() {
-        startActivity(new Intent(this, ParkingActivity.class));
     }
 
     private void installHighwayAssistPreset() {

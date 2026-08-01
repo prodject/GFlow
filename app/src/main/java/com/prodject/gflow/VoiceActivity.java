@@ -1207,7 +1207,6 @@ public class VoiceActivity extends Activity {
         items.add(new AliasOption("vehicle", "Автомобиль"));
         items.add(new AliasOption("adas", "ADAS"));
         items.add(new AliasOption("parking", "Парковка"));
-        items.add(new AliasOption("hud", "HUD / Cluster"));
         items.add(new AliasOption("automation", "Автоматизация"));
         items.add(new AliasOption("profile", "Профили"));
         items.add(new AliasOption("steering", "Кнопки руля"));
@@ -1254,8 +1253,6 @@ public class VoiceActivity extends Activity {
         if ("climate".equals(target)) cls = ClimateActivity.class;
         else if ("vehicle".equals(target)) cls = VehicleActivity.class;
         else if ("adas".equals(target)) cls = AdasActivity.class;
-        else if ("parking".equals(target)) cls = ParkingActivity.class;
-        else if ("hud".equals(target)) cls = HudActivity.class;
         else if ("automation".equals(target)) cls = AutomationActivity.class;
         else if ("profile".equals(target)) cls = ProfileActivity.class;
         else if ("steering".equals(target)) cls = SteeringActivity.class;

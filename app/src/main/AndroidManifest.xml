@@ -172,7 +172,6 @@
         <activity android:name=".AdasActivity" android:exported="false" />
         <activity android:name=".CameraActivity" android:exported="false" />
         <activity android:name=".ParkingActivity" android:exported="false" />
-        <activity android:name=".HudActivity" android:exported="false" />
         <activity android:name=".AutomationActivity" android:exported="false" />
         <activity android:name=".ProfileActivity" android:exported="false" />
         <activity android:name=".SteeringActivity" android:exported="false" />
@@ -222,17 +221,9 @@
         <service android:name=".CameraRecordingService" android:exported="false" android:foregroundServiceType="camera|microphone" />
         <service android:name=".LowSpeedCameraService" android:exported="false" />
         <service android:name=".VoiceForegroundService" android:exported="false" android:foregroundServiceType="microphone" />
-        <service android:name=".HudPresentationService" android:exported="false" />
-        <service android:name=".HudObserverService" android:exported="false" />
         <service android:name=".GFlowMediaSessionListener" android:exported="true" android:label="GFlow Media" android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
             <intent-filter>
                 <action android:name="android.service.notification.NotificationListenerService" />
-            </intent-filter>
-        </service>
-        <service android:name=".ClusterBridgeService" android:exported="true">
-            <intent-filter>
-                <action android:name="geely.oneos.intent.action.CLUSTER" />
-                <action android:name="ecarx.intent.action.CLUSTER" />
             </intent-filter>
         </service>
         <service android:name=".AppWatchdogAccessibilityService" android:exported="true" android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">

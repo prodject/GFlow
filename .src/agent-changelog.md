@@ -1797,6 +1797,57 @@ GFlow parking/HUD direct-action cleanup on Saturday, August 1, 2026:
   - the same log still shows `HUDInteraction.create returned null`;
   - direct user-facing actions for those paths were therefore misleading and were removed instead of being left as flaky controls.
 
+GFlow parking section removal on Saturday, August 1, 2026:
+
+- removed the user-facing `Parking / APA` section from app navigation instead of leaving a half-disabled screen.
+- `MainActivity` no longer exposes parking as:
+  - hero quick zone;
+  - dashboard widget;
+  - dock destination;
+  - drawer destination.
+- camera-oriented entrypoints were redirected to `CameraActivity` where appropriate.
+- `AdasActivity` no longer links out to a separate parking screen:
+  - removed parking quick action;
+  - removed parking shortcuts from the PDC panel;
+  - removed parking export follow-up action;
+  - changed parking status wording to `PDC diagnostics`.
+- `VoiceActivity` no longer resolves the `parking` alias to `ParkingActivity`.
+- the `ParkingActivity` class and diagnostics groups were left in the codebase for now:
+  - to avoid breaking old direct intents without a dedicated cleanup pass;
+  - to keep parking-related diagnostics inventory available in shared diagnostics.
+
+GFlow HUD section removal on Saturday, August 1, 2026:
+
+- removed the user-facing `HUD / Cluster` section from app navigation.
+- `MainActivity` no longer exposes HUD as:
+  - vehicle quick action;
+  - drawer destination;
+  - rail destination.
+- `VoiceActivity` no longer exposes a `hud` screen alias in the voice screen picker and no longer resolves `hud` to `HudActivity`.
+- shared diagnostics for `HUD / DIM` were left intact in:
+  - `SettingsActivity`;
+  - `DiagnosticsRunner`.
+- `HudActivity` and related services were left in the codebase for now:
+  - to preserve diagnostics/service tooling until a separate cleanup pass;
+  - to avoid mixing UI removal with deeper service deletion in one step.
+
+GFlow HUD stack deletion on Saturday, August 1, 2026:
+
+- deleted the remaining HUD-only UI/service stack:
+  - `HudActivity.java`;
+  - `HudPresentationService.java`;
+  - `HudObserverService.java`;
+  - `ClusterBridgeService.java`.
+- removed their declarations from `AndroidManifest.xml`.
+- removed the remaining profile-action write path for `hud` from `UserProfileEngine`.
+- shared diagnostics for `HUD / DIM` were intentionally kept:
+  - `SettingsActivity` still logs HUD/DIM availability/readback;
+  - `DiagnosticsRunner` still includes the HUD/DIM diagnostics block.
+- rationale:
+  - `gflow_data_1.33.log` still shows `HUDInteraction.create returned null`;
+  - direct user actions had already been removed;
+  - keeping the dead HUD UI/service shell no longer added useful runtime coverage.
+
 - write diagnostics now take an int snapshot before probing a function and restore the previous value after the probe.
 - restore result is logged per write:
   - `snapshot=OK`;
