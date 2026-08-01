@@ -104,8 +104,6 @@ public class HudActivity extends Activity {
         hero.addView(row);
 
         LinearLayout quick = Ui.row(this);
-        addActionChip(quick, "DIM Night", this::requestDimNight);
-        addActionChip(quick, "Presentation", () -> setDimPresentation(true));
         addActionChip(quick, "Расширенно", this::openAdvancedHud);
         hero.addView(quick, lpMatchWrap(0, 14, 0, 0));
         return hero;
@@ -121,24 +119,7 @@ public class HudActivity extends Activity {
     private LinearLayout buildControlPanel() {
         LinearLayout panel = Ui.glassCard(this);
         panel.addView(Ui.label(this, "DIM / Cluster"));
-        panel.addView(Ui.muted(this, "Projection HUD отсутствует на этой машине; оставлены DIM / cluster / bridge действия и диагностика."));
-
-        GridLayout grid = new GridLayout(this);
-        grid.setColumnCount(3);
-        addTile(grid, "DIM day/night", Ui.CYAN, this::requestDimNight);
-        addTile(grid, "Presentation on", Ui.SUCCESS, () -> setDimPresentation(true));
-        addTile(grid, "Presentation off", Ui.ERROR, () -> setDimPresentation(false));
-        addTile(grid, "Music tab", Color.rgb(119, 83, 132), () -> dimTab(EcarxHudDimAdapter.DIM_TAB_MUSIC));
-        addTile(grid, "Navi tab", Color.rgb(72, 153, 255), () -> dimTab(EcarxHudDimAdapter.DIM_TAB_NAVIGATION));
-        addTile(grid, "Control center", Ui.WARNING, () -> dimTab(EcarxHudDimAdapter.DIM_TAB_CONTROL_CENTER));
-        panel.addView(grid, lpMatchWrap(0, 12, 0, 0));
-
-        LinearLayout dim = Ui.row(this);
-        addActionChip(dim, "DIM Night", this::requestDimNight);
-        addActionChip(dim, "Презентация", () -> setDimPresentation(true));
-        addActionChip(dim, "Вкладка Music", () -> dimTab(EcarxHudDimAdapter.DIM_TAB_MUSIC));
-        addActionChip(dim, "Control center", () -> dimTab(EcarxHudDimAdapter.DIM_TAB_CONTROL_CENTER));
-        panel.addView(dim, lpMatchWrap(0, 14, 0, 0));
+        panel.addView(Ui.muted(this, "Прямые HUD / DIM AdaptAPI actions убраны. Оставлены diagnostics, bridge и сервисы."));
 
         LinearLayout services = Ui.row(this);
         addActionChip(services, "HUD SVC", () -> startForegroundService(new Intent(this, HudPresentationService.class)));
@@ -167,29 +148,8 @@ public class HudActivity extends Activity {
         LinearLayout hud = Ui.glassCard(this);
         hud.addView(Ui.text(this, "DIM / Cluster Bridge", 18, true));
         hud.addView(Ui.muted(this, new EcarxHudDimAdapter(this).availability()));
-        hud.addView(Ui.muted(this, "Прямые HUD AdaptAPI кнопки убраны: на этом автомобиле нет projection HUD. Секция оставлена для readback, DIM и cluster bridge."));
+        hud.addView(Ui.muted(this, "Прямые HUD / DIM AdaptAPI actions убраны. Секция оставлена для readback, bridge и service status."));
         addDiagnostic(hud, "HUD readback", EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.HUD_DISPLAY_NAVI, EcarxVehicleAdapter.HUD_DISPLAY_SAFETY);
-        addHudDimAction(hud, "HUDInteraction: статус", a -> a.hudStatus());
-        addHudDimAction(hud, "HUDInteraction: height/sync", a -> a.hudSync());
-        addHudDimAction(hud, "DIMInteraction: статус", a -> a.dimStatus());
-        addHudDimAction(hud, "DIM: запрос day/night", EcarxHudDimAdapter::requestDayNightMode);
-        addHudDimAction(hud, "DIM: presentation on", a -> a.setPresentation(true));
-        addHudDimAction(hud, "DIM: presentation off", a -> a.setPresentation(false));
-        addHudDimAction(hud, "DIM Menu: IHU ready/theme", EcarxHudDimAdapter::dimMenuReadyAndTheme);
-        addHudDimAction(hud, "DIM Menu: вкладка навигации", a -> a.dimMenuTab(EcarxHudDimAdapter.DIM_TAB_NAVIGATION));
-        addHudDimAction(hud, "DIM Menu: вкладка музыки", a -> a.dimMenuTab(EcarxHudDimAdapter.DIM_TAB_MUSIC));
-        addHudDimAction(hud, "DIM Menu: control center", a -> a.dimMenuTab(EcarxHudDimAdapter.DIM_TAB_CONTROL_CENTER));
-        addHudDimAction(hud, "Навигация на приборке: выкл", a -> a.switchNaviMode(EcarxHudDimAdapter.NAVI_MODE_OFF));
-        addHudDimAction(hud, "Навигация на приборке: упрощенно", a -> a.switchNaviMode(EcarxHudDimAdapter.NAVI_MODE_SIMPLIFY));
-        addHudDimAction(hud, "Навигация на приборке: полно", a -> a.switchNaviMode(EcarxHudDimAdapter.NAVI_MODE_FULL));
-        addHudDimAction(hud, "Навигация на приборке: AR", a -> a.switchNaviMode(EcarxHudDimAdapter.NAVI_MODE_AR));
-        addHudDimAction(hud, "Навигация на приборке: 3D-полосы", a -> a.switchNaviMode(EcarxHudDimAdapter.NAVI_MODE_3D_LANE));
-        addHudDimAction(hud, "DIM громкость 10", a -> a.setDimVolume(false, 10));
-        addHudDimAction(hud, "DIM климат: Celsius", EcarxHudDimAdapter::climateCelsiusUnit);
-        addHudDimAction(hud, "DIM климат: 22.0C", a -> a.climateTemp(22.0f));
-        addHudDimAction(hud, "DIM средний расход: пример", a -> a.updateAvgFuelRanking(0, "{\"source\":\"GFlow\",\"avg\":0}"));
-        addHudDimAction(hud, "DIM медиа: mute", a -> a.publishMediaMuteState(1));
-        addHudDimAction(hud, "DIM медиа: unmute", a -> a.publishMediaMuteState(0));
         advancedHost.addView(hud, lpMatchWrap(0, 0, 0, 16));
 
         LinearLayout audio = Ui.glassCard(this);
@@ -247,10 +207,10 @@ public class HudActivity extends Activity {
         dock.setOrientation(LinearLayout.HORIZONTAL);
         dock.setGravity(Gravity.CENTER_VERTICAL);
         dock.setPadding(Ui.dp(this, 18), Ui.dp(this, 14), Ui.dp(this, 18), Ui.dp(this, 14));
-        addDockButton(dock, "HUD", () -> sendVehicle(EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.COMMON_ON), true);
-        addDockButton(dock, "Media", () -> sendVehicle(EcarxVehicleAdapter.HUD_DISPLAY_MEDIA, EcarxVehicleAdapter.COMMON_ON), false);
-        addDockButton(dock, "Navi", () -> sendVehicle(EcarxVehicleAdapter.HUD_DISPLAY_NAVI, EcarxVehicleAdapter.COMMON_ON), false);
-        addDockButton(dock, "DIM", this::requestDimNight, false);
+        addDockButton(dock, "HUD", this::openAdvancedHud, true);
+        addDockButton(dock, "Media", this::openAdvancedHud, false);
+        addDockButton(dock, "Navi", this::openAdvancedHud, false);
+        addDockButton(dock, "DIM", this::openAdvancedHud, false);
         addDockButton(dock, "Cluster", () -> startForegroundService(new Intent(this, ClusterBridgeService.class)), false);
         return dock;
     }

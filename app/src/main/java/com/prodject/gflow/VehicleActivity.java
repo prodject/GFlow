@@ -923,13 +923,8 @@ public class VehicleActivity extends Activity {
     }
 
     private void openAvmCamera() {
-        AvmHalAdapter.Result hal = new AvmHalAdapter(this).open360();
-        if (hal.success) {
-            Ui.toast(this, "360 открыт через HAL");
-            return;
-        }
         EcarxDvrAdapter.Result evs = new EcarxDvrAdapter(this).openEvs(EcarxDvrAdapter.EVS_CAMERA_AVM);
-        Ui.toast(this, evs.success ? "360 открыт через EVS fallback" : "360 не открыт: " + hal.message + "\n" + evs.message);
+        Ui.toast(this, evs.success ? "360 открыт через EVS" : "360 не открыт: " + evs.message);
     }
 
     private void openTrunkOemEntry() {

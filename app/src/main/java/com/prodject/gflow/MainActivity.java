@@ -1303,12 +1303,7 @@ public class MainActivity extends Activity {
         LinearLayout card = Ui.card(this);
         card.addView(Ui.text(this, "Проектор и OneOS", 22, true));
         card.addView(Ui.muted(this, new EcarxHudDimAdapter(this).availability()));
-        LinearLayout row = Ui.row(this);
-        addToggleAction(row, "HUD on", () -> sendVehicleChecked(EcarxVehicleAdapter.HUD_ACTIVE, EcarxVehicleAdapter.COMMON_ON));
-        addToggleAction(row, "Навигация", () -> sendVehicleChecked(EcarxVehicleAdapter.HUD_DISPLAY_NAVI, EcarxVehicleAdapter.COMMON_ON));
-        addToggleAction(row, "Медиа", () -> sendVehicleChecked(EcarxVehicleAdapter.HUD_DISPLAY_MEDIA, EcarxVehicleAdapter.COMMON_ON));
-        addToggleAction(row, "DIM night", () -> new EcarxHudDimAdapter(this).requestDayNightMode());
-        card.addView(row);
+        card.addView(Ui.muted(this, "Прямые HUD / DIM actions убраны. Используйте экран HUD только для diagnostics, bridge и сервисов."));
         root.addView(card, lpMatchWrap(0, 0, 0, 12));
     }
 

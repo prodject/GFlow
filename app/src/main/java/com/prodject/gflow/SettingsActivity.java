@@ -267,6 +267,7 @@ public class SettingsActivity extends Activity {
 
         LinearLayout row = Ui.row(this);
         addActionChip(row, "Запустить", this::runAutoDiagnostics);
+        addActionChip(row, "Открыть DVR", this::openCameraScreen);
         addActionChip(row, "Share gflow_data.log", this::shareDiagnosticsIfExists);
         panel.addView(row, lpMatchWrap(0, 12, 0, 0));
         return panel;
@@ -382,6 +383,10 @@ public class SettingsActivity extends Activity {
             renderContent();
             Ui.toast(this, "Не удалось открыть share");
         }
+    }
+
+    private void openCameraScreen() {
+        startActivity(new Intent(this, CameraActivity.class));
     }
 
     private void appendAdvancedDiagnostics(StringBuilder log) {

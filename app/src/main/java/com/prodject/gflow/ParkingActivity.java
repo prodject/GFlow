@@ -86,7 +86,7 @@ public class ParkingActivity extends Activity {
         TextView title = Ui.text(this, "Parking Control", 28, true);
         title.setPadding(0, 0, 0, 0);
         titleBlock.addView(title);
-        TextView subtitle = Ui.muted(this, "Быстрый запуск парковки наверху, raw PAS и APA ниже без потери функций.");
+        TextView subtitle = Ui.muted(this, "Быстрый запуск парковки и diagnostics без прямых PAS/PAC/AVM write-путей.");
         subtitle.setTextSize(13);
         titleBlock.addView(subtitle);
         bar.addView(titleBlock, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
@@ -120,7 +120,7 @@ public class ParkingActivity extends Activity {
         LinearLayout left = new LinearLayout(this);
         left.setOrientation(LinearLayout.VERTICAL);
         left.addView(buildHeroMetric("Auto Park", "Готов к поиску места"));
-        left.addView(buildHeroMetric("360 Camera", "Верхний и задний обзор"));
+        left.addView(buildHeroMetric("360 Camera", "EVS entry only"));
         left.addView(buildHeroMetric("PDC", "Передние и задние датчики"));
         row.addView(left, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 0.94f));
 
@@ -132,7 +132,6 @@ public class ParkingActivity extends Activity {
 
         LinearLayout quick = Ui.row(this);
         addActionChip(quick, "Auto Park", this::openAutoParkUi);
-        addActionChip(quick, "360", this::openAvmCamera);
         addActionChip(quick, "PDC status", this::showPdcStatus);
         addActionChip(quick, "Advanced", this::toggleAdvancedParking);
         hero.addView(quick, lpMatchWrap(0, 16, 0, 0));
@@ -156,15 +155,12 @@ public class ParkingActivity extends Activity {
     private LinearLayout buildParkingModes() {
         LinearLayout panel = Ui.glassCard(this);
         panel.addView(Ui.label(this, "Primary Parking"));
-        panel.addView(Ui.muted(this, "Сверху оставлены только самые частые действия, а подробные PAS / APA блоки идут ниже."));
+        panel.addView(Ui.muted(this, "Сверху оставлены только OEM entry и diagnostics. Прямые PAS / PAC / AVM writes убраны."));
 
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(3);
         addTile(grid, "Открыть Auto Park", Ui.CYAN, this::openAutoParkUi);
-        addTile(grid, "Открыть 360", Color.rgb(72, 153, 255), this::openAvmCamera);
         addTile(grid, "PDC status", Ui.SUCCESS, this::showPdcStatus);
-        addTile(grid, "RCTA Вкл", Ui.WARNING, () -> sendVehicle(EcarxVehicleAdapter.PAS_RCTA_ACTIVATION, EcarxVehicleAdapter.COMMON_ON));
-        addTile(grid, "RCTA Выкл", Color.rgb(128, 140, 156), () -> sendVehicle(EcarxVehicleAdapter.PAS_RCTA_ACTIVATION, EcarxVehicleAdapter.COMMON_OFF));
         panel.addView(grid, lpMatchWrap(0, 12, 0, 0));
 
         panel.addView(buildModeSelector(), lpMatchWrap(0, 14, 0, 0));
@@ -193,13 +189,10 @@ public class ParkingActivity extends Activity {
     private LinearLayout buildAssistShortcuts() {
         LinearLayout panel = Ui.glassCard(this);
         panel.addView(Ui.label(this, "Assist Tools"));
-        panel.addView(Ui.muted(this, "Быстрые действия для типового сценария, а полный набор команд остается в секциях ниже."));
+        panel.addView(Ui.muted(this, "Оставлены только безопасные shortcuts без прямых PAS/PAC write-команд."));
 
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(2);
-        addShortcutButton(grid, "PDC / PAC старт", () -> sendVehicle(EcarxVehicleAdapter.PAS_PAC_ACTIVATION, EcarxVehicleAdapter.COMMON_ON));
-        addShortcutButton(grid, "Направляющие", () -> sendVehicle(EcarxVehicleAdapter.PAS_PAC_OVERLAY_STEERPATH, EcarxVehicleAdapter.COMMON_ON));
-        addShortcutButton(grid, "Top View", this::openAvmCamera);
         addShortcutButton(grid, "APA Confirm", () -> {
             if (!experimentalFeaturesEnabled()) {
                 Ui.toast(this, "Для APA Confirm включите Experimental features");
@@ -216,9 +209,7 @@ public class ParkingActivity extends Activity {
     private LinearLayout buildRadarAndVisualPanel() {
         LinearLayout panel = Ui.glassCard(this);
         panel.addView(Ui.label(this, "Радары / Визуальная помощь"));
-        panel.addView(Ui.muted(this, "log_1.32 подтвердил AVM через HAL/EVS и PDC-кандидат PAS_PAC_ACTIVATION. Radar work mode оставлен только как readback."));
-        addActionButton(panel, "Открыть AVM 360", this::openAvmCamera);
-        addActionButton(panel, "Активировать PDC/PAC", () -> sendVehicle(EcarxVehicleAdapter.PAS_PAC_ACTIVATION, EcarxVehicleAdapter.COMMON_ON));
+        panel.addView(Ui.muted(this, "Прямые AVM/PAC write-действия убраны. Секция оставлена для readback и signal diagnostics."));
         addDiagnostic(panel, "Статус радаров и оверлеев",
                 EcarxVehicleAdapter.PAS_STATUS,
                 EcarxVehicleAdapter.PAS_RADAR_WORK_MODE,
@@ -541,14 +532,8 @@ public class ParkingActivity extends Activity {
     }
 
     private void openAvmCamera() {
-        AvmHalAdapter.Result hal = new AvmHalAdapter(this).open360();
-        if (hal.success) {
-            Ui.toast(this, "AVM 360 открыт через HAL");
-            refreshStatusCards();
-            return;
-        }
         EcarxDvrAdapter.Result result = new EcarxDvrAdapter(this).openEvs(EcarxDvrAdapter.EVS_CAMERA_AVM);
-        Ui.toast(this, result.success ? "AVM 360 открыт через EVS fallback" : hal.message + "\n" + result.message);
+        Ui.toast(this, result.success ? "AVM 360 открыт через EVS" : result.message);
         refreshStatusCards();
     }
 

@@ -1769,6 +1769,34 @@ GFlow implementation from `log_1.32/alls` on Friday, July 31, 2026:
 
 GFlow diagnostics restore update on Friday, July 31, 2026:
 
+GFlow parking/HUD direct-action cleanup on Saturday, August 1, 2026:
+
+- removed direct PAS/PAC/AVM write entrypoints from the visible parking UI:
+  - removed `RCTA on/off` tiles;
+  - removed `PDC / PAC start`;
+  - removed `overlay steerpath`;
+  - removed direct `360` launch buttons from the parking quick/primary shortcut layers.
+- `ParkingActivity` now keeps parking UI focused on:
+  - OEM Auto Park entry;
+  - signal-based APA controls;
+  - readback/diagnostics.
+- `360` open in both parking and vehicle screens no longer tries the direct AVM HAL write path first.
+  - removed the `AvmHalAdapter.open360()` user-facing attempt;
+  - user-facing `360` open now uses EVS only.
+- removed direct HUD / DIM AdaptAPI action buttons from visible UI surfaces:
+  - removed HUD/DIM quick actions in `HudActivity`;
+  - removed direct HUD/DIM action grid/chips in `HudActivity`;
+  - removed direct HUD/DIM dock actions in `HudActivity`;
+  - removed direct HUD/DIM overview toggles in `MainActivity`.
+- HUD screen now stays focused on:
+  - readback diagnostics;
+  - bridge/services;
+  - AudioExt service tools.
+- rationale:
+  - `gflow_data_1.33.log` still shows `SecurityException: requires android.car.permission.CAR_VENDOR_EXTENSION` on parking/AVM raw paths;
+  - the same log still shows `HUDInteraction.create returned null`;
+  - direct user-facing actions for those paths were therefore misleading and were removed instead of being left as flaky controls.
+
 - write diagnostics now take an int snapshot before probing a function and restore the previous value after the probe.
 - restore result is logged per write:
   - `snapshot=OK`;
