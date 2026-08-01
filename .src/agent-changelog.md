@@ -1848,6 +1848,23 @@ GFlow HUD stack deletion on Saturday, August 1, 2026:
   - direct user actions had already been removed;
   - keeping the dead HUD UI/service shell no longer added useful runtime coverage.
 
+GFlow CI hotfix after HUD/parking cleanup on Saturday, August 1, 2026:
+
+- checked GitHub Actions run `30690394620`, job `91343953631`, through `gh run view --log`.
+- the failing compile error was:
+  - `AdasActivity.java:538`;
+  - invalid method reference `this::showLastCommandPanel`;
+  - symbol not found.
+- root cause:
+  - parking/HUD cleanup replaced the old `APA` dock target in `AdasActivity`;
+  - the replacement referenced a method that does not exist.
+- fix:
+  - replaced the broken dock target with `showLastCommandSummary()`;
+  - added a small local summary method that shows the last ADAS command label/raw value via toast.
+- local rebuild could not be executed in this workspace because:
+  - `./gradlew` is not present in the repo;
+  - system `gradle` is not installed in the environment.
+
 - write diagnostics now take an int snapshot before probing a function and restore the previous value after the probe.
 - restore result is logged per write:
   - `snapshot=OK`;

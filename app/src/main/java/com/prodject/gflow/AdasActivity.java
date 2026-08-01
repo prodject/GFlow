@@ -535,8 +535,12 @@ public class AdasActivity extends Activity {
         addDockButton(dock, "ACC", () -> sendVehicle("ACC режим", EcarxVehicleAdapter.ADAS_ACC_ICC_SWITCH, EcarxVehicleAdapter.ACC_ICC_ACC), false);
         addDockButton(dock, "ICC", () -> sendVehicle("ICC режим", EcarxVehicleAdapter.ADAS_ACC_ICC_SWITCH, EcarxVehicleAdapter.ACC_ICC_ICC), false);
         addDockButton(dock, "PDC", () -> sendVehicle("PDC volume mid", EcarxVehicleAdapter.ADAS_PDC_WARNING_VOLUME, EcarxVehicleAdapter.PDC_VOLUME_MID), false);
-        addDockButton(dock, "APA", this::showLastCommandPanel, false);
+        addDockButton(dock, "APA", this::showLastCommandSummary, false);
         return dock;
+    }
+
+    private void showLastCommandSummary() {
+        Ui.toast(this, lastCommandLabel + "\n" + (lastCommandRaw.isEmpty() ? "Raw ID: еще не отправлялось" : lastCommandRaw));
     }
 
     private void addHiddenAssistantCard(GridLayout grid, String title, String body, QuickItem[] items) {
