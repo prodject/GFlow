@@ -15,6 +15,9 @@ import android.widget.TextView;
 import java.util.LinkedHashSet;
 
 final class CarFunctionSelector {
+    private static final int[] NO_RUNTIME_VALUES = new int[0];
+    private static final CarFunctionCatalog.Value[] NO_STATIC_VALUES = new CarFunctionCatalog.Value[0];
+
     interface Sender {
         void send(int functionId, int zone, int value);
     }
@@ -24,7 +27,7 @@ final class CarFunctionSelector {
     static void show(Activity activity, String title, int functionId, int zone, Sender sender) {
         EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(activity);
         CarFunctionCatalog.Entry entry = adapter.catalogEntry(functionId);
-        int[] runtimeValues = adapter.supportedValues(functionId, zone);
+        int[] runtimeValues = safeRuntimeValues(adapter.supportedValues(functionId, zone));
         ValueItem[] values = resolveValues(adapter, functionId, runtimeValues);
 
         Dialog dialog = new Dialog(activity);
@@ -87,8 +90,8 @@ final class CarFunctionSelector {
 
     static boolean shouldSelect(Activity activity, int functionId, int zone, int requestedValue) {
         EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(activity);
-        CarFunctionCatalog.Value[] staticValues = CarFunctionCatalog.staticValues(functionId);
-        int[] runtimeValues = adapter.supportedValues(functionId, zone);
+        CarFunctionCatalog.Value[] staticValues = safeStaticValues(CarFunctionCatalog.staticValues(functionId));
+        int[] runtimeValues = safeRuntimeValues(adapter.supportedValues(functionId, zone));
         if (requestedValue == EcarxVehicleAdapter.COMMON_ON && hasSelectorValues(staticValues, runtimeValues)) {
             return true;
         }
@@ -112,7 +115,7 @@ final class CarFunctionSelector {
     }
 
     private static ValueItem[] resolveValues(EcarxVehicleAdapter adapter, int functionId, int[] runtimeValues) {
-        CarFunctionCatalog.Value[] staticValues = CarFunctionCatalog.staticValues(functionId);
+        CarFunctionCatalog.Value[] staticValues = safeStaticValues(CarFunctionCatalog.staticValues(functionId));
         LinkedHashSet<Integer> runtime = new LinkedHashSet<>();
         for (int value : runtimeValues) runtime.add(value);
 
@@ -142,6 +145,14 @@ final class CarFunctionSelector {
             if (value == requested) return true;
         }
         return false;
+    }
+
+    private static CarFunctionCatalog.Value[] safeStaticValues(CarFunctionCatalog.Value[] values) {
+        return values == null ? NO_STATIC_VALUES : values;
+    }
+
+    private static int[] safeRuntimeValues(int[] values) {
+        return values == null ? NO_RUNTIME_VALUES : values;
     }
 
     private static String cleanLabel(String value) {
