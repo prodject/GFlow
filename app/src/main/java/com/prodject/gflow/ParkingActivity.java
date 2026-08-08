@@ -21,6 +21,7 @@ import java.util.List;
 
 public class ParkingActivity extends Activity {
     private static final String APP_SETTINGS = "app_settings";
+    private static final String KEY_DEVELOPER_MODE = "developer_mode";
     private static final String KEY_EXPERIMENTAL_FEATURES = "experimental_features";
     private static final int PARK_MODE_PARALLEL = CarSignalManagerAdapter.PARK_MODE_HORIZONTAL_IN;
     private static final int PARK_MODE_PERP = CarSignalManagerAdapter.PARK_MODE_PERPENDICULAR_IN;
@@ -57,7 +58,7 @@ public class ParkingActivity extends Activity {
         shell.addView(buildHeroPanel(), lpMatchWrap(0, 16, 0, 16));
         shell.addView(buildParkingModes(), lpMatchWrap(0, 0, 0, 16));
         shell.addView(buildAssistShortcuts(), lpMatchWrap(0, 0, 0, 16));
-        shell.addView(buildAdvancedParkingPanel(), lpMatchWrap(0, 0, 0, 16));
+        if (developerModeEnabled()) shell.addView(buildAdvancedParkingPanel(), lpMatchWrap(0, 0, 0, 16));
         shell.addView(buildRadarAndVisualPanel(), lpMatchWrap(0, 0, 0, 16));
         shell.addView(buildApaControlPanel(), lpMatchWrap(0, 0, 0, 16));
         shell.addView(buildStatusGrid(), lpMatchWrap(0, 0, 0, 16));
@@ -82,17 +83,17 @@ public class ParkingActivity extends Activity {
         LinearLayout titleBlock = new LinearLayout(this);
         titleBlock.setOrientation(LinearLayout.VERTICAL);
         titleBlock.setPadding(Ui.dp(this, 16), 0, 0, 0);
-        titleBlock.addView(Ui.label(this, "Parking / APA"));
+        titleBlock.addView(Ui.label(this, "Parking"));
         TextView title = Ui.text(this, "Parking Control", 28, true);
         title.setPadding(0, 0, 0, 0);
         titleBlock.addView(title);
-        TextView subtitle = Ui.muted(this, "Readback и diagnostics для парковочных систем без OEM entry и AVM/APA launch-путей.");
+        TextView subtitle = Ui.muted(this, "Парковочные статусы и доступные сценарии без скрытых системных путей.");
         subtitle.setTextSize(13);
         titleBlock.addView(subtitle);
         bar.addView(titleBlock, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
         bar.addView(buildTopStat("PDC", "Активно"));
-        bar.addView(buildTopStat("Diag", "Readback"));
+        if (developerModeEnabled()) bar.addView(buildTopStat("Dev", "Расширено"));
         return bar;
     }
 
@@ -119,8 +120,8 @@ public class ParkingActivity extends Activity {
         row.setGravity(Gravity.CENTER_VERTICAL);
         LinearLayout left = new LinearLayout(this);
         left.setOrientation(LinearLayout.VERTICAL);
-        left.addView(buildHeroMetric("Parking", "Readback и status"));
-        left.addView(buildHeroMetric("OEM entry", "Скрыт"));
+        left.addView(buildHeroMetric("Parking", "Статусы и управление"));
+        left.addView(buildHeroMetric("Системные входы", "Скрыты"));
         left.addView(buildHeroMetric("PDC", "Передние и задние датчики"));
         row.addView(left, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 0.94f));
 
@@ -132,7 +133,7 @@ public class ParkingActivity extends Activity {
 
         LinearLayout quick = Ui.row(this);
         addActionChip(quick, "PDC status", this::showPdcStatus);
-        addActionChip(quick, "Advanced", this::toggleAdvancedParking);
+        if (developerModeEnabled()) addActionChip(quick, "Developer", this::toggleAdvancedParking);
         hero.addView(quick, lpMatchWrap(0, 16, 0, 0));
         return hero;
     }
@@ -154,7 +155,7 @@ public class ParkingActivity extends Activity {
     private LinearLayout buildParkingModes() {
         LinearLayout panel = Ui.glassCard(this);
         panel.addView(Ui.label(this, "Primary Parking"));
-        panel.addView(Ui.muted(this, "OEM entry и AVM launch скрыты. Оставлены только diagnostics и signal/readback-инструменты."));
+        panel.addView(Ui.muted(this, "Скрытые системные входы убраны. Оставлены только доступные действия и статусы."));
 
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(3);
@@ -187,7 +188,7 @@ public class ParkingActivity extends Activity {
     private LinearLayout buildAssistShortcuts() {
         LinearLayout panel = Ui.glassCard(this);
         panel.addView(Ui.label(this, "Assist Tools"));
-        panel.addView(Ui.muted(this, "Оставлены только безопасные shortcuts без прямых PAS/PAC write-команд."));
+        panel.addView(Ui.muted(this, "Быстрые действия для подтверждения и выбора сценария."));
 
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(2);
@@ -207,7 +208,7 @@ public class ParkingActivity extends Activity {
     private LinearLayout buildRadarAndVisualPanel() {
         LinearLayout panel = Ui.glassCard(this);
         panel.addView(Ui.label(this, "Радары / Визуальная помощь"));
-        panel.addView(Ui.muted(this, "Прямые AVM/PAC write-действия убраны. Секция оставлена для readback и signal diagnostics."));
+        panel.addView(Ui.muted(this, "Секция показывает доступные статусы радаров и подсказок парковки."));
         addDiagnostic(panel, "Статус радаров и оверлеев",
                 EcarxVehicleAdapter.PAS_STATUS,
                 EcarxVehicleAdapter.PAS_RADAR_WORK_MODE,
@@ -224,10 +225,10 @@ public class ParkingActivity extends Activity {
 
     private LinearLayout buildApaControlPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Сигналы APA"));
+        panel.addView(Ui.label(this, "Сценарии парковки"));
         panel.addView(Ui.muted(this, experimentalFeaturesEnabled()
-                ? "Оставлены только signal-based сценарии парковки без OEM launch path."
-                : "Оставлены только безопасные signal-based сценарии без OEM launch path. Дополнительные raw-кнопки открываются в Experimental."));
+                ? "Показаны доступные сценарии парковки. Дополнительные расширенные настройки вынесены отдельно."
+                : "Показаны только доступные сценарии парковки. Дополнительные расширенные настройки скрыты."));
 
         addSignalDiagnostic(panel, "Статус APA",
                 "getDrvrAsscSysDisp", CarSignalManagerAdapter.SIG_DRVR_ASSC_SYS_DISP,
@@ -251,12 +252,10 @@ public class ParkingActivity extends Activity {
 
     private LinearLayout buildAdvancedParkingPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Advanced Parking"));
-        panel.addView(Ui.muted(this, experimentalFeaturesEnabled()
-                ? "Полный raw-набор APA/RPA, PAS/AVM и remote parking доступен ниже по кнопке."
-                : "Включите Experimental features в настройках, чтобы открыть raw APA/RPA, PAS/AVM и remote parking diagnostics."));
+        panel.addView(Ui.label(this, "Developer / Diagnostics"));
+        panel.addView(Ui.muted(this, "Расширенные сигналы, чтение состояний и служебные сценарии."));
 
-        Button toggle = Ui.button(this, "Открыть advanced parking");
+        Button toggle = Ui.button(this, "Открыть developer section");
         toggle.setOnClickListener(v -> {
             Ui.press(v);
             toggleAdvancedParking();
@@ -279,10 +278,10 @@ public class ParkingActivity extends Activity {
         advancedHost.removeAllViews();
 
         LinearLayout apa = Ui.glassCard(this);
-        apa.addView(Ui.text(this, "APA / RPA", 18, true));
-        apa.addView(Ui.muted(this, "Raw parking signals, remote parking и HAL readback без OEM entry и AVM launch."));
-        addDiagnostic(apa, "Parking diagnostics", EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.ADAS_PDC_WARNING_VOLUME);
-        addDiagnostic(apa, "GInputBridge PAS inventory",
+        apa.addView(Ui.text(this, "Parking Signals", 18, true));
+        apa.addView(Ui.muted(this, "Расширенные сигналы парковки и удаленные сценарии."));
+        addDiagnostic(apa, "Parking status", EcarxVehicleAdapter.ADAS_PDC, EcarxVehicleAdapter.ADAS_PDC_WARNING_VOLUME);
+        addDiagnostic(apa, "Inventory",
                 EcarxVehicleAdapter.PAS_DRVR_ASSC_SYS_BTN_PUSH,
                 EcarxVehicleAdapter.PAS_DRVR_ASSC_SYS_PARK_MOD,
                 EcarxVehicleAdapter.PAS_AUT_PRKG_SLOT_NR_REQ,
@@ -313,7 +312,7 @@ public class ParkingActivity extends Activity {
             addSignalCommand(apa, "Remote parking: Вкл", "setRemPrkgEnaReq", CarSignalManagerAdapter.SIG_REM_PRKG_ENA_REQ, EcarxVehicleAdapter.COMMON_ON);
             addSignalCommand(apa, "Remote parking: Выкл", "setRemPrkgEnaReq", CarSignalManagerAdapter.SIG_REM_PRKG_ENA_REQ, EcarxVehicleAdapter.COMMON_OFF);
             addSignalCommand(apa, "Remote parking self-search", "setRemPrkgSelfSearchReq", CarSignalManagerAdapter.SIG_REM_PRKG_SELF_SEARCH_REQ, CarSignalManagerAdapter.APA_BUTTON_ON);
-            addHalPropertyDiagnostic(apa, "HAL-свойства mobile RPA",
+            addHalPropertyDiagnostic(apa, "Служебные свойства mobile RPA",
                     CarSignalManagerAdapter.VEH_MOBDEV_RPA_AUTHENT_REQ1_AUTHENT_STS,
                     CarSignalManagerAdapter.VEH_MOBDEV_RPA_AUTHENT_REQ1_CHKS,
                     CarSignalManagerAdapter.VEH_MOBDEV_RPA_AUTHENT_REQ1_CNTR,
@@ -327,8 +326,8 @@ public class ParkingActivity extends Activity {
         advancedHost.addView(apa, lpMatchWrap(0, 0, 0, 16));
 
         LinearLayout avm = Ui.glassCard(this);
-        avm.addView(Ui.text(this, "PAS Diagnostics", 18, true));
-        avm.addView(Ui.muted(this, "Raw PAS readback без AVM launch и без direct write-команд."));
+        avm.addView(Ui.text(this, "Parking Status", 18, true));
+        avm.addView(Ui.muted(this, "Подробные статусы парковочных помощников."));
         addDiagnostic(avm, "Состояние PAC / PAS",
                 EcarxVehicleAdapter.PAS_DRVR_ASSC_SYS_BTN_PUSH,
                 EcarxVehicleAdapter.PAS_DRVR_ASSC_SYS_PARK_MOD,
@@ -395,7 +394,7 @@ public class ParkingActivity extends Activity {
         addDockButton(dock, "PDC", this::showPdcStatus, true);
         addDockButton(dock, "PAC", () -> sendVehicle(EcarxVehicleAdapter.PAS_PAC_ACTIVATION, EcarxVehicleAdapter.COMMON_ON), false);
         addDockButton(dock, "RCTA", () -> sendVehicle(EcarxVehicleAdapter.PAS_RCTA_ACTIVATION, EcarxVehicleAdapter.COMMON_ON), false);
-        addDockButton(dock, "EXP", this::scrollAdvancedIntoView, false);
+        if (developerModeEnabled()) addDockButton(dock, "DEV", this::scrollAdvancedIntoView, false);
         return dock;
     }
 
@@ -526,7 +525,7 @@ public class ParkingActivity extends Activity {
 
     private void openAvmCamera() {
         EcarxDvrAdapter.Result result = new EcarxDvrAdapter(this).openEvs(EcarxDvrAdapter.EVS_CAMERA_AVM);
-        Ui.toast(this, result.success ? "AVM 360 открыт через EVS" : result.message);
+        Ui.toast(this, result.success ? "Камера 360 открыта" : result.message);
         refreshStatusCards();
     }
 
@@ -536,7 +535,7 @@ public class ParkingActivity extends Activity {
         EcarxVehicleAdapter.Result pdcValue = adapter.get(EcarxVehicleAdapter.ADAS_PDC);
         EcarxVehicleAdapter.Result pacSupport = adapter.support(EcarxVehicleAdapter.PAS_PAC_ACTIVATION);
         EcarxVehicleAdapter.Result pacValue = adapter.get(EcarxVehicleAdapter.PAS_PAC_ACTIVATION);
-        Ui.dialog(this, "PDC / PAC", "write candidate: PAS_PAC_ACTIVATION = 1\nADAS_PDC support: " + pdcSupport.message + "\nADAS_PDC readback: " + pdcValue.message + "\nPAC support: " + pacSupport.message + "\nPAC readback: " + pacValue.message);
+        Ui.dialog(this, "PDC / PAC", "PDC support: " + pdcSupport.message + "\nPDC state: " + pdcValue.message + "\nPAC support: " + pacSupport.message + "\nPAC state: " + pacValue.message);
     }
 
     private void sendSignalParkMode(int mode) {
@@ -549,7 +548,7 @@ public class ParkingActivity extends Activity {
     private void scrollAdvancedIntoView() {
         ensureAdvancedVisible();
         if (advancedHost != null) advancedHost.requestFocus();
-        Ui.toast(this, experimentalFeaturesEnabled() ? "Открыт расширенный parking-блок" : "Для полного набора включите Experimental features");
+        Ui.toast(this, experimentalFeaturesEnabled() ? "Открыт раздел разработчика" : "Для полного набора включите Experimental features");
     }
 
     private void toggleAdvancedParking() {
@@ -569,7 +568,7 @@ public class ParkingActivity extends Activity {
         if (advancedHost != null) advancedHost.setVisibility(advancedVisible ? View.VISIBLE : View.GONE);
         if (advancedToggleHint != null) {
             advancedToggleHint.setText(advancedVisible
-                    ? "Advanced parking развернут. Полный raw-набор ниже."
+                    ? "Раздел разработчика развернут. Полный набор состояний ниже."
                     : "Блок свернут по умолчанию, чтобы основной сценарий парковки оставался читаемым.");
         }
     }
@@ -616,7 +615,7 @@ public class ParkingActivity extends Activity {
     }
 
     private void addDiagnostic(LinearLayout root, String label, int... functionIds) {
-        Button b = Ui.button(this, "Диагностика: " + label);
+        Button b = Ui.button(this, label);
         b.setOnClickListener(v -> {
             EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
             StringBuilder sb = new StringBuilder(label).append("\n");
@@ -640,7 +639,7 @@ public class ParkingActivity extends Activity {
     }
 
     private void addSignalDiagnostic(LinearLayout root, String label, Object... methodSignalPairs) {
-        Button b = Ui.button(this, "Диагностика сигналов: " + label);
+        Button b = Ui.button(this, label);
         b.setOnClickListener(v -> {
             CarSignalManagerAdapter adapter = new CarSignalManagerAdapter(this);
             StringBuilder sb = new StringBuilder(label).append("\n");
@@ -653,7 +652,7 @@ public class ParkingActivity extends Activity {
     }
 
     private void addHalPropertyDiagnostic(LinearLayout root, String label, int... propertyIds) {
-        Button b = Ui.button(this, "HAL-диагностика: " + label);
+        Button b = Ui.button(this, label);
         b.setOnClickListener(v -> {
             CarSignalManagerAdapter adapter = new CarSignalManagerAdapter(this);
             StringBuilder sb = new StringBuilder(label).append("\n");
@@ -668,11 +667,16 @@ public class ParkingActivity extends Activity {
         return prefs.getBoolean(KEY_EXPERIMENTAL_FEATURES, false);
     }
 
+    private boolean developerModeEnabled() {
+        SharedPreferences prefs = getSharedPreferences(APP_SETTINGS, MODE_PRIVATE);
+        return prefs.getBoolean(KEY_DEVELOPER_MODE, false);
+    }
+
     private EcarxVehicleAdapter.Result executeVehicleCommand(int functionId, int value) {
         EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
         if (!adapter.isWritable(functionId)) {
             return EcarxVehicleAdapter.Result.external(
-                    "Функция переведена в diagnostics/readback-only: " + compact(EcarxVehicleAdapter.hex(functionId)),
+                    "Функция доступна только для просмотра состояния: " + compact(EcarxVehicleAdapter.hex(functionId)),
                     false,
                     true);
         }
@@ -704,7 +708,7 @@ public class ParkingActivity extends Activity {
         EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
         EcarxVehicleAdapter.Result pac = adapter.get(EcarxVehicleAdapter.PAS_PAC_STATUS);
         EcarxVehicleAdapter.Result view = adapter.get(EcarxVehicleAdapter.PAS_PAC_VIEW_SELECTION);
-        return compact(pac.message) + " · " + compact(view.message) + " · entry EVS";
+        return compact(pac.message) + " · " + compact(view.message) + " · камера";
     }
 
     private String apaStatusSummary() {

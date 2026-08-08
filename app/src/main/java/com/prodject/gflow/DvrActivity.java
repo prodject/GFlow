@@ -11,6 +11,8 @@ import java.io.File;
 import java.util.*;
 
 public class DvrActivity extends Activity {
+    private static final String APP_SETTINGS = "app_settings";
+    private static final String KEY_DEVELOPER_MODE = "developer_mode";
     private TextView status;
     private LinearLayout root;
     private EditText camerasInput;
@@ -36,7 +38,7 @@ public class DvrActivity extends Activity {
         LinearLayout hero = Ui.card(this);
         hero.addView(Ui.text(this, "Камеры и архив", 22, true));
         hero.addView(new CameraPreviewWidget(this), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 150)));
-        hero.addView(Ui.muted(this, new EcarxDvrAdapter(this).availability()));
+        if (developerModeEnabled()) hero.addView(Ui.muted(this, new EcarxDvrAdapter(this).availability()));
         root.addView(hero, margin(0, 8, 0, 12));
         addSettingsUi();
         start.setOnClickListener(v -> {
@@ -62,21 +64,23 @@ public class DvrActivity extends Activity {
         row.addView(refresh, buttonLp());
         actions.addView(row);
         root.addView(actions, margin(0, 0, 0, 12));
-        LinearLayout diag = Ui.card(this);
-        diag.addView(Ui.text(this, "Штатные камеры / EVS", 18, true));
-        root.addView(diag, margin(0, 0, 0, 12));
-        LinearLayout oldRoot = root;
-        root = diag;
-        addEvs("EVS открыть rear", EcarxDvrAdapter.EVS_CAMERA_REAR, true);
-        addEvs("EVS закрыть rear", EcarxDvrAdapter.EVS_CAMERA_REAR, false);
-        addEvs("EVS открыть AVM/360", EcarxDvrAdapter.EVS_CAMERA_AVM, true);
-        addEvs("EVS закрыть AVM/360", EcarxDvrAdapter.EVS_CAMERA_AVM, false);
-        addEvs("EVS открыть DVR", EcarxDvrAdapter.EVS_CAMERA_DVR, true);
-        addDvr("DVR камера online", a -> a.dvrCameraOnline());
-        addDvr("DVR capture", a -> a.dvrCapture());
-        addDvr("DVR mode", a -> a.dvrCurrentMode());
-        addDvr("DVR SD status", a -> a.dvrSdcardStatus());
-        root = oldRoot;
+        if (developerModeEnabled()) {
+            LinearLayout diag = Ui.card(this);
+            diag.addView(Ui.text(this, "Диагностика разработчика", 18, true));
+            root.addView(diag, margin(0, 0, 0, 12));
+            LinearLayout oldRoot = root;
+            root = diag;
+            addEvs("Открыть заднюю камеру", EcarxDvrAdapter.EVS_CAMERA_REAR, true);
+            addEvs("Закрыть заднюю камеру", EcarxDvrAdapter.EVS_CAMERA_REAR, false);
+            addEvs("Открыть 360", EcarxDvrAdapter.EVS_CAMERA_AVM, true);
+            addEvs("Закрыть 360", EcarxDvrAdapter.EVS_CAMERA_AVM, false);
+            addEvs("Открыть DVR камеру", EcarxDvrAdapter.EVS_CAMERA_DVR, true);
+            addDvr("Статус камеры", a -> a.dvrCameraOnline());
+            addDvr("Снимок", a -> a.dvrCapture());
+            addDvr("Режим", a -> a.dvrCurrentMode());
+            addDvr("Статус SD", a -> a.dvrSdcardStatus());
+            root = oldRoot;
+        }
         LinearLayout statusCard = Ui.card(this);
         statusCard.addView(Ui.text(this, "Статус", 18, true));
         statusCard.addView(status);
@@ -118,7 +122,7 @@ public class DvrActivity extends Activity {
         styleInput(storagePathInput);
         LinearLayout card = Ui.card(this);
         card.addView(Ui.text(this, "Настройки архива", 18, true));
-        card.addView(Ui.muted(this, "Camera2 источники пишутся напрямую. EVS открывает штатный вид и пробует screenrecord."));
+        card.addView(Ui.muted(this, "Источники записи, сегменты и расположение архива."));
         card.addView(camerasInput, margin(0, 8, 0, 6));
         LinearLayout nums = Ui.row(this);
         nums.addView(segmentInput, buttonLp());
@@ -150,7 +154,7 @@ public class DvrActivity extends Activity {
                     .putExtra(CameraRecordingService.EXTRA_CAMERA_ID, cameraId);
             if (open) startForegroundService(intent);
             else startService(intent);
-            Ui.toast(this, open ? "EVS open delegated" : "EVS close delegated");
+            Ui.toast(this, open ? "Команда открытия отправлена" : "Команда закрытия отправлена");
             refresh();
         });
         root.addView(b);
@@ -182,7 +186,7 @@ public class DvrActivity extends Activity {
         } catch (Exception e) {
             sb.append("Ошибка Camera2: ").append(e.getMessage()).append("\n");
         }
-        sb.append("\nEVS источники из OneOS AdaptAPI: evs:rear, evs:360, evs:dvr\n");
+        if (developerModeEnabled()) sb.append("\nДополнительные системные источники: rear, 360, dvr\n");
         RecordingStateController.Snapshot snapshot = new RecordingStateController(this).snapshot();
         sb.append("\nRecording state: ").append(snapshot.state.name()).append(" / ").append(snapshot.source).append("\n");
         sb.append("\nUSB кандидаты:\n").append(usbRootsSummary());
@@ -217,6 +221,10 @@ public class DvrActivity extends Activity {
         } catch (Exception e) {
             return fallback;
         }
+    }
+
+    private boolean developerModeEnabled() {
+        return getSharedPreferences(APP_SETTINGS, MODE_PRIVATE).getBoolean(KEY_DEVELOPER_MODE, false);
     }
 
     private void styleInput(EditText e) {

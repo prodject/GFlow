@@ -234,7 +234,7 @@ public class VehicleActivity extends Activity {
         addTile(grid, "Окна вниз", Color.rgb(98, 162, 255), () -> sendVehicle(EcarxVehicleAdapter.BCM_WINDOW, EcarxVehicleAdapter.WINDOW_OPEN));
         addTile(grid, "Окна вверх", Color.rgb(91, 209, 167), () -> sendVehicle(EcarxVehicleAdapter.BCM_WINDOW, EcarxVehicleAdapter.WINDOW_CLOSE));
         if (developerModeEnabled()) {
-            addTile(grid, "Двери DEV", Color.rgb(108, 132, 255), this::showDoorSheet);
+            addTile(grid, "Двери", Color.rgb(108, 132, 255), this::showDoorSheet);
         }
         addTile(grid, "Багажник статус", Color.rgb(255, 138, 80), () -> showReadbackSheet("Багажник", compact(new EcarxVehicleAdapter(this).get(EcarxVehicleAdapter.BCM_DOOR_STATUS, EcarxVehicleAdapter.BCM_DOOR_REAR).message)));
         addTile(grid, "Child lock", Color.rgb(255, 179, 64), () -> setRearChildLock(EcarxVehicleAdapter.COMMON_ON));
@@ -248,7 +248,7 @@ public class VehicleActivity extends Activity {
                 new QuickItem("Статус замков", () -> showReadbackSheet("Замки", compact(new EcarxVehicleAdapter(this).get(EcarxVehicleAdapter.VEHICLE_CENTRAL_LOCK).message))),
                 new QuickItem("Child lock", () -> setRearChildLock(EcarxVehicleAdapter.COMMON_ON))
         }));
-        if (developerModeEnabled()) addActionChip(actions, "Двери DEV", this::showDoorSheet);
+        if (developerModeEnabled()) addActionChip(actions, "Двери", this::showDoorSheet);
         addActionChip(actions, "Окна", () -> showActionSheet("Окна", new QuickItem[]{
                 QuickItem.hold("FL открыть", EcarxVehicleAdapter.BCM_WINDOW, EcarxVehicleAdapter.BCM_WINDOW_ROW_1_LEFT, EcarxVehicleAdapter.WINDOW_OPEN, EcarxVehicleAdapter.WINDOW_OPEN_PAUSE),
                 QuickItem.hold("FL закрыть", EcarxVehicleAdapter.BCM_WINDOW, EcarxVehicleAdapter.BCM_WINDOW_ROW_1_LEFT, EcarxVehicleAdapter.WINDOW_CLOSE, EcarxVehicleAdapter.WINDOW_CLOSE_PAUSE),
@@ -265,13 +265,13 @@ public class VehicleActivity extends Activity {
     private LinearLayout buildSeatsPanel() {
         LinearLayout panel = Ui.glassCard(this);
         panel.addView(Ui.label(this, "Seat Control"));
-        panel.addView(Ui.text(this, "Удержание кнопки = движение, отпускание = stop. Водитель: 3 регулировки. Пассажир: 2 регулировки, как в stock APK.", 14, false));
+        panel.addView(Ui.text(this, "Удержание кнопки = движение, отпускание = stop. Водитель: 3 регулировки. Пассажир: 2 регулировки.", 14, false));
         panel.addView(buildSeatControlCard("Driver", EcarxVehicleAdapter.ZONE_DRIVER_LEFT, true), lpMatchWrap(0, 12, 0, 12));
         panel.addView(buildSeatControlCard("Passenger", EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, false), lpMatchWrap(0, 0, 0, 12));
 
         LinearLayout memory = Ui.row(this);
-        addActionChip(memory, "Сохранить stock", () -> sendVehicle(EcarxVehicleAdapter.SEAT_POSITION_SAVE, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_STOCK_MEMORY_SAVE_2));
-        addActionChip(memory, "Вызвать stock", () -> sendVehicle(EcarxVehicleAdapter.SEAT_POSITION_SET, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_STOCK_MEMORY_SET_1));
+        addActionChip(memory, "Сохранить", () -> sendVehicle(EcarxVehicleAdapter.SEAT_POSITION_SAVE, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_STOCK_MEMORY_SAVE_2));
+        addActionChip(memory, "Положение 1", () -> sendVehicle(EcarxVehicleAdapter.SEAT_POSITION_SET, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.SEAT_STOCK_MEMORY_SET_1));
         addActionChip(memory, "Профили", () -> startActivity(new Intent(this, ProfileActivity.class)));
         panel.addView(memory, lpMatchWrap(0, 0, 0, 0));
         return panel;
@@ -500,8 +500,8 @@ public class VehicleActivity extends Activity {
         LinearLayout panel = Ui.glassCard(this);
         panel.addView(Ui.label(this, "Drive / Профили"));
         panel.addView(Ui.text(this, experimentalFeaturesEnabled()
-                ? "Drive modes, steering feel, custom keys и расширенный experimental drive flow вынесены в новый экран."
-                : "Drive modes, steering feel, custom keys и переход в отдельные пользовательские профили.", 14, false));
+                ? "Режимы движения, усилие руля и дополнительные настройки вынесены в отдельный экран."
+                : "Режимы движения, усилие руля и переход к пользовательским профилям.", 14, false));
         panel.addView(buildStockDriveSteeringPanel(), lpMatchWrap(0, 12, 0, 12));
 
         GridLayout grid = new GridLayout(this);
@@ -518,7 +518,7 @@ public class VehicleActivity extends Activity {
                 new QuickItem("Open 360", this::openAvmCamera),
                 new QuickItem("Custom Drive", () -> sendVehicle(EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_DRIVING_MODE))
         });
-        addAdvancedCard(grid, "Штатные переключатели", "Пары function/zone/value из stock settings log", new QuickItem[]{
+        addAdvancedCard(grid, "Основные переключатели", "Базовые функции движения и удержания", new QuickItem[]{
                 new QuickItem("Start/Stop OFF", () -> sendVehicle(EcarxVehicleAdapter.VEHICLE_ENGINE_STOP_START, EcarxVehicleAdapter.COMMON_OFF)),
                 new QuickItem("Auto Hold ON", () -> sendVehicle(EcarxVehicleAdapter.VEHICLE_AUTO_HOLD, EcarxVehicleAdapter.COMMON_ON)),
                 new QuickItem("EPB Auto ON", () -> sendVehicle(EcarxVehicleAdapter.VEHICLE_PBC_AUTO_APPLY, EcarxVehicleAdapter.COMMON_ON)),
@@ -542,7 +542,7 @@ public class VehicleActivity extends Activity {
                 new QuickItem("Button sound 1", () -> sendVehicle(EcarxVehicleAdapter.VEHICLE_SOFT_BUTTON_SOUND_TYPE, 0x2e020101)),
                 new QuickItem("Steer medium", () -> sendVehicle(EcarxVehicleAdapter.VEHICLE_STEERING_ASSISTANCE_LEVEL, EcarxVehicleAdapter.STEERING_ASSISTANCE_MEDIUM))
         });
-        addAdvancedCard(grid, "OEM Custom Keys", "Подтвержденные точки входа из GInputBridge", new QuickItem[]{
+        addAdvancedCard(grid, "Быстрые действия", "Доступные системные сценарии", new QuickItem[]{
                 new QuickItem("Trunk", this::openTrunkOemEntry),
                 new QuickItem("DVR", () -> sendVehicle(EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_DVR)),
                 new QuickItem("Navigation", () -> sendVehicle(EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_NAVIGATION)),
@@ -568,7 +568,7 @@ public class VehicleActivity extends Activity {
     private LinearLayout buildStockDriveSteeringPanel() {
         LinearLayout panel = Ui.glassCard(this);
         panel.addView(Ui.label(this, "Stock drive / steering"));
-        panel.addView(Ui.muted(this, "Основные кнопки — значения из stock-логов. «Все…» открывает каталог + runtime supported values."));
+        panel.addView(Ui.muted(this, "Основные кнопки открывают доступные варианты действий для режима движения."));
 
         LinearLayout modes = Ui.row(this);
         addDrivePill(modes, "Eco", () -> sendVehicle(EcarxVehicleAdapter.DRIVE_MODE_SELECT, EcarxVehicleAdapter.DRIVE_MODE_ECO));
@@ -595,7 +595,7 @@ public class VehicleActivity extends Activity {
     private LinearLayout buildExperimentalDrivePanel() {
         LinearLayout panel = Ui.glassCard(this);
         panel.addView(Ui.label(this, "Экспериментальный drive"));
-        panel.addView(Ui.muted(this, "Только подтвержденные log_1.32 write-кандидаты. Energy, launch, ESC, StarTrack и custom AWD скрыты как unsupported."));
+        panel.addView(Ui.muted(this, "Показаны только доступные и подтвержденные функции движения."));
 
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(2);
@@ -850,7 +850,7 @@ public class VehicleActivity extends Activity {
     private void sendVehicle(int functionId, int value) {
         EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
         if (!adapter.isWritable(functionId)) {
-            Ui.toast(this, "Функция переведена в diagnostics/readback-only");
+            Ui.toast(this, "Функция доступна только для просмотра состояния");
             refreshState();
             return;
         }
@@ -865,7 +865,7 @@ public class VehicleActivity extends Activity {
     private void sendVehicle(int functionId, int zone, int value) {
         EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
         if (!adapter.isWritable(functionId)) {
-            Ui.toast(this, "Функция переведена в diagnostics/readback-only");
+            Ui.toast(this, "Функция доступна только для просмотра состояния");
             refreshState();
             return;
         }
@@ -879,7 +879,7 @@ public class VehicleActivity extends Activity {
     private void sendVehicleFloat(int functionId, int zone, float value) {
         EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
         if (!adapter.isWritable(functionId)) {
-            Ui.toast(this, "Функция переведена в diagnostics/readback-only");
+            Ui.toast(this, "Функция доступна только для просмотра состояния");
             refreshState();
             return;
         }
@@ -933,12 +933,12 @@ public class VehicleActivity extends Activity {
 
     private void openAvmCamera() {
         EcarxDvrAdapter.Result evs = new EcarxDvrAdapter(this).openEvs(EcarxDvrAdapter.EVS_CAMERA_AVM);
-        Ui.toast(this, evs.success ? "360 открыт через EVS" : "360 не открыт: " + evs.message);
+        Ui.toast(this, evs.success ? "360 открыт" : "360 не открыт: " + evs.message);
     }
 
     private void openTrunkOemEntry() {
         EcarxVehicleAdapter.Result result = CarCommandBus.sendVehicle(this, EcarxVehicleAdapter.BCM_CUSTOM_KEY, EcarxVehicleAdapter.CUSTOM_KEY_TRUNK);
-        Ui.toast(this, result.success ? "OEM вход багажника отправлен" : "OEM вход багажника не выполнен");
+        Ui.toast(this, result.success ? "Команда багажника отправлена" : "Команда багажника не выполнена");
         refreshState();
     }
 
@@ -973,7 +973,7 @@ public class VehicleActivity extends Activity {
 
     private void showMirrorDialogSheet() {
         showActionSheet("Диалог зеркал", new QuickItem[]{
-                new QuickItem("Открыть OEM-диалог", () -> {
+                new QuickItem("Открыть диалог", () -> {
                     EcarxControlBoardAdapter.Result result = new EcarxControlBoardAdapter(this).showMirrorDialog();
                     Ui.toast(this, result.success ? "Диалог открыт" : "Диалог не открыт");
                 }),

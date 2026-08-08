@@ -201,8 +201,8 @@ public class AdasActivity extends Activity {
 
     private LinearLayout buildStockAssistantsPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Stock assistants"));
-        panel.addView(Ui.muted(this, "Подтвержденные из stock/main-шторка write-контракты. Остальные ADAS оставлены в experimental."));
+        panel.addView(Ui.label(this, "Основные ассистенты"));
+        panel.addView(Ui.muted(this, "Подтвержденные функции помощи водителю."));
 
         LinearLayout lane = Ui.row(this);
         addActionChip(lane, "LKA ON", () -> sendVehicle("LKA включить", EcarxVehicleAdapter.ADAS_LKA, EcarxVehicleAdapter.COMMON_ON));
@@ -229,8 +229,8 @@ public class AdasActivity extends Activity {
 
     private LinearLayout buildHiddenAssistantsPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Hidden Assistants"));
-        panel.addView(Ui.muted(this, "Скрытые помощники с понятными values. Команды проходят через support check и selector там, где есть набор значений."));
+        panel.addView(Ui.label(this, "Дополнительные ассистенты"));
+        panel.addView(Ui.muted(this, "Дополнительные доступные настройки помощи водителю."));
 
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(2);
@@ -315,7 +315,7 @@ public class AdasActivity extends Activity {
     private LinearLayout buildPdcPanel() {
         LinearLayout panel = Ui.glassCard(this);
         panel.addView(Ui.label(this, "PDC / Парковка"));
-        panel.addView(Ui.muted(this, "PDC остается частью ADAS. Отдельный раздел Parking / APA убран как неподтвержденный."));
+        panel.addView(Ui.muted(this, "Парковочные предупреждения и громкость оповещений."));
 
         LinearLayout controls = Ui.row(this);
         addActionChip(controls, "Громкость сред.", () -> sendVehicle("PDC volume mid", EcarxVehicleAdapter.ADAS_PDC_WARNING_VOLUME, EcarxVehicleAdapter.PDC_VOLUME_MID));
@@ -345,8 +345,8 @@ public class AdasActivity extends Activity {
     private LinearLayout buildExperimentalPanel() {
         LinearLayout panel = Ui.glassCard(this);
         panel.setVisibility(MODE_EXPERIMENTAL.equals(currentMode) ? View.VISIBLE : View.GONE);
-        panel.addView(Ui.label(this, "Экспериментальный ADAS"));
-        panel.addView(Ui.muted(this, "Панель доступна только при включенном experimental gate. Команды отправляются через новый UI, без возврата в legacy ADAS."));
+        panel.addView(Ui.label(this, "Экспериментальные функции"));
+        panel.addView(Ui.muted(this, "Панель доступна только при включении Experimental features."));
 
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(3);
@@ -378,8 +378,8 @@ public class AdasActivity extends Activity {
 
     private LinearLayout buildReadableExperimentalAssistPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Pilot / Traffic Assist"));
-        panel.addView(Ui.muted(this, "Здесь вынесены только те функции, для которых понятен сценарий взаимодействия: toggle, понятный selector или явный readback-only режим."));
+        panel.addView(Ui.label(this, "Дополнительное движение"));
+        panel.addView(Ui.muted(this, "Расширенные функции движения и предупреждений."));
 
         GridLayout toggles = new GridLayout(this);
         toggles.setColumnCount(2);
@@ -413,7 +413,7 @@ public class AdasActivity extends Activity {
         addActionChip(speedWarning, "LKA sound", () -> sendVehicle("LKA warning sound", EcarxVehicleAdapter.VEHICLE_LANE_KEEPING_AID_WARNING, EcarxVehicleAdapter.LKA_WARNING_SOUND));
         addActionChip(speedWarning, "RCTA", () -> sendVehicle("Rear cross traffic alert", EcarxVehicleAdapter.VEHICLE_REAR_CROSS_TRAFFIC_ALERT, EcarxVehicleAdapter.COMMON_ON));
         summary.addView(speedWarning, lpMatchWrap(0, 0, 0, 8));
-        summary.addView(Ui.muted(this, "Speed warning/LKA/RCTA значения взяты из stock settings log. APB mode оставлен как readback/raw: подтвержденных set values пока нет."), lpMatchWrap(0, 0, 0, 8));
+        summary.addView(Ui.muted(this, "Показаны только дополнительные режимы, для которых доступен понятный сценарий управления."), lpMatchWrap(0, 0, 0, 8));
         summary.addView(diagnosticCard("Чтение режимов Pilot",
                 EcarxVehicleAdapter.ADAS_APB_MODE,
                 EcarxVehicleAdapter.ADAS_SPEED_LIMIT_WARNING_MODE,
@@ -428,7 +428,7 @@ public class AdasActivity extends Activity {
         LinearLayout panel = Ui.glassCard(this);
         panel.setVisibility(MODE_DIAGNOSTICS.equals(currentMode) ? View.VISIBLE : View.GONE);
         panel.addView(Ui.label(this, "Диагностика разработчика"));
-        panel.addView(Ui.muted(this, "Support/readback, последние команды и сырой набор ID вынесены в новый экран ADAS вместо legacy ветки."));
+        panel.addView(Ui.muted(this, "Служебные статусы, экспорт и подробные идентификаторы функций."));
 
         panel.addView(diagnosticCard("ADAS support/readback",
                 EcarxVehicleAdapter.ADAS_AEB,
@@ -488,7 +488,7 @@ public class AdasActivity extends Activity {
         TextView last = Ui.text(this, "Последняя команда: " + lastCommandLabel, 15, true);
         last.setPadding(0, Ui.dp(this, 14), 0, Ui.dp(this, 4));
         panel.addView(last);
-        TextView raw = Ui.muted(this, lastCommandRaw.isEmpty() ? "Raw ID: еще не отправлялось" : lastCommandRaw);
+        TextView raw = Ui.muted(this, lastCommandRaw.isEmpty() ? "Идентификатор: еще не отправлялось" : lastCommandRaw);
         panel.addView(raw);
 
         LinearLayout actions = Ui.row(this);
@@ -502,8 +502,8 @@ public class AdasActivity extends Activity {
         grid.setColumnCount(2);
         addStatusCard(grid, "Ассистенты", experimentalFeaturesEnabled() ? "AEB · FCW · LKA · AI" : "AEB · FCW · LKA · LDW", Ui.SUCCESS);
         addStatusCard(grid, "Круиз", "ACC / ICC / TSR", Ui.CYAN);
-        addStatusCard(grid, "Парковка", "PDC diagnostics", Ui.WARNING);
-        addStatusCard(grid, "Полоса", developerModeEnabled() ? "Lane keep · readback · diagnostics" : "Lane keep / lane warning", Color.rgb(129, 149, 255));
+        addStatusCard(grid, "Парковка", "PDC", Ui.WARNING);
+        addStatusCard(grid, "Полоса", "Lane keep / lane warning", Color.rgb(129, 149, 255));
         return grid;
     }
 
@@ -620,7 +620,7 @@ public class AdasActivity extends Activity {
         EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
         if (!adapter.isWritable(functionId)) {
             rememberCommand(label, functionId, value, false);
-            Ui.toast(this, "Это readback/status, а не управляющая команда");
+            Ui.toast(this, "Здесь доступен только просмотр состояния");
             return;
         }
         int zone = adapter.spec(functionId).defaultZone;
@@ -635,7 +635,7 @@ public class AdasActivity extends Activity {
         EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
         if (!adapter.isWritable(functionId)) {
             rememberCommand(label, functionId, 0, false);
-            Ui.toast(this, "Это readback/status, а не управляющая команда");
+            Ui.toast(this, "Здесь доступен только просмотр состояния");
             return;
         }
         int zone = adapter.spec(functionId).defaultZone;
@@ -658,7 +658,7 @@ public class AdasActivity extends Activity {
         EcarxVehicleAdapter.Result support = adapter.support(functionId);
         if (support == null || !support.isSupported()) {
             rememberCommand(label, functionId, value, false);
-            Ui.toast(this, "Функция недоступна в AdaptAPI этого автомобиля");
+            Ui.toast(this, "Функция недоступна на этом автомобиле");
             return;
         }
         EcarxVehicleAdapter.Result result = CarCommandBus.sendVehicle(this, functionId, value);
