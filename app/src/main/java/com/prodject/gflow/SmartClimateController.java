@@ -18,8 +18,17 @@ final class SmartClimateController {
     static final String KEY_LAST_APPLY_AT = "last_apply_at";
     static final String KEY_LAST_STAGE = "last_stage";
     static final String KEY_LOG = "log";
+    static final String KEY_OVERRIDE_FAN_UNTIL = "override_fan_until";
+    static final String KEY_OVERRIDE_AC_UNTIL = "override_ac_until";
+    static final String KEY_OVERRIDE_FLOW_UNTIL = "override_flow_until";
+    static final String KEY_OVERRIDE_CIRC_UNTIL = "override_circ_until";
+    static final String KEY_OVERRIDE_DEFROST_UNTIL = "override_defrost_until";
+    static final String KEY_OVERRIDE_SEAT_UNTIL = "override_seat_until";
+    static final String KEY_OVERRIDE_WHEEL_UNTIL = "override_wheel_until";
+    private static final long MANUAL_OVERRIDE_MS = 10 * 60_000L;
 
     static final String MODE_OFF = "off";
+    static final String MODE_AUTO = "auto";
     static final String MODE_FAST_COOL = "fast_cool";
     static final String MODE_FAST_HEAT = "fast_heat";
     static final String MODE_STABILIZE = "stabilize";
@@ -39,32 +48,22 @@ final class SmartClimateController {
         if (!p.getBoolean(KEY_ENABLED, false) || MODE_OFF.equals(mode)) return "Smart climate off";
         long now = System.currentTimeMillis();
         long last = p.getLong(KEY_LAST_APPLY_AT, 0L);
-        if (now - last < 60_000L) return "Cooldown: настройки менялись меньше минуты назад";
+        if (now - last < 15_000L) return "Cooldown: настройки менялись меньше 15 секунд назад";
 
         VehicleSignalStateAdapter signals = new VehicleSignalStateAdapter(context);
         State s = signals.smartClimateState(p);
         EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(context);
         ArrayList<String> out = new ArrayList<>();
-        out.add("SmartClimate mode=" + mode + " cabin=" + s.cabin + " outside=" + s.outside
-                + " driverTarget=" + s.driverTarget + " passengerTarget=" + s.passengerTarget);
+        ClimatePlan plan = buildPlan(mode, s);
+        out.add("SmartClimate mode=" + mode + " stage=" + plan.stage + " cabin=" + s.cabin + " outside=" + s.outside
+                + " target=" + plan.targetTemp + " delta=" + plan.deltaTemp + " power=" + plan.climatePower + "%");
         out.add("Signals:\n" + signals.status());
         out.add(adapter.set(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_ON).message);
-
-        if (s.fogging) {
-            out.add(adapter.set(EcarxVehicleAdapter.HVAC_CIRCULATION, EcarxVehicleAdapter.CIRCULATION_OUTSIDE).message);
-            out.add(adapter.set(EcarxVehicleAdapter.HVAC_DEFROST_FRONT, EcarxVehicleAdapter.COMMON_ON).message);
-        }
-        if (s.callActive) out.add(adapter.set(EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_2).message);
-
-        if (MODE_FAST_COOL.equals(mode) || MODE_SUMMER.equals(mode)) runSummer(adapter, s, out);
-        else if (MODE_FAST_HEAT.equals(mode)) runWinter(adapter, s, out);
-        else if (MODE_STABILIZE.equals(mode)) runStabilize(adapter, s, out);
-        else if (MODE_MAINTAIN.equals(mode)) runMaintain(adapter, s, out);
-        else if (MODE_DRY.equals(mode)) runDry(adapter, s, out);
+        applyPlan(context, adapter, s, plan, out);
 
         prefs(context).edit()
                 .putLong(KEY_LAST_APPLY_AT, now)
-                .putString(KEY_LAST_STAGE, stage(mode, s))
+                .putString(KEY_LAST_STAGE, plan.stage)
                 .putString(VehicleSignalStateAdapter.KEY_LAST_STATUS, signals.status())
                 .putString(KEY_LOG, joinLines(out) + "\n" + p.getString(KEY_LOG, ""))
                 .apply();
@@ -81,70 +80,154 @@ final class SmartClimateController {
         return prefs(context).getString(KEY_LOG, "");
     }
 
-    private static void runSummer(EcarxVehicleAdapter adapter, State s, ArrayList<String> out) {
-        if (s.cabin >= 27.0f) {
-            out.add(adapter.set(EcarxVehicleAdapter.HVAC_AC_MAX, EcarxVehicleAdapter.COMMON_ON).message);
-            out.add(adapter.setFloat(EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, 18.0f).message);
-            out.add(adapter.setFloat(EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, 18.0f).message);
-            out.add(adapter.set(EcarxVehicleAdapter.HVAC_CIRCULATION, EcarxVehicleAdapter.CIRCULATION_INNER).message);
-            out.add(adapter.set(EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_8).message);
-            out.add(adapter.set(EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.HVAC_SEAT_VENTILATION_LEVEL_2).message);
-        } else if (s.cabin > s.driverTarget + 1.0f) {
-            out.add(adapter.set(EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_4).message);
-            out.add(adapter.setFloat(EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, s.driverTarget).message);
-            out.add(adapter.setFloat(EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, s.passengerTarget).message);
+    static String lastStage(Context context) {
+        return prefs(context).getString(KEY_LAST_STAGE, "");
+    }
+
+    static void noteManualClimateChange(Context context, int functionId) {
+        SharedPreferences.Editor editor = prefs(context).edit();
+        long until = System.currentTimeMillis() + MANUAL_OVERRIDE_MS;
+        if (functionId == EcarxVehicleAdapter.HVAC_FAN_SPEED || functionId == EcarxVehicleAdapter.HVAC_AUTO_FAN_SETTING) {
+            editor.putLong(KEY_OVERRIDE_FAN_UNTIL, until);
+        } else if (functionId == EcarxVehicleAdapter.HVAC_AC || functionId == EcarxVehicleAdapter.HVAC_AC_MAX) {
+            editor.putLong(KEY_OVERRIDE_AC_UNTIL, until);
+        } else if (functionId == EcarxVehicleAdapter.HVAC_CIRCULATION) {
+            editor.putLong(KEY_OVERRIDE_CIRC_UNTIL, until);
+        } else if (functionId == EcarxVehicleAdapter.HVAC_BLOWING_MODE) {
+            editor.putLong(KEY_OVERRIDE_FLOW_UNTIL, until);
+        } else if (functionId == EcarxVehicleAdapter.HVAC_DEFROST_FRONT
+                || functionId == EcarxVehicleAdapter.HVAC_DEFROST_FRONT_MAX
+                || functionId == EcarxVehicleAdapter.HVAC_DEFROST_REAR
+                || functionId == EcarxVehicleAdapter.HVAC_AUTO_DEFROST_FRONT) {
+            editor.putLong(KEY_OVERRIDE_DEFROST_UNTIL, until);
+        } else if (functionId == EcarxVehicleAdapter.HVAC_SEAT_HEATING
+                || functionId == EcarxVehicleAdapter.HVAC_SEAT_VENTILATION
+                || functionId == EcarxVehicleAdapter.HVAC_SEAT_MASSAGE) {
+            editor.putLong(KEY_OVERRIDE_SEAT_UNTIL, until);
+        } else if (functionId == EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT) {
+            editor.putLong(KEY_OVERRIDE_WHEEL_UNTIL, until);
         } else {
-            out.add(adapter.set(EcarxVehicleAdapter.HVAC_AC_MAX, EcarxVehicleAdapter.COMMON_OFF).message);
-            out.add(adapter.set(EcarxVehicleAdapter.HVAC_CIRCULATION, EcarxVehicleAdapter.CIRCULATION_AUTO).message);
-            out.add(adapter.set(EcarxVehicleAdapter.HVAC_AUTO, EcarxVehicleAdapter.COMMON_ON).message);
-            out.add(adapter.set(EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_AUTO).message);
+            return;
         }
+        editor.apply();
     }
 
-    private static void runWinter(EcarxVehicleAdapter adapter, State s, ArrayList<String> out) {
-        if (s.cabin < s.driverTarget - 3.0f || s.engineMinutes < 10) {
-            out.add(adapter.set(EcarxVehicleAdapter.HVAC_DEFROST_FRONT, EcarxVehicleAdapter.COMMON_ON).message);
-            out.add(adapter.set(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_LEG_AND_FRONT_WINDOW).message);
-            out.add(adapter.set(EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT, EcarxVehicleAdapter.WHEEL_HEAT_HIGH).message);
-            out.add(adapter.set(EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.HVAC_SEAT_HEATING_LEVEL_3).message);
-            out.add(adapter.set(EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_5).message);
-            out.add(adapter.setFloat(EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, Math.min(26.0f, s.driverTarget + 3.0f)).message);
-        } else {
-            out.add(adapter.set(EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.HVAC_SEAT_HEATING_LEVEL_1).message);
-            out.add(adapter.set(EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_2).message);
-            out.add(adapter.setFloat(EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, s.driverTarget).message);
-            out.add(adapter.set(EcarxVehicleAdapter.HVAC_AUTO, EcarxVehicleAdapter.COMMON_ON).message);
+    private static ClimatePlan buildPlan(String mode, State s) {
+        float target = (s.driverTarget + s.passengerTarget) / 2f;
+        float delta = s.cabin - target;
+        float absDelta = Math.abs(delta);
+        int climatePower = climatePower(absDelta);
+
+        if (MODE_DRY.equals(mode)) {
+            return new ClimatePlan(mode, "drying", target, delta, climatePower, target, fanForPower(35), true, false, true,
+                    EcarxVehicleAdapter.CIRCULATION_OUTSIDE, EcarxVehicleAdapter.BLOWING_MODE_FACE_AND_FRONT_WINDOW,
+                    0, EcarxVehicleAdapter.HVAC_SEAT_LEVEL_OFF, EcarxVehicleAdapter.COMMON_OFF);
         }
+        if (MODE_FAST_COOL.equals(mode) || MODE_SUMMER.equals(mode)) {
+            return coolingPlan("cooling_boost", s, target, Math.max(delta, 5f), Math.max(climatePower, 90));
+        }
+        if (MODE_FAST_HEAT.equals(mode)) {
+            return heatingPlan("heating_boost", s, target, Math.min(delta, -5f), Math.max(climatePower, 90));
+        }
+        if (MODE_STABILIZE.equals(mode)) {
+            return delta >= 0 ? coolingPlan("stabilize_cool", s, target, delta, Math.max(climatePower, 30))
+                    : heatingPlan("stabilize_heat", s, target, delta, Math.max(climatePower, 30));
+        }
+        if (MODE_MAINTAIN.equals(mode)) {
+            return maintainPlan("maintain", s, target, delta);
+        }
+        if (absDelta < 0.5f) {
+            return maintainPlan("hold", s, target, delta);
+        }
+        if (delta > 0f) {
+            return coolingPlan("cooling_auto", s, target, delta, climatePower);
+        }
+        return heatingPlan("heating_auto", s, target, delta, climatePower);
     }
 
-    private static void runStabilize(EcarxVehicleAdapter adapter, State s, ArrayList<String> out) {
-        out.add(adapter.setFloat(EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, s.driverTarget).message);
-        out.add(adapter.setFloat(EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, s.passengerTarget).message);
-        out.add(adapter.set(EcarxVehicleAdapter.HVAC_FAN_SPEED, Math.abs(s.cabin - s.driverTarget) > 2.0f ? EcarxVehicleAdapter.FAN_SPEED_4 : EcarxVehicleAdapter.FAN_SPEED_2).message);
+    private static ClimatePlan coolingPlan(String stage, State s, float target, float delta, int climatePower) {
+        boolean max = climatePower >= 95 || (s.outside - s.cabin >= 4f && delta >= 5f);
+        float supply = Math.max(17.0f, target - (climatePower >= 85 ? 3.0f : climatePower >= 60 ? 2.0f : 1.0f));
+        boolean dry = s.humidityRisk;
+        int circulation = s.poorAirQuality
+                ? EcarxVehicleAdapter.CIRCULATION_OUTSIDE
+                : (s.outside > s.cabin + 1.5f || max ? EcarxVehicleAdapter.CIRCULATION_INNER : EcarxVehicleAdapter.CIRCULATION_OUTSIDE);
+        return new ClimatePlan(MODE_AUTO, stage, target, delta, climatePower, supply, fanForPower(climatePower), true, max, dry,
+                circulation, EcarxVehicleAdapter.BLOWING_MODE_FACE, EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, EcarxVehicleAdapter.HVAC_SEAT_VENTILATION_LEVEL_2, EcarxVehicleAdapter.COMMON_OFF);
     }
 
-    private static void runMaintain(EcarxVehicleAdapter adapter, State s, ArrayList<String> out) {
-        out.add(adapter.setFloat(EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, s.driverTarget).message);
-        out.add(adapter.setFloat(EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, s.passengerTarget).message);
+    private static ClimatePlan heatingPlan(String stage, State s, float target, float delta, int climatePower) {
+        float supply = Math.min(26.0f, target + (climatePower >= 85 ? 3.0f : climatePower >= 60 ? 2.0f : 1.0f));
+        boolean defrost = s.fogging || s.engineMinutes < 5 || delta <= -3.0f;
+        int blowing = defrost ? EcarxVehicleAdapter.BLOWING_MODE_LEG_AND_FRONT_WINDOW : EcarxVehicleAdapter.BLOWING_MODE_FACE_AND_LEG;
+        int wheel = climatePower >= 60 ? EcarxVehicleAdapter.WHEEL_HEAT_HIGH : climatePower >= 30 ? EcarxVehicleAdapter.WHEEL_HEAT_LOW : EcarxVehicleAdapter.COMMON_OFF;
+        int seat = climatePower >= 80 ? EcarxVehicleAdapter.HVAC_SEAT_HEATING_LEVEL_3 : climatePower >= 50 ? EcarxVehicleAdapter.HVAC_SEAT_HEATING_LEVEL_2 : climatePower >= 20 ? EcarxVehicleAdapter.HVAC_SEAT_HEATING_LEVEL_1 : EcarxVehicleAdapter.HVAC_SEAT_LEVEL_OFF;
+        return new ClimatePlan(MODE_AUTO, stage, target, delta, climatePower, supply, fanForPower(climatePower), s.humidityRisk, false, defrost,
+                s.poorAirQuality ? EcarxVehicleAdapter.CIRCULATION_OUTSIDE : EcarxVehicleAdapter.CIRCULATION_AUTO, blowing, EcarxVehicleAdapter.HVAC_SEAT_HEATING, seat, wheel);
+    }
+
+    private static ClimatePlan maintainPlan(String stage, State s, float target, float delta) {
+        boolean dry = s.humidityRisk;
+        return new ClimatePlan(MODE_AUTO, stage, target, delta, 10, target, s.callActive ? EcarxVehicleAdapter.FAN_SPEED_2 : EcarxVehicleAdapter.FAN_SPEED_AUTO,
+                dry || s.poorAirQuality, false, dry, dry ? EcarxVehicleAdapter.CIRCULATION_OUTSIDE : (s.poorAirQuality ? EcarxVehicleAdapter.CIRCULATION_OUTSIDE : EcarxVehicleAdapter.CIRCULATION_AUTO),
+                dry ? EcarxVehicleAdapter.BLOWING_MODE_FACE_AND_FRONT_WINDOW : EcarxVehicleAdapter.BLOWING_MODE_AUTO,
+                0, EcarxVehicleAdapter.HVAC_SEAT_LEVEL_OFF, EcarxVehicleAdapter.COMMON_OFF);
+    }
+
+    private static void applyPlan(Context context, EcarxVehicleAdapter adapter, State s, ClimatePlan plan, ArrayList<String> out) {
+        SharedPreferences p = prefs(context);
+        out.add(adapter.setFloat(EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, plan.supplyTemp).message);
+        out.add(adapter.setFloat(EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, plan.supplyTemp).message);
         out.add(adapter.set(EcarxVehicleAdapter.HVAC_AUTO, EcarxVehicleAdapter.COMMON_ON).message);
-        out.add(adapter.set(EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_AUTO).message);
-    }
-
-    private static void runDry(EcarxVehicleAdapter adapter, State s, ArrayList<String> out) {
-        out.add(adapter.set(EcarxVehicleAdapter.HVAC_AC, EcarxVehicleAdapter.COMMON_OFF).message);
-        out.add(adapter.set(EcarxVehicleAdapter.HVAC_CIRCULATION, EcarxVehicleAdapter.CIRCULATION_OUTSIDE).message);
-        out.add(adapter.set(EcarxVehicleAdapter.HVAC_BLOWING_MODE, EcarxVehicleAdapter.BLOWING_MODE_FACE).message);
-        out.add(adapter.set(EcarxVehicleAdapter.HVAC_FAN_SPEED, EcarxVehicleAdapter.FAN_SPEED_3).message);
-    }
-
-    private static String stage(String mode, State s) {
-        if (MODE_SUMMER.equals(mode) || MODE_FAST_COOL.equals(mode)) {
-            if (s.cabin >= 27f) return "cooling_max";
-            if (s.cabin > s.driverTarget + 1f) return "cooling_reduce_fan";
-            return "cooling_auto";
+        if (!overrideActive(p, KEY_OVERRIDE_AC_UNTIL)) {
+            out.add(adapter.set(EcarxVehicleAdapter.HVAC_AC, plan.acEnabled ? EcarxVehicleAdapter.COMMON_ON : EcarxVehicleAdapter.COMMON_OFF).message);
+            out.add(adapter.set(EcarxVehicleAdapter.HVAC_AC_MAX, plan.acMax ? EcarxVehicleAdapter.COMMON_ON : EcarxVehicleAdapter.COMMON_OFF).message);
         }
-        if (MODE_FAST_HEAT.equals(mode)) return s.cabin < s.driverTarget - 3f ? "heating_fast" : "heating_auto";
-        return mode;
+        if (!overrideActive(p, KEY_OVERRIDE_CIRC_UNTIL)) {
+            out.add(adapter.set(EcarxVehicleAdapter.HVAC_CIRCULATION, plan.circulation).message);
+        }
+        if (!overrideActive(p, KEY_OVERRIDE_FLOW_UNTIL)) {
+            out.add(adapter.set(EcarxVehicleAdapter.HVAC_BLOWING_MODE, plan.blowingMode).message);
+        }
+        if (!overrideActive(p, KEY_OVERRIDE_FAN_UNTIL)) {
+            out.add(adapter.set(EcarxVehicleAdapter.HVAC_FAN_SPEED, s.callActive ? EcarxVehicleAdapter.FAN_SPEED_2 : plan.fanSpeed).message);
+        }
+        if (!overrideActive(p, KEY_OVERRIDE_DEFROST_UNTIL)) {
+            out.add(adapter.set(EcarxVehicleAdapter.HVAC_DEFROST_FRONT, plan.defrost ? EcarxVehicleAdapter.COMMON_ON : EcarxVehicleAdapter.COMMON_OFF).message);
+        }
+        if (!overrideActive(p, KEY_OVERRIDE_SEAT_UNTIL)) {
+            out.add(adapter.set(EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.HVAC_SEAT_LEVEL_OFF).message);
+            out.add(adapter.set(EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, EcarxVehicleAdapter.HVAC_SEAT_LEVEL_OFF).message);
+            if (plan.seatFunctionId != 0 && plan.seatLevel != EcarxVehicleAdapter.HVAC_SEAT_LEVEL_OFF) {
+                out.add(adapter.set(plan.seatFunctionId, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, plan.seatLevel).message);
+            }
+        }
+        if (!overrideActive(p, KEY_OVERRIDE_WHEEL_UNTIL)) {
+            out.add(adapter.set(EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT,
+                    plan.wheelLevel != EcarxVehicleAdapter.COMMON_OFF ? plan.wheelLevel : EcarxVehicleAdapter.COMMON_OFF).message);
+        }
+    }
+
+    private static boolean overrideActive(SharedPreferences prefs, String key) {
+        return prefs.getLong(key, 0L) > System.currentTimeMillis();
+    }
+
+    private static int climatePower(float absDelta) {
+        if (absDelta >= 5f) return 100;
+        if (absDelta >= 3f) return 85;
+        if (absDelta >= 2f) return 65;
+        if (absDelta >= 1f) return 40;
+        if (absDelta >= 0.5f) return 20;
+        return 10;
+    }
+
+    private static int fanForPower(int climatePower) {
+        if (climatePower >= 95) return EcarxVehicleAdapter.FAN_SPEED_8;
+        if (climatePower >= 80) return EcarxVehicleAdapter.FAN_SPEED_6;
+        if (climatePower >= 60) return EcarxVehicleAdapter.FAN_SPEED_4;
+        if (climatePower >= 35) return EcarxVehicleAdapter.FAN_SPEED_3;
+        if (climatePower >= 20) return EcarxVehicleAdapter.FAN_SPEED_2;
+        return EcarxVehicleAdapter.FAN_SPEED_1;
     }
 
     private static String joinLines(List<String> lines) {
@@ -161,8 +244,10 @@ final class SmartClimateController {
         final int engineMinutes;
         final boolean fogging;
         final boolean callActive;
+        final boolean humidityRisk;
+        final boolean poorAirQuality;
 
-        State(float cabin, float outside, float driverTarget, float passengerTarget, int engineMinutes, boolean fogging, boolean callActive) {
+        State(float cabin, float outside, float driverTarget, float passengerTarget, int engineMinutes, boolean fogging, boolean callActive, boolean humidityRisk, boolean poorAirQuality) {
             this.cabin = cabin;
             this.outside = outside;
             this.driverTarget = driverTarget;
@@ -170,6 +255,8 @@ final class SmartClimateController {
             this.engineMinutes = engineMinutes;
             this.fogging = fogging;
             this.callActive = callActive;
+            this.humidityRisk = humidityRisk;
+            this.poorAirQuality = poorAirQuality;
         }
 
         static State from(SharedPreferences p) {
@@ -180,7 +267,46 @@ final class SmartClimateController {
                     p.getFloat(KEY_PASSENGER_TARGET, 22.0f),
                     p.getInt(KEY_ENGINE_MINUTES, 0),
                     p.getBoolean(KEY_FOGGING, false),
-                    p.getBoolean(KEY_CALL_ACTIVE, false));
+                    p.getBoolean(KEY_CALL_ACTIVE, false),
+                    p.getBoolean(KEY_FOGGING, false),
+                    false);
+        }
+    }
+
+    static final class ClimatePlan {
+        final String mode;
+        final String stage;
+        final float targetTemp;
+        final float deltaTemp;
+        final int climatePower;
+        final float supplyTemp;
+        final int fanSpeed;
+        final boolean acEnabled;
+        final boolean acMax;
+        final boolean defrost;
+        final int circulation;
+        final int blowingMode;
+        final int seatFunctionId;
+        final int seatLevel;
+        final int wheelLevel;
+
+        ClimatePlan(String mode, String stage, float targetTemp, float deltaTemp, int climatePower, float supplyTemp, int fanSpeed,
+                    boolean acEnabled, boolean acMax, boolean defrost, int circulation, int blowingMode, int seatFunctionId, int seatLevel, int wheelLevel) {
+            this.mode = mode;
+            this.stage = stage;
+            this.targetTemp = targetTemp;
+            this.deltaTemp = deltaTemp;
+            this.climatePower = climatePower;
+            this.supplyTemp = supplyTemp;
+            this.fanSpeed = fanSpeed;
+            this.acEnabled = acEnabled;
+            this.acMax = acMax;
+            this.defrost = defrost;
+            this.circulation = circulation;
+            this.blowingMode = blowingMode;
+            this.seatFunctionId = seatFunctionId;
+            this.seatLevel = seatLevel;
+            this.wheelLevel = wheelLevel;
         }
     }
 }

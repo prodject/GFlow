@@ -42,8 +42,13 @@ final class VehicleSignalStateAdapter {
         int engineMinutes = engineMinutes(prefs, ignition, engine, engineStartStop);
         readFloat("speed", SENSOR_CAR_SPEED, Float.NaN);
         readEvent("gear", SENSOR_GEAR, Integer.MIN_VALUE);
-        readFloat("rain", SENSOR_RAIN, Float.NaN);
-        readEvent("rainSensor", SENSOR_RAIN_SENSOR_STATE, Integer.MIN_VALUE);
+        float rain = readFloat("rain", SENSOR_RAIN, Float.NaN);
+        int rainSensor = readEvent("rainSensor", SENSOR_RAIN_SENSOR_STATE, Integer.MIN_VALUE);
+        boolean humidityRisk = fogging || isRainDetected(rain, rainSensor) || readVehicleFlag("autoDehumidification", EcarxVehicleAdapter.HVAC_AUTO_DEHUMIDIFICATION, false);
+        boolean poorAirQuality = readVehicleFlag("aqsStatus", EcarxVehicleAdapter.HVAC_AQS_STATUS, false)
+                || readVehicleFlag("aqsSwitch", EcarxVehicleAdapter.HVAC_AQS_SWITCH, false)
+                || readVehicleFlag("co2Switch", EcarxVehicleAdapter.HVAC_CO2_SWITCH, false)
+                || readVehicleFlag("ionSwitch", EcarxVehicleAdapter.HVAC_IONS_SWITCH, false);
 
         String engineNote = "ignition=" + valueOrNa(ignition) + ", engine=" + valueOrNa(engine)
                 + ", startStop=" + valueOrNa(engineStartStop);
@@ -56,7 +61,9 @@ final class VehicleSignalStateAdapter {
                 prefs.getFloat(SmartClimateController.KEY_PASSENGER_TARGET, 22.0f),
                 engineMinutes,
                 fogging,
-                callActive);
+                callActive,
+                humidityRisk,
+                poorAirQuality);
     }
 
     String status() {
@@ -135,6 +142,36 @@ final class VehicleSignalStateAdapter {
         prefs.edit().putLong(KEY_ENGINE_STARTED_AT, 0L).apply();
         status.add("engineMinutes=0 inferred from inactive engine signal");
         return 0;
+    }
+
+    private boolean readVehicleFlag(String label, int functionId, boolean fallback) {
+        try {
+            EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(context);
+            EcarxVehicleAdapter.Result support = adapter.support(functionId);
+            if (support != null && !support.isSupported()) {
+                status.add(label + " " + hex(functionId) + " unsupported, fallback=" + fallback);
+                return fallback;
+            }
+            EcarxVehicleAdapter.Result result = adapter.get(functionId);
+            if (result == null || !result.success) {
+                status.add(label + " " + hex(functionId) + " fallback=" + fallback);
+                return fallback;
+            }
+            boolean active = isActiveVehicleValue(result.value);
+            status.add(label + " " + hex(functionId) + "=" + hex(result.value));
+            return active;
+        } catch (Exception e) {
+            status.add(label + " " + hex(functionId) + " fallback=" + fallback + " (" + root(e) + ")");
+            return fallback;
+        }
+    }
+
+    private static boolean isRainDetected(float rain, int rainSensor) {
+        return (!Float.isNaN(rain) && rain > 0.01f) || isActive(rainSensor);
+    }
+
+    private static boolean isActiveVehicleValue(int value) {
+        return value != Integer.MIN_VALUE && value != 0 && value != 0xff;
     }
 
     private static boolean isActive(int value) {

@@ -519,76 +519,110 @@ public class ClimateActivity extends Activity {
         LinearLayout panel = Ui.glassCard(this);
         panel.addView(Ui.label(this, "Умный климат"));
         SharedPreferences prefs = SmartClimateController.prefs(this);
-        CheckBox enabled = new CheckBox(this);
-        enabled.setText("Контроллер включен");
-        enabled.setChecked(prefs.getBoolean(SmartClimateController.KEY_ENABLED, false));
-        EditText modeField = new EditText(this);
-        modeField.setHint("off / fast_cool / fast_heat / stabilize / maintain / dry / summer");
-        modeField.setText(prefs.getString(SmartClimateController.KEY_MODE, SmartClimateController.MODE_OFF));
-        EditText cabin = new EditText(this);
-        cabin.setHint("Fallback: температура салона");
-        cabin.setText(String.valueOf(prefs.getFloat(SmartClimateController.KEY_CABIN_TEMP, 26.0f)));
-        EditText outside = new EditText(this);
-        outside.setHint("Fallback: внешняя температура");
-        outside.setText(String.valueOf(prefs.getFloat(SmartClimateController.KEY_OUTSIDE_TEMP, 26.0f)));
-        EditText driverTarget = new EditText(this);
-        driverTarget.setHint("Цель водительской зоны");
-        driverTarget.setText(String.valueOf(prefs.getFloat(SmartClimateController.KEY_DRIVER_TARGET, 22.0f)));
-        EditText passengerTarget = new EditText(this);
-        passengerTarget.setHint("Цель пассажирской зоны");
-        passengerTarget.setText(String.valueOf(prefs.getFloat(SmartClimateController.KEY_PASSENGER_TARGET, 22.0f)));
-        EditText engineMinutes = new EditText(this);
-        engineMinutes.setHint("Минуты работы двигателя");
-        engineMinutes.setText(String.valueOf(prefs.getInt(SmartClimateController.KEY_ENGINE_MINUTES, 0)));
+        boolean unified = climateZonesUnified();
+        String mode = prefs.getString(SmartClimateController.KEY_MODE, SmartClimateController.MODE_AUTO);
+        boolean enabled = prefs.getBoolean(SmartClimateController.KEY_ENABLED, false);
+        float inside = sensorFloatValue(EcarxVehicleAdapter.SENSOR_TYPE_TEMPERATURE_INDOOR, prefs.getFloat(SmartClimateController.KEY_CABIN_TEMP, 26.0f));
+        float outside = sensorFloatValue(EcarxVehicleAdapter.SENSOR_TYPE_TEMPERATURE_AMBIENT, prefs.getFloat(SmartClimateController.KEY_OUTSIDE_TEMP, 26.0f));
+        float driverTarget = prefs.getFloat(SmartClimateController.KEY_DRIVER_TARGET, 22.0f);
+        float passengerTarget = prefs.getFloat(SmartClimateController.KEY_PASSENGER_TARGET, 22.0f);
+        float averageTarget = (driverTarget + passengerTarget) / 2f;
+        float delta = inside - averageTarget;
+
+        panel.addView(Ui.text(this, "Автоматически поддерживает температуру, выбирает интенсивность, охлаждение, нагрев и осушение по данным датчиков.", 14, false));
+
+        LinearLayout hero = Ui.row(this);
+        hero.addView(buildSmartMetric("Статус", enabled ? "Включен" : "Выключен"), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        hero.addView(buildSmartMetric("Сценарий", smartModeLabel(mode)), metricLp());
+        hero.addView(buildSmartMetric("Этап", smartStageLabel(SmartClimateController.lastStage(this))), metricLp());
+        panel.addView(hero, lpMatchWrap(0, 14, 0, 14));
+
+        LinearLayout live = Ui.glassCard(this);
+        live.addView(Ui.label(this, "Текущие условия"));
+        live.addView(Ui.text(this, "В салоне: " + formatCelsius(inside), 18, true));
+        live.addView(Ui.muted(this, "Снаружи: " + formatCelsius(outside)));
+        live.addView(Ui.muted(this, unified
+                ? "Цель: " + formatCelsius(averageTarget)
+                : "Цель: водитель " + formatCelsius(driverTarget) + " · пассажир " + formatCelsius(passengerTarget)));
+        live.addView(Ui.muted(this, "Разница: " + formatSignedCelsius(delta)));
+        panel.addView(live, lpMatchWrap(0, 0, 0, 14));
+
+        LinearLayout targetCard = Ui.glassCard(this);
+        targetCard.addView(Ui.label(this, unified ? "Желаемая температура" : "Цели по зонам"));
+        if (unified) {
+            targetCard.addView(buildSmartTargetSlider("Общая температура", averageTarget, value -> {
+                prefs.edit()
+                        .putFloat(SmartClimateController.KEY_DRIVER_TARGET, value)
+                        .putFloat(SmartClimateController.KEY_PASSENGER_TARGET, value)
+                        .apply();
+                renderContent();
+            }), lpMatchWrap(0, 10, 0, 0));
+        } else {
+            targetCard.addView(buildSmartTargetSlider("Водитель", driverTarget, value -> {
+                prefs.edit().putFloat(SmartClimateController.KEY_DRIVER_TARGET, value).apply();
+                renderContent();
+            }), lpMatchWrap(0, 10, 0, 0));
+            targetCard.addView(buildSmartTargetSlider("Пассажир", passengerTarget, value -> {
+                prefs.edit().putFloat(SmartClimateController.KEY_PASSENGER_TARGET, value).apply();
+                renderContent();
+            }), lpMatchWrap(0, 10, 0, 0));
+        }
+        panel.addView(targetCard, lpMatchWrap(0, 0, 0, 14));
+
+        LinearLayout modes = Ui.glassCard(this);
+        modes.addView(Ui.label(this, "Сценарий работы"));
+        modes.addView(Ui.muted(this, "Auto сам выбирает охлаждение, нагрев или поддержание. Остальные сценарии дают более явный приоритет."));
+        LinearLayout row1 = Ui.row(this);
+        addSmartModeChip(row1, "Auto", SmartClimateController.MODE_AUTO, mode);
+        addSmartModeChip(row1, "Охладить", SmartClimateController.MODE_FAST_COOL, mode);
+        addSmartModeChip(row1, "Согреть", SmartClimateController.MODE_FAST_HEAT, mode);
+        panel.addView(modes, lpMatchWrap(0, 0, 0, 0));
+        modes.addView(row1, lpMatchWrap(0, 12, 0, 0));
+        LinearLayout row2 = Ui.row(this);
+        addSmartModeChip(row2, "Стабилизировать", SmartClimateController.MODE_STABILIZE, mode);
+        addSmartModeChip(row2, "Поддерживать", SmartClimateController.MODE_MAINTAIN, mode);
+        addSmartModeChip(row2, "Осушить", SmartClimateController.MODE_DRY, mode);
+        modes.addView(row2, lpMatchWrap(0, 10, 0, 0));
+
+        LinearLayout options = Ui.glassCard(this);
+        options.addView(Ui.label(this, "Дополнительные условия"));
         CheckBox fogging = new CheckBox(this);
-        fogging.setText("Запотевание стекол");
+        fogging.setText("Стекла запотевают");
         fogging.setChecked(prefs.getBoolean(SmartClimateController.KEY_FOGGING, false));
-        CheckBox call = new CheckBox(this);
-        call.setText("Активный звонок");
-        call.setChecked(prefs.getBoolean(SmartClimateController.KEY_CALL_ACTIVE, false));
         CheckBox dryAfterTrip = new CheckBox(this);
         dryAfterTrip.setText("Просушка после поездки");
         dryAfterTrip.setChecked(prefs.getBoolean(SmartClimateController.KEY_DRY_AFTER_TRIP, true));
-        panel.addView(enabled);
-        panel.addView(modeField, lpMatchWrap(0, 8, 0, 0));
-        panel.addView(cabin, lpMatchWrap(0, 8, 0, 0));
-        panel.addView(outside, lpMatchWrap(0, 8, 0, 0));
-        panel.addView(driverTarget, lpMatchWrap(0, 8, 0, 0));
-        panel.addView(passengerTarget, lpMatchWrap(0, 8, 0, 0));
-        panel.addView(engineMinutes, lpMatchWrap(0, 8, 0, 0));
-        panel.addView(fogging);
-        panel.addView(call);
-        panel.addView(dryAfterTrip);
-        Button save = Ui.button(this, "Сохранить Smart climate");
-        save.setTextColor(Ui.primaryText(this));
-        save.setOnClickListener(v -> {
-            prefs.edit()
-                    .putBoolean(SmartClimateController.KEY_ENABLED, enabled.isChecked())
-                    .putString(SmartClimateController.KEY_MODE, modeField.getText().toString().trim())
-                    .putFloat(SmartClimateController.KEY_CABIN_TEMP, AutomationEngine.parseFloat(cabin.getText().toString(), 26.0f))
-                    .putFloat(SmartClimateController.KEY_OUTSIDE_TEMP, AutomationEngine.parseFloat(outside.getText().toString(), 26.0f))
-                    .putFloat(SmartClimateController.KEY_DRIVER_TARGET, AutomationEngine.parseFloat(driverTarget.getText().toString(), 22.0f))
-                    .putFloat(SmartClimateController.KEY_PASSENGER_TARGET, AutomationEngine.parseFloat(passengerTarget.getText().toString(), 22.0f))
-                    .putInt(SmartClimateController.KEY_ENGINE_MINUTES, AutomationEngine.parseInt(engineMinutes.getText().toString(), 0))
-                    .putBoolean(SmartClimateController.KEY_FOGGING, fogging.isChecked())
-                    .putBoolean(SmartClimateController.KEY_CALL_ACTIVE, call.isChecked())
-                    .putBoolean(SmartClimateController.KEY_DRY_AFTER_TRIP, dryAfterTrip.isChecked())
-                    .apply();
-            Ui.toast(this, "Smart climate сохранен");
-            refreshState();
+        options.addView(fogging);
+        options.addView(dryAfterTrip);
+        panel.addView(options, lpMatchWrap(0, 14, 0, 14));
+
+        LinearLayout recommendation = Ui.glassCard(this);
+        recommendation.addView(Ui.label(this, "Что сделает автоматика"));
+        recommendation.addView(Ui.text(this, smartRecommendation(mode, inside, outside, averageTarget, fogging.isChecked()), 15, false));
+        panel.addView(recommendation, lpMatchWrap(0, 0, 0, 14));
+
+        LinearLayout actions = Ui.row(this);
+        addClimateActionChip(actions, enabled ? "Выключить" : "Включить", () -> {
+            prefs.edit().putBoolean(SmartClimateController.KEY_ENABLED, !enabled).apply();
+            renderContent();
         });
-        Button run = Ui.button(this, "Контроллер: шаг сейчас");
-        run.setTextColor(Ui.primaryText(this));
-        run.setOnClickListener(v -> {
-            save.performClick();
+        addClimateActionChip(actions, "Применить сейчас", () -> {
+            prefs.edit()
+                    .putBoolean(SmartClimateController.KEY_ENABLED, true)
+                    .putBoolean(SmartClimateController.KEY_FOGGING, fogging.isChecked())
+                    .putBoolean(SmartClimateController.KEY_DRY_AFTER_TRIP, dryAfterTrip.isChecked())
+                    .putFloat(SmartClimateController.KEY_CABIN_TEMP, inside)
+                    .putFloat(SmartClimateController.KEY_OUTSIDE_TEMP, outside)
+                    .apply();
             new AlertDialog.Builder(this)
-                    .setTitle("Smart climate")
+                    .setTitle("Умный климат")
                     .setMessage(AutomationEngine.runSmartClimate(this))
                     .setPositiveButton("OK", null)
                     .show();
+            renderContent();
         });
-        panel.addView(save, lpMatchWrap(0, 8, 0, 0));
-        panel.addView(run, lpMatchWrap(0, 8, 0, 0));
+        addClimateActionChip(actions, "Журнал", this::showSmartClimateLog);
+        panel.addView(actions);
         return panel;
     }
 
@@ -762,9 +796,153 @@ public class ClimateActivity extends Activity {
         row.addView(b, lp);
     }
 
+    private View buildSmartMetric(String label, String value) {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(Ui.dp(this, 14), Ui.dp(this, 12), Ui.dp(this, 14), Ui.dp(this, 12));
+        card.setBackground(Ui.cardBg(this, Color.argb(46, 255, 255, 255), Ui.dp(this, 22), Color.argb(36, 255, 255, 255)));
+        card.addView(Ui.label(this, label));
+        TextView text = Ui.text(this, value, 18, true);
+        text.setPadding(0, Ui.dp(this, 6), 0, 0);
+        card.addView(text);
+        return card;
+    }
+
+    private LinearLayout.LayoutParams metricLp() {
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        lp.leftMargin = Ui.dp(this, 10);
+        return lp;
+    }
+
+    private LinearLayout buildSmartTargetSlider(String label, float initialValue, FloatConsumer consumer) {
+        LinearLayout card = Ui.deepCard(this);
+        card.addView(Ui.label(this, label));
+        TextView value = Ui.text(this, formatCelsius(initialValue), 28, true);
+        value.setPadding(0, Ui.dp(this, 6), 0, 0);
+        card.addView(value);
+        SeekBar seek = new SeekBar(this);
+        seek.setMax(32);
+        seek.setProgress(heroTempProgressFromValue(initialValue));
+        seek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                float temp = heroTempValueFromProgress(progress);
+                value.setText(formatCelsius(temp));
+                if (fromUser) consumer.accept(temp);
+            }
+            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+        card.addView(seek);
+        return card;
+    }
+
+    private void addSmartModeChip(LinearLayout row, String label, String modeValue, String currentMode) {
+        Button b = Ui.button(this, label);
+        boolean active = modeValue.equals(currentMode);
+        b.setTextColor(active || Ui.dark(this) ? Color.WHITE : Ui.primaryText(this));
+        b.setBackground(Ui.cardBg(this,
+                active ? Color.argb(120, 77, 163, 255) : (Ui.dark(this) ? Color.argb(44, 255, 255, 255) : Color.argb(238, 255, 255, 255)),
+                Ui.dp(this, 18),
+                active ? Color.argb(96, 77, 163, 255) : (Ui.dark(this) ? Color.TRANSPARENT : Color.argb(88, 185, 198, 214))));
+        b.setOnClickListener(v -> {
+            SmartClimateController.prefs(this).edit().putString(SmartClimateController.KEY_MODE, modeValue).apply();
+            renderContent();
+        });
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 54), 1f);
+        lp.leftMargin = Ui.dp(this, 5);
+        lp.rightMargin = Ui.dp(this, 5);
+        row.addView(b, lp);
+    }
+
+    private String smartModeLabel(String mode) {
+        if (SmartClimateController.MODE_AUTO.equals(mode)) return "Auto";
+        if (SmartClimateController.MODE_FAST_COOL.equals(mode)) return "Охладить";
+        if (SmartClimateController.MODE_FAST_HEAT.equals(mode)) return "Согреть";
+        if (SmartClimateController.MODE_STABILIZE.equals(mode)) return "Стабилизировать";
+        if (SmartClimateController.MODE_MAINTAIN.equals(mode)) return "Поддерживать";
+        if (SmartClimateController.MODE_DRY.equals(mode)) return "Осушить";
+        if (SmartClimateController.MODE_SUMMER.equals(mode)) return "Лето";
+        return "Выключен";
+    }
+
+    private String smartStageLabel(String stage) {
+        if (stage == null || stage.trim().isEmpty()) return "Ожидание";
+        if ("cooling_boost".equals(stage)) return "Быстрое охлаждение";
+        if ("cooling_auto".equals(stage)) return "Охлаждение";
+        if ("stabilize_cool".equals(stage)) return "Мягкое охлаждение";
+        if ("heating_boost".equals(stage)) return "Быстрый прогрев";
+        if ("heating_auto".equals(stage)) return "Прогрев";
+        if ("stabilize_heat".equals(stage)) return "Мягкий прогрев";
+        if ("maintain".equals(stage) || "hold".equals(stage)) return "Поддержание";
+        if ("drying".equals(stage)) return "Осушение";
+        return stage;
+    }
+
+    private String smartRecommendation(String mode, float inside, float outside, float target, boolean fogging) {
+        float delta = inside - target;
+        if (SmartClimateController.MODE_DRY.equals(mode)) {
+            return "Будет включено осушение: наружный воздух, мягкий поток на стекло и средняя скорость вентилятора.";
+        }
+        if (fogging) {
+            return "Приоритет будет отдан стеклам: наружный воздух, defrost и осушение салона.";
+        }
+        if (delta >= 5f) {
+            return outside > inside
+                    ? "Сильный перегрев салона: включится интенсивное охлаждение, рециркуляция и высокая скорость вентилятора."
+                    : "Салон заметно теплее цели: система начнет быстрое охлаждение и затем снизит интенсивность по мере приближения к цели.";
+        }
+        if (delta >= 1f) {
+            return "Нужно умеренное охлаждение: автоматика подберет A/C, поток воздуха и снизит вентилятор при приближении к цели.";
+        }
+        if (delta <= -3f) {
+            return "Салон холоднее цели: система усилит прогрев, добавит поток на стекло и может включить подогрев руля и сиденья.";
+        }
+        if (delta <= -1f) {
+            return "Нужно мягкое повышение температуры: прогрев без лишней интенсивности, с постепенным снижением вентилятора.";
+        }
+        return "Температура близка к цели: система будет удерживать комфортный режим без резких переключений.";
+    }
+
+    private String formatCelsius(float value) {
+        return String.format(Locale.US, "%.1f°C", value);
+    }
+
+    private String formatSignedCelsius(float value) {
+        return String.format(Locale.US, "%+.1f°C", value);
+    }
+
+    private float sensorFloatValue(int sensorId, float fallback) {
+        EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
+        EcarxVehicleAdapter.Result support = adapter.supportSensor(sensorId);
+        if (support == null || !support.isSupported()) return fallback;
+        EcarxVehicleAdapter.Result result = adapter.getSensorFloat(sensorId);
+        if (result == null) return fallback;
+        return Float.isNaN(result.floatData) ? fallback : result.floatData;
+    }
+
+    private void showSmartClimateLog() {
+        String lastStage = smartStageLabel(SmartClimateController.lastStage(this));
+        String lastSignals = VehicleSignalStateAdapter.lastStatus(this);
+        String log = SmartClimateController.log(this);
+        StringBuilder body = new StringBuilder();
+        body.append("Последний этап: ").append(lastStage).append("\n\n");
+        if (lastSignals != null && !lastSignals.trim().isEmpty()) {
+            body.append("Последние сигналы\n").append(lastSignals.trim()).append("\n\n");
+        }
+        body.append(log == null || log.trim().isEmpty() ? "Журнал пока пуст." : log.trim());
+        new AlertDialog.Builder(this)
+                .setTitle("Умный климат")
+                .setMessage(body.toString())
+                .setPositiveButton("OK", null)
+                .show();
+    }
+
     private void setStockDriverTemp(float value) {
         EcarxVehicleAdapter.Result result = new EcarxVehicleAdapter(this)
                 .setFloat(EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_DRIVER_LEFT, value);
+        if (result.success) {
+            SmartClimateController.noteManualClimateChange(this, EcarxVehicleAdapter.HVAC_TEMP);
+        }
         refreshState();
         Ui.toast(this, result.success ? "Температура " + value : result.message);
     }
@@ -964,6 +1142,9 @@ public class ClimateActivity extends Activity {
             return;
         }
         EcarxVehicleAdapter.Result result = adapter.set(functionId, value);
+        if (result.success) {
+            SmartClimateController.noteManualClimateChange(this, functionId);
+        }
         refreshState();
         Ui.toast(this, result.success ? "Климат обновлен" : result.message);
     }
@@ -976,6 +1157,9 @@ public class ClimateActivity extends Activity {
             return;
         }
         EcarxVehicleAdapter.Result result = adapter.set(functionId, zone, value);
+        if (result.success) {
+            SmartClimateController.noteManualClimateChange(this, functionId);
+        }
         refreshState();
         Ui.toast(this, result.success ? "Климат обновлен" : result.message);
     }
@@ -1110,6 +1294,9 @@ public class ClimateActivity extends Activity {
         EcarxVehicleAdapter.Result current = adapter.get(functionId, zone);
         int next = nextSeatClimateLevel(current == null ? 0 : current.value);
         EcarxVehicleAdapter.Result result = adapter.set(functionId, zone, next);
+        if (result.success) {
+            SmartClimateController.noteManualClimateChange(this, functionId);
+        }
         refreshState();
         Ui.toast(this, result.success ? "Климат обновлен" : result.message);
     }
@@ -1143,6 +1330,9 @@ public class ClimateActivity extends Activity {
         EcarxVehicleAdapter.Result current = adapter.get(EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT);
         int next = nextWheelHeatLevel(current == null ? 0 : current.value);
         EcarxVehicleAdapter.Result result = adapter.set(EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT, next);
+        if (result.success) {
+            SmartClimateController.noteManualClimateChange(this, EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT);
+        }
         refreshState();
         Ui.toast(this, result.success ? "Климат обновлен" : result.message);
     }
@@ -1333,6 +1523,10 @@ public class ClimateActivity extends Activity {
             this.label = label;
             this.action = action;
         }
+    }
+
+    private interface FloatConsumer {
+        void accept(float value);
     }
 
     private boolean developerModeEnabled() {
