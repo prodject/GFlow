@@ -168,6 +168,8 @@ final class EcarxVehicleAdapter {
     static final int CLIMATE_ZONE_FOUR = 0x10010504;
     static final int TEMP_UNIT_C = 0x10060601;
     static final int TEMP_UNIT_F = 0x10060602;
+    static final int SENSOR_TYPE_TEMPERATURE_AMBIENT = 1051392;
+    static final int SENSOR_TYPE_TEMPERATURE_INDOOR = 1051648;
     static final int DISPLAY_WINDOW_TAB_DEFAULT = 0x10100301;
     static final int DISPLAY_WINDOW_TAB_LEFT_TEMP = 0x10100302;
     static final int DISPLAY_WINDOW_TAB_RIGHT_TEMP = 0x10100303;

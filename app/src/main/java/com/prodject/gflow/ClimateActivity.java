@@ -50,13 +50,18 @@ public class ClimateActivity extends Activity {
     private TextView topCabinValue;
     private TextView driverTempValue;
     private TextView passengerTempValue;
+    private TextView indoorTempValue;
+    private TextView outdoorTempValue;
     private TextView fanValue;
     private TextView summaryValue;
+    private LinearLayout heroPassengerCard;
+    private TextView heroDriverLabel;
     private SeekBar heroTempSeekBar;
     private CheckBox heroSyncToggle;
     private String editingPresetName = "";
     private Mode mode = Mode.HOME;
     private boolean updatingHeroControls;
+    private Boolean lastUnifiedClimate;
     private final Runnable stateTicker = new Runnable() {
         @Override public void run() {
             refreshState();
@@ -151,7 +156,7 @@ public class ClimateActivity extends Activity {
 
         topModeValue = buildTopStat(bar, "Режим", "...");
         topZoneValue = buildTopStat(bar, "Зона", "...");
-        topCabinValue = buildTopStat(bar, "Салон", "...");
+        topCabinValue = buildTopStat(bar, "Датчики", "...");
         return bar;
     }
 
@@ -179,21 +184,28 @@ public class ClimateActivity extends Activity {
 
         LinearLayout driverCard = Ui.glassCard(this);
         driverCard.setPadding(Ui.dp(this, 18), Ui.dp(this, 16), Ui.dp(this, 18), Ui.dp(this, 16));
-        driverCard.addView(Ui.label(this, "Водитель"));
+        heroDriverLabel = Ui.label(this, "Водитель");
+        driverCard.addView(heroDriverLabel);
         driverTempValue = Ui.text(this, "--", 38, true);
         driverTempValue.setPadding(0, Ui.dp(this, 4), 0, 0);
         driverCard.addView(driverTempValue);
+        TextView driverHint = Ui.muted(this, "Уставка климата");
+        driverHint.setPadding(0, Ui.dp(this, 6), 0, 0);
+        driverCard.addView(driverHint);
         tempRow.addView(driverCard, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.15f));
 
-        LinearLayout passengerCard = Ui.glassCard(this);
-        passengerCard.setPadding(Ui.dp(this, 16), Ui.dp(this, 16), Ui.dp(this, 16), Ui.dp(this, 16));
-        passengerCard.addView(Ui.label(this, "Пассажир"));
+        heroPassengerCard = Ui.glassCard(this);
+        heroPassengerCard.setPadding(Ui.dp(this, 16), Ui.dp(this, 16), Ui.dp(this, 16), Ui.dp(this, 16));
+        heroPassengerCard.addView(Ui.label(this, "Пассажир"));
         passengerTempValue = Ui.text(this, "--", 24, true);
         passengerTempValue.setPadding(0, Ui.dp(this, 8), 0, 0);
-        passengerCard.addView(passengerTempValue);
+        heroPassengerCard.addView(passengerTempValue);
+        TextView passengerHint = Ui.muted(this, "Уставка климата");
+        passengerHint.setPadding(0, Ui.dp(this, 6), 0, 0);
+        heroPassengerCard.addView(passengerHint);
         LinearLayout.LayoutParams passengerLp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 0.85f);
         passengerLp.leftMargin = Ui.dp(this, 12);
-        tempRow.addView(passengerCard, passengerLp);
+        tempRow.addView(heroPassengerCard, passengerLp);
 
         hero.addView(tempRow, lpMatchWrap(0, 8, 0, 0));
 
@@ -205,7 +217,7 @@ public class ClimateActivity extends Activity {
                 Ui.dark(this) ? Color.argb(104, 24, 32, 46) : Color.argb(236, 244, 249, 255),
                 Ui.dp(this, 22),
                 Ui.dark(this) ? Color.argb(116, 77, 163, 255) : Color.argb(92, 77, 163, 255)));
-        sliderCard.addView(Ui.label(this, "Температура водителя"));
+        sliderCard.addView(Ui.label(this, "Температура"));
         heroTempSeekBar = new SeekBar(this);
         heroTempSeekBar.setMax(32);
         heroTempSeekBar.setProgress(12);
@@ -253,10 +265,16 @@ public class ClimateActivity extends Activity {
 
         LinearLayout status = new LinearLayout(this);
         status.setOrientation(LinearLayout.VERTICAL);
+        indoorTempValue = Ui.text(this, "В салоне: --", 16, true);
+        indoorTempValue.setPadding(0, Ui.dp(this, 6), 0, 0);
+        outdoorTempValue = Ui.text(this, "Снаружи: --", 16, true);
+        outdoorTempValue.setPadding(0, Ui.dp(this, 4), 0, 0);
         fanValue = Ui.text(this, "Вентилятор: --", 16, true);
         fanValue.setPadding(0, Ui.dp(this, 6), 0, 0);
         summaryValue = Ui.text(this, "Состояние климата: обновление...", 14, false);
         summaryValue.setTextColor(Ui.secondaryText(this));
+        status.addView(indoorTempValue);
+        status.addView(outdoorTempValue);
         status.addView(fanValue);
         status.addView(summaryValue);
         hero.addView(status, lpMatchWrap(0, 10, 0, 0));
@@ -273,8 +291,10 @@ public class ClimateActivity extends Activity {
         addClimateToggle(grid, "A/C", Ui.CYAN, () -> command(EcarxVehicleAdapter.HVAC_AC, EcarxVehicleAdapter.COMMON_ON));
         addClimateToggle(grid, "A/C Max", Ui.WARNING, () -> command(EcarxVehicleAdapter.HVAC_AC_MAX, EcarxVehicleAdapter.COMMON_ON));
         addClimateToggle(grid, "Eco", Color.rgb(69, 186, 134), () -> command(EcarxVehicleAdapter.HVAC_ECO, EcarxVehicleAdapter.COMMON_ON));
-        addClimateToggle(grid, "Sync", Color.rgb(103, 147, 255), () -> command(EcarxVehicleAdapter.HVAC_CLIMATE_ZONE, EcarxVehicleAdapter.CLIMATE_ZONE_DUAL));
-        addClimateToggle(grid, "Split", Color.rgb(134, 103, 255), () -> command(EcarxVehicleAdapter.HVAC_CLIMATE_ZONE, EcarxVehicleAdapter.CLIMATE_ZONE_SINGLE));
+        if (!climateZonesUnified()) {
+            addClimateToggle(grid, "Sync", Color.rgb(103, 147, 255), () -> command(EcarxVehicleAdapter.HVAC_CLIMATE_ZONE, EcarxVehicleAdapter.CLIMATE_ZONE_DUAL));
+            addClimateToggle(grid, "Split", Color.rgb(134, 103, 255), () -> command(EcarxVehicleAdapter.HVAC_CLIMATE_ZONE, EcarxVehicleAdapter.CLIMATE_ZONE_SINGLE));
+        }
         addClimateToggle(grid, "°F", Color.rgb(255, 122, 89), () -> command(EcarxVehicleAdapter.HVAC_TEMP_UNIT, EcarxVehicleAdapter.TEMP_UNIT_F));
         panel.addView(grid, lpMatchWrap(0, 12, 0, 0));
         return panel;
@@ -282,11 +302,12 @@ public class ClimateActivity extends Activity {
 
     private LinearLayout buildClimateMainPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Водитель / Пассажир"));
+        boolean unified = climateZonesUnified();
+        panel.addView(Ui.label(this, unified ? "Температура" : "Водитель / Пассажир"));
 
         LinearLayout tempRow = Ui.row(this);
         tempRow.setGravity(Gravity.CENTER_VERTICAL);
-        tempRow.addView(buildTempCard("Водитель", EcarxVehicleAdapter.ZONE_DRIVER_LEFT), new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 0.9f));
+        tempRow.addView(buildTempCard(unified ? "Общая температура" : "Водитель", EcarxVehicleAdapter.ZONE_DRIVER_LEFT), new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, unified ? 1.1f : 0.9f));
 
         LinearLayout center = Ui.glassCard(this);
         center.addView(Ui.label(this, "Потоки воздуха"));
@@ -320,7 +341,9 @@ public class ClimateActivity extends Activity {
         centerLp.rightMargin = Ui.dp(this, 12);
         tempRow.addView(center, centerLp);
 
-        tempRow.addView(buildTempCard("Пассажир", EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT), new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 0.9f));
+        if (!unified) {
+            tempRow.addView(buildTempCard("Пассажир", EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT), new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 0.9f));
+        }
         panel.addView(tempRow);
 
         LinearLayout seats = Ui.row(this);
@@ -615,9 +638,11 @@ public class ClimateActivity extends Activity {
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(2);
         addReadbackCard(grid, "Основное состояние", readbackByIds(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.HVAC_AUTO, EcarxVehicleAdapter.HVAC_AC, EcarxVehicleAdapter.HVAC_FAN_SPEED));
-        addReadbackCard(grid, "Температура", readback(
+        addReadbackCard(grid, "Температура и датчики", readback(
                 floatReadback(EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_DRIVER_LEFT),
                 floatReadback(EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT),
+                sensorReadback("В салоне", EcarxVehicleAdapter.SENSOR_TYPE_TEMPERATURE_INDOOR),
+                sensorReadback("Снаружи", EcarxVehicleAdapter.SENSOR_TYPE_TEMPERATURE_AMBIENT),
                 singleReadback(EcarxVehicleAdapter.HVAC_TEMP_UNIT),
                 singleReadback(EcarxVehicleAdapter.HVAC_CLIMATE_ZONE)));
         addReadbackCard(grid, "Сиденья и руль", developerModeEnabled()
@@ -964,19 +989,36 @@ public class ClimateActivity extends Activity {
     }
 
     private void refreshState() {
+        boolean unified = climateZonesUnified();
+        if (lastUnifiedClimate == null || lastUnifiedClimate != unified) {
+            lastUnifiedClimate = unified;
+            if (contentHost != null) {
+                renderContent();
+            }
+        }
         if (topModeValue != null) topModeValue.setText(simpleState(EcarxVehicleAdapter.HVAC_AUTO, "Auto"));
         if (topZoneValue != null) topZoneValue.setText(simpleState(EcarxVehicleAdapter.HVAC_CLIMATE_ZONE, "Zone"));
         if (topCabinValue != null) topCabinValue.setText(cabinSummary());
         if (driverTempValue != null) driverTempValue.setText(formatHeroTemp(floatState(EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_DRIVER_LEFT)));
         if (passengerTempValue != null) passengerTempValue.setText(formatHeroTemp(floatState(EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT)));
+        if (indoorTempValue != null) indoorTempValue.setText("В салоне: " + sensorTemperature(EcarxVehicleAdapter.SENSOR_TYPE_TEMPERATURE_INDOOR));
+        if (outdoorTempValue != null) outdoorTempValue.setText("Снаружи: " + sensorTemperature(EcarxVehicleAdapter.SENSOR_TYPE_TEMPERATURE_AMBIENT));
         if (fanValue != null) fanValue.setText("Вентилятор: " + simpleState(EcarxVehicleAdapter.HVAC_FAN_SPEED, "Fan"));
         if (summaryValue != null) summaryValue.setText(buildSummary());
         updateHeroControls();
     }
 
     private String cabinSummary() {
-        return floatState(EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_DRIVER_LEFT) + " / "
-                + floatState(EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT);
+        return sensorTemperature(EcarxVehicleAdapter.SENSOR_TYPE_TEMPERATURE_INDOOR) + " · "
+                + sensorTemperature(EcarxVehicleAdapter.SENSOR_TYPE_TEMPERATURE_AMBIENT);
+    }
+
+    private boolean climateZonesUnified() {
+        EcarxVehicleAdapter.Result result = new EcarxVehicleAdapter(this).get(EcarxVehicleAdapter.HVAC_CLIMATE_ZONE);
+        if (result == null) return false;
+        if (result.value == EcarxVehicleAdapter.CLIMATE_ZONE_SINGLE) return true;
+        String message = result.message == null ? "" : result.message.toLowerCase(Locale.ROOT);
+        return message.contains("single") || message.contains(EcarxVehicleAdapter.hex(EcarxVehicleAdapter.CLIMATE_ZONE_SINGLE).toLowerCase(Locale.ROOT));
     }
 
     private String buildSummary() {
@@ -996,6 +1038,20 @@ public class ClimateActivity extends Activity {
         EcarxVehicleAdapter.Result result = new EcarxVehicleAdapter(this).getFloat(functionId, zone);
         if (result == null || result.message == null || result.message.trim().isEmpty()) return "--";
         return compact(result.message);
+    }
+
+    private String sensorTemperature(int sensorId) {
+        EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
+        EcarxVehicleAdapter.Result support = adapter.supportSensor(sensorId);
+        if (support == null || !support.isSupported()) return "--";
+        EcarxVehicleAdapter.Result result = adapter.getSensorFloat(sensorId);
+        if (result == null || result.message == null || result.message.trim().isEmpty()) return "--";
+        return compact(result.message);
+    }
+
+    private String sensorReadback(String label, int sensorId) {
+        EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
+        return label + ": " + compact(adapter.supportSensor(sensorId).message) + "\n" + compact(adapter.getSensorFloat(sensorId).message);
     }
 
     private String zonedReadback(int functionId, int zone) {
@@ -1104,6 +1160,9 @@ public class ClimateActivity extends Activity {
         if (heroTempSeekBar == null && heroSyncToggle == null) return;
         updatingHeroControls = true;
         try {
+            boolean unified = climateZonesUnified();
+            if (heroDriverLabel != null) heroDriverLabel.setText(unified ? "Общая температура" : "Водитель");
+            if (heroPassengerCard != null) heroPassengerCard.setVisibility(unified ? View.GONE : View.VISIBLE);
             if (heroTempSeekBar != null) {
                 heroTempSeekBar.setProgress(heroTempProgressFromValue(parseClimateTemp(floatState(
                         EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_DRIVER_LEFT), 22.0f)));
@@ -1111,6 +1170,7 @@ public class ClimateActivity extends Activity {
             if (heroSyncToggle != null) {
                 String zone = simpleState(EcarxVehicleAdapter.HVAC_CLIMATE_ZONE, "");
                 boolean sync = zone.contains("10010502") || zone.toLowerCase(Locale.ROOT).contains("dual");
+                heroSyncToggle.setVisibility(unified ? View.GONE : View.VISIBLE);
                 heroSyncToggle.setChecked(sync);
                 styleHeroSyncToggle(sync);
             }
