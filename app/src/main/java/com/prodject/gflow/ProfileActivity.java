@@ -18,6 +18,7 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -70,6 +71,7 @@ public class ProfileActivity extends Activity {
         if (contentHost == null) return;
         contentHost.removeAllViews();
         if (mode == Mode.EDITOR) contentHost.addView(buildEditorPanel(selectedName), lpMatchWrap(0, 0, 0, 16));
+        else if (mode == Mode.DETAIL) contentHost.addView(buildDetailPanel(selectedName), lpMatchWrap(0, 0, 0, 16));
         else contentHost.addView(buildHomePanel(), lpMatchWrap(0, 0, 0, 16));
     }
 
@@ -89,7 +91,7 @@ public class ProfileActivity extends Activity {
         LinearLayout titleBlock = new LinearLayout(this);
         titleBlock.setOrientation(LinearLayout.VERTICAL);
         titleBlock.setPadding(Ui.dp(this, 16), 0, 0, 0);
-        titleBlock.addView(Ui.label(this, mode == Mode.EDITOR ? "Profile Editor" : "User Profiles"));
+        titleBlock.addView(Ui.label(this, mode == Mode.EDITOR ? "Profile Editor" : mode == Mode.DETAIL ? "Profile Details" : "User Profiles"));
         titleBlock.addView(Ui.text(this, "Профили пользователей", 28, true));
         bar.addView(titleBlock, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
@@ -162,8 +164,8 @@ public class ProfileActivity extends Activity {
         grid.setColumnCount(2);
         addStatusCard(grid, "Активный", activeProfileName(), Ui.CYAN);
         addStatusCard(grid, "Последний", prefs.getString(UserProfileEngine.KEY_LAST_USED, "нет"), Ui.SUCCESS);
-        addStatusCard(grid, "Drivers", previewNames("driver"), Ui.WARNING);
-        addStatusCard(grid, "Passengers", previewNames("passenger"), Color.rgb(129, 149, 255));
+        addStatusCard(grid, "По умолчанию", defaultProfileLabel(), Ui.WARNING);
+        addStatusCard(grid, "Профили", String.valueOf(UserProfileEngine.names(this, "driver").size() + UserProfileEngine.names(this, "passenger").size()), Color.rgb(129, 149, 255));
         return grid;
     }
 
@@ -201,8 +203,8 @@ public class ProfileActivity extends Activity {
         top.addView(title, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
         top.addView(Ui.pill(this, profile.type, "driver".equals(profile.type) ? Ui.CYAN : Ui.SUCCESS));
         card.addView(top);
-        card.addView(Ui.muted(this, identitySummary(profile.identity)));
-        card.addView(Ui.muted(this, commandSummary(profile.commands)));
+        card.addView(Ui.muted(this, UserProfileEngine.profileDescription(this, name)));
+        card.addView(Ui.muted(this, profileMetaLine(name)));
 
         LinearLayout actions = Ui.row(this);
         addMiniAction(actions, "Выбрать", () -> {
@@ -216,7 +218,100 @@ public class ProfileActivity extends Activity {
         });
         addMiniAction(actions, "Редактировать", () -> openMode(Mode.EDITOR, name));
         card.addView(actions, lpMatchWrap(0, 12, 0, 0));
+
+        LinearLayout extra = Ui.row(this);
+        addMiniAction(extra, isDefaultProfile(name) ? "Убрать default" : "Default", () -> {
+            if (isDefaultProfile(name)) UserProfileEngine.clearDefaultProfile(this);
+            else UserProfileEngine.setDefaultProfile(this, name, true);
+            renderContent();
+        });
+        addMiniAction(extra, "Обновить", () -> {
+            UserProfileEngine.Profile current = UserProfileEngine.Profile.parse(UserProfileEngine.raw(this, name));
+            showResultSheet("Профиль", UserProfileEngine.updateFromCurrent(this, name, name, current.type, current.avatar, current.identity, null));
+            renderContent();
+        });
+        addMiniAction(extra, "Дубль", () -> duplicateProfile(name));
+        addMiniAction(extra, "Переим.", () -> renameProfile(name));
+        card.addView(extra, lpMatchWrap(0, 10, 0, 0));
+
+        LinearLayout destructive = Ui.row(this);
+        addMiniAction(destructive, "Удалить", () -> {
+            UserProfileEngine.Profile current = UserProfileEngine.Profile.parse(UserProfileEngine.raw(this, name));
+            UserProfileEngine.delete(this, name, current.type);
+            if (name.equals(selectedName)) selectedName = "";
+            renderContent();
+        });
+        card.addView(destructive, lpMatchWrap(0, 10, 0, 0));
+        card.setOnClickListener(v -> openMode(Mode.DETAIL, name));
         return card;
+    }
+
+    private LinearLayout buildDetailPanel(String name) {
+        UserProfileEngine.Profile profile = UserProfileEngine.Profile.parse(UserProfileEngine.raw(this, name));
+        LinearLayout panel = Ui.glassCard(this);
+        panel.addView(Ui.label(this, "Профиль"));
+        panel.addView(Ui.text(this, profile.name.isEmpty() ? "Профиль не найден" : profile.name, 26, true));
+        if (profile.name.isEmpty()) return panel;
+
+        LinearLayout hero = Ui.row(this);
+        LinearLayout left = new LinearLayout(this);
+        left.setOrientation(LinearLayout.VERTICAL);
+        left.addView(metricLine("Тип", profile.type));
+        left.addView(metricLine("Описание", UserProfileEngine.profileDescription(this, name)));
+        left.addView(metricLine("Identity", identitySummary(profile.identity)));
+        left.addView(metricLine("Статус", profileMetaLine(name)));
+        hero.addView(left, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+
+        LinearLayout avatarCard = Ui.deepCard(this);
+        avatarCard.setGravity(Gravity.CENTER);
+        TextView avatar = Ui.text(this, profile.avatar == null || profile.avatar.trim().isEmpty() ? defaultAvatar(profile.type) : profile.avatar, 36, true);
+        avatar.setGravity(Gravity.CENTER);
+        avatarCard.addView(avatar);
+        hero.addView(avatarCard, new LinearLayout.LayoutParams(Ui.dp(this, 180), Ui.dp(this, 180)));
+        panel.addView(hero, lpMatchWrap(0, 12, 0, 12));
+
+        GridLayout status = new GridLayout(this);
+        status.setColumnCount(2);
+        addStatusCard(status, "Параметров", String.valueOf(UserProfileEngine.parameterCount(this, name)), Ui.CYAN);
+        addStatusCard(status, "Последний запуск", formatLastApplied(name), Ui.SUCCESS);
+        addStatusCard(status, "Default", isDefaultProfile(name) ? "Да" : "Нет", Ui.WARNING);
+        addStatusCard(status, "Snapshot", UserProfileEngine.isDirty(this, name) ? "Изменен" : "Актуален", Color.rgb(129, 149, 255));
+        panel.addView(status, lpMatchWrap(0, 0, 0, 12));
+
+        LinearLayout actions = Ui.row(this);
+        addActionChip(actions, "Применить", () -> {
+            showResultSheet("Применение профиля", UserProfileEngine.apply(this, name));
+            openMode(Mode.DETAIL, name);
+        });
+        addActionChip(actions, isDefaultProfile(name) ? "Убрать default" : "Сделать default", () -> {
+            if (isDefaultProfile(name)) UserProfileEngine.clearDefaultProfile(this);
+            else UserProfileEngine.setDefaultProfile(this, name, true);
+            openMode(Mode.DETAIL, name);
+        });
+        addActionChip(actions, "Обновить", () -> {
+            showResultSheet("Профиль", refreshProfileFromCurrent(name));
+            openMode(Mode.DETAIL, name);
+        });
+        addActionChip(actions, "Редактировать", () -> openMode(Mode.EDITOR, name));
+        panel.addView(actions, lpMatchWrap(0, 0, 0, 12));
+
+        LinearLayout actions2 = Ui.row(this);
+        addActionChip(actions2, "Дублировать", () -> duplicateProfile(name));
+        addActionChip(actions2, "Переименовать", () -> renameProfile(name));
+        addActionChip(actions2, "Удалить", () -> {
+            UserProfileEngine.delete(this, name, profile.type);
+            selectedName = "";
+            openMode(Mode.HOME, "");
+        });
+        addActionChip(actions2, "Назад", () -> openMode(Mode.HOME, name));
+        panel.addView(actions2, lpMatchWrap(0, 0, 0, 12));
+
+        LinearLayout snapshot = Ui.deepCard(this);
+        snapshot.addView(Ui.label(this, "Содержимое профиля"));
+        snapshot.addView(Ui.muted(this, "Список сохраненных параметров snapshot. Входные датчики среды сюда не включаются."));
+        snapshot.addView(Ui.text(this, AutomationEngine.join(profile.commands).replace(",", "\n"), 14, false));
+        panel.addView(snapshot, lpMatchWrap(0, 0, 0, 0));
+        return panel;
     }
 
     private LinearLayout buildEditorPanel(String name) {
@@ -230,13 +325,14 @@ public class ProfileActivity extends Activity {
         LinearLayout panel = Ui.glassCard(this);
         panel.addView(Ui.label(this, editing ? "Profile Editor" : "Create Profile"));
         panel.addView(Ui.text(this, editing ? "Редактирование профиля" : "Создание профиля", 22, true));
-        panel.addView(Ui.muted(this, "Поля создания соответствуют `Design.txt`: имя, тип, avatar, source identity и какие настройки сохранить."));
+        panel.addView(Ui.muted(this, "Создайте профиль из текущего состояния автомобиля или настройте snapshot вручную. Параметры вне выбранных категорий применяться не будут."));
 
         EditText profileName = edit("Имя профиля", editing ? profile.name : "");
         EditText type = edit("driver / passenger", typeValue);
         EditText avatar = edit("Avatar", avatarValue);
         EditText identity = edit("manual=; phone=; bluetooth=; face=; digitalKey=", identityValue);
         EditText body = edit("Тело профиля", bodyValue);
+        CheckBox useOnBoot = check("Использовать при запуске ГУ", editing && isDefaultProfile(profile.name));
         body.setMinLines(14);
         body.setGravity(Gravity.TOP);
         body.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
@@ -245,6 +341,7 @@ public class ProfileActivity extends Activity {
         panel.addView(type);
         panel.addView(avatar);
         panel.addView(identity);
+        panel.addView(useOnBoot, lpMatchWrap(0, 4, 0, 0));
         panel.addView(buildSettingsSelector(body, type));
         panel.addView(body, lpMatchWrap(0, 12, 0, 0));
 
@@ -253,9 +350,11 @@ public class ProfileActivity extends Activity {
             String result = UserProfileEngine.save(this, editing ? profile.name : "", profileName.getText().toString(),
                     type.getText().toString().trim(), avatar.getText().toString(), identity.getText().toString(), body.getText().toString());
             selectedName = profileName.getText().toString().trim();
+            if (useOnBoot.isChecked()) UserProfileEngine.setDefaultProfile(this, selectedName, true);
+            else if (editing && isDefaultProfile(profile.name)) UserProfileEngine.clearDefaultProfile(this);
             prefs = UserProfileEngine.prefs(this);
             showResultSheet("Профиль", result);
-            openMode(Mode.HOME, selectedName);
+            openMode(Mode.DETAIL, selectedName);
         });
         addActionChip(actions, "Применить", () -> {
             if (!editing && profileName.getText().toString().trim().isEmpty()) {
@@ -267,8 +366,9 @@ public class ProfileActivity extends Activity {
                         type.getText().toString().trim(), avatar.getText().toString(), identity.getText().toString(), body.getText().toString());
             }
             selectedName = profileName.getText().toString().trim();
+            if (useOnBoot.isChecked()) UserProfileEngine.setDefaultProfile(this, selectedName, true);
             showResultSheet("Применение профиля", UserProfileEngine.apply(this, selectedName));
-            openMode(Mode.HOME, selectedName);
+            openMode(Mode.DETAIL, selectedName);
         });
         addActionChip(actions, "Текущее в тело", () -> body.setText(UserProfileEngine.captureBody(this, type.getText().toString().trim(), null)));
         addActionChip(actions, "Домой", () -> openMode(Mode.HOME, selectedName));
@@ -366,6 +466,8 @@ public class ProfileActivity extends Activity {
         sheet.addView(type);
         sheet.addView(avatar);
         sheet.addView(identity);
+        CheckBox useOnBoot = check("Использовать при запуске ГУ", false);
+        sheet.addView(useOnBoot);
 
         CheckBox seat = check("Seat / Mirror", true);
         CheckBox climate = check("Climate / Fan", true);
@@ -394,8 +496,9 @@ public class ProfileActivity extends Activity {
                     "", name.getText().toString(), type.getText().toString().trim(), avatar.getText().toString(), identity.getText().toString(),
                     collectSettings(seat, climate, comfort, drive, hud, cabin, media, desktop, automation, adas));
             selectedName = name.getText().toString().trim();
+            if (useOnBoot.isChecked()) UserProfileEngine.setDefaultProfile(this, selectedName, true);
             showResultSheet("Профиль", result);
-            renderContent();
+            openMode(Mode.DETAIL, selectedName);
         });
         builder.setNegativeButton("Отмена", null);
         AlertDialog dialog = builder.create();
@@ -411,6 +514,34 @@ public class ProfileActivity extends Activity {
             return;
         }
         openMode(Mode.EDITOR, selectedName);
+    }
+
+    private void duplicateProfile(String name) {
+        UserProfileEngine.Profile profile = UserProfileEngine.Profile.parse(UserProfileEngine.raw(this, name));
+        String newName = profile.name + " копия";
+        String result = UserProfileEngine.save(this, "", newName, profile.type, profile.avatar, profile.identity, AutomationEngine.join(profile.commands));
+        selectedName = newName;
+        showResultSheet("Дублирование", result);
+        openMode(Mode.DETAIL, newName);
+    }
+
+    private void renameProfile(String name) {
+        UserProfileEngine.Profile profile = UserProfileEngine.Profile.parse(UserProfileEngine.raw(this, name));
+        EditText field = edit("Новое имя", profile.name);
+        new AlertDialog.Builder(this)
+                .setTitle("Переименовать профиль")
+                .setView(field)
+                .setPositiveButton("Сохранить", (dialog, which) -> {
+                    String newName = field.getText().toString().trim();
+                    if (newName.isEmpty()) return;
+                    String result = UserProfileEngine.save(this, profile.name, newName, profile.type, profile.avatar, profile.identity, AutomationEngine.join(profile.commands));
+                    if (isDefaultProfile(profile.name)) UserProfileEngine.setDefaultProfile(this, newName, true);
+                    selectedName = newName;
+                    showResultSheet("Профиль", result);
+                    openMode(Mode.DETAIL, newName);
+                })
+                .setNegativeButton("Отмена", null)
+                .show();
     }
 
     private void openCreateFor(String type) {
@@ -567,6 +698,37 @@ public class ProfileActivity extends Activity {
         return active == null || active.trim().isEmpty() ? "Нет" : active;
     }
 
+    private String defaultProfileLabel() {
+        String name = UserProfileEngine.defaultProfileName(this);
+        if (name == null || name.trim().isEmpty()) return "Не назначен";
+        return name + (UserProfileEngine.defaultProfileEnabled(this) ? " · boot" : "");
+    }
+
+    private boolean isDefaultProfile(String name) {
+        return name != null && name.equals(UserProfileEngine.defaultProfileName(this));
+    }
+
+    private String profileMetaLine(String name) {
+        ArrayList<String> tags = new ArrayList<>();
+        if (name.equals(activeProfileName())) tags.add(UserProfileEngine.isDirty(this, name) ? "Активен · изменен" : "Активен");
+        if (isDefaultProfile(name)) tags.add("По умолчанию");
+        tags.add(UserProfileEngine.parameterCount(this, name) + " параметров");
+        long lastAt = UserProfileEngine.lastAppliedAt(this, name);
+        if (lastAt > 0L) tags.add("Последний запуск " + new SimpleDateFormat("dd.MM HH:mm", Locale.getDefault()).format(new Date(lastAt)));
+        return AutomationEngine.join(tags).replace(",", " · ");
+    }
+
+    private String refreshProfileFromCurrent(String name) {
+        UserProfileEngine.Profile current = UserProfileEngine.Profile.parse(UserProfileEngine.raw(this, name));
+        return UserProfileEngine.updateFromCurrent(this, name, name, current.type, current.avatar, current.identity, null);
+    }
+
+    private String formatLastApplied(String name) {
+        long lastAt = UserProfileEngine.lastAppliedAt(this, name);
+        if (lastAt <= 0L) return "Не применялся";
+        return new SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()).format(new Date(lastAt));
+    }
+
     private UserProfileEngine.Profile selectedProfile() {
         String name = selectedName;
         if (name == null || name.trim().isEmpty()) name = prefs.getString(UserProfileEngine.KEY_LAST_USED, "");
@@ -621,6 +783,7 @@ public class ProfileActivity extends Activity {
 
     private enum Mode {
         HOME,
+        DETAIL,
         EDITOR
     }
 }

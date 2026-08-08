@@ -10,6 +10,9 @@ final class UserProfileEngine {
     static final String KEY_PASSENGER_ORDER = "passenger_order";
     static final String KEY_LAST_USED = "last_used";
     static final String KEY_LAST_APPLIED_AT = "last_applied_at";
+    static final String KEY_DEFAULT_PROFILE = "default_profile";
+    static final String KEY_DEFAULT_PROFILE_ENABLED = "default_profile_enabled";
+    static final String KEY_DEFAULT_PROFILE_LAST_BOOT = "default_profile_last_boot";
 
     private UserProfileEngine() {}
 
@@ -51,7 +54,11 @@ final class UserProfileEngine {
         SharedPreferences p = prefs(context);
         ArrayList<String> order = new ArrayList<>(AutomationEngine.names(p, orderKey));
         order.remove(name);
-        p.edit().remove("profile2:" + name).putString(orderKey, AutomationEngine.join(order)).apply();
+        SharedPreferences.Editor editor = p.edit().remove("profile2:" + name).putString(orderKey, AutomationEngine.join(order));
+        if (name.equals(p.getString(KEY_DEFAULT_PROFILE, ""))) {
+            editor.remove(KEY_DEFAULT_PROFILE).putBoolean(KEY_DEFAULT_PROFILE_ENABLED, false);
+        }
+        editor.apply();
     }
 
     static String raw(Context context, String name) {
@@ -63,13 +70,67 @@ final class UserProfileEngine {
         if (profile.name.length() == 0) return "Профиль не найден: " + name;
         EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(context);
         StringBuilder sb = new StringBuilder("Профиль ").append(profile.type).append(": ").append(profile.name).append("\n");
-        for (String line : profile.commands) sb.append(runLine(context, adapter, line)).append("\n");
+        int applied = 0;
+        int failed = 0;
+        ArrayList<String> issues = new ArrayList<>();
+        for (String line : profile.commands) {
+            String result = runLine(context, adapter, line);
+            if (result == null || result.trim().isEmpty()) continue;
+            sb.append(result).append("\n");
+            String lower = result.toLowerCase(Locale.ROOT);
+            if (lower.contains("failed") || lower.contains("ошибка") || lower.contains("unknown")) {
+                failed++;
+                issues.add(result);
+            } else {
+                applied++;
+            }
+        }
         prefs(context).edit()
                 .putString(KEY_LAST_USED, profile.name)
                 .putLong(KEY_LAST_APPLIED_AT, System.currentTimeMillis())
+                .putLong("profile_last_applied:" + profile.name, System.currentTimeMillis())
                 .apply();
         AutomationEngine.prefs(context).edit().putString(AutomationEngine.KEY_ACTIVE_PROFILE, profile.name).apply();
+        sb.append("\nИтог: применено ").append(applied).append(" параметров");
+        if (failed > 0) sb.append(", проблемных ").append(failed);
+        if (!issues.isEmpty()) {
+            sb.append("\n\nНепримененные или спорные пункты:\n");
+            for (String item : issues) sb.append("- ").append(item).append("\n");
+        }
         return sb.toString();
+    }
+
+    static void setDefaultProfile(Context context, String name, boolean enabled) {
+        prefs(context).edit()
+                .putString(KEY_DEFAULT_PROFILE, name == null ? "" : name.trim())
+                .putBoolean(KEY_DEFAULT_PROFILE_ENABLED, enabled && name != null && !name.trim().isEmpty())
+                .apply();
+    }
+
+    static void clearDefaultProfile(Context context) {
+        prefs(context).edit().remove(KEY_DEFAULT_PROFILE).putBoolean(KEY_DEFAULT_PROFILE_ENABLED, false).apply();
+    }
+
+    static String defaultProfileName(Context context) {
+        return prefs(context).getString(KEY_DEFAULT_PROFILE, "");
+    }
+
+    static boolean defaultProfileEnabled(Context context) {
+        SharedPreferences p = prefs(context);
+        return p.getBoolean(KEY_DEFAULT_PROFILE_ENABLED, false) && !defaultProfileName(context).trim().isEmpty();
+    }
+
+    static String applyDefaultProfileOnBootIfNeeded(Context context, String action) {
+        if (!defaultProfileEnabled(context)) return "";
+        if (Intent.ACTION_SHUTDOWN.equals(action)) return "";
+        SharedPreferences p = prefs(context);
+        long now = System.currentTimeMillis();
+        long lastBootApply = p.getLong(KEY_DEFAULT_PROFILE_LAST_BOOT, 0L);
+        if (now - lastBootApply < 60_000L) return "";
+        String name = defaultProfileName(context);
+        if (name.trim().isEmpty()) return "";
+        p.edit().putLong(KEY_DEFAULT_PROFILE_LAST_BOOT, now).apply();
+        return apply(context, name);
     }
 
     static String matchIdentity(Context context, String kind, String value) {
@@ -187,6 +248,59 @@ final class UserProfileEngine {
 
     static String updateFromCurrent(Context context, String oldName, String name, String type, String avatar, String identity, Set<String> settings) {
         return save(context, oldName, name, type, avatar, identity, captureBody(context, type, settings));
+    }
+
+    static int parameterCount(Context context, String name) {
+        return Profile.parse(raw(context, name)).commands.size();
+    }
+
+    static String profileDescription(Context context, String name) {
+        Profile profile = Profile.parse(raw(context, name));
+        if (profile.commands.isEmpty()) return "Пустой профиль";
+        ArrayList<String> tokens = new ArrayList<>();
+        for (String line : profile.commands) {
+            if (line.startsWith("climateTemp:")) {
+                String[] p = line.split(":");
+                if (p.length > 2) tokens.add("Климат " + p[2] + "°C");
+            } else if (line.startsWith("seatMemory:")) {
+                String[] p = line.split(":");
+                if (p.length > 2) tokens.add("Сиденье " + p[2]);
+            } else if (line.startsWith("drive:")) {
+                tokens.add("Drive " + line.substring("drive:".length()));
+            } else if (line.startsWith("ambience:")) {
+                tokens.add("Подсветка " + line.substring("ambience:".length()));
+            } else if (line.startsWith("seatHeat:")) {
+                tokens.add("Подогрев");
+            } else if (line.startsWith("seatVent:")) {
+                tokens.add("Вентиляция");
+            } else if (line.startsWith("preset:")) {
+                tokens.add("Preset");
+            }
+            if (tokens.size() >= 4) break;
+        }
+        return tokens.isEmpty() ? profile.commands.size() + " параметров" : joinSummary(tokens);
+    }
+
+    static long lastAppliedAt(Context context, String name) {
+        return prefs(context).getLong("profile_last_applied:" + name, 0L);
+    }
+
+    static boolean isDirty(Context context, String name) {
+        String active = AutomationEngine.prefs(context).getString(AutomationEngine.KEY_ACTIVE_PROFILE, "");
+        if (!name.equals(active)) return false;
+        String current = captureBody(context, Profile.parse(raw(context, name)).type, null).trim();
+        String saved = AutomationEngine.join(Profile.parse(raw(context, name)).commands).trim();
+        return !current.isEmpty() && !saved.isEmpty() && !current.equals(saved);
+    }
+
+    private static String joinSummary(List<String> items) {
+        StringBuilder sb = new StringBuilder();
+        int limit = Math.min(items.size(), 4);
+        for (int i = 0; i < limit; i++) {
+            if (i > 0) sb.append(" · ");
+            sb.append(items.get(i));
+        }
+        return sb.toString();
     }
 
     private static String runLine(Context context, EcarxVehicleAdapter adapter, String raw) {

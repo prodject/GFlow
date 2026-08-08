@@ -7,6 +7,7 @@ public class BootReceiver extends BroadcastReceiver {
         context.startForegroundService(new Intent(context, VoiceForegroundService.class));
         CameraForegroundService.start(context);
         AutomationEngine.runTrigger(context, "boot", intent == null ? "" : intent.getAction());
+        UserProfileEngine.applyDefaultProfileOnBootIfNeeded(context, intent == null ? "" : intent.getAction());
         AutomationEngine.runSmartClimateIfEnabled(context);
         if (intent != null && Intent.ACTION_SHUTDOWN.equals(intent.getAction())) SmartClimateController.dryAfterTrip(context);
         else AutomationEngine.startLowSpeedCameraIfEnabled(context);

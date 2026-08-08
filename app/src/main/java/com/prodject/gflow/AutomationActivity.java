@@ -242,6 +242,10 @@ public class AutomationActivity extends Activity {
             Ui.toast(this, "Navigation context installed");
             renderContent();
         });
+        addTemplateTile(grid, "Boot Profile", Color.rgb(125, 109, 186), () -> {
+            installBootProfileScenario();
+            renderContent();
+        });
         panel.addView(grid, lpMatchWrap(0, 12, 0, 0));
 
         LinearLayout lists = Ui.row(this);
@@ -257,7 +261,20 @@ public class AutomationActivity extends Activity {
         LinearLayout panel = Ui.glassCard(this);
         panel.addView(Ui.label(this, "Automation Notes"));
         panel.addView(Ui.text(this, automationIdeas(), 14, false));
+        panel.addView(buildProfileAutomationCard(), lpMatchWrap(0, 14, 0, 0));
         return panel;
+    }
+
+    private LinearLayout buildProfileAutomationCard() {
+        LinearLayout card = Ui.deepCard(this);
+        card.addView(Ui.label(this, "Профили в автоматизации"));
+        card.addView(Ui.text(this, "Профиль можно использовать как действие сценария. Практический сценарий: при запуске ГУ применить профиль по умолчанию или конкретный профиль поездки.", 14, false));
+        card.addView(Ui.muted(this, "Для пресета используйте строку `action:user_profile=Имя профиля`. Для сценария: `step:action user_profile=Имя профиля`."));
+        LinearLayout row = Ui.row(this);
+        addActionChip(row, "Создать boot-профиль", this::installBootProfileScenario);
+        addActionChip(row, "Открыть профили", () -> startActivity(new android.content.Intent(this, ProfileActivity.class)));
+        card.addView(row, lpMatchWrap(0, 12, 0, 0));
+        return card;
     }
 
     private LinearLayout buildPresetList() {
@@ -404,7 +421,7 @@ public class AutomationActivity extends Activity {
 
         LinearLayout panel = Ui.glassCard(this);
         panel.addView(Ui.label(this, oldName.isEmpty() ? "Новый Trigger" : "Trigger Editor"));
-        panel.addView(Ui.text(this, "Trigger хранит имя, тип события, выражение совпадения и целевой smart preset.", 14, false));
+        panel.addView(Ui.text(this, "Trigger хранит имя, тип события, выражение совпадения и целевой preset. Если нужно применить профиль, создайте preset с `action:user_profile=...` и укажите его здесь.", 14, false));
 
         EditText name = textField("Название", oldName, false);
         EditText type = textField("manual / boot / app / voice / button", typeValue, false);
@@ -745,12 +762,32 @@ public class AutomationActivity extends Activity {
 
     private String automationIdeas() {
         return "Что еще логично автоматизировать:\n"
+                + "- Профиль при старте ГУ: boot -> user_profile, без повторного применения при каждом открытии главного экрана.\n"
                 + "- Welcome / уход: при открытии двери водителя включить профиль, климат, подсветку и любимый режим движения.\n"
                 + "- Parking guard: при парковке включать DVR/360 и закрывать окна/люк.\n"
                 + "- Rain scenario: по ручному триггеру или датчику дождя закрыть окна/люк и включить дворники auto.\n"
                 + "- Night mode: вечером менять яркость, HUD, тему DIM и салонную подсветку.\n"
                 + "- App context: при запуске навигации включать split, HUD navigation и autozoom.\n"
                 + "- Service mode: перед сервисом отключать экспериментальные функции и возвращать стандартный профиль.";
+    }
+
+    private void installBootProfileScenario() {
+        String profile = UserProfileEngine.defaultProfileName(this);
+        if (profile == null || profile.trim().isEmpty()) {
+            profile = AutomationEngine.prefs(this).getString(AutomationEngine.KEY_ACTIVE_PROFILE, "");
+        }
+        if (profile == null || profile.trim().isEmpty()) {
+            Ui.toast(this, "Сначала создайте профиль или назначьте профиль по умолчанию");
+            return;
+        }
+        String presetName = "Профиль " + profile;
+        AutomationStore.savePreset(this, "", presetName, "action:user_profile=" + profile);
+        String scenario = "name:Стартовый профиль " + profile + "\n"
+                + "trigger:boot\n"
+                + "policy:minInterval=5m\n"
+                + "step:action user_profile=" + profile + "\n";
+        AutomationStore.saveNamed(this, AutomationEngine.KEY_SCENARIO_ORDER, "scenario:", "", "Стартовый профиль " + profile, scenario);
+        Ui.toast(this, "Создан сценарий запуска профиля");
     }
 
     private LinearLayout.LayoutParams lpMatchWrap(int l, int t, int r, int b) {
