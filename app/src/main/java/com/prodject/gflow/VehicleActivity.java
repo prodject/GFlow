@@ -265,7 +265,7 @@ public class VehicleActivity extends Activity {
     private LinearLayout buildSeatsPanel() {
         LinearLayout panel = Ui.glassCard(this);
         panel.addView(Ui.label(this, "Seat Control"));
-        panel.addView(Ui.text(this, "Удержание = движение, отпускание = stop. Пассажирская высота скрыта: stock подтвердил только length/backrest.", 14, false));
+        panel.addView(Ui.text(this, "Удержание кнопки = движение, отпускание = stop. Водитель: 3 регулировки. Пассажир: 2 регулировки, как в stock APK.", 14, false));
         panel.addView(buildSeatControlCard("Driver", EcarxVehicleAdapter.ZONE_DRIVER_LEFT, true), lpMatchWrap(0, 12, 0, 12));
         panel.addView(buildSeatControlCard("Passenger", EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT, false), lpMatchWrap(0, 0, 0, 12));
 
@@ -280,39 +280,53 @@ public class VehicleActivity extends Activity {
     private LinearLayout buildSeatControlCard(String title, int zone, boolean includeHeight) {
         LinearLayout card = Ui.glassCard(this);
         card.addView(Ui.label(this, title));
+        card.addView(Ui.muted(this, includeHeight
+                ? "Высота, продольное движение и спинка"
+                : "Продольное движение и спинка"));
 
-        LinearLayout up = Ui.row(this);
         if (includeHeight) {
-            addSeatHoldButton(up, "↑", EcarxVehicleAdapter.SEAT_HEIGHT, zone, EcarxVehicleAdapter.SEAT_HEIGHT_UP);
-        } else {
-            addSeatSpacer(up);
+            card.addView(buildSeatControlSection(
+                    "Высота",
+                    new SeatButton("Поднять", EcarxVehicleAdapter.SEAT_HEIGHT, zone, EcarxVehicleAdapter.SEAT_HEIGHT_UP),
+                    new SeatButton("Опустить", EcarxVehicleAdapter.SEAT_HEIGHT, zone, EcarxVehicleAdapter.SEAT_HEIGHT_DOWN)
+            ), lpMatchWrap(0, 12, 0, 0));
         }
-        card.addView(up, lpMatchWrap(0, 10, 0, 0));
 
-        LinearLayout move = Ui.row(this);
-        addSeatHoldButton(move, "←", EcarxVehicleAdapter.SEAT_LENGTH, zone, EcarxVehicleAdapter.SEAT_BACKWARD);
-        addSeatCenter(move);
-        addSeatHoldButton(move, "→", EcarxVehicleAdapter.SEAT_LENGTH, zone, EcarxVehicleAdapter.SEAT_FORWARD);
-        card.addView(move, lpMatchWrap(0, 8, 0, 0));
+        card.addView(buildSeatControlSection(
+                "Сдвиг подушки",
+                new SeatButton("Назад", EcarxVehicleAdapter.SEAT_LENGTH, zone, EcarxVehicleAdapter.SEAT_BACKWARD),
+                new SeatButton("Вперед", EcarxVehicleAdapter.SEAT_LENGTH, zone, EcarxVehicleAdapter.SEAT_FORWARD)
+        ), lpMatchWrap(0, 12, 0, 0));
 
-        LinearLayout down = Ui.row(this);
-        if (includeHeight) {
-            addSeatHoldButton(down, "↓", EcarxVehicleAdapter.SEAT_HEIGHT, zone, EcarxVehicleAdapter.SEAT_HEIGHT_DOWN);
-        } else {
-            addSeatSpacer(down);
-        }
-        card.addView(down, lpMatchWrap(0, 8, 0, 0));
-
-        LinearLayout backrest = Ui.row(this);
-        addSeatHoldButton(backrest, "Спинка +", EcarxVehicleAdapter.SEAT_BACKREST, zone, EcarxVehicleAdapter.SEAT_BACKREST_FORWARD);
-        addSeatHoldButton(backrest, "Спинка -", EcarxVehicleAdapter.SEAT_BACKREST, zone, EcarxVehicleAdapter.SEAT_BACKREST_BACKWARD);
-        card.addView(backrest, lpMatchWrap(0, 12, 0, 0));
+        card.addView(buildSeatControlSection(
+                "Спинка",
+                new SeatButton("Отклонить", EcarxVehicleAdapter.SEAT_BACKREST, zone, EcarxVehicleAdapter.SEAT_BACKREST_BACKWARD),
+                new SeatButton("Поднять", EcarxVehicleAdapter.SEAT_BACKREST, zone, EcarxVehicleAdapter.SEAT_BACKREST_FORWARD)
+        ), lpMatchWrap(0, 12, 0, 0));
         return card;
+    }
+
+    private LinearLayout buildSeatControlSection(String title, SeatButton left, SeatButton right) {
+        LinearLayout section = new LinearLayout(this);
+        section.setOrientation(LinearLayout.VERTICAL);
+        section.setPadding(Ui.dp(this, 16), Ui.dp(this, 14), Ui.dp(this, 16), Ui.dp(this, 14));
+        section.setBackground(Ui.cardBg(this,
+                Ui.dark(this) ? Color.argb(44, 255, 255, 255) : Color.argb(238, 255, 255, 255),
+                Ui.dp(this, 20),
+                Ui.dark(this) ? Color.TRANSPARENT : Color.argb(88, 185, 198, 214)));
+        section.addView(Ui.label(this, title));
+
+        LinearLayout row = Ui.row(this);
+        row.setWeightSum(2f);
+        addSeatHoldButton(row, left.label, left.functionId, left.zone, left.value);
+        addSeatHoldButton(row, right.label, right.functionId, right.zone, right.value);
+        section.addView(row, lpMatchWrap(0, 10, 0, 0));
+        return section;
     }
 
     private void addSeatHoldButton(LinearLayout row, String label, int functionId, int zone, int value) {
         Button b = Ui.button(this, label);
-        b.setTextSize(label.length() == 1 ? 28 : 15);
+        b.setTextSize(15);
         b.setTextColor(Ui.dark(this) ? Color.WHITE : Ui.primaryText(this));
         b.setBackground(Ui.cardBg(this,
                 Ui.dark(this) ? Color.argb(76, 255, 255, 255) : Color.argb(245, 255, 255, 255),
@@ -337,23 +351,18 @@ public class VehicleActivity extends Activity {
         row.addView(b, lp);
     }
 
-    private void addSeatCenter(LinearLayout row) {
-        TextView center = Ui.text(this, "hold", 14, true);
-        center.setGravity(Gravity.CENTER);
-        center.setBackground(Ui.cardBg(this, Color.argb(80, 77, 163, 255), Ui.dp(this, 22), Color.TRANSPARENT));
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 64), 1f);
-        lp.leftMargin = Ui.dp(this, 6);
-        lp.rightMargin = Ui.dp(this, 6);
-        row.addView(center, lp);
-    }
+    private static final class SeatButton {
+        final String label;
+        final int functionId;
+        final int zone;
+        final int value;
 
-    private void addSeatSpacer(LinearLayout row) {
-        TextView spacer = Ui.muted(this, "height not supported");
-        spacer.setGravity(Gravity.CENTER);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, Ui.dp(this, 48), 1f);
-        lp.leftMargin = Ui.dp(this, 6);
-        lp.rightMargin = Ui.dp(this, 6);
-        row.addView(spacer, lp);
+        SeatButton(String label, int functionId, int zone, int value) {
+            this.label = label;
+            this.functionId = functionId;
+            this.zone = zone;
+            this.value = value;
+        }
     }
 
     private LinearLayout buildMirrorsPanel() {
