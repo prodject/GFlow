@@ -234,7 +234,7 @@ public class AdasActivity extends Activity {
 
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(2);
-        addHiddenAssistantCard(grid, "Speed Assist", "TSR, warning, offset fallback", new QuickItem[]{
+        addHiddenAssistantCard(grid, "Speed Assist", "Распознавание знаков, предупреждения и смещение лимита", new QuickItem[]{
                 new QuickItem("TSR ON", () -> sendVehicle("Traffic sign recognition", EcarxVehicleAdapter.ADAS_TRAFFIC_SIGN_RECOGNITION, EcarxVehicleAdapter.COMMON_ON)),
                 new QuickItem("TSR OFF", () -> sendVehicle("Traffic sign recognition off", EcarxVehicleAdapter.ADAS_TRAFFIC_SIGN_RECOGNITION, EcarxVehicleAdapter.COMMON_OFF)),
                 new QuickItem("Warning", () -> selectVehicleValue("Speed warning mode", EcarxVehicleAdapter.ADAS_SPEED_LIMIT_WARNING_MODE)),
@@ -242,14 +242,14 @@ public class AdasActivity extends Activity {
                 new QuickItem("Alert status", () -> showStatusSheet("Traffic sign alert", EcarxVehicleAdapter.ADAS_TRAFFIC_SIGN_ALERT)),
                 new QuickItem("ACC+TSR status", () -> showStatusSheet("ACC with TSR", EcarxVehicleAdapter.ADAS_ACC_WITH_TSR))
         });
-        addHiddenAssistantCard(grid, "Lane Assist", "ELKA, LCA; paddle readback only", new QuickItem[]{
+        addHiddenAssistantCard(grid, "Lane Assist", "Удержание полосы, перестроение и состояние подрулевого сценария", new QuickItem[]{
                 new QuickItem("ELKA ON", () -> sendVehicle("ELKA включить", EcarxVehicleAdapter.ADAS_ELKA, EcarxVehicleAdapter.COMMON_ON)),
                 new QuickItem("ELKA OFF", () -> sendVehicle("ELKA выключить", EcarxVehicleAdapter.ADAS_ELKA, EcarxVehicleAdapter.COMMON_OFF)),
                 new QuickItem("LCA ON", () -> sendVehicle("Lane change assist on", EcarxVehicleAdapter.ADAS_LANE_CHANGE_ASSIST, EcarxVehicleAdapter.COMMON_ON)),
                 new QuickItem("LCA OFF", () -> sendVehicle("Lane change assist off", EcarxVehicleAdapter.ADAS_LANE_CHANGE_ASSIST, EcarxVehicleAdapter.COMMON_OFF)),
                 new QuickItem("Paddle status", () -> showStatusSheet("Paddle lane change", EcarxVehicleAdapter.ADAS_PADDLE_LANE_CHANGE_ASSIST))
         });
-        addHiddenAssistantCard(grid, "Collision Assist", "AEB / FCW / rear warning", new QuickItem[]{
+        addHiddenAssistantCard(grid, "Collision Assist", "Автоторможение, предупреждение спереди и сзади", new QuickItem[]{
                 new QuickItem("AEB ON", () -> sendVehicle("AEB включить", EcarxVehicleAdapter.ADAS_AEB, EcarxVehicleAdapter.COMMON_ON)),
                 new QuickItem("AEB OFF", () -> sendVehicle("AEB выключить", EcarxVehicleAdapter.ADAS_AEB, EcarxVehicleAdapter.COMMON_OFF)),
                 new QuickItem("FCW Low", () -> sendVehicle("FCW sensitivity low", EcarxVehicleAdapter.ADAS_FCW_SENSITIVITY, EcarxVehicleAdapter.FCW_SENSITIVITY_LOW)),
@@ -257,7 +257,7 @@ public class AdasActivity extends Activity {
                 new QuickItem("FCW High", () -> sendVehicle("FCW sensitivity high", EcarxVehicleAdapter.ADAS_FCW_SENSITIVITY, EcarxVehicleAdapter.FCW_SENSITIVITY_HIGH)),
                 new QuickItem("FCW status", () -> showStatusSheet("FCW status", EcarxVehicleAdapter.ADAS_FCW))
         });
-        addHiddenAssistantCard(grid, "Traffic Light Assist", "Attention; sound readback only", new QuickItem[]{
+        addHiddenAssistantCard(grid, "Traffic Light Assist", "Внимание к светофорам и звуковые уведомления", new QuickItem[]{
                 new QuickItem("Attention ON", () -> sendVehicle("Traffic light attention on", EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION, EcarxVehicleAdapter.COMMON_ON)),
                 new QuickItem("Attention OFF", () -> sendVehicle("Traffic light attention off", EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION, EcarxVehicleAdapter.COMMON_OFF)),
                 new QuickItem("Sound status", () -> showStatusSheet("Traffic light sound", EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION_SOUND))
@@ -346,7 +346,7 @@ public class AdasActivity extends Activity {
         LinearLayout panel = Ui.glassCard(this);
         panel.setVisibility(MODE_EXPERIMENTAL.equals(currentMode) ? View.VISIBLE : View.GONE);
         panel.addView(Ui.label(this, "Экспериментальные функции"));
-        panel.addView(Ui.muted(this, "Панель доступна только при включении Experimental features."));
+        panel.addView(Ui.muted(this, "Панель доступна только при включении экспериментальных функций."));
 
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(3);
@@ -394,8 +394,8 @@ public class AdasActivity extends Activity {
         LinearLayout togglesOff = Ui.row(this);
         addActionChip(togglesOff, "AI Default Off", () -> sendVehicle("AI Assist default off", EcarxVehicleAdapter.ADAS_AI_ASSIST_DEFAULT_ON, EcarxVehicleAdapter.COMMON_OFF));
         addActionChip(togglesOff, "Выход выкл", () -> sendVehicle("Overtaking lane exit off", EcarxVehicleAdapter.ADAS_AI_ASSIST_OUT_OVERTAKING_LANE, EcarxVehicleAdapter.COMMON_OFF));
-        addActionChip(togglesOff, "Звук status", () -> showStatusSheet("Traffic light sound", EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION_SOUND));
-        addActionChip(togglesOff, "Paddle status", () -> showStatusSheet("Paddle lane change", EcarxVehicleAdapter.ADAS_PADDLE_LANE_CHANGE_ASSIST));
+        addActionChip(togglesOff, "Статус звука", () -> showStatusSheet("Traffic light sound", EcarxVehicleAdapter.ADAS_TRAFFIC_LIGHT_ATTENTION_SOUND));
+        addActionChip(togglesOff, "Статус paddle", () -> showStatusSheet("Paddle lane change", EcarxVehicleAdapter.ADAS_PADDLE_LANE_CHANGE_ASSIST));
         panel.addView(togglesOff, lpMatchWrap(0, 12, 0, 0));
 
         LinearLayout tlbModes = Ui.row(this);
@@ -503,7 +503,7 @@ public class AdasActivity extends Activity {
         addStatusCard(grid, "Ассистенты", experimentalFeaturesEnabled() ? "AEB · FCW · LKA · AI" : "AEB · FCW · LKA · LDW", Ui.SUCCESS);
         addStatusCard(grid, "Круиз", "ACC / ICC / TSR", Ui.CYAN);
         addStatusCard(grid, "Парковка", "PDC", Ui.WARNING);
-        addStatusCard(grid, "Полоса", "Lane keep / lane warning", Color.rgb(129, 149, 255));
+        addStatusCard(grid, "Полоса", "Удержание и предупреждение", Color.rgb(129, 149, 255));
         return grid;
     }
 

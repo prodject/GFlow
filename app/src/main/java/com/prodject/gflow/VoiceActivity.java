@@ -204,7 +204,7 @@ public class VoiceActivity extends Activity {
     private LinearLayout buildCommandPanel() {
         LinearLayout panel = Ui.glassCard(this);
         panel.addView(Ui.label(this, "Команды"));
-        panel.addView(Ui.text(this, "Локальный Vosk, ручной ввод команд и выполнение встроенного parser flow.", 14, false));
+        panel.addView(Ui.text(this, "Локальное распознавание, ручной ввод команд и выполнение встроенных сценариев.", 14, false));
 
         commandInput = edit("Введите или продиктуйте команду", latestRecognition);
         panel.addView(commandInput);
@@ -232,7 +232,7 @@ public class VoiceActivity extends Activity {
     private LinearLayout buildAliasPanel() {
         LinearLayout panel = Ui.glassCard(this);
         panel.addView(Ui.label(this, "Команды алиасов"));
-        panel.addView(Ui.text(this, "Alias может запускать preset, scenario, action или broadcast command. Долгое нажатие — редактирование.", 14, false));
+        panel.addView(Ui.text(this, "Алиас может запускать пресет, сценарий, экран или команду. Долгое нажатие — редактирование.", 14, false));
 
         LinearLayout row = Ui.row(this);
         addActionChip(row, "Добавить", () -> editAlias(null));
@@ -881,7 +881,7 @@ public class VoiceActivity extends Activity {
 
     private EcarxVehicleAdapter.Result openAvmCamera() {
         EcarxDvrAdapter.Result result = new EcarxDvrAdapter(this).openEvs(EcarxDvrAdapter.EVS_CAMERA_AVM);
-        return EcarxVehicleAdapter.Result.external("AVM 360 via EVS: " + result.message, result.success, true);
+        return EcarxVehicleAdapter.Result.external("Камера 360: " + result.message, result.success, true);
     }
 
     private EcarxVehicleAdapter.Result parseCustomPropulsion(String cmd) {
@@ -953,11 +953,11 @@ public class VoiceActivity extends Activity {
     private EcarxVehicleAdapter.Result sendVehicleChecked(int functionId, int value) {
         EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
         if (!adapter.isWritable(functionId)) {
-            return EcarxVehicleAdapter.Result.external("Функция переведена в diagnostics/readback-only", false, true);
+            return EcarxVehicleAdapter.Result.external("Функция доступна только для просмотра состояния", false, true);
         }
         EcarxVehicleAdapter.Result support = adapter.support(functionId);
         if (!support.isSupported()) {
-            return EcarxVehicleAdapter.Result.external("Функция недоступна в AdaptAPI этого автомобиля", false, false);
+            return EcarxVehicleAdapter.Result.external("Функция недоступна на этом автомобиле", false, false);
         }
         return CarCommandBus.sendVehicle(this, functionId, value);
     }
@@ -965,7 +965,7 @@ public class VoiceActivity extends Activity {
     private EcarxVehicleAdapter.Result sendVehicleChecked(int functionId, int zone, int value) {
         EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
         if (!adapter.isWritable(functionId)) {
-            return EcarxVehicleAdapter.Result.external("Функция переведена в diagnostics/readback-only", false, true);
+            return EcarxVehicleAdapter.Result.external("Функция доступна только для просмотра состояния", false, true);
         }
         EcarxVehicleAdapter.Result support = adapter.support(functionId, zone);
         if (!support.isSupported()) {
@@ -1094,7 +1094,7 @@ public class VoiceActivity extends Activity {
 
     private void chooseAliasType(String[] typeHolder, String[] labelHolder, TextView typeView, String[] targetHolder, TextView targetView) {
         final String[] ids = new String[]{"launch", "preset", "scenario", "drive", "screen", "voice", "command"};
-        final String[] labels = new String[]{"Открыть приложение", "Запустить пресет", "Запустить сценарий", "Сменить режим вождения", "Открыть экран", "Broadcast / voice command", "Vehicle raw command"};
+        final String[] labels = new String[]{"Открыть приложение", "Запустить пресет", "Запустить сценарий", "Сменить режим вождения", "Открыть экран", "Команда приложения", "Команда автомобиля"};
         new AlertDialog.Builder(this)
                 .setTitle("Тип действия")
                 .setItems(labels, (d, which) -> {
@@ -1133,7 +1133,7 @@ public class VoiceActivity extends Activity {
     }
 
     private void promptAliasTarget(String type, String[] targetHolder, String[] labelHolder, TextView targetView) {
-        EditText value = edit("voice".equals(type) ? "Текст команды" : "Raw command", targetHolder[0]);
+        EditText value = edit("voice".equals(type) ? "Текст команды" : "Команда автомобиля", targetHolder[0]);
         new AlertDialog.Builder(this)
                 .setTitle("Цель")
                 .setView(value)
@@ -1226,8 +1226,8 @@ public class VoiceActivity extends Activity {
         if ("scenario".equals(type)) return "Запустить сценарий";
         if ("drive".equals(type)) return "Сменить режим вождения";
         if ("screen".equals(type)) return "Открыть экран";
-        if ("voice".equals(type)) return "Broadcast / voice command";
-        if ("command".equals(type)) return "Vehicle raw command";
+        if ("voice".equals(type)) return "Команда приложения";
+        if ("command".equals(type)) return "Команда автомобиля";
         return "Legacy alias";
     }
 

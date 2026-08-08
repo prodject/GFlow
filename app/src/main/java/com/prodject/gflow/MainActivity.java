@@ -302,7 +302,7 @@ public class MainActivity extends Activity {
         heroCarSummary = buildMetricLine("Климат", dashboardCarSummary());
         summary.addView(heroCarSummary);
         summary.addView(buildMetricLine("Профиль", activeProfileName()));
-        summary.addView(buildMetricLine("Режим", developerModeEnabled() ? "Developer" : "Comfort"));
+        summary.addView(buildMetricLine("Режим", developerModeEnabled() ? "Расширенный" : "Комфорт"));
         summary.addView(buildMetricLine("DVR", dvrSummary()));
         summary.addView(buildMetricLine("ADAS", adasSummary()));
         LinearLayout.LayoutParams summaryLp = new LinearLayout.LayoutParams(Ui.dp(this, 260), ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -473,7 +473,7 @@ public class MainActivity extends Activity {
     }
 
     private String adasSummary() {
-        return developerModeEnabled() ? "AEB · LKA · ACC · DEV" : "AEB · LKA · PDC";
+        return developerModeEnabled() ? "AEB · LKA · ACC · расширено" : "AEB · LKA · PDC";
     }
 
     private String climateDashboardDetails() {
@@ -496,7 +496,7 @@ public class MainActivity extends Activity {
     }
 
     private String adasDashboardDetails() {
-        return adasSummary() + "\n" + (developerModeEnabled() ? "Расширенная диагностика активна" : "Базовый набор ассистентов");
+        return adasSummary() + "\n" + (developerModeEnabled() ? "Расширенные функции активны" : "Базовый набор ассистентов");
     }
 
     private String parkingDashboardDetails() {
@@ -573,7 +573,7 @@ public class MainActivity extends Activity {
     private LinearLayout buildExpandedDashboardDrawer() {
         LinearLayout drawer = Ui.glassCard(this);
         drawer.setPadding(Ui.dp(this, 20), Ui.dp(this, 24), Ui.dp(this, 20), Ui.dp(this, 24));
-        drawer.addView(Ui.label(this, "Navigation Drawer"));
+        drawer.addView(Ui.label(this, "Навигация"));
         drawer.addView(Ui.text(this, "GFlow Home", 28, true));
         drawer.addView(Ui.muted(this, "Быстрый доступ к крупным разделам и системным действиям."));
 
@@ -582,7 +582,7 @@ public class MainActivity extends Activity {
         addDrawerAction(drawer, "Автомобиль", this::showVehicleMenu);
         addDrawerAction(drawer, "ADAS", this::showAdasMenu);
         addDrawerAction(drawer, "Камеры / DVR", () -> startActivity(new Intent(this, CameraActivity.class)));
-        addDrawerAction(drawer, "Split Apps", this::openSplitLauncher);
+        addDrawerAction(drawer, "Разделение окон", this::openSplitLauncher);
         addDrawerAction(drawer, "Подсветка", this::showAmbienceLight);
         addDrawerAction(drawer, "Автоматизация", this::showAutomation);
         addDrawerAction(drawer, "Профили", this::showProfilesMenu);
@@ -732,7 +732,7 @@ public class MainActivity extends Activity {
         addStatusCard(strip, "Адаптер", vehicleAdapterReady() ? "доступен" : "нет подключения", Ui.BLUE);
         addStatusCard(strip, "DVR", "настройки", Color.rgb(168, 65, 58));
         addStatusCard(strip, "Автоклимат", SmartClimateController.prefs(this).getBoolean(SmartClimateController.KEY_ENABLED, false) ? "включен" : "выключен", Ui.GREEN);
-        addStatusCard(strip, "Режим", developerModeEnabled() ? "developer" : "user", developerModeEnabled() ? Ui.BLUE : Ui.GREEN);
+        addStatusCard(strip, "Режим", developerModeEnabled() ? "расширенный" : "пользовательский", developerModeEnabled() ? Ui.BLUE : Ui.GREEN);
         root.addView(strip, lpMatchWrap(0, 0, 0, 14));
     }
 
@@ -1103,12 +1103,12 @@ public class MainActivity extends Activity {
         status.addView(Ui.muted(this, "Статус интеграции"));
         status.addView(Ui.text(this, new EcarxVehicleAdapter(this).availability(), 14, false));
         status.addView(Ui.muted(this, developerModeEnabled()
-                ? "Developer diagnostics включены: raw IDs и диагностические блоки видны."
-                : "User mode: raw IDs и диагностические блоки скрыты. Включите Developer diagnostics в настройках для проверки прошивки."));
+                ? "Расширенный режим включен: доступны служебные блоки и дополнительные сведения."
+                : "Пользовательский режим: служебные блоки и дополнительные сведения скрыты."));
         root.addView(status, lpMatchWrap(0, 0, 0, 12));
         EditText filter = new EditText(this);
         filter.setSingleLine(true);
-        filter.setHint("Фильтр по странице: климат, окно, ADAS, diag...");
+        filter.setHint("Фильтр по странице: климат, окно, ADAS...");
         filter.setTextSize(15);
         filter.setBackground(Ui.cardBg(this, Ui.PANEL, Ui.dp(this, 14), Ui.LINE));
         filter.setPadding(Ui.dp(this, 14), 0, Ui.dp(this, 14), 0);
@@ -1258,7 +1258,7 @@ public class MainActivity extends Activity {
     private void addAdasOverview(LinearLayout root) {
         LinearLayout card = Ui.card(this);
         card.addView(Ui.text(this, "Ассистенты водителя", 22, true));
-        card.addView(Ui.muted(this, "Основные переключатели вынесены наверх. Подробные firmware-команды и диагностика находятся ниже."));
+        card.addView(Ui.muted(this, "Основные переключатели вынесены наверх. Дополнительные параметры доступны в отдельных разделах."));
         LinearLayout safety = Ui.row(this);
         addToggleAction(safety, "AEB", () -> sendVehicleChecked(EcarxVehicleAdapter.ADAS_AEB, EcarxVehicleAdapter.COMMON_ON));
         addToggleAction(safety, "FCW", () -> sendVehicleChecked(EcarxVehicleAdapter.ADAS_FCW_SENSITIVITY, EcarxVehicleAdapter.FCW_SENSITIVITY_NORMAL));
@@ -1284,9 +1284,9 @@ public class MainActivity extends Activity {
 
     private void addHudOverview(LinearLayout root) {
         LinearLayout card = Ui.card(this);
-        card.addView(Ui.text(this, "Проектор и OneOS", 22, true));
+        card.addView(Ui.text(this, "Проектор", 22, true));
         card.addView(Ui.muted(this, new EcarxHudDimAdapter(this).availability()));
-        card.addView(Ui.muted(this, "Прямые HUD / DIM actions убраны. Используйте экран HUD только для diagnostics, bridge и сервисов."));
+        card.addView(Ui.muted(this, "Прямое управление проектором и экранными режимами вынесено в служебные разделы."));
         root.addView(card, lpMatchWrap(0, 0, 0, 12));
     }
 
@@ -1366,10 +1366,10 @@ public class MainActivity extends Activity {
 
     private String safetyHelp(String safety) {
         if ("SAFE".equals(safety)) return "Обычное действие приложения без прямой записи в критичные автомобильные функции.";
-        if ("DIAG".equals(safety)) return "Диагностика support/readback/HAL. В обычном пользовательском режиме такие пункты скрыты.";
-        if ("EXP".equals(safety)) return "Экспериментальная функция. Перед использованием проверьте поддержку прошивки и ожидаемые значения.";
+        if ("DIAG".equals(safety)) return "Служебная проверка состояния и поддержки. В обычном пользовательском режиме такие пункты скрыты.";
+        if ("EXP".equals(safety)) return "Экспериментальная функция. Перед использованием проверьте поддержку автомобиля и ожидаемое поведение.";
         if ("PRIV".equals(safety)) return "Требует системных разрешений, ADB grants, root или поддержки привилегированной прошивки.";
-        return "Firmware-dependent команда автомобиля. UI отправляет команду, но исполнение зависит от ECARX/Geely/OneOS API и разрешений.";
+        return "Команда автомобиля зависит от поддержки системы и доступных разрешений.";
     }
 
     private String safetyFor(String label) {
@@ -1432,11 +1432,11 @@ public class MainActivity extends Activity {
     private EcarxVehicleAdapter.Result sendVehicleChecked(int functionId, int value) {
         EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
         if (!adapter.isWritable(functionId)) {
-            return EcarxVehicleAdapter.Result.external("Функция переведена в diagnostics/readback-only", false, true);
+            return EcarxVehicleAdapter.Result.external("Функция доступна только для просмотра состояния", false, true);
         }
         EcarxVehicleAdapter.Result support = adapter.support(functionId);
         if (!support.isSupported()) {
-            return EcarxVehicleAdapter.Result.external("Функция недоступна в AdaptAPI этого автомобиля", false, false);
+            return EcarxVehicleAdapter.Result.external("Функция недоступна на этом автомобиле", false, false);
         }
         return CarCommandBus.sendVehicle(this, functionId, value);
     }
@@ -1444,7 +1444,7 @@ public class MainActivity extends Activity {
     private EcarxVehicleAdapter.Result sendVehicleChecked(int functionId, int zone, int value) {
         EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
         if (!adapter.isWritable(functionId)) {
-            return EcarxVehicleAdapter.Result.external("Функция переведена в diagnostics/readback-only", false, true);
+            return EcarxVehicleAdapter.Result.external("Функция доступна только для просмотра состояния", false, true);
         }
         EcarxVehicleAdapter.Result support = adapter.support(functionId, zone);
         if (!support.isSupported()) {
@@ -1632,11 +1632,11 @@ public class MainActivity extends Activity {
     }
 
     private void showAvasDigitalKey() {
-        LinearLayout root = commandRoot("Experimental: AVAS / Digital Key");
-        addScreenMap(root, "Карта вкладки", "AVAS содержит экспериментальные настройки внешнего предупреждающего звука. Digital Key оставлен readback-only.",
-                "AVAS", "Volume", "Sound", "Readback");
-        root.addView(Ui.text(this, "AVAS - внешний звук предупреждения пешеходов у EV/PHEV. Отключение или смена громкости/типа звука может быть юридически и безопасностно спорной, поэтому раздел спрятан за Experimental features.", 14, false));
-        Ui.section(root, "AVAS controls", "Switch, volume и sound type. Используйте только после проверки требований безопасности и законодательства.");
+        LinearLayout root = commandRoot("Эксперимент: AVAS / Digital Key");
+        addScreenMap(root, "Карта вкладки", "AVAS содержит экспериментальные настройки внешнего предупреждающего звука. Digital Key оставлен только для просмотра состояний.",
+                "AVAS", "Громкость", "Звук", "Состояние");
+        root.addView(Ui.text(this, "AVAS управляет внешним предупреждающим звуком. Раздел спрятан в экспериментальных функциях, так как его использование зависит от требований безопасности и законодательства.", 14, false));
+        Ui.section(root, "Управление AVAS", "Переключение, громкость и тип звука. Используйте только после проверки требований безопасности и законодательства.");
         addDiagnostic(root, "AVAS",
                 EcarxVehicleAdapter.VEHICLE_AVAS_SWITCH,
                 EcarxVehicleAdapter.VEHICLE_AVAS_VOLUME,
@@ -1651,8 +1651,8 @@ public class MainActivity extends Activity {
         addCommandGroup(root, "AVAS sound type", EcarxVehicleAdapter.VEHICLE_AVAS_SOUND_TYPE,
                 new String[]{"AVAS sound none", "AVAS sound 1", "AVAS sound 2", "AVAS sound 3", "AVAS sound 4", "AVAS sound 5", "AVAS sound 6", "AVAS sound 7", "AVAS sound 8"},
                 new int[]{EcarxVehicleAdapter.AVAS_SOUND_NONE, EcarxVehicleAdapter.AVAS_SOUND_1, EcarxVehicleAdapter.AVAS_SOUND_2, EcarxVehicleAdapter.AVAS_SOUND_3, EcarxVehicleAdapter.AVAS_SOUND_4, EcarxVehicleAdapter.AVAS_SOUND_5, EcarxVehicleAdapter.AVAS_SOUND_6, EcarxVehicleAdapter.AVAS_SOUND_7, EcarxVehicleAdapter.AVAS_SOUND_8});
-        Ui.section(root, "Digital Key readback", "Ниже только чтение статусов. Команды pair/unpair/delete/termination/suspension намеренно не добавлены.");
-        root.addView(Ui.text(this, "Digital key ниже только читает статусы. Команды pair/unpair/delete/termination/suspension намеренно не добавлены.", 14, false));
+        Ui.section(root, "Digital Key", "Ниже доступен только просмотр состояний. Команды привязки и удаления намеренно не добавлены.");
+        root.addView(Ui.text(this, "Digital Key в этом разделе показывает только состояния. Изменение ключей здесь не выполняется.", 14, false));
         addDiagnostic(root, "Digital key statuses",
                 EcarxVehicleAdapter.VEHICLE_DIGITAL_KEY,
                 EcarxVehicleAdapter.VEHICLE_DIGITAL_KEY_REQ_STS,
@@ -1666,10 +1666,10 @@ public class MainActivity extends Activity {
     }
 
     private void showSceneModes() {
-        LinearLayout root = commandRoot("Experimental: Сценарии");
+        LinearLayout root = commandRoot("Эксперимент: Сценарии");
         addScreenMap(root, "Карта вкладки", "Scene modes отправляют ON/OFF в готовые режимы автомобиля: Theater, Wash, Pet, Nap, Camping и другие.",
                 "Cabin", "Comfort", "Media", "Rear");
-        root.addView(Ui.text(this, "Сценарные режимы из ISceneMode.smali. Кнопки отправляют ON/OFF в соответствующий scene function.", 14, false));
+        root.addView(Ui.text(this, "Сценарные режимы включают и выключают готовые состояния автомобиля.", 14, false));
         Ui.section(root, "Scene toggles", "Каждый режим добавлен парой ON/OFF. Проверяйте поддержку конкретной прошивки.");
         addDiagnostic(root, "Scene modes",
                 EcarxVehicleAdapter.SCENE_THEATER,
@@ -1706,12 +1706,12 @@ public class MainActivity extends Activity {
     }
 
     private void showAmbienceLight() {
-        LinearLayout root = commandRoot("Experimental: Подсветка");
+        LinearLayout root = commandRoot("Эксперимент: Подсветка");
         addScreenMap(root, "Карта вкладки", "Ambience light разделен на цвета, эффекты, control mode, welcome/music/voice и зоны.",
                 "Color", "Effect", "Mode", "Zones");
         addAmbiencePreview(root);
-        root.addView(Ui.text(this, "Ambience light из IAmbienceLight.smali: темы, цвета, weather/music/welcome/voice и зоны.", 14, false));
-        Ui.section(root, "Ambience diagnostics", "Readback и поддержка подсветки видны в Developer diagnostics.");
+        root.addView(Ui.text(this, "Раздел подсветки включает цвета, эффекты, сценарии приветствия и зоны салона.", 14, false));
+        Ui.section(root, "Состояние подсветки", "Подробные служебные сведения о подсветке доступны в расширенном режиме.");
         addDiagnostic(root, "Ambience light",
                 EcarxVehicleAdapter.AMBIENCE_LIGHT_THEME_COLOR,
                 EcarxVehicleAdapter.AMBIENCE_LIGHT_COLOR_WEATHER,
@@ -1734,7 +1734,7 @@ public class MainActivity extends Activity {
         addCommandGroup(root, "Theme mode", EcarxVehicleAdapter.AMBIENCE_LIGHT_EFFECT,
                 new String[]{"Effect solid", "Effect gradients", "Effect breathe", "Theme radical", "Theme simple", "Theme liberating", "Theme agile", "Effect off"},
                 new int[]{EcarxVehicleAdapter.AMBIENCE_LIGHT_EFFECT_SOLID, EcarxVehicleAdapter.AMBIENCE_LIGHT_EFFECT_GRADIENTS, EcarxVehicleAdapter.AMBIENCE_LIGHT_EFFECT_BREATHE, EcarxVehicleAdapter.AMBIENCE_LIGHT_THEME_RADICAL, EcarxVehicleAdapter.AMBIENCE_LIGHT_THEME_SIMPLE, EcarxVehicleAdapter.AMBIENCE_LIGHT_THEME_LIBERATING, EcarxVehicleAdapter.AMBIENCE_LIGHT_THEME_AGILE, EcarxVehicleAdapter.COMMON_OFF});
-        Ui.section(root, "Stock ambience", "Значения из stock settings: яркость float zone 0x8, цвета и напоминания.");
+        Ui.section(root, "Точные настройки", "Подробные значения яркости, цветов и напоминаний подсветки.");
         addFloatCommand(root, "Intensity 10", EcarxVehicleAdapter.AMBIENCE_LIGHT_INTENSITY, EcarxVehicleAdapter.ZONE_ROW_1_ALL, 10.0f);
         addFloatCommand(root, "Intensity 50", EcarxVehicleAdapter.AMBIENCE_LIGHT_INTENSITY, EcarxVehicleAdapter.ZONE_ROW_1_ALL, 50.0f);
         addFloatCommand(root, "Intensity 100", EcarxVehicleAdapter.AMBIENCE_LIGHT_INTENSITY, EcarxVehicleAdapter.ZONE_ROW_1_ALL, 100.0f);
@@ -1760,7 +1760,7 @@ public class MainActivity extends Activity {
         addCommandGroup(root, "Zones", EcarxVehicleAdapter.AMBIENCE_LIGHT_ZONE_EXPERIENCE,
                 new String[]{"Zone all", "Zone front", "Zone headrest", "Zone rear"},
                 new int[]{EcarxVehicleAdapter.AMBIENCE_LIGHT_ZONE_ALL, EcarxVehicleAdapter.AMBIENCE_LIGHT_ZONE_FRONT, EcarxVehicleAdapter.AMBIENCE_LIGHT_ZONE_HEADREST, EcarxVehicleAdapter.AMBIENCE_LIGHT_ZONE_REAR});
-        Ui.section(root, "GInputBridge extras", "Остальные функции подсветки пока выведены как диагностика/readback.");
+        Ui.section(root, "Дополнительные функции", "Остальные параметры подсветки доступны в расширенном режиме.");
         addDiagnostic(root, "GInputBridge ambience extras",
                 EcarxVehicleAdapter.AMBIENCE_LIGHT_BRIGHTNESS_DRIVING,
                 EcarxVehicleAdapter.AMBIENCE_LIGHT_BRIGHTNESS_STATIONARY,
@@ -1778,9 +1778,9 @@ public class MainActivity extends Activity {
 
     private void addAmbienceFluentPanel(LinearLayout root) {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Stock ambience"));
+        panel.addView(Ui.label(this, "Точная настройка"));
         panel.addView(Ui.text(this, "Подсветка салона", 24, true));
-        panel.addView(Ui.muted(this, "Stock-контракты: яркость zone 0x8, палитра solid/breathe zone 0x200a0100, transition global."));
+        panel.addView(Ui.muted(this, "Подробная настройка яркости, палитры и эффектов подсветки."));
 
         LinearLayout top = Ui.row(this);
         LinearLayout intensity = Ui.deepCard(this);
@@ -1817,7 +1817,7 @@ public class MainActivity extends Activity {
         top.addView(toggles, togglesLp);
         panel.addView(top, lpMatchWrap(0, 14, 0, 14));
 
-        Ui.section(panel, "Эффект", "Три значения подтверждены stock. Доп. режимы из исходников оставлены как candidate selector.");
+        Ui.section(panel, "Эффект", "Быстрый выбор основных эффектов подсветки.");
         LinearLayout effects = Ui.row(this);
         addAmbiencePill(effects, "Solid", () -> sendAmbienceInt(EcarxVehicleAdapter.AMBIENCE_LIGHT_EFFECT, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.AMBIENCE_LIGHT_EFFECT_SOLID));
         addAmbiencePill(effects, "Gradient", () -> sendAmbienceInt(EcarxVehicleAdapter.AMBIENCE_LIGHT_EFFECT, EcarxVehicleAdapter.ZONE_ALL, EcarxVehicleAdapter.AMBIENCE_LIGHT_EFFECT_GRADIENTS));
@@ -1886,7 +1886,7 @@ public class MainActivity extends Activity {
         LinearLayout top = Ui.row(this);
         TextView title = Ui.text(this, "Визуал подсветки", 18, true);
         top.addView(title, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-        top.addView(Ui.help(this, "Визуал подсветки", "Preview использует ассеты OneOS-ControlBoard: фон салона/двери и подсвеченный слой автомобиля. Нажмите по нижней части preview, чтобы сменить цвет локально; реальные команды ниже отправляют значения в AdaptAPI."));
+        top.addView(Ui.help(this, "Визуал подсветки", "Предпросмотр показывает цвет подсветки салона. Нажмите по нижней части, чтобы сменить демонстрационный цвет; реальные команды применяются кнопками ниже."));
         card.addView(top);
         card.addView(Ui.muted(this, "Касание по preview меняет демонстрационный цвет. Команды ниже выполняют реальную запись theme/effect/zone."));
         VehicleVisualView visual = new VehicleVisualView(this, true);
@@ -1915,11 +1915,11 @@ public class MainActivity extends Activity {
     }
 
     private void showDayMode() {
-        LinearLayout root = commandRoot("Experimental: Яркость / DayMode");
+        LinearLayout root = commandRoot("Эксперимент: Яркость / DayMode");
         addScreenMap(root, "Карта вкладки", "DayMode управляет day/night/auto режимом и яркостью backlight, DIM, floodlight, screen и mirror.",
                 "Day", "Night", "Brightness", "DIM");
-        root.addView(Ui.text(this, "DayMode и яркость из IDayMode.smali. Для яркости значения 25/50/75 экспериментальные; сначала проверь min/max/step.", 14, false));
-        Ui.section(root, "Brightness diagnostics", "Min/max/step и readback видны в Developer diagnostics.");
+        root.addView(Ui.text(this, "Раздел управляет дневным и ночным режимом, а также яркостью связанных экранов и подсветки.", 14, false));
+        Ui.section(root, "Состояние яркости", "Подробные служебные сведения о яркости доступны в расширенном режиме.");
         addDiagnostic(root, "DayMode / brightness",
                 EcarxVehicleAdapter.DAYMODE_SETTING,
                 EcarxVehicleAdapter.DAYMODE_SYNC,
@@ -1970,8 +1970,8 @@ public class MainActivity extends Activity {
     }
 
     private void addExperimentalDriveFeatures(LinearLayout root) {
-        root.addView(Ui.text(this, "Experimental drive features: только подтвержденные log_1.32 write-кандидаты. Energy, launch, ESC и StarTrack скрыты как unsupported.", 14, false));
-        addDiagnostic(root, "Experimental drive modes",
+        root.addView(Ui.text(this, "Экспериментальные режимы движения собраны в отдельный раздел и содержат только подтвержденные варианты.", 14, false));
+        addDiagnostic(root, "Режимы движения",
                 EcarxVehicleAdapter.DRIVE_MODE_SELECT,
                 EcarxVehicleAdapter.DRIVE_CUSTOM_PROPULSION,
                 EcarxVehicleAdapter.DRIVE_CUSTOM_SUSPENSION,

@@ -255,7 +255,7 @@ public class ClimateActivity extends Activity {
         status.setOrientation(LinearLayout.VERTICAL);
         fanValue = Ui.text(this, "Вентилятор: --", 16, true);
         fanValue.setPadding(0, Ui.dp(this, 6), 0, 0);
-        summaryValue = Ui.text(this, "Состояние HVAC: ожидание readback", 14, false);
+        summaryValue = Ui.text(this, "Состояние климата: обновление...", 14, false);
         summaryValue.setTextColor(Ui.secondaryText(this));
         status.addView(fanValue);
         status.addView(summaryValue);
@@ -327,7 +327,7 @@ public class ClimateActivity extends Activity {
         seats.setWeightSum(4f);
         addClimateActionChip(seats, "Подогрев сид.", () -> cycleSeatClimate(EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.ZONE_DRIVER_LEFT));
         if (developerModeEnabled()) {
-            addClimateActionChip(seats, "Вентиляция DEV", () -> cycleSeatClimate(EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, EcarxVehicleAdapter.ZONE_DRIVER_LEFT));
+            addClimateActionChip(seats, "Вентиляция", () -> cycleSeatClimate(EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, EcarxVehicleAdapter.ZONE_DRIVER_LEFT));
         }
         addClimateActionChip(seats, "Руль", this::cycleWheelHeat);
         addClimateActionChip(seats, "Обдув стекла", this::showDefrostSheet);
@@ -353,9 +353,9 @@ public class ClimateActivity extends Activity {
 
     private LinearLayout buildStockHvacFluentPanel() {
         LinearLayout panel = Ui.glassCard(this);
-        panel.addView(Ui.label(this, "Stock HVAC"));
-        panel.addView(Ui.text(this, "Точные значения из stock settings", 22, true));
-        panel.addView(Ui.muted(this, "Вентилятор и обдув используют zone 0x8. Температура — float zone 0x1."));
+        panel.addView(Ui.label(this, "Точные настройки"));
+        panel.addView(Ui.text(this, "Режимы климата", 22, true));
+        panel.addView(Ui.muted(this, "Подробная настройка вентилятора, температуры и потоков воздуха."));
 
         LinearLayout row = Ui.row(this);
         row.setGravity(Gravity.CENTER_VERTICAL);
@@ -614,13 +614,13 @@ public class ClimateActivity extends Activity {
     private View buildClimateReadbackGrid() {
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(2);
-        addReadbackCard(grid, "Основа HVAC", readbackByIds(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.HVAC_AUTO, EcarxVehicleAdapter.HVAC_AC, EcarxVehicleAdapter.HVAC_FAN_SPEED));
+        addReadbackCard(grid, "Основное состояние", readbackByIds(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.HVAC_AUTO, EcarxVehicleAdapter.HVAC_AC, EcarxVehicleAdapter.HVAC_FAN_SPEED));
         addReadbackCard(grid, "Температура", readback(
                 floatReadback(EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_DRIVER_LEFT),
                 floatReadback(EcarxVehicleAdapter.HVAC_TEMP, EcarxVehicleAdapter.ZONE_PASSENGER_RIGHT),
                 singleReadback(EcarxVehicleAdapter.HVAC_TEMP_UNIT),
                 singleReadback(EcarxVehicleAdapter.HVAC_CLIMATE_ZONE)));
-        addReadbackCard(grid, "Сиденья / Руль", developerModeEnabled()
+        addReadbackCard(grid, "Сиденья и руль", developerModeEnabled()
                 ? readback(
                 zonedReadback(EcarxVehicleAdapter.HVAC_SEAT_HEATING, EcarxVehicleAdapter.ZONE_DRIVER_LEFT),
                 zonedReadback(EcarxVehicleAdapter.HVAC_SEAT_VENTILATION, EcarxVehicleAdapter.ZONE_DRIVER_LEFT),
@@ -635,12 +635,12 @@ public class ClimateActivity extends Activity {
                 singleReadback(EcarxVehicleAdapter.HVAC_CO2_SWITCH),
                 singleReadback(EcarxVehicleAdapter.HVAC_IONS_SWITCH),
                 singleReadback(EcarxVehicleAdapter.HVAC_AIR_FRAGRANCE)));
-        addReadbackCard(grid, "Обдув / Осушение", readback(
+        addReadbackCard(grid, "Обдув и осушение", readback(
                 singleReadback(EcarxVehicleAdapter.HVAC_DEFROST_FRONT),
                 singleReadback(EcarxVehicleAdapter.HVAC_DEFROST_REAR),
                 singleReadback(EcarxVehicleAdapter.HVAC_DEFROST_FRONT_MAX),
                 singleReadback(EcarxVehicleAdapter.HVAC_AUTOMATIC_VENTILATION_DRY)));
-        addReadbackCard(grid, "Расширенные режимы", readback(
+        addReadbackCard(grid, "Дополнительные режимы", readback(
                 singleReadback(EcarxVehicleAdapter.HVAC_RAPID_COOLING),
                 singleReadback(EcarxVehicleAdapter.HVAC_RAPID_WARMING),
                 singleReadback(EcarxVehicleAdapter.HVAC_PRE_CLIMATISATION),
@@ -814,7 +814,7 @@ public class ClimateActivity extends Activity {
         });
         addDockButton(dock, "Расширенно", () -> openMode(Mode.ADVANCED), mode == Mode.ADVANCED, new QuickItem[]{
                 new QuickItem("Расширенно", () -> openMode(Mode.ADVANCED)),
-                new QuickItem("Readback", this::showReadbackSheet),
+                new QuickItem("Состояние", this::showReadbackSheet),
                 new QuickItem("Комфорт", () -> openMode(Mode.HOME))
         });
         return dock;
@@ -852,8 +852,8 @@ public class ClimateActivity extends Activity {
     }
 
     private void showQuickHvacSheet() {
-        showActionSheet("Быстрый HVAC", new QuickItem[]{
-                new QuickItem("HVAC выкл", () -> command(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_OFF)),
+        showActionSheet("Быстрый климат", new QuickItem[]{
+                new QuickItem("Климат выкл", () -> command(EcarxVehicleAdapter.HVAC_POWER, EcarxVehicleAdapter.COMMON_OFF)),
                 new QuickItem("Auto", () -> command(EcarxVehicleAdapter.HVAC_AUTO, EcarxVehicleAdapter.COMMON_ON)),
                 new QuickItem("AC Max", () -> command(EcarxVehicleAdapter.HVAC_AC_MAX, EcarxVehicleAdapter.COMMON_ON)),
                 new QuickItem("Auto fan normal", () -> command(EcarxVehicleAdapter.HVAC_AUTO_FAN_SETTING, EcarxVehicleAdapter.ZONE_ROW_1_ALL, EcarxVehicleAdapter.AUTO_FAN_SETTING_NORMAL)),
@@ -881,7 +881,7 @@ public class ClimateActivity extends Activity {
     }
 
     private void showReadbackSheet() {
-        showActionSheet("Чтение HVAC", new QuickItem[]{
+        showActionSheet("Состояние климата", new QuickItem[]{
                 new QuickItem(singleReadback(EcarxVehicleAdapter.HVAC_POWER), this::refreshState),
                 new QuickItem(singleReadback(EcarxVehicleAdapter.HVAC_AUTO), this::refreshState),
                 new QuickItem(singleReadback(EcarxVehicleAdapter.HVAC_AC), this::refreshState),
@@ -935,12 +935,12 @@ public class ClimateActivity extends Activity {
         EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
         EcarxVehicleAdapter.Result support = adapter.support(functionId);
         if (support != null && !support.isSupported()) {
-            Ui.toast(this, "Функция недоступна в AdaptAPI этого автомобиля");
+            Ui.toast(this, "Функция недоступна на этом автомобиле");
             return;
         }
         EcarxVehicleAdapter.Result result = adapter.set(functionId, value);
         refreshState();
-        Ui.toast(this, result.success ? "HVAC updated" : result.message);
+        Ui.toast(this, result.success ? "Климат обновлен" : result.message);
     }
 
     private void command(int functionId, int zone, int value) {
@@ -952,7 +952,7 @@ public class ClimateActivity extends Activity {
         }
         EcarxVehicleAdapter.Result result = adapter.set(functionId, zone, value);
         refreshState();
-        Ui.toast(this, result.success ? "HVAC updated" : result.message);
+        Ui.toast(this, result.success ? "Климат обновлен" : result.message);
     }
 
     private void applyClimatePreset(EcarxVehicleAdapter.Command... commands) {
@@ -980,9 +980,9 @@ public class ClimateActivity extends Activity {
     }
 
     private String buildSummary() {
-        return "Power " + simpleState(EcarxVehicleAdapter.HVAC_POWER, "off")
-                + " · A/C " + simpleState(EcarxVehicleAdapter.HVAC_AC, "off")
-                + " · Defrost " + simpleState(EcarxVehicleAdapter.HVAC_DEFROST_FRONT, "off");
+        return "Питание " + simpleState(EcarxVehicleAdapter.HVAC_POWER, "выкл")
+                + " · A/C " + simpleState(EcarxVehicleAdapter.HVAC_AC, "выкл")
+                + " · Обдув стекла " + simpleState(EcarxVehicleAdapter.HVAC_DEFROST_FRONT, "выкл");
     }
 
     private String simpleState(int functionId, String fallback) {
@@ -1055,7 +1055,7 @@ public class ClimateActivity extends Activity {
         int next = nextSeatClimateLevel(current == null ? 0 : current.value);
         EcarxVehicleAdapter.Result result = adapter.set(functionId, zone, next);
         refreshState();
-        Ui.toast(this, result.success ? "HVAC updated" : result.message);
+        Ui.toast(this, result.success ? "Климат обновлен" : result.message);
     }
 
     private int nextSeatClimateLevel(int current) {
@@ -1081,14 +1081,14 @@ public class ClimateActivity extends Activity {
         EcarxVehicleAdapter adapter = new EcarxVehicleAdapter(this);
         EcarxVehicleAdapter.Result support = adapter.support(EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT);
         if (support != null && !support.isSupported()) {
-            Ui.toast(this, "Подогрев руля недоступен в AdaptAPI этого автомобиля");
+            Ui.toast(this, "Подогрев руля недоступен на этом автомобиле");
             return;
         }
         EcarxVehicleAdapter.Result current = adapter.get(EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT);
         int next = nextWheelHeatLevel(current == null ? 0 : current.value);
         EcarxVehicleAdapter.Result result = adapter.set(EcarxVehicleAdapter.HVAC_STEERING_WHEEL_HEAT, next);
         refreshState();
-        Ui.toast(this, result.success ? "HVAC updated" : result.message);
+        Ui.toast(this, result.success ? "Климат обновлен" : result.message);
     }
 
     private int nextWheelHeatLevel(int current) {
